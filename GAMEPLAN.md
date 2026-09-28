@@ -3,9 +3,24 @@
 **Working title:** Proof of Fight  
 **Live URL (planned):** https://proofoffight.com  
 **Repo:** `github.com/coloredskyscore/proof-of-fight` (separate project — not coloredskyscore)  
-**Status:** Design lock for v1. No hosting pointed yet. No wallet. No on-chain mint.
+**Status:** First playable build is in the repo (steps 1–2 of the build order). No hosting pointed yet. No wallet. No on-chain mint.
 
 This is the document to build from. If a feature is not in **v1**, it does not get built until the dummy fight is fun.
+
+---
+
+## 0. Changes in the first playable build (Sept 28, 2026)
+
+Everything below this section already reflects these changes. The exact numbers live in `js/data.js`.
+
+- **Balance fix.** In the draft numbers, Strike beat Mint and Rug on average for every character, so spamming Strike won 76–91% of fights and the jokes lived on the losing buttons. New numbers: Strike 10, Mint 24, Rug 36, and **Rug hits Hidden targets** ("you can't hide from a rug"). Saylor starts at 105 HP. The draft numbers are still selectable on the title screen as "Original draft numbers" so you can feel the difference.
+- **Contradiction 1 fixed (XRP Army vs Hidden).** Supers can't be dodged, full stop. XRP Army always lands.
+- **Contradiction 2 fixed (CPU Super timing).** The CPU always fires its Super the turn its meter reaches 10. The per-character timing rules are gone. The player gets an on-screen warning that turn.
+- **Contradiction 3 fixed (missing numbers).** Every Super, the Rug recoil, status durations and the exact turn order now have numbers (sections 6, 7, 10, 11).
+- **Vitalik's Super is now Ultra Sound Moves.** An awkward arms-out dance in front of a big screen of dancing bears doing the same thing. It hypnotizes: the target's next attack hits themselves. Soulbound Teddy is retired; the Teddy and Reviewed statuses are gone.
+- **Daily Fight moved into v1** (section 14). Wordle model: same matchup and luck for everyone each day, one try, share an emoji grid.
+- **Phone-first layout.** Portrait, no rotation needed. Landscape phones get a side-by-side layout.
+- Supers for Charles, Adam and Vitalik were bumped after balance simulations (`node tools/sim.js`).
 
 ---
 
@@ -23,7 +38,7 @@ It is not:
 - An on-chain STEPN-style mint economy
 - Anything connected to coloredskyscore.com
 
-Players will open a link, pick a fighter, fight a CPU, then share a result link.
+Players will open a link, play today's Daily Fight (or pick a fighter in Free Play), then share the result.
 
 ---
 
@@ -47,20 +62,20 @@ Porkbun is the domain registrar only. Do not buy Porkbun hosting (Link in Bio, A
 
 ## 3. v1 in one paragraph
 
-Seven caricature fighters. One CPU opponent. Five buttons: **Strike**, **Privacy**, **Mint**, **Rug**, **Super**. A **Blocks** meter of 10 squares. Super spends the whole row and plays a 2–3 second cut-in. Fight ends at 0 HP. After the fight, a unique URL replays the result card. No accounts. No wallet. No PHP.
+Seven caricature fighters. One CPU opponent. Five buttons: **Strike**, **Privacy**, **Mint**, **Rug**, **Super**. A **Blocks** meter of 10 squares. Super spends the whole row and plays a 2–3 second cut-in. Fight ends at 0 HP. A **Daily Fight** gives everyone the same matchup each day. After the fight, share an emoji grid of how it went. No accounts. No wallet. No PHP.
 
 ---
 
 ## 4. Core loop
 
-1. Title screen → pick your fighter → pick CPU opponent (or a fixed first fight).
-2. Both start at **100 HP** and **0 / 10 Blocks**.
+1. Title screen → **Daily Fight** (fixed matchup for the day) or **Free Play** (pick your fighter → pick CPU opponent, or the suggested first fight).
+2. Both start at **100 HP** (Saylor 105) and **0 / 10 Blocks**.
 3. You choose a move.
 4. CPU chooses a move using that character's personality table.
-5. Resolve in order: Super → Privacy (Hidden or not) → Strike / Mint / Rug against whoever is still visible.
+5. Resolve in order: Super → Privacy (Hidden or not) → Strike / Mint / Rug (see section 7 for the exact rules).
 6. Banners fire (`ARTWORK SUCKS!`, `VIEW KEY LEAKED`, etc.).
 7. Repeat until one HP bar is empty.
-8. Result card + **Copy link** + **Copy tweet**.
+8. Result card + emoji grid + **Share** / **Post on X**.
 
 Win condition: reduce the opponent to 0 HP. Supers change *how* you get there. They are not a second win condition.
 
@@ -69,8 +84,8 @@ Win condition: reduce the opponent to 0 HP. Supers change *how* you get there. T
 ## 5. Resources
 
 ### HP
-- Start at 100.
-- Integers only. No decimals.
+- Start at 100. Saylor starts at 105 (he's the tank).
+- Integers only. No decimals. Half damage rounds up.
 
 ### Blocks (the meter)
 Not "aura." Not "guard."
@@ -88,23 +103,25 @@ Not "aura." Not "guard."
 | Mint success | +2 |
 | Mint fail | +1 |
 | Rug success | steal 2 from opponent |
-| Rug fail | lose 2 (floor at 0) |
-| Got hit while not Hidden | +1 |
+| Rug fail | lose 2 (if you have 0, take 5 damage instead) |
+| Got hit by Strike / Mint / Rug | +1 (Supers don't give this) |
 | Super | spend 10, gain 0 |
+
+Strike and Mint give their Blocks even if the target was Hidden.
 
 ---
 
 ## 6. The five buttons
 
 ### Strike
-The only honest move. Always hits if the target is not Hidden. Small damage (~12). +2 Blocks. No joke banner unless it KOs.
+The only honest move. Always hits if the target is not Hidden. **10 damage.** +2 Blocks. No joke banner unless it KOs.
 
 This exists so the match is not a slot machine.
 
 ### Privacy
 Zcash-flavored dodge. Replaces Guard.
 
-- Success: **Hidden** for the rest of this turn. Incoming Strike / Mint / Rug miss. +3 Blocks.
+- Success: **Hidden** for the rest of this turn. Incoming Strike and Mint miss. Rug still hits. Supers still hit. +3 Blocks.
 - Fail: stay visible, take full damage if they attacked, +1 Block. Banner examples: `VIEW KEY LEAKED` / `EXPLORER SAYS HI` / `YOUR MEMO WAS EMPTY`.
 
 Hide chance is per character (see roster).
@@ -112,17 +129,17 @@ Hide chance is per character (see roster).
 ### Mint
 Launch an NFT at them.
 
-- Success: medium damage (~18) + 2 Blocks. A JPEG slap.
+- Success: **24 damage** + 2 Blocks. A JPEG slap.
 - Fail: 0 damage, +1 Block, banner: **ARTWORK SUCKS!** plus a character-specific extra line.
 
 ### Rug
 High-risk drain.
 
-- Success: big damage (~28) + steal 2 Blocks.
-- Fail: lose 2 Blocks (or take a small recoil slap if already at 0 Blocks) + humiliating banner.
+- Success: **36 damage** + steal 2 Blocks. **Hits even if the target is Hidden** (you can't hide from a rug).
+- Fail: lose 2 Blocks (or take **5 recoil damage** if already at 0 Blocks) + humiliating banner.
 
 ### Super
-Requires 10 Blocks. Never whiffs. Plays the character cutscene. Then apply that Super's effect. Bar empties.
+Requires 10 Blocks. **Never whiffs and can't be dodged**, not even by a successful Privacy. Plays the character cutscene. Then apply that Super's effect. Bar empties.
 
 If both sides Super on the same turn, player Super plays first in v1 (simple). Revisit later if it feels unfair.
 
@@ -130,11 +147,17 @@ If both sides Super on the same turn, player Super plays first in v1 (simple). R
 
 ## 7. Turn resolution order
 
-1. If a fighter used Super, play that cutscene and apply its effect.
-2. Privacy rolls. Apply Hidden or fail banners.
-3. Strike / Mint / Rug resolve against targets that are not Hidden and not Sleep / Blind-skipped.
-4. Tick timed statuses (HODL, Reviewed, Teddy, Sleep, Blind).
-5. Check KO.
+Both sides lock a move at the same time (the CPU never sees yours). Then:
+
+0. **Last turn's statuses kick in.** A Blind or Asleep fighter skips this turn. A Hypnotized fighter's Strike / Mint / Rug targets themselves this turn.
+1. **Supers**, player first. They can't be dodged. Blind, Sleep and Hypnotized land on the target's *next* turn (both moves are already locked this turn). HODL starts immediately.
+2. **Privacy** rolls. Apply Hidden or fail banners.
+3. **Strike / Mint / Rug**, player first. Strike and Mint miss Hidden targets. Rug doesn't.
+4. **HODL** ticks down.
+
+**KO is instant.** The moment someone hits 0 HP the fight ends, even mid-turn, so there are no double KOs. Because the player goes first in each step, the player wins exact ties.
+
+**Turn cap: 30.** If nobody is down after turn 30: banner `CHAIN HALTED`, higher HP percentage wins.
 
 If both Rugs fail: extra banner `MUTUAL REKT`.
 
@@ -149,7 +172,7 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 | `toly` | Toly | @toly | Speed / throughput |
 | `mert` | Mert | @mert | Infra / "I told you so" |
 | `garlinghouse` | Garlinghouse | @bgarlinghouse | Lawyers and liquidity |
-| `vitalik` | Vitalik | @VitalikButerin | Research / weird shield |
+| `vitalik` | Vitalik | @VitalikButerin | Research / questionable dance moves |
 | `adam` | Adam Back | @adam3us | Cypherpunk grind |
 | `charles` | Charles | @IOHK_Charles | Peer review / long speeches |
 | `saylor` | Saylor | @saylor | Tank / orange pill |
@@ -213,19 +236,19 @@ Cutscene budget for v1: **2–3 seconds**, same template for everyone.
 
 No 12-second animated films in v1.
 
-| Character | Super | What you see | Effect |
-|---|---|---|---|
-| Mert | **Helius Flare** | Sun hits the dome, beam slaps their eyes | Small damage + **Blind** (they skip their next turn) |
-| Toly | **Firedancer** | "INCREASING BANDWIDTH AND REDUCING LATENCY!!!" then a fat punch | Huge single hit. KO banner: **Low Latency Finish** |
-| Garlinghouse | **XRP Army** | Polo-shirt normies jog across and body-check | 5 small hits, medium total. Hit 3 **breaks Hidden** if they were going to vanish next? Keep v1 simple: 5 chips, ignores nothing extra except it still requires they are not Hidden *this* turn |
-| Charles | **Peer Review** | Five nerds with laptops; Charles starts a sentence that does not end | Almost no damage + **Sleep** (skip next turn) + **Reviewed** (their next Super needs 2 extra Blocks, i.e. 12 — or keep v1 as "next Super locked one extra turn"). *v1 simpler: Sleep only + next Super costs 12 Blocks if we can show 12. Otherwise Sleep + they lose 3 Blocks.* |
-| Saylor | **No Second Best** | Bear drops in, he mounts it, points at camera, charges | Big hit + **HODL** for 2 turns (take half damage) |
-| Adam Back | **OP_RETURN** | Long-barreled gun etched `OP_RETURN`, fires an **80 BYTES** blob | Medium damage + **Prune** (strip one buff: HODL, Reviewed, Teddy) |
-| Vitalik | **Soulbound Teddy** | Beat-up stuffed bear/unicorn, tiny halo, cannot be traded | 0 damage. Teddy **eats the next incoming hit**, then pops |
+All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 
-Charles v1 lock (simple): Sleep + strip 3 Blocks from them (peer review delays the roadmap). Skip the "Super costs extra" rule until the dummy exists.
+| Character | Super | What you see | Effect | KO finish line |
+|---|---|---|---|---|
+| Mert | **Helius Flare** | Sun hits the dome, beam slaps their eyes. "I TOLD YOU SO." | **10 dmg + Blind** (they skip their next turn) | LIGHTS OUT |
+| Toly | **Firedancer** | "INCREASING BANDWIDTH AND REDUCING LATENCY!!!" then a fat punch | **35 dmg**, one hit | LOW LATENCY FINISH |
+| Garlinghouse | **XRP Army** | Polo-shirt normies jog across and body-check | **5 hits × 5 dmg = 25** | ARMY SETTLEMENT |
+| Charles | **Peer Review** | Five nerds with laptops; Charles starts a sentence that does not end | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** (peer review delays the roadmap) | PEER REVIEWED |
+| Saylor | **No Second Best** | Bear drops in, he mounts it, points at camera, charges | **25 dmg + HODL** (Saylor takes half damage this turn and next) | NO SECOND BEST |
+| Adam Back | **OP_RETURN** | Long-barreled gun etched `OP_RETURN`, fires an **80 BYTES** blob | **Prune** (strips their HODL) **then 25 dmg** | 80 BYTES OF PAIN |
+| Vitalik | **Ultra Sound Moves** | A big screen behind him full of dancing bears, arms locked straight out, swaying. Vitalik in front doing the exact same awkward dance. "DON'T LOOK AT THE DANCE." | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | HYPNOTIZED |
 
-XRP Army v1 lock: 5 hits of 5 damage each (25 if all connect). Miss the whole thing if target is Hidden.
+Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY`, hitting yourself `SELF-REKT`.
 
 ---
 
@@ -233,14 +256,13 @@ XRP Army v1 lock: 5 hits of 5 damage each (25 if all connect). Miss the whole th
 
 | Status | Does | Cleared by |
 |---|---|---|
-| Hidden | Incoming Strike / Mint / Rug miss this turn | End of turn |
-| Blind | Skip your next action | After the skipped action |
-| Sleep | Skip your next action | After the skipped action |
-| HODL | Take half damage for 2 turns | Timer |
-| Teddy | Absorb the next hit, then pop | One hit or Adam Prune |
-| Reviewed | Flavor only in v1 unless we add the extra-Block tax later | — |
+| Hidden | Incoming Strike and Mint miss this turn. Rug and Supers still hit. | End of turn |
+| Blind | Skip your next turn | After the skipped turn |
+| Sleep | Skip your next turn | After the skipped turn |
+| Hypnotized | Your next turn's Strike / Mint / Rug hits yourself (normal odds, full damage). Privacy and Super are safe, so a smart player hides. | After that turn |
+| HODL | Take half damage (rounded up) this turn and next | Timer, or Adam's Prune |
 
-Blind and Sleep do not stack into a two-turn skip. If both land, still one skipped action.
+Blind and Sleep do not stack into a two-turn skip. If both land, still one skipped turn.
 
 ---
 
@@ -248,38 +270,60 @@ Blind and Sleep do not stack into a two-turn skip. If both land, still one skipp
 
 The CPU is always ready. No human is waiting.
 
-Weights are "how often they try this when legal." Super is always used if Blocks == 10.
+Weights are "how often they try this." **Every CPU fires its Super the turn its meter reaches 10**, no exceptions, and the player sees a warning that turn. (The draft had per-character Super timing, but it contradicted "always at 10", so it's gone.)
 
-| Character | Strike | Privacy | Mint | Rug | Super rule |
-|---|---|---|---|---|---|
-| Saylor | High | Rare | Low | Almost never | Fire Super immediately at 10 |
-| Adam Back | Medium | Very high | Almost never | Almost never | Super when they have a buff to Prune, else at 10 |
-| Charles | Low | Medium | Medium | Low | Super as soon as 10 (he came to lecture) |
-| Garlinghouse | Medium | Low | High | High | Super at 10 |
-| Toly | High | Low | Medium | Medium | Super at 10 (he is hunting the Firedancer KO) |
-| Mert | Medium | Medium | Medium | Medium | Super at 10, prefers it if you have Blocks to waste via Blind |
-| Vitalik | Medium | Medium | Low | Low | Super when HP < 40 (teddy as panic shield), else at 10 |
+| Character | Strike | Privacy | Mint | Rug |
+|---|---|---|---|---|
+| Saylor | High | Rare | Low | Almost never |
+| Adam Back | Medium | Very high | Almost never | Almost never |
+| Charles | Low | Medium | Medium | Low |
+| Garlinghouse | Medium | Low | High | High |
+| Toly | High | Low | Medium | Medium |
+| Mert | Medium | Medium | Medium | Medium |
+| Vitalik | Medium | Medium | Low | Low |
 
-v1 AI can be a weighted random pick from that row. No pathfinding. No combo solver.
+Weight values: Very high 6 · High 4 · Medium 3 · Low 2 · Rare 1 · Almost never 0.5.
+
+v1 AI is a weighted random pick from that row. No pathfinding. No combo solver. A hypnotized CPU doesn't know it's hypnotized, which is the joke.
 
 ---
 
 ## 13. Stage and presentation
 
-- One 2D ground line. Two fighters facing each other.
-- HP bar + Blocks row over each.
-- Move buttons docked at the bottom for the player only.
+- **Phone first, portrait, no rotation needed.** Top: HP bars + Blocks rows (arcade HUD). Middle: the stage. Bottom, under your thumbs: a wide Super bar and a 2×2 grid of Strike / Privacy / Mint / Rug. Each button shows its damage and your odds.
+- Landscape phones get the stage on the left and the buttons on the right. Desktop shows the phone layout centered.
+- One 2D ground line. Two fighters facing each other. Background skyline is a candlestick chart.
 - Banners in the center, huge, ugly, screenshottable.
 - Caricature art, thick line, shared palette so it looks like one roster.
 - No official logos.
 
-First playable dummy can be two colored rectangles and the five buttons. Art comes after the loop is funny.
+First playable dummy uses simple block fighters (colored body, emoji head) and the five buttons. Art comes after the loop is funny.
 
 ---
 
-## 14. Shareable results
+## 14. Daily Fight and shareable results
 
-After KO, generate a URL that encodes the fight. No database in v1.
+### Daily Fight (Wordle model)
+- One fight per day for everyone: same matchup, same seed (same luck). Day 1 is Saylor vs Mert (section 20).
+- One try per day. Progress is saved in the browser, so closing the tab mid-fight resumes it.
+- Tracks played / won / streak in the browser. No accounts.
+- Resets at local midnight. The result card shows a countdown.
+- Share text is an emoji grid, one square per turn:
+
+```
+Proof of Fight Daily #1 🥊
+Saylor vs Mert: WON in 9 turns (41 HP left)
+🟩🟩🟦🟥🟨🟩⬛🟩🟩🏆
+https://proofoffight.com/
+```
+
+🟩 your attack landed · 🟦 you hid · 🟨 you used Super · 🟥 whiff or fail · ⬛ skipped · 🌀 hit yourself (hypnotized) · 🏆 / 💀 result.
+
+### Preview images (before launch, no worker needed)
+The preview picture under a link is what people see in their feed. Instead of one generic image, pre-render **49 static images** once ("Saylor beat Toly", one per winner/loser pair including mirrors) and put the matchup in the share link path (e.g. `/r/saylor-beat-toly/`). Still free static hosting.
+
+### Result replay URL (next)
+The engine already replays a fight exactly from its seed + move log (`replay()` in `js/engine.js`), so a URL can encode the fight. No database in v1.
 
 Example shape:
 
@@ -299,7 +343,7 @@ v1 fields:
 
 Opening `/r?...` shows the **result card** (portraits, winner, finish line, HP leftover, Copy tweet, Rematch).
 
-X / Twitter link previews will use one generic OG image in v1. Custom per-fight preview images need a tiny worker later. Do not build that first.
+Per-*fight* custom preview images (showing HP, turns) would need a tiny worker later. Per-*matchup* static images (above) cover launch.
 
 Tweet template:
 
@@ -340,7 +384,8 @@ Write these in `later.md` if they nag you. They are not v1.
 - Campaign vs Warren / Gensler
 - Full anime video supers
 - Marketplace, tokens, repair sinks
-- Custom OG image worker + short IDs (`pof.gg/r/x7k2`)
+- Custom per-fight OG image worker + short IDs (`pof.gg/r/x7k2`)
+- Smarter CPU (reads your statuses, e.g. hides when hypnotized)
 - Short redirect domain (`pof.gg`)
 
 Trait idea, parked: same seven faces, rolled stats that only nudge the % tables above. Do not invent 200 characters.
@@ -351,11 +396,11 @@ Trait idea, parked: same seven faces, rolled stats that only nudge the % tables 
 
 Do not point DNS at an empty repo.
 
-1. Drop this file in the `proof-of-fight` repo as `GAMEPLAN.md` (and a short `README.md` that points at it).
-2. HTML dummy: two rectangles, HP, Blocks, five buttons, one CPU, banners in the console or on screen.
-3. Play it until a Super cut-in (text-only) makes you laugh.
+1. ~~Drop this file in the `proof-of-fight` repo as `GAMEPLAN.md` (and a short `README.md` that points at it).~~ Done.
+2. ~~HTML dummy: two rectangles, HP, Blocks, five buttons, one CPU, banners in the console or on screen.~~ Done, plus Daily Fight and share grid.
+3. **← You are here.** Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.
 4. Then caricature portraits.
-5. Then result URLs.
+5. Then result URLs + the 49 matchup preview images.
 6. Then GitHub Pages or Cloudflare Pages.
 7. Then Porkbun DNS: `proofoffight.com` → that host.
 8. Then tell anyone.
@@ -378,14 +423,17 @@ Do not open Pages or touch nameservers before step 2 exists.
 
 - Title: **Proof of Fight**
 - Domain: **proofoffight.com**
-- Mode: **single player vs CPU**
+- Mode: **single player vs CPU**, with a **Daily Fight** (same fight for everyone) and **Free Play**
 - Look: **2D fighter stage**
 - Play: **turn-based buttons**
 - Meter: **Blocks**, 10 squares
-- Buttons: **Strike / Privacy / Mint / Rug / Super**
-- Super: named cutscene, 2–3 seconds, never whiffs
+- Buttons: **Strike / Privacy / Mint / Rug / Super** (10 / hide / 24 / 36 / Super)
+- Rug hits Hidden targets
+- Super: named cutscene, 2–3 seconds, never whiffs, can't be dodged; CPU fires at 10
+- Vitalik's Super: **Ultra Sound Moves** (hypnotizing dance)
 - Roster: Toly, Mert, Garlinghouse, Vitalik, Adam Back, Charles, Saylor
-- Share: encoded result URL
+- Share: emoji grid (now), encoded result URL (next)
+- Layout: phone-first portrait
 - Chain mint: later
 - coloredskyscore: never mixed in
 
@@ -396,3 +444,18 @@ Do not open Pages or touch nameservers before step 2 exists.
 **You: Saylor vs CPU: Mert**
 
 Why: tank vs blind. Teaches Blocks, Super, and a missed turn. If that fight is not funny, nothing else will be.
+
+It's the suggested fight in Free Play and it's **Daily Fight #1**.
+
+---
+
+## 21. Where things live in the code
+
+| File | What's in it |
+|---|---|
+| `js/data.js` | Every number and joke line: damage, odds, HP, Blocks, CPU weights, Super effects, banners. Tune here. |
+| `js/engine.js` | The rules (sections 5–12). No graphics. Same seed + same moves = same fight. |
+| `js/app.js` | Screens, animations, cut-ins, Daily Fight, sharing. |
+| `css/style.css` | The look. |
+| `tools/sim.js` | `node tools/sim.js` plays thousands of fights and prints win rates per fighter. Run it after changing numbers. |
+| `tools/check.js` | `node tools/check.js` checks the rules still work (Supers can't be dodged, Blind skips one turn, etc.). |
