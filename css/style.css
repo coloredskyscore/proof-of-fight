@@ -382,6 +382,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   text-shadow: 0 4px 0 #b3261e, 0 7px 0 var(--line);
   transform: rotate(-4deg);
 }
+.banner.long .banner-text { font-size: clamp(20px, 6.4vw, 34px); }
 .banner.ko .banner-text { font-size: clamp(56px, 20vw, 96px); color: #fff; text-shadow: 0 5px 0 #b3261e, 0 9px 0 var(--line); }
 .banner-sub {
   margin-top: 10px;
@@ -467,7 +468,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 }
 .cutin:not([hidden]) { display: flex; }
 .cutin-stripes {
-  position: absolute; inset: -20%;
+  position: absolute; inset: -20% -50% -20% -20%;
   background: repeating-linear-gradient(-20deg, var(--c) 0 38px, #0006 38px 76px);
   background: repeating-linear-gradient(-20deg, var(--c) 0 38px, color-mix(in srgb, var(--c) 55%, #000) 38px 76px);
   opacity: .9;
@@ -527,8 +528,6 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .cutin-deco { position: absolute; inset: 0; pointer-events: none; }
 
 .deco-row { position: absolute; left: 0; right: 0; top: 6%; text-align: center; font-size: 42px; letter-spacing: 4px; }
-.deco-fire span { display: inline-block; animation: rise .5s ease-in-out infinite alternate; }
-.deco-fire span:nth-child(even) { animation-delay: -.25s; }
 .deco-sun {
   position: absolute; left: 50%; top: 30%; width: 150vmax; height: 150vmax;
   transform: translate(-50%, -50%);
@@ -551,8 +550,66 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   animation: bytes 2.4s linear forwards;
 }
 
+/* Toly: Second Best Salesman. Brochure of phone bricks fans open, one gets slapped in, airdrop confetti. */
+.cutin { --dir: 1; }
+.cutin.from-c { --dir: -1; }
+.brick {
+  position: relative;
+  width: 54px; height: 100px;
+  padding: 26px 5px 6px;
+  border: 3px solid var(--line); border-radius: 12px;
+  background: #1c1c26;
+  box-shadow: 0 4px 0 #0008;
+}
+.brick-bump {
+  position: absolute; left: 5px; top: 4px;
+  width: 28px; height: 18px;
+  display: flex; align-items: center; justify-content: space-evenly;
+  border: 2px solid #000; border-radius: 7px;
+  background: #34344a;
+}
+.brick-bump i { width: 8px; height: 8px; border-radius: 50%; background: #0b0b12; border: 1px solid #6a6a80; }
+.brick-screen {
+  display: grid; place-items: center;
+  height: 100%;
+  padding: 2px;
+  border-radius: 6px;
+  background: linear-gradient(160deg, #19c6a0, #7b5cff);
+  font: 900 8px/1.1 var(--body);
+  color: #fff; text-align: center;
+}
+.brochure { position: absolute; left: 50%; top: 5%; }
+.brochure .brick { position: absolute; left: -27px; top: 0; transform-origin: 50% 140%; }
+.cutin.play .brochure .brick { animation: fanOpen .45s var(--d) cubic-bezier(.2, 1.4, .4, 1) both; }
+.cutin-pdeco { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.sup-salesman .cutin-prop { display: none; }
+.slap { position: absolute; left: 50%; top: 4%; }
+.slap .brick { left: -42px; width: 84px; height: 156px; padding: 38px 8px 10px; }
+.slap .brick-bump { width: 42px; height: 27px; left: 7px; top: 6px; }
+.slap .brick-bump i { width: 12px; height: 12px; }
+.slap .brick-screen { font-size: 16px; }
+.cutin.play .slap { animation: slap 1.5s .75s cubic-bezier(.3, 1.5, .5, 1) both; }
+.confetti { position: absolute; left: calc(50% + var(--dir) * 32vw); top: calc(4% + 78px); z-index: 4; }
+.confetti i { position: absolute; width: 10px; height: 10px; opacity: 0; }
+.cutin.play .confetti i { animation: burst 1.1s 1.2s cubic-bezier(.1, .8, .3, 1) both; }
+.saga-box {
+  position: absolute; bottom: 7%; left: calc(50% + var(--dir) * 28vw - 50px);
+  width: 100px; padding: 10px 6px 8px;
+  border: 3px solid var(--line); border-radius: 4px;
+  background: #a98556;
+  box-shadow: 0 6px 0 #0008;
+  color: #3a2610; text-align: center;
+  z-index: 2;
+}
+.saga-box::before { content: ''; position: absolute; top: 0; bottom: 0; left: 42%; width: 16%; background: #d6b37f; opacity: .6; }
+.saga-box::after { content: '💨'; position: absolute; left: -28px; bottom: -4px; font-size: 26px; }
+.saga-box b { position: relative; display: block; font: 400 20px var(--display); letter-spacing: .1em; }
+.saga-box small { position: relative; display: block; font: 900 8px var(--body); letter-spacing: .05em; }
+.cutin.play .saga-box { animation: boxDrop .55s .95s cubic-bezier(.3, 1.6, .5, 1) both; }
+
 /* Vitalik: the big screen of dancers, everyone arms-out and in sync */
 .cutin.sup-dance { justify-content: flex-end; padding-bottom: 6vh; }
+.sup-dance .cutin-pdeco { position: static; }
 .sup-dance .cutin-portrait {
   background: transparent; border: none; box-shadow: none; border-radius: 0;
   width: min(28vw, 120px); aspect-ratio: auto;
@@ -606,6 +663,8 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   border-radius: 50%; border: 3px solid var(--line); background: var(--c); font-size: 28px;
 }
 .res-faces span.face.lost { filter: grayscale(1) brightness(.6); }
+.face-wrap { position: relative; }
+.face-prop { position: absolute; right: -10px; bottom: -8px; font-size: 26px; font-style: normal; transform: rotate(14deg); }
 .res-line { margin: 10px 0 4px; font-weight: 700; }
 .res-finish { font-family: var(--display); color: var(--gold); font-size: 1.1rem; }
 .res-grid { font-size: 1.3rem; letter-spacing: 1px; margin: 12px 0 4px; word-break: break-all; line-height: 1.4; }
@@ -686,6 +745,18 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 @keyframes runAcross { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 110%)); } }
 @keyframes drop { from { transform: translateY(-160%); } to { transform: translateY(0); } }
 @keyframes bytes { from { transform: translateX(100vw); } to { transform: translateX(-110%); } }
+@keyframes fanOpen { from { opacity: 0; transform: rotate(0) scale(.6); } to { opacity: 1; transform: rotate(var(--r)); } }
+@keyframes slap {
+  0% { opacity: 0; transform: translate(0, 40px) scale(.4) rotate(-20deg); }
+  30% { opacity: 1; transform: translate(calc(var(--dir) * 29vw), 0) scale(1.2) rotate(calc(var(--dir) * 16deg)); }
+  42%, 100% { opacity: 1; transform: translate(calc(var(--dir) * 32vw), 0) scale(1) rotate(calc(var(--dir) * 10deg)); }
+}
+@keyframes burst {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(.4); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--x), calc(var(--y) + 70px)) rotate(var(--rot)) scale(1); }
+}
+@keyframes boxDrop { from { transform: translateY(-120vh) rotate(-25deg); } to { transform: rotate(-6deg); } }
 @keyframes glow { from { filter: brightness(1); } to { filter: brightness(1.35); } }
 @keyframes pulse { 50% { filter: brightness(1.15); transform: scale(1.015); } }
 

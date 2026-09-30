@@ -59,16 +59,20 @@
   // Very high 6 · High 4 · Medium 3 · Low 2 · Rare 1 · Almost never 0.5
   var FIGHTERS = {
     toly: {
-      id: 'toly', name: 'Toly', lane: 'Speed / throughput',
+      id: 'toly', name: 'Toly', lane: 'Throughput / phone sales',
       color: '#19c6a0', emoji: '⚡',
       hide: 0.35, mint: 0.50, rug: 0.30,
       mintFail: 'FLOOR IS LATENCY', rugFail: 'OUTAGE HIT THE BRIDGE',
       ai: { strike: 4, privacy: 2, mint: 3, rug: 3 },
       super: {
-        id: 'firedancer', name: 'Firedancer', prop: '🔥',
-        line: 'INCREASING BANDWIDTH AND REDUCING LATENCY!!!',
-        blurb: 'One huge hit', finish: 'LOW LATENCY FINISH'
-      }
+        id: 'salesman', name: 'Second Best Salesman', prop: '📱',
+        line: 'APPLE + SOLANA MOBILE: 3.469 BILLION',
+        blurb: 'One huge hit', finish: 'HATER CONVERTED',
+        cpuAfter: 'SALES GOAL OF THE YEAR ACCOMPLISHED.', // banner after the hit, CPU Toly only
+        koProp: '📱' // the loser ends up holding the phone they didn't ask for
+      },
+      // KO line that replaces the normal finish when this fighter beats a specific rival.
+      rivalKo: { saylor: 'THERE IS A SECOND BEST' }
     },
     mert: {
       id: 'mert', name: 'Mert', lane: 'Infra / "I told you so"',
@@ -146,7 +150,7 @@
 
   // Super effects. dmg is per hit; hits > 1 means a multi-hit.
   var SUPERS = {
-    firedancer:   { dmg: 35 },
+    salesman:     { dmg: 35 },
     helius:       { dmg: 10, skip: 'blind' },
     xrparmy:      { dmg: 5, hits: 5 },
     peerreview:   { dmg: 15, skip: 'sleep', drain: 3 },

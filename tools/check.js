@@ -138,6 +138,26 @@ test('Rug fail at 0 Blocks costs 5 HP recoil', function () {
   assert.strictEqual(f.f[0].hp, 100 - D.RULESETS.balanced.rugRecoil);
 });
 
+test('Toly Super KO reads HATER CONVERTED', function () {
+  var f = E.newFight({ player: 'toly', cpu: 'mert', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].hp = 30;
+  rig(f, [cpuRoll('mert', 'strike')]);
+  E.playTurn(f, 'super');
+  assert.strictEqual(f.finish, 'HATER CONVERTED');
+  assert.strictEqual(f.finishCause, 'super');
+});
+
+test('Toly beating Saylor, any way, reads THERE IS A SECOND BEST', function () {
+  var f = E.newFight({ player: 'saylor', cpu: 'toly', seed: 1 });
+  f.f[0].hp = 5;
+  rig(f, [cpuRoll('toly', 'strike'), 0.99 /* Saylor's hide fails */, 0 /* fail line */]);
+  E.playTurn(f, 'privacy');
+  assert.strictEqual(f.winner, 1);
+  assert.strictEqual(f.finish, 'THERE IS A SECOND BEST');
+  assert.strictEqual(f.finishCause, 'strike');
+});
+
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {
   var rng = E.makeRng(99);
   for (var n = 0; n < 10000; n++) {

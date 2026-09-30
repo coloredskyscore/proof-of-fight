@@ -44,3 +44,4 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | `js/engine.js` | Game rules (no graphics; runs in Node too) |
 | `js/app.js` | Screens, animations, Daily Fight, sharing |
 | `tools/` | Balance simulator and rules checks |
+| `docs/supers/` | Super move concepts, one per fighter, and the slots the game supports |

@@ -52,6 +52,7 @@
   var S = {
     fight: null, opts: null, busy: false, result: null, today: null,
     pickPlayer: null, pickStep: 'player', countdown: null,
+    lastMoves: null, koProp: null,
     rules: D.RULESETS[store.get('rules')] ? store.get('rules') : 'balanced'
   };
 
@@ -175,6 +176,8 @@
   function startFight(opts, resumeMoves) {
     S.opts = opts;
     S.fight = resumeMoves ? E.replay(opts, resumeMoves) : E.newFight(opts);
+    S.lastMoves = null;
+    S.koProp = null;
     buildArena();
     render(E.snapshot(S.fight));
     $('#turn-num').textContent = S.fight.turn;
@@ -258,7 +261,8 @@
       if (s.hypnoNext) chips.push('<span class="chip bad">🌀 HYPNO</span>');
       $('.chips', hud).innerHTML = chips.join('');
       fighterEl(i).classList.toggle('is-hidden', !!s.hidden);
-      bubble(i, s.hypnoNext ? '🌀' : s.skipNext === 'sleep' ? '💤' : s.skipNext === 'blind' ? '😵' : s.hidden ? '🕶️' : '');
+      bubble(i, S.koProp && S.koProp.who === i ? S.koProp.prop
+        : s.hypnoNext ? '🌀' : s.skipNext === 'sleep' ? '💤' : s.skipNext === 'blind' ? '😵' : s.hidden ? '🕶️' : '');
     }
   }
 
@@ -336,6 +340,7 @@
   async function handle(e) {
     switch (e.t) {
       case 'reveal':
+        S.lastMoves = e.moves;
         chip(0, e.moves[0], e.hyp[0]);
         chip(1, e.moves[1], e.hyp[1]);
         log(moveText(0, e.moves[0]) + '   ·   ' + moveText(1, e.moves[1]));
@@ -351,7 +356,7 @@
       case 'super':
         render(e.snap);
         if (S.fight.f[e.who].id === 'vitalik') fighterEl(e.who).classList.add('dance');
-        await cutIn(e.who);
+        await cutIn(e.who, { targetTriedToHide: !!S.lastMoves && S.lastMoves[1 - e.who] === 'privacy' });
         log(who(e.who) + ' used ' + D.FIGHTERS[S.fight.f[e.who].id].super.name + '!');
         break;
 
@@ -402,6 +407,7 @@
         break;
 
       case 'ko':
+        S.koProp = koPropFor(e.winner, e.cause) ? { who: e.loser, prop: koPropFor(e.winner, e.cause) } : null;
         render(e.snap);
         fighterEl(e.loser).classList.add('is-ko');
         banner(e.timeout ? 'TIME!' : 'K.O.', e.finish, true);
@@ -438,6 +444,12 @@
       return;
     }
     var stolen = e.stolen ? 'Stole ' + e.stolen + ' Blocks' : '';
+    var sup = D.FIGHTERS[S.fight.f[e.attacker].id].super;
+    if (e.move === 'super' && e.n === e.of && e.attacker === 1 && sup.cpuAfter && e.snap[e.target].hp > 0) {
+      banner(sup.cpuAfter, '');
+      await sleep(1300);
+      return;
+    }
     if (e.pierced) banner("CAN'T HIDE FROM A RUG", stolen);
     else if (e.move === 'rug') banner('RUGGED!', stolen);
     else if (e.move === 'mint') banner('JPEG SLAP!', '');
@@ -494,7 +506,7 @@
     $('.banner-sub', b).textContent = sub || '';
     b.className = 'banner';
     void b.offsetWidth;
-    b.className = 'banner show' + (ko ? ' ko' : '');
+    b.className = 'banner show' + (ko ? ' ko' : text.length > 18 ? ' long' : '');
   }
 
   function buzz(ms) {
@@ -542,21 +554,52 @@
       '</g></svg>';
   }
 
-  function decoFor(id) {
-    switch (id) {
-      case 'firedancer': return '<div class="deco-row deco-fire">' + spans('🔥', 5) + '</div>';
-      case 'helius': return '<div class="deco-sun"></div>';
-      case 'xrparmy': return '<div class="deco-run">' + spans('🏃', 6) + '</div>';
-      case 'peerreview': return '<div class="deco-row deco-nerds">' + spans('🤓💻', 5) + '</div>';
-      case 'nosecondbest': return '<div class="deco-drop">🐻</div>';
-      case 'opreturn': return '<div class="deco-bytes">OP_RETURN 6a4c50' + randomHex(28) + '…</div>';
-      case 'dance':
-        return '<div class="bigscreen">' + dancerSVG('bear') + dancerSVG('bear') + dancerSVG('bear') + dancerSVG('bear') + '</div>';
-    }
-    return '';
+  // Toly: generic thick phone slabs with a stupid camera bump. No real logos.
+  function phoneBrick(screen, style) {
+    return '<div class="brick"' + (style ? ' style="' + style + '"' : '') + '>' +
+      '<span class="brick-bump"><i></i><i></i></span><span class="brick-screen">' + esc(screen) + '</span></div>';
   }
 
-  function cutIn(i) {
+  function salesDeco(ctx) {
+    var screens = ['Seed Vault', 'dApp Store', 'BUY NOW', 'dApp Store', 'Seed Vault'];
+    var fan = [-36, -18, 0, 18, 36].map(function (deg, k) {
+      return phoneBrick(screens[k], '--r:' + deg + 'deg;--d:' + (0.2 + k * 0.05) + 's;z-index:' + (3 - Math.abs(k - 2)));
+    }).join('');
+    // Airdrop confetti and BONK-colored beanbags (cosmetic, so Math.random is fine here).
+    var colors = ['#19c6a0', '#9b7bff', '#ffb31a', '#ff7a45', '#ffffff'], bits = '';
+    for (var k = 0; k < 30; k++) {
+      var a = Math.random() * Math.PI * 2, dist = 60 + Math.random() * 150;
+      bits += '<i style="--x:' + Math.round(Math.cos(a) * dist) + 'px;--y:' + Math.round(Math.sin(a) * dist) + 'px;' +
+        '--rot:' + Math.round(Math.random() * 720 - 360) + 'deg;background:' + colors[k % colors.length] +
+        (k % 3 === 0 ? ';border-radius:50%;width:14px;height:14px' : '') + '"></i>';
+    }
+    return {
+      screen: '<div class="brochure">' + fan + '</div>' +
+        // They tried to hide from a salesman: warehouse inventory falls out anyway.
+        (ctx && ctx.targetTriedToHide ? '<div class="saga-box"><b>SAGA</b><small>WAREHOUSE STOCK</small></div>' : ''),
+      portrait: '<div class="slap">' + phoneBrick('BUY NOW') + '</div><div class="confetti">' + bits + '</div>'
+    };
+  }
+
+  // Returns { screen, portrait }: full-screen decoration, and decoration anchored to the fighter's portrait.
+  function decoFor(id, ctx) {
+    switch (id) {
+      case 'salesman': return salesDeco(ctx);
+      case 'dance':
+        return {
+          screen: '<div class="bigscreen">' + dancerSVG('bear') + dancerSVG('bear') + dancerSVG('bear') + dancerSVG('bear') + '</div>',
+          portrait: dancerSVG('vitalik')
+        };
+      case 'helius': return { screen: '<div class="deco-sun"></div>' };
+      case 'xrparmy': return { screen: '<div class="deco-run">' + spans('🏃', 6) + '</div>' };
+      case 'peerreview': return { screen: '<div class="deco-row deco-nerds">' + spans('🤓💻', 5) + '</div>' };
+      case 'nosecondbest': return { screen: '<div class="deco-drop">🐻</div>' };
+      case 'opreturn': return { screen: '<div class="deco-bytes">OP_RETURN 6a4c50' + randomHex(28) + '…</div>' };
+    }
+    return {};
+  }
+
+  function cutIn(i, ctx) {
     return new Promise(function (resolve) {
       var F = D.FIGHTERS[S.fight.f[i].id], sup = F.super, el = $('#cutin');
       el.className = 'cutin from-' + SIDE[i] + ' sup-' + sup.id;
@@ -566,11 +609,9 @@
       $('.cutin-name', el).textContent = sup.name.toUpperCase();
       $('.cutin-who', el).textContent = F.name.toUpperCase();
       $('.cutin-line', el).textContent = '“' + sup.line + '”';
-      $('.cutin-deco', el).innerHTML = decoFor(sup.id);
-      var portrait = $('.cutin-portrait', el);
-      var old = $('.vitalik-dancer', portrait);
-      if (old) old.remove();
-      if (sup.id === 'dance') portrait.insertAdjacentHTML('beforeend', dancerSVG('vitalik'));
+      var deco = decoFor(sup.id, ctx);
+      $('.cutin-deco', el).innerHTML = deco.screen || '';
+      $('.cutin-pdeco', el).innerHTML = deco.portrait || '';
 
       el.hidden = false;
       void el.offsetWidth;
@@ -598,7 +639,8 @@
     var res = {
       mode: o.mode, n: o.n, player: f.f[0].id, cpu: f.f[1].id,
       won: f.winner === 0, turns: f.turn, hp: f.f[f.winner].hp, finish: f.finish,
-      grid: f.grid.slice(), rules: f.rules.id, seed: f.seed, moves: f.moves.join('')
+      grid: f.grid.slice(), rules: f.rules.id, seed: f.seed, moves: f.moves.join(''),
+      koProp: koPropFor(f.winner, f.finishCause)
     };
     if (o.mode === 'daily') {
       if (!store.get('daily.' + o.n)) {
@@ -638,8 +680,15 @@
     return line + '\n' + titleCase(res.finish) + '.\n' + gridText(res) + '\n' + siteUrl();
   }
 
-  function face(F, lost) {
-    return '<span class="face' + (lost ? ' lost' : '') + '" style="--c:' + F.color + '">' + F.emoji + '</span>';
+  function face(F, lost, prop) {
+    return '<span class="face-wrap"><span class="face' + (lost ? ' lost' : '') + '" style="--c:' + F.color + '">' +
+      F.emoji + '</span>' + (prop ? '<i class="face-prop">' + prop + '</i>' : '') + '</span>';
+  }
+
+  // Some Supers leave a prop on the loser (Toly's phone). Only when the Super did the KO.
+  function koPropFor(winner, cause) {
+    if (cause !== 'super' || !S.fight) return null;
+    return D.FIGHTERS[S.fight.f[winner].id].super.koProp || null;
   }
 
   function showResult(res) {
@@ -649,7 +698,7 @@
     var t = $('#res-title');
     t.textContent = res.won ? 'YOU WIN' : 'YOU LOSE';
     t.classList.toggle('lose', !res.won);
-    $('#res-faces').innerHTML = face(P, !res.won) + '<span>VS</span>' + face(C, res.won);
+    $('#res-faces').innerHTML = face(P, !res.won, !res.won && res.koProp) + '<span>VS</span>' + face(C, res.won, res.won && res.koProp);
     $('#res-line').textContent = res.won
       ? P.name + ' beat ' + C.name + ' in ' + res.turns + ' turns · ' + res.hp + ' HP left'
       : C.name + ' beat your ' + P.name + ' in ' + res.turns + ' turns';

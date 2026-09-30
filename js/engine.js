@@ -121,10 +121,14 @@
       if (fight.f[loser].hp > 0 || fight.over) return;
       fight.over = true;
       fight.winner = 1 - loser;
-      if (attacker === loser) fight.finish = D.FINISH.self;
-      else if (cause === 'super') fight.finish = D.FIGHTERS[fight.f[attacker].id].super.finish;
+      var W = D.FIGHTERS[fight.f[attacker].id];
+      var rival = W.rivalKo && W.rivalKo[fight.f[loser].id];
+      if (attacker === loser) { cause = 'self'; fight.finish = D.FINISH.self; }
+      else if (rival) fight.finish = rival;
+      else if (cause === 'super') fight.finish = W.super.finish;
       else fight.finish = D.FINISH[cause];
-      push({ t: 'ko', winner: fight.winner, loser: loser, finish: fight.finish });
+      fight.finishCause = cause;
+      push({ t: 'ko', winner: fight.winner, loser: loser, finish: fight.finish, cause: cause });
     }
 
     function hurt(target, n) {
@@ -288,7 +292,8 @@
         fight.over = true;
         fight.winner = p >= c ? 0 : 1;
         fight.finish = D.FINISH.timeout;
-        push({ t: 'ko', winner: fight.winner, loser: 1 - fight.winner, finish: fight.finish, timeout: true });
+        fight.finishCause = 'timeout';
+        push({ t: 'ko', winner: fight.winner, loser: 1 - fight.winner, finish: fight.finish, cause: 'timeout', timeout: true });
       }
     }
 

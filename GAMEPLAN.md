@@ -9,7 +9,13 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ---
 
-## 0. Changes in the first playable build (Sept 28, 2026)
+## 0. Changes
+
+### Sept 30, 2026: Toly's Super is now Second Best Salesman
+
+Full concept and build notes: [docs/supers/toly.md](docs/supers/toly.md). Same 35-damage nuke, new everything else: he sells the opponent a phone so hard it counts as a haymaker. KO line `HATER CONVERTED`. Toly beating Saylor (any move) reads `THERE IS A SECOND BEST`. Firedancer is retired from the screen. Super concepts now live in `docs/supers/`, one file per fighter.
+
+### Sept 28, 2026: first playable build
 
 Everything below this section already reflects these changes. The exact numbers live in `js/data.js`.
 
@@ -169,7 +175,7 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 
 | ID | In-game name | Source handle | Lane |
 |---|---|---|---|
-| `toly` | Toly | @toly | Speed / throughput |
+| `toly` | Toly | @toly | Throughput / phone sales |
 | `mert` | Mert | @mert | Infra / "I told you so" |
 | `garlinghouse` | Garlinghouse | @bgarlinghouse | Lawyers and liquidity |
 | `vitalik` | Vitalik | @VitalikButerin | Research / questionable dance moves |
@@ -241,7 +247,7 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Character | Super | What you see | Effect | KO finish line |
 |---|---|---|---|---|
 | Mert | **Helius Flare** | Sun hits the dome, beam slaps their eyes. "I TOLD YOU SO." | **10 dmg + Blind** (they skip their next turn) | LIGHTS OUT |
-| Toly | **Firedancer** | "INCREASING BANDWIDTH AND REDUCING LATENCY!!!" then a fat punch | **35 dmg**, one hit | LOW LATENCY FINISH |
+| Toly | **Second Best Salesman** ([doc](docs/supers/toly.md)) | A brochure of phone bricks fans open, he slaps a `BUY NOW` phone into them, airdrop confetti. "APPLE + SOLANA MOBILE: 3.469 BILLION" | **35 dmg**, one hit | HATER CONVERTED |
 | Garlinghouse | **XRP Army** | Polo-shirt normies jog across and body-check | **5 hits × 5 dmg = 25** | ARMY SETTLEMENT |
 | Charles | **Peer Review** | Five nerds with laptops; Charles starts a sentence that does not end | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** (peer review delays the roadmap) | PEER REVIEWED |
 | Saylor | **No Second Best** | Bear drops in, he mounts it, points at camera, charges | **25 dmg + HODL** (Saylor takes half damage this turn and next) | NO SECOND BEST |
@@ -249,6 +255,10 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Vitalik | **Ultra Sound Moves** | A big screen behind him full of dancing bears, arms locked straight out, swaying. Vitalik in front doing the exact same awkward dance. "DON'T LOOK AT THE DANCE." | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | HYPNOTIZED |
 
 Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY`, hitting yourself `SELF-REKT`.
+
+**Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`.
+
+**CPU after-Super lines** show as a banner after a CPU's Super lands (not when it's the KO): CPU Toly says `SALES GOAL OF THE YEAR ACCOMPLISHED.`
 
 ---
 
@@ -386,6 +396,7 @@ Write these in `later.md` if they nag you. They are not v1.
 - Marketplace, tokens, repair sinks
 - Custom per-fight OG image worker + short IDs (`pof.gg/r/x7k2`)
 - Smarter CPU (reads your statuses, e.g. hides when hypnotized)
+- Toly v2 status tax `Seeker'd` (can't use Privacy for 2 turns). Parked until the nuke is funny; see docs/supers/toly.md
 - Short redirect domain (`pof.gg`)
 
 Trait idea, parked: same seven faces, rolled stats that only nudge the % tables above. Do not invent 200 characters.
@@ -431,6 +442,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Rug hits Hidden targets
 - Super: named cutscene, 2–3 seconds, never whiffs, can't be dodged; CPU fires at 10
 - Vitalik's Super: **Ultra Sound Moves** (hypnotizing dance)
+- Toly's Super: **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
 - Roster: Toly, Mert, Garlinghouse, Vitalik, Adam Back, Charles, Saylor
 - Share: emoji grid (now), encoded result URL (next)
 - Layout: phone-first portrait
@@ -459,3 +471,4 @@ It's the suggested fight in Free Play and it's **Daily Fight #1**.
 | `css/style.css` | The look. |
 | `tools/sim.js` | `node tools/sim.js` plays thousands of fights and prints win rates per fighter. Run it after changing numbers. |
 | `tools/check.js` | `node tools/check.js` checks the rules still work (Supers can't be dodged, Blind skips one turn, etc.). |
+| `docs/supers/` | One doc per fighter's Super concept, plus a README of the slots the game supports. |
