@@ -47,6 +47,17 @@
 
   var PRIVACY_FAIL_LINES = ['VIEW KEY LEAKED', 'EXPLORER SAYS HI', 'YOUR MEMO WAS EMPTY'];
 
+  // Button names. A fighter can rename any button with its own `moves` entry; the job,
+  // color and numbers stay the same. Names: 12 characters max so they fit on a phone.
+  //   ok   = banner when it lands (privacy: when you hide)
+  //   fail = banner when it flops (default Mint/Rug show the fighter's mintFail/rugFail under it)
+  var DEFAULT_MOVES = {
+    strike:  { name: 'Strike',  icon: '👊' },
+    privacy: { name: 'Privacy', icon: '🥷', ok: 'HIDDEN' },
+    mint:    { name: 'Mint',    icon: '🖼️', ok: 'JPEG SLAP!', fail: 'ARTWORK SUCKS!' },
+    rug:     { name: 'Rug',     icon: '🪤', ok: 'RUGGED!',    fail: 'RUG FAILED' }
+  };
+
   var FINISH = {
     strike: 'HONEST WORK',
     mint: 'JPEG TO THE FACE',
@@ -75,15 +86,24 @@
       rivalKo: { saylor: 'THERE IS A SECOND BEST' }
     },
     mert: {
-      id: 'mert', name: 'Mert', lane: 'Infra / "I told you so"',
-      color: '#ffc53d', emoji: '☀️',
+      id: 'mert', name: 'Mert', lane: 'Infra / every bald guy ever',
+      color: '#ffc53d', emoji: '👨‍🦲',
       hide: 0.45, mint: 0.45, rug: 0.40,
-      mintFail: 'RIGHT-CLICK SAVED', rugFail: 'DEV WALLET WAS A DECOY',
       ai: { strike: 3, privacy: 3, mint: 3, rug: 3 },
+      moves: {
+        strike:  { name: 'Shitpost',   icon: '🗯️' },
+        privacy: { name: 'Zolana',     icon: '🕶️', ok: 'EVERY BALD GUY EVER',    fail: 'VIEW KEY LEAKED' },
+        mint:    { name: 'Memecoin',   icon: '🪙', ok: 'I LIKE MEMECOINS',       fail: 'SNIPED IN BLOCK ZERO' },
+        rug:     { name: 'Rate Limit', icon: '⛔', ok: '429: TOO MANY REQUESTS', fail: 'STATUS PAGE: ALL GREEN' }
+      },
       super: {
-        id: 'helius', name: 'Helius Flare', prop: '☀️',
-        line: 'I TOLD YOU SO.',
-        blurb: 'Small hit + Blind (they skip their next turn)', finish: 'LIGHTS OUT'
+        id: 'helium', name: 'CEO of Helium', prop: '☀️',
+        flicker: ['HELIUS', 'HELIUM', 'HIVEMAPPER'], // name card flickers through these, then locks
+        line: 'THE RPCS DID THIS',
+        blurb: 'Small hit + Blind (they skip their next turn)', finish: 'TRILLIONS',
+        cpuAfter: 'THE PLAN IS WORKING',
+        koProp: '🎈',
+        skipLine: 'WHO WAS THAT' // shown over the target on the turn they skip
       }
     },
     garlinghouse: {
@@ -151,7 +171,7 @@
   // Super effects. dmg is per hit; hits > 1 means a multi-hit.
   var SUPERS = {
     salesman:     { dmg: 35 },
-    helius:       { dmg: 10, skip: 'blind' },
+    helium:       { dmg: 8, skip: 'blind' },
     xrparmy:      { dmg: 5, hits: 5 },
     peerreview:   { dmg: 15, skip: 'sleep', drain: 3 },
     nosecondbest: { dmg: 25, hodl: 2 },
@@ -167,6 +187,7 @@
     RULESETS: RULESETS,
     BLOCKS: BLOCKS,
     PRIVACY_FAIL_LINES: PRIVACY_FAIL_LINES,
+    DEFAULT_MOVES: DEFAULT_MOVES,
     FINISH: FINISH,
     FIGHTERS: FIGHTERS,
     SUPERS: SUPERS,

@@ -1,4 +1,9 @@
 :root {
+  /* Button jobs. Renamed buttons keep these colors everywhere. */
+  --role-strike: #c8402b;
+  --role-privacy: #1f6f99;
+  --role-mint: #a83578;
+  --role-rug: #5a3fb0;
   --bg: #0b0a12;
   --panel: #16131f;
   --panel-2: #201b2d;
@@ -170,6 +175,12 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .pick-lane { font-size: .78rem; color: var(--muted); }
 .pick-super { font-size: .78rem; color: var(--gold); font-weight: 700; }
 .pick-odds { font-size: .72rem; color: var(--muted); }
+.pick-moves { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0; }
+.pick-moves span { font-size: .68rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; color: #fff; }
+.role-strike, .f-chip.role-strike { background: var(--role-strike); }
+.role-privacy, .f-chip.role-privacy { background: var(--role-privacy); }
+.role-mint, .f-chip.role-mint { background: var(--role-mint); }
+.role-rug, .f-chip.role-rug { background: var(--role-rug); }
 
 /* ---------- HUD ---------- */
 .hud {
@@ -339,6 +350,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   z-index: 5;
 }
 .f-chip.show { opacity: 1; transform: translateX(-50%) scale(1); }
+.f-chip.role-super { background: var(--gold); color: #1a1200; }
 
 .fighter.lunge.side-p { transform: translateX(38%); }
 .fighter.lunge.side-c { transform: translateX(-38%); }
@@ -506,6 +518,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   text-shadow: 0 5px 0 var(--line);
   transform: rotate(-4deg);
 }
+.cutin-name.flicker { color: #9ff; text-shadow: -3px 0 0 #f0f, 3px 0 0 #0ff, 0 5px 0 var(--line); animation: glitch .17s steps(2) infinite; }
 .cutin-who { font: 900 1rem var(--body); letter-spacing: .2em; margin-top: 8px; color: #fff; text-shadow: 0 2px 0 #000; }
 .cutin-line {
   position: relative;
@@ -549,6 +562,17 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   color: #7CFF9B; background: #000c; padding: 6px 10px; border-radius: 6px;
   animation: bytes 2.4s linear forwards;
 }
+
+/* Mert: CEO of Helium. Sun catches the dome, a beam sweeps out toward the opponent. */
+.dome-beam {
+  position: absolute; left: 50%; top: 20%;
+  width: 110vw; height: 30px;
+  border-radius: 15px;
+  background: linear-gradient(90deg, #fffbe0, #fff6 45%, transparent);
+  transform-origin: 0 50%;
+  opacity: 0;
+}
+.cutin.play .dome-beam { animation: beamSweep 1.3s .55s ease-out both; }
 
 /* Toly: Second Best Salesman. Brochure of phone bricks fans open, one gets slapped in, airdrop confetti. */
 .cutin { --dir: 1; }
@@ -757,6 +781,12 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   100% { opacity: 0; transform: translate(var(--x), calc(var(--y) + 70px)) rotate(var(--rot)) scale(1); }
 }
 @keyframes boxDrop { from { transform: translateY(-120vh) rotate(-25deg); } to { transform: rotate(-6deg); } }
+@keyframes glitch { 50% { transform: rotate(-4deg) skewX(-12deg) translateX(4px); } }
+@keyframes beamSweep {
+  0% { opacity: 0; transform: scaleX(var(--dir)) rotate(-40deg) scaleY(.4); }
+  25% { opacity: 1; }
+  100% { opacity: .9; transform: scaleX(var(--dir)) rotate(12deg) scaleY(1); }
+}
 @keyframes glow { from { filter: brightness(1); } to { filter: brightness(1.35); } }
 @keyframes pulse { 50% { filter: brightness(1.15); transform: scale(1.015); } }
 

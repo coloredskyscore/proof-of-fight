@@ -60,7 +60,7 @@ test('Strike and Mint miss Hidden targets', function () {
   assert.strictEqual(f.f[1].hp, 100);
 });
 
-test('Helius Flare blinds: the target skips its NEXT turn only', function () {
+test('CEO of Helium blinds: the target skips its NEXT turn only', function () {
   var f = E.newFight({ player: 'mert', cpu: 'saylor', seed: 1 });
   f.f[0].blocks = 10;
   rig(f, [cpuRoll('saylor', 'strike'), /* turn 2: CPU skipped, no roll */ /* turn 3: */ cpuRoll('saylor', 'strike')]);
@@ -156,6 +156,30 @@ test('Toly beating Saylor, any way, reads THERE IS A SECOND BEST', function () {
   assert.strictEqual(f.winner, 1);
   assert.strictEqual(f.finish, 'THERE IS A SECOND BEST');
   assert.strictEqual(f.finishCause, 'strike');
+});
+
+test('Mert Super KO reads TRILLIONS', function () {
+  var f = E.newFight({ player: 'mert', cpu: 'adam', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].hp = D.SUPERS.helium.dmg;
+  rig(f, [cpuRoll('adam', 'strike')]);
+  E.playTurn(f, 'super');
+  assert.strictEqual(f.finish, 'TRILLIONS');
+});
+
+test('Renamed buttons fit on a phone and have their banner lines', function () {
+  D.ROSTER.forEach(function (id) {
+    var F = D.FIGHTERS[id];
+    Object.keys(F.moves || {}).forEach(function (m) {
+      var mv = F.moves[m];
+      assert(D.DEFAULT_MOVES[m], id + ': unknown button ' + m);
+      assert(mv.name && mv.name.length <= 12, id + ' ' + m + ': name must be 1-12 characters');
+      assert(mv.icon, id + ' ' + m + ': needs an icon');
+      if (m !== 'strike') assert(mv.ok && mv.fail, id + ' ' + m + ': needs ok and fail lines');
+    });
+    if (!F.moves || !F.moves.mint) assert(F.mintFail, id + ': needs mintFail');
+    if (!F.moves || !F.moves.rug) assert(F.rugFail, id + ': needs rugFail');
+  });
 });
 
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {

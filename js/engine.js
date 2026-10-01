@@ -229,7 +229,7 @@
       result[i] = doAttack(i, act[i]);
       if (act[i] === 'rug' && result[i].code === 'fail') rugFails++;
     }
-    if (rugFails === 2 && !fight.over) push({ t: 'banner', text: 'MUTUAL REKT', sub: 'Both rugs failed' });
+    if (rugFails === 2 && !fight.over) push({ t: 'banner', text: 'MUTUAL REKT', sub: 'Both big gambles flopped' });
 
     function doAttack(who, move) {
       var me = fight.f[who], F = D.FIGHTERS[me.id];
@@ -242,14 +242,14 @@
           if (move === 'mint') {
             me.blocks += D.BLOCKS.mintFail;
             clampBlocks(me);
-            push({ t: 'fail', who: who, move: move, text: 'ARTWORK SUCKS!', sub: F.mintFail });
+            push({ t: 'fail', who: who, move: move });
           } else if (me.blocks === 0) {
             dealt = hurt(who, R.rugRecoil);
-            push({ t: 'fail', who: who, move: move, text: 'RUG FAILED', sub: F.rugFail, recoil: dealt });
+            push({ t: 'fail', who: who, move: move, recoil: dealt });
             ko(who, 'rug', who);
           } else {
             me.blocks = Math.max(0, me.blocks - D.BLOCKS.rugFailLoss);
-            push({ t: 'fail', who: who, move: move, text: 'RUG FAILED', sub: F.rugFail, lost: D.BLOCKS.rugFailLoss });
+            push({ t: 'fail', who: who, move: move, lost: D.BLOCKS.rugFailLoss });
           }
           return { code: 'fail' };
         }

@@ -11,6 +11,12 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 1, 2026: Mert's kit, and fighters can rename their buttons
+
+Full concept and build notes: [docs/supers/mert.md](docs/supers/mert.md).
+- **Per-fighter button names.** Every fighter keeps the same five buttons, colors, jobs and numbers, but can rename the first four with their own emoji and banner lines (section 6). Mert is first: 🗯️ Shitpost · 🕶️ Zolana · 🪙 Memecoin · ⛔ Rate Limit. Everyone else keeps Strike / Privacy / Mint / Rug until their names are drafted. The opponent's move label above their head is tinted by job, so a renamed button still reads as "the big gamble".
+- **Mert's Super is now CEO of Helium:** the name card flickers HELIUS → HELIUM → HIVEMAPPER, sun off the dome, `THE RPCS DID THIS`, 8 damage + Blind, KO `TRILLIONS` (loser holds a 🎈). Blinded opponents get `WHO WAS THAT` and a 🙈 on their skipped turn. Mert's head is now 👨‍🦲.
+
 ### Sept 30, 2026: Toly's Super is now Second Best Salesman
 
 Full concept and build notes: [docs/supers/toly.md](docs/supers/toly.md). Same 35-damage nuke, new everything else: he sells the opponent a phone so hard it counts as a haymaker. KO line `HATER CONVERTED`. Toly beating Saylor (any move) reads `THERE IS A SECOND BEST`. Firedancer is retired from the screen. Super concepts now live in `docs/supers/`, one file per fighter.
@@ -119,6 +125,14 @@ Strike and Mint give their Blocks even if the target was Hidden.
 
 ## 6. The five buttons
 
+Every fighter has the same five buttons: same colors, same jobs, same numbers. A fighter can **rename** the first four (name, emoji, banner lines); see `docs/supers/README.md` for the slots. Renamed so far:
+
+| Fighter | 🔴 Red (Strike) | 🔵 Blue (Privacy) | 🩷 Pink (Mint) | 🟣 Purple (Rug) |
+|---|---|---|---|---|
+| Mert | 🗯️ Shitpost | 🕶️ Zolana | 🪙 Memecoin | ⛔ Rate Limit |
+
+The rest of this section uses the generic names.
+
 ### Strike
 The only honest move. Always hits if the target is not Hidden. **10 damage.** +2 Blocks. No joke banner unless it KOs.
 
@@ -176,7 +190,7 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 | ID | In-game name | Source handle | Lane |
 |---|---|---|---|
 | `toly` | Toly | @toly | Throughput / phone sales |
-| `mert` | Mert | @mert | Infra / "I told you so" |
+| `mert` | Mert | @mert | Infra / every bald guy ever |
 | `garlinghouse` | Garlinghouse | @bgarlinghouse | Lawyers and liquidity |
 | `vitalik` | Vitalik | @VitalikButerin | Research / questionable dance moves |
 | `adam` | Adam Back | @adam3us | Cypherpunk grind |
@@ -246,7 +260,7 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 
 | Character | Super | What you see | Effect | KO finish line |
 |---|---|---|---|---|
-| Mert | **Helius Flare** | Sun hits the dome, beam slaps their eyes. "I TOLD YOU SO." | **10 dmg + Blind** (they skip their next turn) | LIGHTS OUT |
+| Mert | **CEO of Helium** ([doc](docs/supers/mert.md)) | Name card flickers HELIUS / HELIUM / HIVEMAPPER, then locks. Sun catches the dome, beam sweeps their eyes. "THE RPCS DID THIS" | **8 dmg + Blind** (they skip their next turn; `WHO WAS THAT`) | TRILLIONS |
 | Toly | **Second Best Salesman** ([doc](docs/supers/toly.md)) | A brochure of phone bricks fans open, he slaps a `BUY NOW` phone into them, airdrop confetti. "APPLE + SOLANA MOBILE: 3.469 BILLION" | **35 dmg**, one hit | HATER CONVERTED |
 | Garlinghouse | **XRP Army** | Polo-shirt normies jog across and body-check | **5 hits × 5 dmg = 25** | ARMY SETTLEMENT |
 | Charles | **Peer Review** | Five nerds with laptops; Charles starts a sentence that does not end | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** (peer review delays the roadmap) | PEER REVIEWED |
@@ -397,6 +411,8 @@ Write these in `later.md` if they nag you. They are not v1.
 - Custom per-fight OG image worker + short IDs (`pof.gg/r/x7k2`)
 - Smarter CPU (reads your statuses, e.g. hides when hypnotized)
 - Toly v2 status tax `Seeker'd` (can't use Privacy for 2 turns). Parked until the nuke is funny; see docs/supers/toly.md
+- Renamed buttons that also *work* differently (one twist per fighter at most, after a simulator pass)
+- A rival KO line for Mert vs Garlinghouse
 - Short redirect domain (`pof.gg`)
 
 Trait idea, parked: same seven faces, rolled stats that only nudge the % tables above. Do not invent 200 characters.
@@ -443,6 +459,8 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Super: named cutscene, 2–3 seconds, never whiffs, can't be dodged; CPU fires at 10
 - Vitalik's Super: **Ultra Sound Moves** (hypnotizing dance)
 - Toly's Super: **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
+- Mert's Super: **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
+- Fighters can rename their buttons; jobs, colors and numbers stay shared
 - Roster: Toly, Mert, Garlinghouse, Vitalik, Adam Back, Charles, Saylor
 - Share: emoji grid (now), encoded result URL (next)
 - Layout: phone-first portrait
@@ -471,4 +489,4 @@ It's the suggested fight in Free Play and it's **Daily Fight #1**.
 | `css/style.css` | The look. |
 | `tools/sim.js` | `node tools/sim.js` plays thousands of fights and prints win rates per fighter. Run it after changing numbers. |
 | `tools/check.js` | `node tools/check.js` checks the rules still work (Supers can't be dodged, Blind skips one turn, etc.). |
-| `docs/supers/` | One doc per fighter's Super concept, plus a README of the slots the game supports. |
+| `docs/supers/` | One doc per fighter (Super concept, button names), plus a README of the slots the game supports. |

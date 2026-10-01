@@ -34,16 +34,9 @@
     }
   };
 
-  var MOVE_INFO = {
-    strike: { icon: '👊', label: 'Strike' },
-    privacy: { icon: '🥷', label: 'Privacy' },
-    mint: { icon: '🖼️', label: 'Mint' },
-    rug: { icon: '🪤', label: 'Rug' },
-    super: { icon: '⚡', label: 'SUPER' },
-    skip: { icon: '😵', label: 'Skipped' }
-  };
+  var BUTTONS = ['strike', 'privacy', 'mint', 'rug'];
   var STATUS_TEXT = {
-    blind: '😵 BLINDED', sleep: '💤 ASLEEP', hypno: '🌀 HYPNOTIZED',
+    blind: '🙈 BLINDED', sleep: '💤 ASLEEP', hypno: '🌀 HYPNOTIZED',
     hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks'
   };
   var GRID_EMOJI = { hit: '🟩', hid: '🟦', super: '🟨', fail: '🟥', miss: '🟥', skip: '⬛', self: '🌀', none: '⬛' };
@@ -132,13 +125,19 @@
     var R = D.RULESETS[S.rules];
     var html = D.ROSTER.map(function (id) {
       var F = D.FIGHTERS[id];
+      var moves = F.moves ? '<span class="pick-moves">' + BUTTONS.map(function (m) {
+        var mo = moveOf(id, m);
+        return '<span class="role-' + m + '">' + mo.icon + ' ' + esc(mo.name) + '</span>';
+      }).join('') + '</span>' : '';
       return '<button class="pick-card" type="button" data-id="' + id + '" style="--c:' + F.color + '">' +
         '<span class="pick-face">' + F.emoji + '</span>' +
         '<span class="pick-name">' + esc(F.name) + '</span>' +
         '<span class="pick-lane">' + esc(F.lane) + '</span>' +
+        moves +
         '<span class="pick-super">⚡ ' + esc(F.super.name) + '</span>' +
         '<span class="pick-odds">' + (R.hp[id] || R.hp.default) + ' HP · Hide ' + pct(F.hide) +
-        ' · Mint ' + pct(F.mint) + ' · Rug ' + pct(F.rug) + '</span>' +
+        ' · ' + esc(moveOf(id, 'mint').name) + ' ' + pct(F.mint) +
+        ' · ' + esc(moveOf(id, 'rug').name) + ' ' + pct(F.rug) + '</span>' +
         '</button>';
     }).join('');
     if (step === 'cpu') {
@@ -240,7 +239,24 @@
     $('#skyline').innerHTML = html;
   }
 
+  // One fighter's name, icon and banner lines for a button. Fighters can rename buttons
+  // (data.js `moves`); anything they don't set falls back to DEFAULT_MOVES.
+  function moveOf(fighterId, move) {
+    if (move === 'super') return { name: 'Super', icon: '⚡' };
+    if (move === 'skip') return { name: 'Skipped', icon: '😶' };
+    var F = D.FIGHTERS[fighterId], base = D.DEFAULT_MOVES[move], own = (F.moves && F.moves[move]) || {};
+    return {
+      name: own.name || base.name,
+      icon: own.icon || base.icon,
+      ok: own.ok || base.ok,
+      fail: own.fail || base.fail,
+      // Default Mint/Rug banners put the fighter's joke line underneath.
+      failSub: own.fail ? null : move === 'mint' ? F.mintFail : move === 'rug' ? F.rugFail : null
+    };
+  }
+
   function fighterEl(i) { return $('#fighter-' + SIDE[i]); }
+  function whose(i) { return i === 0 ? 'Your' : nm(i) + "'s"; }
   function nm(i) { return D.FIGHTERS[S.fight.f[i].id].name; }
   function who(i) { return i === 0 ? 'You' : nm(i); }
 
@@ -256,13 +272,13 @@
       $('.blocks', hud).classList.toggle('full', s.blocks >= D.MAX_BLOCKS);
       var chips = [];
       if (s.hodl > 0) chips.push('<span class="chip good">💎 HODL</span>');
-      if (s.skipNext === 'blind') chips.push('<span class="chip bad">😵 BLIND</span>');
+      if (s.skipNext === 'blind') chips.push('<span class="chip bad">🙈 BLIND</span>');
       if (s.skipNext === 'sleep') chips.push('<span class="chip bad">💤 ASLEEP</span>');
       if (s.hypnoNext) chips.push('<span class="chip bad">🌀 HYPNO</span>');
       $('.chips', hud).innerHTML = chips.join('');
       fighterEl(i).classList.toggle('is-hidden', !!s.hidden);
       bubble(i, S.koProp && S.koProp.who === i ? S.koProp.prop
-        : s.hypnoNext ? '🌀' : s.skipNext === 'sleep' ? '💤' : s.skipNext === 'blind' ? '😵' : s.hidden ? '🕶️' : '');
+        : s.hypnoNext ? '🌀' : s.skipNext === 'sleep' ? '💤' : s.skipNext === 'blind' ? '🙈' : s.hidden ? '🕶️' : '');
     }
   }
 
@@ -283,6 +299,9 @@
         $('.move-sub', b).textContent = st.canSuper ? 'READY!' : me.blocks + '/' + D.MAX_BLOCKS + ' Blocks';
         b.disabled = locked || !st.canSuper;
       } else {
+        var mo = moveOf(me.id, m);
+        $('.move-icon', b).textContent = mo.icon;
+        $('.move-label', b).textContent = mo.name;
         $('.move-sub', b).textContent = subs[m];
         b.disabled = locked;
       }
@@ -294,9 +313,12 @@
 
     var cpu = f.f[1], note = '';
     if (!f.over) {
-      if (st.skipped === 'blind') note = "😵 You're BLINDED by the flare. You skip this turn.";
+      if (st.skipped === 'blind') note = "🙈 BLINDED by the dome. You skip this turn.";
       else if (st.skipped === 'sleep') note = '💤 You fell ASLEEP during the peer review. You skip this turn.';
-      else if (st.hypnotized) note = '🌀 HYPNOTIZED: Strike, Mint and Rug hit YOU this turn. Privacy or Super is safe.';
+      else if (st.hypnotized) {
+        note = '🌀 HYPNOTIZED: ' + moveOf(me.id, 'strike').name + ', ' + moveOf(me.id, 'mint').name + ' and ' +
+          moveOf(me.id, 'rug').name + ' hit YOU this turn. ' + moveOf(me.id, 'privacy').name + ' or Super is safe.';
+      }
       else if (cpu.blocks >= D.MAX_BLOCKS && !cpu.skipNext) note = '⚠️ ' + nm(1) + "'s Super fires this turn. It can't be dodged.";
       else if (st.canSuper) note = "⚡ Your Super is ready. It can't be dodged.";
     }
@@ -333,8 +355,8 @@
   }
 
   function moveText(i, move) {
-    var m = MOVE_INFO[move];
-    return who(i) + ': ' + m.icon + ' ' + m.label;
+    var m = moveOf(S.fight.f[i].id, move);
+    return who(i) + ': ' + m.icon + ' ' + m.name;
   }
 
   async function handle(e) {
@@ -348,9 +370,15 @@
         break;
 
       case 'skip':
-        bubble(e.who, e.reason === 'blind' ? '😵' : '💤');
-        popup(e.who, e.reason === 'blind' ? 'BLINDED' : 'ASLEEP', 'status');
-        await sleep(800);
+        bubble(e.who, e.reason === 'blind' ? '🙈' : '💤');
+        var skipLine = D.FIGHTERS[S.fight.f[1 - e.who].id].super.skipLine;
+        if (skipLine) {
+          banner(skipLine, (e.who === 0 ? 'You skip' : nm(e.who) + ' skips') + ' this turn');
+          await sleep(1200);
+        } else {
+          popup(e.who, e.reason === 'blind' ? 'BLINDED' : 'ASLEEP', 'status');
+          await sleep(800);
+        }
         break;
 
       case 'super':
@@ -374,23 +402,29 @@
 
       case 'hide':
         render(e.snap);
-        if (e.ok) {
-          popup(e.who, 'HIDDEN', 'good');
+        var pv = moveOf(S.fight.f[e.who].id, 'privacy');
+        if (e.ok && pv.ok === D.DEFAULT_MOVES.privacy.ok) {
+          popup(e.who, pv.ok, 'good');
           await sleep(650);
+        } else if (e.ok) {
+          banner(pv.ok, (e.who === 0 ? 'You' : nm(e.who)) + ' vanished');
+          await sleep(1150);
         } else {
           wobble(e.who);
-          banner(e.line, (e.who === 0 ? 'Your' : nm(e.who) + "'s") + ' privacy failed');
+          // Default Privacy rolls a random fail line in the engine; renamed ones bring their own.
+          banner(pv.fail || e.line, whose(e.who) + ' ' + pv.name + ' failed');
           await sleep(1250);
         }
         break;
 
       case 'fail':
+        var fm = moveOf(S.fight.f[e.who].id, e.move);
         wobble(e.who);
         render(e.snap);
-        banner(e.text, e.sub);
+        banner(fm.fail, fm.failSub || whose(e.who) + ' ' + fm.name + ' flopped');
         if (e.recoil) popup(e.who, '-' + e.recoil, 'dmg');
         else if (e.lost) popup(e.who, '-' + e.lost + ' Blocks', 'status');
-        log(who(e.who) + (e.move === 'mint' ? ' minted a dud.' : ' tried to rug and fumbled.'));
+        log(whose(e.who) + ' ' + fm.name + ' flopped.');
         await sleep(1350);
         break;
 
@@ -450,9 +484,9 @@
       await sleep(1300);
       return;
     }
-    if (e.pierced) banner("CAN'T HIDE FROM A RUG", stolen);
-    else if (e.move === 'rug') banner('RUGGED!', stolen);
-    else if (e.move === 'mint') banner('JPEG SLAP!', '');
+    var hm = e.move === 'super' ? null : moveOf(S.fight.f[e.attacker].id, e.move);
+    if (e.pierced) banner("CAN'T HIDE FROM A " + hm.name.toUpperCase(), stolen);
+    else if (e.move === 'rug' || e.move === 'mint') banner(hm.ok, stolen);
     if (!multi) log(who(e.attacker) + ' hit ' + (e.target === 0 ? 'you' : nm(e.target)) + ' for ' + e.amount + '.');
     await sleep(multi ? 240 : (e.move === 'rug' || e.move === 'mint') ? 1050 : 650);
   }
@@ -471,10 +505,11 @@
     var c = $('.f-chip', fighterEl(i));
     if (!c) return;
     if (!move) { c.classList.remove('show'); return; }
-    var m = MOVE_INFO[move];
+    var m = moveOf(S.fight.f[i].id, move);
     var attack = move === 'strike' || move === 'mint' || move === 'rug';
-    c.textContent = m.icon + ' ' + m.label.toUpperCase() + (hyp && attack ? ' 🌀' : '');
-    c.classList.add('show');
+    c.textContent = m.icon + ' ' + m.name.toUpperCase() + (hyp && attack ? ' 🌀' : '');
+    // Tinted by job, so a renamed button still reads as "the big gamble" etc.
+    c.className = 'f-chip show role-' + move;
   }
 
   function restartClass(el, cls, ms) {
@@ -590,7 +625,7 @@
           screen: '<div class="bigscreen">' + dancerSVG('bear') + dancerSVG('bear') + dancerSVG('bear') + dancerSVG('bear') + '</div>',
           portrait: dancerSVG('vitalik')
         };
-      case 'helius': return { screen: '<div class="deco-sun"></div>' };
+      case 'helium': return { screen: '<div class="deco-sun"></div>', portrait: '<div class="dome-beam"></div>' };
       case 'xrparmy': return { screen: '<div class="deco-run">' + spans('🏃', 6) + '</div>' };
       case 'peerreview': return { screen: '<div class="deco-row deco-nerds">' + spans('🤓💻', 5) + '</div>' };
       case 'nosecondbest': return { screen: '<div class="deco-drop">🐻</div>' };
@@ -606,7 +641,19 @@
       el.style.setProperty('--c', F.color);
       $('.cutin-head', el).textContent = F.emoji;
       $('.cutin-prop', el).textContent = sup.prop;
-      $('.cutin-name', el).textContent = sup.name.toUpperCase();
+      var nameEl = $('.cutin-name', el);
+      nameEl.textContent = sup.name.toUpperCase();
+      nameEl.classList.remove('flicker');
+      if (sup.flicker) {
+        nameEl.textContent = sup.flicker[0];
+        nameEl.classList.add('flicker');
+        sup.flicker.slice(1).concat(sup.name.toUpperCase()).forEach(function (txt, k, all) {
+          later(function () {
+            nameEl.textContent = txt;
+            if (k === all.length - 1) nameEl.classList.remove('flicker');
+          }, 330 + k * 170);
+        });
+      }
       $('.cutin-who', el).textContent = F.name.toUpperCase();
       $('.cutin-line', el).textContent = '“' + sup.line + '”';
       var deco = decoFor(sup.id, ctx);
@@ -769,24 +816,25 @@
     var R = S.fight && !$('#screen-fight').hidden ? S.fight.rules : D.RULESETS[S.rules];
     $('#help-body').innerHTML =
       '<p>You and the CPU each pick a move at the same time. First to 0 HP loses.</p>' +
-      '<h3>The five buttons</h3><ul>' +
-      '<li><b>👊 Strike</b>: ' + R.strike + ' damage. Always hits unless they hid. The honest move.</li>' +
-      '<li><b>🥷 Privacy</b>: try to hide (odds depend on your fighter). Hidden means Strike and Mint miss you' +
-        (R.rugPiercesHidden ? '. Rugs still get you.' : ', and so does Rug.') + '</li>' +
-      '<li><b>🖼️ Mint</b>: ' + R.mint + ' damage if the JPEG lands. If not: ARTWORK SUCKS.</li>' +
-      '<li><b>🪤 Rug</b>: ' + R.rug + ' damage and steal 2 Blocks.' +
+      '<h3>The five buttons</h3>' +
+      '<p>Some fighters have their own names for these (Mert\'s red button is Shitpost). Same color, same job.</p><ul>' +
+      '<li><b>🔴 Red (Strike)</b>: ' + R.strike + ' damage. Always hits unless they hid. The honest move.</li>' +
+      '<li><b>🔵 Blue (Privacy)</b>: try to hide (odds depend on your fighter). Hidden means red and pink miss you' +
+        (R.rugPiercesHidden ? '. Purple still gets you.' : ', and so does purple.') + '</li>' +
+      '<li><b>🩷 Pink (Mint)</b>: ' + R.mint + ' damage if it lands. If not: ARTWORK SUCKS.</li>' +
+      '<li><b>🟣 Purple (Rug)</b>: ' + R.rug + ' damage and steal 2 Blocks.' +
         (R.rugPiercesHidden ? " Hits even if they're hidden." : '') +
         ' Fail and you lose 2 Blocks (or take ' + R.rugRecoil + ' damage if you have none).</li>' +
-      "<li><b>⚡ Super</b>: needs all 10 Blocks. Plays a cut-in. Can't be dodged.</li></ul>" +
+      "<li><b>🟡 Gold (Super)</b>: needs all 10 Blocks. Plays a cut-in. Can't be dodged.</li></ul>" +
       '<h3>Blocks</h3>' +
-      '<p>Strike +2 · Privacy +3 if you hid, +1 if not · Mint +2 (or +1 on a dud) · getting hit +1. ' +
+      '<p>Red +2 · blue +3 if you hid, +1 if not · pink +2 (or +1 on a dud) · getting hit +1. ' +
       'The CPU fires its Super the moment its row is full, and you get a warning first.</p>' +
       '<h3>Statuses</h3><ul>' +
-      '<li>😵 <b>Blind</b> / 💤 <b>Asleep</b>: skip your next turn.</li>' +
-      '<li>🌀 <b>Hypnotized</b>: your next Strike, Mint or Rug hits yourself. Privacy or Super is safe.</li>' +
+      '<li>🙈 <b>Blind</b> / 💤 <b>Asleep</b>: skip your next turn.</li>' +
+      '<li>🌀 <b>Hypnotized</b>: your next red, pink or purple move hits yourself. Blue or Super is safe.</li>' +
       '<li>💎 <b>HODL</b>: take half damage this turn and next.</li></ul>' +
       '<h3>Order of a turn</h3>' +
-      '<p>Supers, then Privacy, then Strike / Mint / Rug. You go first in each step. The fight ends the instant someone hits 0.</p>' +
+      '<p>Supers, then blue (hiding), then red / pink / purple. You go first in each step. The fight ends the instant someone hits 0.</p>' +
       '<h3>Daily Fight</h3>' +
       '<p>Everyone gets the same matchup and the same luck each day. One try. Share your grid; fewer turns is better.</p>';
     $('#modal-help').hidden = false;
