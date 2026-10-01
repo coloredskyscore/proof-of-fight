@@ -88,13 +88,21 @@
     return weightedPick(fight.rng, D.FIGHTERS[fight.f[1].id].ai);
   }
 
-  function snapshot(fight, hidden) {
+  function snapshot(fight, hidden, braced) {
     return fight.f.map(function (f, i) {
       return {
         hp: f.hp, maxHp: f.maxHp, blocks: f.blocks, hodl: f.hodl,
-        skipNext: f.skipNext, hypnoNext: f.hypnoNext, hidden: !!(hidden && hidden[i])
+        skipNext: f.skipNext, hypnoNext: f.hypnoNext,
+        hidden: !!(hidden && hidden[i]), braced: !!(braced && braced[i])
       };
     });
+  }
+
+  // Damage for a fighter's Strike / Mint / Rug: their own number if they have one, else the rules'.
+  function moveDamage(fighterId, move, rules) {
+    var F = D.FIGHTERS[fighterId];
+    if (F.dmg && F.dmg[move] != null && rules.id === 'balanced') return F.dmg[move];
+    return rules[move];
   }
 
   function clampBlocks(f) {
@@ -108,12 +116,13 @@
     var rng = fight.rng, R = fight.rules;
     var ev = [];
     var hidden = [false, false];
+    var braced = [false, false]; // Saylor's STRF: not hidden, but Strike/Mint/Rug do half
     var hyp = [false, false];
     var act = [null, null];
     var result = [null, null]; // per-fighter outcome, used for the share grid
 
     function push(e) {
-      e.snap = snapshot(fight, hidden);
+      e.snap = snapshot(fight, hidden, braced);
       ev.push(e);
     }
 
@@ -126,14 +135,16 @@
       if (attacker === loser) { cause = 'self'; fight.finish = D.FINISH.self; }
       else if (rival) fight.finish = rival;
       else if (cause === 'super') fight.finish = W.super.finish;
+      else if (W.moves && W.moves[cause] && W.moves[cause].ko) fight.finish = W.moves[cause].ko;
       else fight.finish = D.FINISH[cause];
       fight.finishCause = cause;
       push({ t: 'ko', winner: fight.winner, loser: loser, finish: fight.finish, cause: cause });
     }
 
-    function hurt(target, n) {
+    // braceable: Strike/Mint/Rug can be braced against; Supers can't. HODL and a brace don't stack.
+    function hurt(target, n, braceable) {
       var f = fight.f[target];
-      if (f.hodl > 0) n = Math.ceil(n / 2);
+      if (f.hodl > 0 || (braceable && braced[target])) n = Math.ceil(n / 2);
       n = Math.min(n, f.hp);
       f.hp -= n;
       return n;
@@ -207,7 +218,16 @@
     // Step 2: Privacy rolls.
     for (i = 0; i < 2 && !fight.over; i++) {
       if (act[i] !== 'privacy') continue;
-      var me = fight.f[i];
+      var me = fight.f[i], brace = D.FIGHTERS[me.id].brace;
+      if (brace) {
+        // Always works, no dice: half damage from Strike/Mint/Rug this turn.
+        braced[i] = true;
+        me.blocks += brace.blocks;
+        clampBlocks(me);
+        result[i] = { code: 'hid' };
+        push({ t: 'hide', who: i, ok: true, brace: true });
+        continue;
+      }
       if (rng() < D.FIGHTERS[me.id].hide) {
         hidden[i] = true;
         me.blocks += D.BLOCKS.privacyOk;
@@ -276,7 +296,7 @@
         me.blocks += stolen;
         clampBlocks(me);
       }
-      dealt = hurt(ti, R[move]);
+      dealt = hurt(ti, moveDamage(me.id, move, R), true);
       tgt.blocks += D.BLOCKS.gotHit;
       clampBlocks(tgt);
       push({ t: 'hit', attacker: who, target: ti, move: move, amount: dealt, self: self, stolen: stolen, pierced: pierced });
@@ -300,6 +320,7 @@
     fight.grid.push(result[0] ? result[0].code : 'none');
     if (!fight.over) fight.turn++;
     hidden = [false, false];
+    braced = [false, false];
     push({ t: 'end' });
     return ev;
   }
@@ -323,6 +344,7 @@
     playerStatus: playerStatus,
     canSuper: canSuper,
     snapshot: snapshot,
+    moveDamage: moveDamage,
     replay: replay
   };
 });

@@ -16,6 +16,7 @@ One file per fighter: their Super and, optionally, their own button names. Drop 
 | Skip line *(optional, Blind/Sleep Supers)* | Over the opponent on the turn they skip | WHO WAS THAT |
 | Rival KO line *(optional)* | Replaces the finish line when beating one specific fighter | Toly vs Saylor: THERE IS A SECOND BEST |
 | KO prop *(optional)* | What the loser is left holding on stage and on the result card | 🎈 |
+| KO scene *(optional, needs a little code)* | A short extra scene when the Super lands the KO | Saylor's astronaut DJ: WE CALL THEM POOR |
 
 ## Button names (optional, per fighter)
 
@@ -26,15 +27,23 @@ Every fighter has the same five buttons with the same colors and jobs. A fighter
 | 🔴 Red | Reliable hit, always lands | name, emoji | 🗯️ Shitpost |
 | 🔵 Blue | Try to dodge (fighter's hide %) | name, emoji, line when it works, line when it fails | 🕶️ Zolana · EVERY BALD GUY EVER · VIEW KEY LEAKED |
 | 🩷 Pink | Medium gamble | name, emoji, line when it lands, line when it flops | 🪙 Memecoin · I LIKE MEMECOINS · SNIPED IN BLOCK ZERO |
-| 🟣 Purple | Big gamble: steals Blocks, hits through dodges | name, emoji, line when it lands, line when it flops | ⛔ Rate Limit · 429: TOO MANY REQUESTS · STATUS PAGE: ALL GREEN |
+| 🟣 Purple | Big gamble: steals Blocks, hits through dodges | name, emoji, line when it lands, line when it flops, line when it hits someone who hid | ⛔ Rate Limit · 429: TOO MANY REQUESTS · STATUS PAGE: ALL GREEN · CAN'T HIDE FROM A RATE LIMIT |
+
+Every button can also have:
+- **a nickname**, shown small next to the name (Saylor: STRC *Stretch*)
+- **a KO line** used when that button lands the knockout (Saylor's STRC: STRETCH)
 
 **Button names: 12 characters max** (they have to fit on a phone). Banner lines: under ~25 characters reads best.
+
+## Custom numbers and special buttons (needs a balance pass)
+
+A fighter can have their own damage or odds on a button (Saylor's STRK does 20 at 45%, STRD 30 at 25%), and a blue button can be a **brace** instead of a dodge: always works, halves incoming Strike/Mint/Rug damage, never hides (Saylor's STRF). Propose numbers freely; they get run through the simulator before building, and adjusted if a fighter ends up too strong or too weak. Rough guide: a sensible player should win about 60–78% with any fighter.
 
 ## Needs a little code (fine, just describe it)
 
 - **The cut-in scene** (the 2–3 second animation): describe it in plain words and it gets built.
 - **A brand-new effect or status** (e.g. Toly's v2 "Seeker'd": can't use Privacy for 2 turns). Doable, but it changes balance, so it gets run through the simulator first.
-- **A button that works differently** (not just renamed). Same: doable, but it needs a balance pass.
+- **A button that works differently** (not just renamed). Same: doable, but it needs a balance pass. Example: Saylor's STRF brace.
 
 ## House rules
 
@@ -50,3 +59,4 @@ Every fighter has the same five buttons with the same colors and jobs. A fighter
 |---|---|---|---|
 | Toly | Second Best Salesman | not yet | [toly.md](toly.md) |
 | Mert | CEO of Helium | yes | [mert.md](mert.md) |
+| Saylor | Another Orange Dot | yes, plus his own numbers and the STRF brace | [saylor.md](saylor.md) |

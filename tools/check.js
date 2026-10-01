@@ -75,15 +75,15 @@ test('CEO of Helium blinds: the target skips its NEXT turn only', function () {
 });
 
 test('Ultra Sound Moves: hypnotized attacker hits itself next turn', function () {
-  var f = E.newFight({ player: 'vitalik', cpu: 'saylor', seed: 1 });
+  var f = E.newFight({ player: 'vitalik', cpu: 'charles', seed: 1 });
   f.f[0].blocks = 10;
   rig(f, [
-    cpuRoll('saylor', 'privacy'), 0.99 /* hide fails */, 0 /* fail line */,
-    cpuRoll('saylor', 'strike'), 0 /* Vitalik hides */
+    cpuRoll('charles', 'privacy'), 0.99 /* hide fails */, 0 /* fail line */,
+    cpuRoll('charles', 'strike'), 0 /* Vitalik hides */
   ]);
   E.playTurn(f, 'super');
   var afterSuper = f.f[1].hp;
-  assert.strictEqual(afterSuper, 105 - D.SUPERS.dance.dmg);
+  assert.strictEqual(afterSuper, 100 - D.SUPERS.dance.dmg);
   assert.strictEqual(f.f[1].hypnoNext, true);
   var ev = E.playTurn(f, 'privacy');
   assert(has(ev, function (e) { return e.t === 'hit' && e.attacker === 1 && e.target === 1 && e.self; }));
@@ -95,20 +95,20 @@ test('HODL halves damage this turn and next, then wears off', function () {
   f.f[0].blocks = 10;
   rig(f, [cpuRoll('toly', 'strike'), cpuRoll('toly', 'strike'), cpuRoll('toly', 'strike')]);
   E.playTurn(f, 'super');
-  assert.strictEqual(f.f[0].hp, 105 - 5);
+  assert.strictEqual(f.f[0].hp, 100 - 5);
   E.playTurn(f, 'strike');
-  assert.strictEqual(f.f[0].hp, 105 - 10);
+  assert.strictEqual(f.f[0].hp, 100 - 10);
   E.playTurn(f, 'strike');
-  assert.strictEqual(f.f[0].hp, 105 - 20);
+  assert.strictEqual(f.f[0].hp, 100 - 20);
 });
 
 test('OP_RETURN prunes HODL before it hits', function () {
   var f = E.newFight({ player: 'adam', cpu: 'saylor', seed: 1 });
   f.f[0].blocks = 10;
   f.f[1].hodl = 2;
-  rig(f, [cpuRoll('saylor', 'privacy'), 0.99 /* hide fails */, 0 /* fail line */]);
+  rig(f, [cpuRoll('saylor', 'strike')]);
   E.playTurn(f, 'super');
-  assert.strictEqual(f.f[1].hp, 105 - D.SUPERS.opreturn.dmg);
+  assert.strictEqual(f.f[1].hp, 100 - D.SUPERS.opreturn.dmg);
 });
 
 test('CPU fires Super the turn its meter is full', function () {
@@ -151,7 +151,7 @@ test('Toly Super KO reads HATER CONVERTED', function () {
 test('Toly beating Saylor, any way, reads THERE IS A SECOND BEST', function () {
   var f = E.newFight({ player: 'saylor', cpu: 'toly', seed: 1 });
   f.f[0].hp = 5;
-  rig(f, [cpuRoll('toly', 'strike'), 0.99 /* Saylor's hide fails */, 0 /* fail line */]);
+  rig(f, [cpuRoll('toly', 'strike')]); // STRF rolls no dice; braced, the 10 becomes 5
   E.playTurn(f, 'privacy');
   assert.strictEqual(f.winner, 1);
   assert.strictEqual(f.finish, 'THERE IS A SECOND BEST');
@@ -175,11 +175,57 @@ test('Renamed buttons fit on a phone and have their banner lines', function () {
       assert(D.DEFAULT_MOVES[m], id + ': unknown button ' + m);
       assert(mv.name && mv.name.length <= 12, id + ' ' + m + ': name must be 1-12 characters');
       assert(mv.icon, id + ' ' + m + ': needs an icon');
-      if (m !== 'strike') assert(mv.ok && mv.fail, id + ' ' + m + ': needs ok and fail lines');
+      if (m !== 'strike') assert(mv.ok, id + ' ' + m + ': needs an ok line');
+      if (m !== 'strike' && !(m === 'privacy' && F.brace)) assert(mv.fail, id + ' ' + m + ': needs a fail line');
     });
     if (!F.moves || !F.moves.mint) assert(F.mintFail, id + ': needs mintFail');
     if (!F.moves || !F.moves.rug) assert(F.rugFail, id + ': needs rugFail');
   });
+});
+
+test('STRF always works: half damage from Strike/Mint/Rug, +1 Block, never hidden', function () {
+  var f = E.newFight({ player: 'saylor', cpu: 'garlinghouse', seed: 1 });
+  rig(f, [cpuRoll('garlinghouse', 'rug'), 0 /* rug lands */]);
+  var ev = E.playTurn(f, 'privacy');
+  assert.strictEqual(f.f[0].hp, 100 - Math.ceil(D.RULESETS.balanced.rug / 2));
+  assert(ev.some(function (e) { return e.t === 'hide' && e.ok && e.brace; }));
+  assert(!ev.some(function (e) { return e.snap && e.snap[0].hidden; }), 'never hidden');
+});
+
+test('STRF does not halve Supers, and does not stack with HODL', function () {
+  var f = E.newFight({ player: 'saylor', cpu: 'toly', seed: 1 });
+  f.f[1].blocks = 10;
+  rig(f, []);
+  E.playTurn(f, 'privacy');
+  assert.strictEqual(f.f[0].hp, 100 - D.SUPERS.salesman.dmg);
+  f.f[0].hodl = 2;
+  rig(f, [cpuRoll('toly', 'strike')]);
+  var before = f.f[0].hp;
+  E.playTurn(f, 'privacy');
+  assert.strictEqual(before - f.f[0].hp, 5, 'braced + HODL is still half, not a quarter');
+});
+
+test('Saylor uses his own damage: STRK 20, STRD 30', function () {
+  assert.strictEqual(E.moveDamage('saylor', 'mint', D.RULESETS.balanced), 20);
+  assert.strictEqual(E.moveDamage('saylor', 'rug', D.RULESETS.balanced), 30);
+  assert.strictEqual(E.moveDamage('saylor', 'strike', D.RULESETS.balanced), 10);
+  var f = E.newFight({ player: 'saylor', cpu: 'adam', seed: 1 });
+  rig(f, [cpuRoll('adam', 'strike'), 0 /* STRK lands */]);
+  E.playTurn(f, 'mint');
+  assert.strictEqual(f.f[1].hp, 80);
+});
+
+test('STRC KO reads STRETCH; Saylor beating Toly reads THERE IS NO SECOND BEST', function () {
+  var f = E.newFight({ player: 'saylor', cpu: 'adam', seed: 1 });
+  f.f[1].hp = 5;
+  rig(f, [cpuRoll('adam', 'strike')]);
+  E.playTurn(f, 'strike');
+  assert.strictEqual(f.finish, 'STRETCH');
+  var g = E.newFight({ player: 'saylor', cpu: 'toly', seed: 1 });
+  g.f[1].hp = 5;
+  rig(g, [cpuRoll('toly', 'strike')]);
+  E.playTurn(g, 'strike');
+  assert.strictEqual(g.finish, 'THERE IS NO SECOND BEST');
 });
 
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {

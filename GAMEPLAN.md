@@ -11,6 +11,18 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 1, 2026 (later): Saylor's ticker kit
+
+Full concept and build notes: [docs/supers/saylor.md](docs/supers/saylor.md). Saylor is the first fighter whose buttons also *work* differently, not just renamed:
+- 📬 **STRC** (red): 10 dmg, always. KO line `STRETCH`.
+- 🛡️ **STRF** (blue): never hides. Always works, halves Strike/Mint/Rug damage this turn, +1 Block. `SENIOR CLAIM`.
+- 🔄 **STRK** (pink): 20 dmg, 45%. `CONVERTED` / `STILL PREFERRED`.
+- 🎲 **STRD** (purple): 30 dmg, 25%, steals 2 Blocks, hits through dodges. `STRIDE CLEARED` / `DIVIDEND FORFEITED`.
+- **Super: Another Orange Dot**: orange dots stamp onto his tracker chart, `A LITTLE MORE ORANGE`, 25 dmg + HODL. A Super KO plays the astronaut DJ (`FIAT AS A STORE OF VALUE` / `WE CALL THEM POOR`), and the loser holds 💵.
+- Saylor beating Toly reads `THERE IS NO SECOND BEST`. CPU Saylor after his Super: `THE NEXT DOT IS THE IMPORTANT ONE`.
+- HP back to 100: STRF is his tank move now. Simulated, he's exactly as strong as before (75% for a sensible player), and turtling behind STRF doesn't work (2%).
+- Footer now says "Not financial advice." (real securities on the buttons).
+
 ### Oct 1, 2026: Mert's kit, and fighters can rename their buttons
 
 Full concept and build notes: [docs/supers/mert.md](docs/supers/mert.md).
@@ -81,7 +93,7 @@ Seven caricature fighters. One CPU opponent. Five buttons: **Strike**, **Privacy
 ## 4. Core loop
 
 1. Title screen → **Daily Fight** (fixed matchup for the day) or **Free Play** (pick your fighter → pick CPU opponent, or the suggested first fight).
-2. Both start at **100 HP** (Saylor 105) and **0 / 10 Blocks**.
+2. Both start at **100 HP** and **0 / 10 Blocks**.
 3. You choose a move.
 4. CPU chooses a move using that character's personality table.
 5. Resolve in order: Super → Privacy (Hidden or not) → Strike / Mint / Rug (see section 7 for the exact rules).
@@ -96,7 +108,7 @@ Win condition: reduce the opponent to 0 HP. Supers change *how* you get there. T
 ## 5. Resources
 
 ### HP
-- Start at 100. Saylor starts at 105 (he's the tank).
+- Start at 100.
 - Integers only. No decimals. Half damage rounds up.
 
 ### Blocks (the meter)
@@ -125,11 +137,12 @@ Strike and Mint give their Blocks even if the target was Hidden.
 
 ## 6. The five buttons
 
-Every fighter has the same five buttons: same colors, same jobs, same numbers. A fighter can **rename** the first four (name, emoji, banner lines); see `docs/supers/README.md` for the slots. Renamed so far:
+Every fighter has the same five buttons: same colors, same jobs. A fighter can **rename** the first four (name, emoji, banner lines); see `docs/supers/README.md` for the slots. A fighter can also have **their own numbers** for a button, or (rarely) a button that works differently, but only after a simulator pass. Custom so far:
 
 | Fighter | 🔴 Red (Strike) | 🔵 Blue (Privacy) | 🩷 Pink (Mint) | 🟣 Purple (Rug) |
 |---|---|---|---|---|
 | Mert | 🗯️ Shitpost | 🕶️ Zolana | 🪙 Memecoin | ⛔ Rate Limit |
+| Saylor | 📬 STRC | 🛡️ STRF: *always works, halves damage, +1 Block, never hides* | 🔄 STRK: *20 dmg* | 🎲 STRD: *30 dmg* |
 
 The rest of this section uses the generic names.
 
@@ -195,7 +208,7 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 | `vitalik` | Vitalik | @VitalikButerin | Research / questionable dance moves |
 | `adam` | Adam Back | @adam3us | Cypherpunk grind |
 | `charles` | Charles | @IOHK_Charles | Peer review / long speeches |
-| `saylor` | Saylor | @saylor | Tank / orange pill |
+| `saylor` | Saylor | @saylor | Tank / preferred stock |
 
 Anatoly Yakovenko is **Toly** in-game. Not "Antonoly."
 
@@ -215,7 +228,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Mert | 45 | Infra guy who still lives on mainnet Twitter |
 | Toly | 35 | Transparent high-performance capitalist |
 | Garlinghouse | 30 | The lawsuit is the spotlight |
-| Saylor | 20 | He wants you to see the orange |
+| Saylor | — | His blue button (STRF) never hides; it always works and halves the damage |
 
 ### Mint (JPEG lands)
 
@@ -226,7 +239,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Mert | 45 | `RIGHT-CLICK SAVED` |
 | Charles | 40 | `PEER REVIEWERS HATED IT` |
 | Vitalik | 35 | `SOULBOUND AND ALSO UGLY` |
-| Saylor | 30 | `THIS IS NOT DIGITAL ENERGY` |
+| Saylor | 45 | STRK: `STILL PREFERRED` (20 dmg) |
 | Adam Back | 15 | `THAT'S NOT WHAT BITCOIN IS FOR` |
 
 ### Rug
@@ -238,10 +251,10 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Toly | 30 | `OUTAGE HIT THE BRIDGE` |
 | Charles | 25 | `ROADMAP SAYS Q4` |
 | Vitalik | 20 | `PUBLIC GOODS ONLY` |
-| Saylor | 15 | `I DO NOT SELL` |
+| Saylor | 25 | STRD: `DIVIDEND FORFEITED` (30 dmg) |
 | Adam Back | 10 | `CAN'T RUG A HASH` |
 
-Saylor and Adam are *bad* at rugs on purpose.
+Adam is *bad* at rugs on purpose. Saylor's STRD lands more often but hits for less.
 
 ---
 
@@ -264,13 +277,15 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Toly | **Second Best Salesman** ([doc](docs/supers/toly.md)) | A brochure of phone bricks fans open, he slaps a `BUY NOW` phone into them, airdrop confetti. "APPLE + SOLANA MOBILE: 3.469 BILLION" | **35 dmg**, one hit | HATER CONVERTED |
 | Garlinghouse | **XRP Army** | Polo-shirt normies jog across and body-check | **5 hits × 5 dmg = 25** | ARMY SETTLEMENT |
 | Charles | **Peer Review** | Five nerds with laptops; Charles starts a sentence that does not end | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** (peer review delays the roadmap) | PEER REVIEWED |
-| Saylor | **No Second Best** | Bear drops in, he mounts it, points at camera, charges | **25 dmg + HODL** (Saylor takes half damage this turn and next) | NO SECOND BEST |
+| Saylor | **Another Orange Dot** ([doc](docs/supers/saylor.md)) | Orange dots stamp one by one onto his tracker chart. "A LITTLE MORE ORANGE". On a KO: the astronaut DJ, `FIAT AS A STORE OF VALUE` / `WE CALL THEM POOR` | **25 dmg + HODL** (Saylor takes half damage this turn and next) | WE CALL THEM POOR |
 | Adam Back | **OP_RETURN** | Long-barreled gun etched `OP_RETURN`, fires an **80 BYTES** blob | **Prune** (strips their HODL) **then 25 dmg** | 80 BYTES OF PAIN |
 | Vitalik | **Ultra Sound Moves** | A big screen behind him full of dancing bears, arms locked straight out, swaying. Vitalik in front doing the exact same awkward dance. "DON'T LOOK AT THE DANCE." | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | HYPNOTIZED |
 
 Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY`, hitting yourself `SELF-REKT`.
 
-**Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`.
+**Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`.
+
+**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`.
 
 **CPU after-Super lines** show as a banner after a CPU's Super lands (not when it's the KO): CPU Toly says `SALES GOAL OF THE YEAR ACCOMPLISHED.`
 
@@ -285,6 +300,7 @@ Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `E
 | Sleep | Skip your next turn | After the skipped turn |
 | Hypnotized | Your next turn's Strike / Mint / Rug hits yourself (normal odds, full damage). Privacy and Super are safe, so a smart player hides. | After that turn |
 | HODL | Take half damage (rounded up) this turn and next | Timer, or Adam's Prune |
+| Braced (Saylor's STRF) | Half damage from Strike / Mint / Rug this turn (not Supers). Doesn't stack with HODL. | End of turn |
 
 Blind and Sleep do not stack into a two-turn skip. If both land, still one skipped turn.
 
@@ -298,7 +314,7 @@ Weights are "how often they try this." **Every CPU fires its Super the turn its 
 
 | Character | Strike | Privacy | Mint | Rug |
 |---|---|---|---|---|
-| Saylor | High | Rare | Low | Almost never |
+| Saylor | High (STRC) | Low (STRF) | Medium (STRK) | Rare (STRD) |
 | Adam Back | Medium | Very high | Almost never | Almost never |
 | Charles | Low | Medium | Medium | Low |
 | Garlinghouse | Medium | Low | High | High |
@@ -460,6 +476,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Vitalik's Super: **Ultra Sound Moves** (hypnotizing dance)
 - Toly's Super: **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
 - Mert's Super: **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
+- Saylor's kit: **STRC / STRF / STRK / STRD** + **Another Orange Dot** (`WE CALL THEM POOR`)
 - Fighters can rename their buttons; jobs, colors and numbers stay shared
 - Roster: Toly, Mert, Garlinghouse, Vitalik, Adam Back, Charles, Saylor
 - Share: emoji grid (now), encoded result URL (next)
