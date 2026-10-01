@@ -720,6 +720,9 @@
     });
   }
 
+  var FLICKER_START = 450; // ms: first word holds while the name card lands
+  var FLICKER_STEP = 450;  // ms per word
+
   function cutIn(i, ctx) {
     return new Promise(function (resolve) {
       var F = D.FIGHTERS[S.fight.f[i].id], sup = F.super, el = $('#cutin');
@@ -727,19 +730,34 @@
       el.style.setProperty('--c', F.color);
       $('.cutin-head', el).textContent = F.emoji;
       $('.cutin-prop', el).textContent = sup.prop;
+      // Name card flicker (Mert: HELIUS -> HELIUM -> HIVEMAPPER -> CEO OF HELIUM). Each word holds
+      // long enough to read; the glitch only hits on the switch. The voice line, the beam and the
+      // end of the cut-in wait for the lock.
       var nameEl = $('.cutin-name', el);
+      var duration = sup.id === 'dance' ? 3000 : 2700;
       nameEl.textContent = sup.name.toUpperCase();
-      nameEl.classList.remove('flicker');
+      nameEl.className = 'cutin-name';
+      el.style.removeProperty('--lock');
+      el.style.removeProperty('--line-delay');
       if (sup.flicker) {
+        var lockAt = FLICKER_START + sup.flicker.length * FLICKER_STEP;
         nameEl.textContent = sup.flicker[0];
         nameEl.classList.add('flicker');
         sup.flicker.slice(1).concat(sup.name.toUpperCase()).forEach(function (txt, k, all) {
           later(function () {
+            var last = k === all.length - 1;
             nameEl.textContent = txt;
-            if (k === all.length - 1) nameEl.classList.remove('flicker');
-          }, 330 + k * 170);
+            nameEl.classList.remove('glitch', 'lock');
+            void nameEl.offsetWidth;
+            if (last) nameEl.classList.remove('flicker');
+            nameEl.classList.add(last ? 'lock' : 'glitch');
+          }, FLICKER_START + (k + 1) * FLICKER_STEP);
         });
+        el.style.setProperty('--lock', (lockAt / 1000) + 's');
+        el.style.setProperty('--line-delay', ((lockAt + 150) / 1000) + 's');
+        duration = lockAt + 1700;
       }
+      el.style.setProperty('--dur', (duration / 1000) + 's');
       $('.cutin-who', el).textContent = F.name.toUpperCase();
       $('.cutin-line', el).textContent = '“' + sup.line + '”';
       var deco = decoFor(sup.id, ctx);
@@ -751,7 +769,7 @@
       el.classList.add('play');
 
       var done = false;
-      var timer = later(finish, sup.id === 'dance' ? 3000 : 2700);
+      var timer = later(finish, duration);
       function finish() {
         if (done) return;
         done = true;
