@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Proof of Fight</title>
+  <meta name="description" content="A turn-based crypto founder brawl in your browser. Parody. No wallet. New daily fight every day.">
+  <meta name="theme-color" content="#0b0a12">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Proof of Fight">
+  <meta property="og:description" content="A turn-based crypto founder brawl. New daily fight every day. No wallet.">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥊</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- TITLE -->
+    <section id="screen-title" class="screen">
+      <div class="title-wrap">
+        <div class="title-roster" aria-hidden="true"></div>
+        <h1 class="logo"><span>PROOF</span><span class="logo-of">OF</span><span>FIGHT</span></h1>
+        <p class="tagline">Crypto founders. Five buttons. One bad decision per turn.</p>
+
+        <button id="btn-daily" class="btn btn-big btn-gold" type="button"></button>
+        <button id="btn-free" class="btn btn-big" type="button">🥊 Free play</button>
+        <button id="btn-help" class="btn btn-ghost" type="button">How to play</button>
+
+        <p id="title-stats" class="title-stats"></p>
+
+        <label class="rules-pick">
+          <span>Free play rules</span>
+          <select id="rules-select"></select>
+        </label>
+
+        <p class="disclaimer">Parody. Caricatures of public figures, not affiliated with or endorsed by any of them. No wallet, no tokens, no sign-up.</p>
+      </div>
+    </section>
+
+    <!-- PICK -->
+    <section id="screen-pick" class="screen" hidden>
+      <header class="pick-head">
+        <button id="pick-back" class="btn btn-ghost btn-sm" type="button">← Back</button>
+        <h2 id="pick-title">Pick your fighter</h2>
+      </header>
+      <button id="pick-suggest" class="btn btn-suggest" type="button">⭐ First fight: <b>Saylor vs Mert</b></button>
+      <div id="pick-grid" class="pick-grid"></div>
+    </section>
+
+    <!-- FIGHT -->
+    <section id="screen-fight" class="screen" hidden>
+      <header class="hud">
+        <div class="hud-side" id="hud-p">
+          <div class="hud-name"><span class="you-tag">YOU</span><span class="hud-fname"></span></div>
+          <div class="hp"><div class="hp-lag"></div><div class="hp-fill"></div><span class="hp-num"></span></div>
+          <div class="blocks" aria-label="Blocks"></div>
+          <div class="chips"></div>
+        </div>
+        <div class="hud-mid">
+          <div class="hud-turn">TURN <b id="turn-num">1</b></div>
+          <div class="hud-mode" id="hud-mode"></div>
+          <div class="hud-buttons">
+            <button id="btn-fight-help" class="icon-btn" type="button" aria-label="How to play">?</button>
+            <button id="btn-quit" class="icon-btn" type="button" aria-label="Leave fight">✕</button>
+          </div>
+        </div>
+        <div class="hud-side" id="hud-c">
+          <div class="hud-name"><span class="hud-fname"></span><span class="cpu-tag">CPU</span></div>
+          <div class="hp"><div class="hp-lag"></div><div class="hp-fill"></div><span class="hp-num"></span></div>
+          <div class="blocks" aria-label="Blocks"></div>
+          <div class="chips"></div>
+        </div>
+      </header>
+
+      <div class="stage" id="stage">
+        <div class="sky"></div>
+        <div class="skyline" id="skyline" aria-hidden="true"></div>
+        <div class="ground"></div>
+        <div class="fighter side-p" id="fighter-p"></div>
+        <div class="fighter side-c" id="fighter-c"></div>
+        <div class="popups" id="popups" aria-hidden="true"></div>
+        <div class="banner" id="banner" aria-hidden="true"><div class="banner-text"></div><div class="banner-sub"></div></div>
+      </div>
+
+      <p class="log" id="log" aria-live="polite"></p>
+
+      <div class="controls" id="controls">
+        <p class="turn-note" id="turn-note"></p>
+        <button class="move move-super" data-move="super" type="button">
+          <span class="move-icon">⚡</span><span class="move-label">SUPER</span><span class="move-sub"></span>
+        </button>
+        <div class="move-grid">
+          <button class="move move-strike" data-move="strike" type="button"><span class="move-icon">👊</span><span class="move-label">Strike</span><span class="move-sub"></span></button>
+          <button class="move move-privacy" data-move="privacy" type="button"><span class="move-icon">🥷</span><span class="move-label">Privacy</span><span class="move-sub"></span></button>
+          <button class="move move-mint" data-move="mint" type="button"><span class="move-icon">🖼️</span><span class="move-label">Mint</span><span class="move-sub"></span></button>
+          <button class="move move-rug" data-move="rug" type="button"><span class="move-icon">🪤</span><span class="move-label">Rug</span><span class="move-sub"></span></button>
+        </div>
+        <button class="btn btn-big btn-gold btn-continue" id="btn-continue" type="button" hidden>Continue ▶</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- SUPER CUT-IN -->
+  <div class="cutin" id="cutin" hidden aria-live="assertive">
+    <div class="cutin-stripes"></div>
+    <div class="cutin-deco"></div>
+    <div class="cutin-portrait"><span class="cutin-head"></span><span class="cutin-prop"></span><div class="cutin-pdeco"></div></div>
+    <div class="cutin-card">
+      <small>SUPER</small>
+      <div class="cutin-name"></div>
+      <div class="cutin-who"></div>
+    </div>
+    <div class="cutin-line"></div>
+    <div class="cutin-flash"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="modal" id="modal-result" hidden>
+    <div class="modal-card result-card" role="dialog" aria-modal="true" aria-labelledby="res-title">
+      <div class="res-kicker" id="res-kicker"></div>
+      <h2 class="res-title" id="res-title"></h2>
+      <div class="res-faces" id="res-faces"></div>
+      <p class="res-line" id="res-line"></p>
+      <div class="res-finish" id="res-finish"></div>
+      <div class="res-grid" id="res-grid"></div>
+      <p class="res-legend">🟩 hit · 🟦 hid · 🟨 super · 🟥 whiff · ⬛ skipped · 🌀 self-rekt</p>
+      <p class="res-meta" id="res-meta"></p>
+      <div class="res-actions">
+        <button class="btn btn-gold" id="res-share" type="button">Copy result</button>
+        <a class="btn btn-x" id="res-x" target="_blank" rel="noopener">Post on X</a>
+        <button class="btn" id="res-again" type="button">Rematch</button>
+        <button class="btn btn-ghost" id="res-menu" type="button">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP -->
+  <div class="modal" id="modal-help" hidden>
+    <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <h2 id="help-title">How to play</h2>
+      <div id="help-body"></div>
+      <button class="btn btn-gold" id="help-close" type="button">Got it</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
