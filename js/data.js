@@ -19,7 +19,7 @@
       rug: 36,
       rugRecoil: 5,
       rugPiercesHidden: true,
-      hp: { default: 100, saylor: 105 }
+      hp: { default: 100 }
     },
     original: {
       id: 'original',
@@ -49,13 +49,16 @@
 
   // Button names. A fighter can rename any button with its own `moves` entry; the job,
   // color and numbers stay the same. Names: 12 characters max so they fit on a phone.
-  //   ok   = banner when it lands (privacy: when you hide)
-  //   fail = banner when it flops (default Mint/Rug show the fighter's mintFail/rugFail under it)
+  //   nick   = small nickname shown next to the name (optional)
+  //   ok     = banner when it lands (privacy: when you hide)
+  //   fail   = banner when it flops (default Mint/Rug show the fighter's mintFail/rugFail under it)
+  //   pierce = banner when the purple button hits someone who hid (optional)
+  //   ko     = finish line when this button lands the KO (optional)
   var DEFAULT_MOVES = {
     strike:  { name: 'Strike',  icon: '👊' },
     privacy: { name: 'Privacy', icon: '🥷', ok: 'HIDDEN' },
     mint:    { name: 'Mint',    icon: '🖼️', ok: 'JPEG SLAP!', fail: 'ARTWORK SUCKS!' },
-    rug:     { name: 'Rug',     icon: '🪤', ok: 'RUGGED!',    fail: 'RUG FAILED' }
+    rug:     { name: 'Rug',     icon: '🪤', ok: 'RUGGED!',    fail: 'RUG FAILED', pierce: "CAN'T HIDE FROM A RUG" }
   };
 
   var FINISH = {
@@ -94,7 +97,8 @@
         strike:  { name: 'Shitpost',   icon: '🗯️' },
         privacy: { name: 'Zolana',     icon: '🕶️', ok: 'EVERY BALD GUY EVER',    fail: 'VIEW KEY LEAKED' },
         mint:    { name: 'Memecoin',   icon: '🪙', ok: 'I LIKE MEMECOINS',       fail: 'SNIPED IN BLOCK ZERO' },
-        rug:     { name: 'Rate Limit', icon: '⛔', ok: '429: TOO MANY REQUESTS', fail: 'STATUS PAGE: ALL GREEN' }
+        rug:     { name: 'Rate Limit', icon: '⛔', ok: '429: TOO MANY REQUESTS', fail: 'STATUS PAGE: ALL GREEN',
+                   pierce: "CAN'T HIDE FROM A RATE LIMIT" }
       },
       super: {
         id: 'helium', name: 'CEO of Helium', prop: '☀️',
@@ -155,16 +159,29 @@
       }
     },
     saylor: {
-      id: 'saylor', name: 'Saylor', lane: 'Tank / orange pill',
+      id: 'saylor', name: 'Saylor', lane: 'Tank / preferred stock',
       color: '#f7931a', emoji: '🧡',
-      hide: 0.20, mint: 0.30, rug: 0.15,
-      mintFail: 'THIS IS NOT DIGITAL ENERGY', rugFail: 'I DO NOT SELL',
-      ai: { strike: 4, privacy: 1, mint: 2, rug: 0.5 },
+      hide: 0, mint: 0.45, rug: 0.25,
+      // His blue button never hides: it always works and halves incoming Strike/Mint/Rug damage.
+      brace: { blocks: 1 },
+      // Damage that differs from the shared rules (Strike stays 10 like everyone).
+      dmg: { mint: 20, rug: 30 },
+      ai: { strike: 4, privacy: 2, mint: 3, rug: 1 },
+      moves: {
+        strike:  { name: 'STRC', nick: 'Stretch', icon: '📬', ko: 'STRETCH' },
+        privacy: { name: 'STRF', nick: 'Strife',  icon: '🛡️', ok: 'SENIOR CLAIM' },
+        mint:    { name: 'STRK', nick: 'Strike',  icon: '🔄', ok: 'CONVERTED',      fail: 'STILL PREFERRED' },
+        rug:     { name: 'STRD', nick: 'Stride',  icon: '🎲', ok: 'STRIDE CLEARED', fail: 'DIVIDEND FORFEITED' }
+      },
       super: {
-        id: 'nosecondbest', name: 'No Second Best', prop: '🐻',
-        line: 'THERE IS NO SECOND BEST.',
-        blurb: 'Big hit + HODL (half damage this turn and next)', finish: 'NO SECOND BEST'
-      }
+        id: 'orangedot', name: 'Another Orange Dot', prop: '🟠',
+        line: 'A LITTLE MORE ORANGE',
+        blurb: 'Big hit + HODL (half damage this turn and next)', finish: 'WE CALL THEM POOR',
+        cpuAfter: 'THE NEXT DOT IS THE IMPORTANT ONE',
+        koProp: '💵',          // the loser is left holding fiat
+        koScene: 'astronaut'   // Super KO plays the astronaut DJ: FIAT AS A STORE OF VALUE / WE CALL THEM POOR
+      },
+      rivalKo: { toly: 'THERE IS NO SECOND BEST' }
     }
   };
 
@@ -174,7 +191,7 @@
     helium:       { dmg: 8, skip: 'blind' },
     xrparmy:      { dmg: 5, hits: 5 },
     peerreview:   { dmg: 15, skip: 'sleep', drain: 3 },
-    nosecondbest: { dmg: 25, hodl: 2 },
+    orangedot:    { dmg: 25, hodl: 2 },
     opreturn:     { dmg: 25, prune: true },
     dance:        { dmg: 15, hypno: true }
   };

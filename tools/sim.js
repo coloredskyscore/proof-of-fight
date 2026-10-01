@@ -28,9 +28,10 @@ var STRATS = {
     var F = D.FIGHTERS[fight.f[0].id];
     if (fight.f[0].hypnoNext) return 'privacy';
     if (rng() < 0.2) return 'privacy';
-    var best = 'strike', bestV = R.strike;
-    if (F.mint * R.mint > bestV) { best = 'mint'; bestV = F.mint * R.mint; }
-    if (F.rug * R.rug > bestV) { best = 'rug'; }
+    var dm = function (m) { return E.moveDamage(F.id, m, R); };
+    var best = 'strike', bestV = dm('strike');
+    if (F.mint * dm('mint') > bestV) { best = 'mint'; bestV = F.mint * dm('mint'); }
+    if (F.rug * dm('rug') > bestV) { best = 'rug'; }
     return best;
   })
 };

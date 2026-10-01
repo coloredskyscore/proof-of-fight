@@ -127,7 +127,8 @@
       var F = D.FIGHTERS[id];
       var moves = F.moves ? '<span class="pick-moves">' + BUTTONS.map(function (m) {
         var mo = moveOf(id, m);
-        return '<span class="role-' + m + '">' + mo.icon + ' ' + esc(mo.name) + '</span>';
+        return '<span class="role-' + m + '">' + mo.icon + ' ' + esc(mo.name) +
+          (mo.nick ? ' <small>' + esc(mo.nick) + '</small>' : '') + '</span>';
       }).join('') + '</span>' : '';
       return '<button class="pick-card" type="button" data-id="' + id + '" style="--c:' + F.color + '">' +
         '<span class="pick-face">' + F.emoji + '</span>' +
@@ -135,7 +136,8 @@
         '<span class="pick-lane">' + esc(F.lane) + '</span>' +
         moves +
         '<span class="pick-super">⚡ ' + esc(F.super.name) + '</span>' +
-        '<span class="pick-odds">' + (R.hp[id] || R.hp.default) + ' HP · Hide ' + pct(F.hide) +
+        '<span class="pick-odds">' + (R.hp[id] || R.hp.default) + ' HP · ' +
+        (F.brace ? esc(moveOf(id, 'privacy').name) + ' halves dmg' : 'Hide ' + pct(F.hide)) +
         ' · ' + esc(moveOf(id, 'mint').name) + ' ' + pct(F.mint) +
         ' · ' + esc(moveOf(id, 'rug').name) + ' ' + pct(F.rug) + '</span>' +
         '</button>';
@@ -247,9 +249,12 @@
     var F = D.FIGHTERS[fighterId], base = D.DEFAULT_MOVES[move], own = (F.moves && F.moves[move]) || {};
     return {
       name: own.name || base.name,
+      nick: own.nick || '',
       icon: own.icon || base.icon,
       ok: own.ok || base.ok,
       fail: own.fail || base.fail,
+      // Purple hitting someone who hid: their own line, else their success line, else the default.
+      pierce: own.pierce || own.ok || base.pierce,
       // Default Mint/Rug banners put the fighter's joke line underneath.
       failSub: own.fail ? null : move === 'mint' ? F.mintFail : move === 'rug' ? F.rugFail : null
     };
@@ -278,7 +283,8 @@
       $('.chips', hud).innerHTML = chips.join('');
       fighterEl(i).classList.toggle('is-hidden', !!s.hidden);
       bubble(i, S.koProp && S.koProp.who === i ? S.koProp.prop
-        : s.hypnoNext ? '🌀' : s.skipNext === 'sleep' ? '💤' : s.skipNext === 'blind' ? '🙈' : s.hidden ? '🕶️' : '');
+        : s.hypnoNext ? '🌀' : s.skipNext === 'sleep' ? '💤' : s.skipNext === 'blind' ? '🙈'
+        : s.hidden ? '🕶️' : s.braced ? '🛡️' : '');
     }
   }
 
@@ -286,10 +292,10 @@
     var f = S.fight, st = E.playerStatus(f), me = f.f[0], F = D.FIGHTERS[me.id], R = f.rules;
     var locked = S.busy || f.over;
     var subs = {
-      strike: R.strike + ' dmg · always',
-      privacy: 'Hide ' + pct(F.hide),
-      mint: R.mint + ' dmg · ' + pct(F.mint),
-      rug: R.rug + ' dmg · ' + pct(F.rug)
+      strike: E.moveDamage(me.id, 'strike', R) + ' dmg · always',
+      privacy: F.brace ? '½ dmg · always' : 'Hide ' + pct(F.hide),
+      mint: E.moveDamage(me.id, 'mint', R) + ' dmg · ' + pct(F.mint),
+      rug: E.moveDamage(me.id, 'rug', R) + ' dmg · ' + pct(F.rug)
     };
     $all('#controls .move').forEach(function (b) {
       var m = b.dataset.move;
@@ -301,7 +307,7 @@
       } else {
         var mo = moveOf(me.id, m);
         $('.move-icon', b).textContent = mo.icon;
-        $('.move-label', b).textContent = mo.name;
+        $('.move-label', b).innerHTML = esc(mo.name) + (mo.nick ? ' <small class="move-nick">' + esc(mo.nick) + '</small>' : '');
         $('.move-sub', b).textContent = subs[m];
         b.disabled = locked;
       }
@@ -403,7 +409,10 @@
       case 'hide':
         render(e.snap);
         var pv = moveOf(S.fight.f[e.who].id, 'privacy');
-        if (e.ok && pv.ok === D.DEFAULT_MOVES.privacy.ok) {
+        if (e.brace) {
+          banner(pv.ok, 'Half damage this turn');
+          await sleep(1050);
+        } else if (e.ok && pv.ok === D.DEFAULT_MOVES.privacy.ok) {
           popup(e.who, pv.ok, 'good');
           await sleep(650);
         } else if (e.ok) {
@@ -446,7 +455,9 @@
         fighterEl(e.loser).classList.add('is-ko');
         banner(e.timeout ? 'TIME!' : 'K.O.', e.finish, true);
         buzz(e.loser === 0 ? 250 : 80);
-        await sleep(2100);
+        var scene = koSceneFor(e.winner, e.cause);
+        await sleep(scene ? 1400 : 2100);
+        if (scene === 'astronaut') await astronautScene();
         break;
 
       case 'end':
@@ -485,7 +496,7 @@
       return;
     }
     var hm = e.move === 'super' ? null : moveOf(S.fight.f[e.attacker].id, e.move);
-    if (e.pierced) banner("CAN'T HIDE FROM A " + hm.name.toUpperCase(), stolen);
+    if (e.pierced) banner(hm.pierce, stolen || "Hiding didn't help");
     else if (e.move === 'rug' || e.move === 'mint') banner(hm.ok, stolen);
     if (!multi) log(who(e.attacker) + ' hit ' + (e.target === 0 ? 'you' : nm(e.target)) + ' for ' + e.amount + '.');
     await sleep(multi ? 240 : (e.move === 'rug' || e.move === 'mint') ? 1050 : 650);
@@ -617,6 +628,19 @@
   }
 
   // Returns { screen, portrait }: full-screen decoration, and decoration anchored to the fighter's portrait.
+  // Saylor's Sunday tracker: price line up and to the right, orange dots stamp on one by one.
+  function trackerChart() {
+    var pts = [[0, 112], [28, 98], [52, 104], [78, 76], [104, 84], [130, 58], [158, 66], [188, 40], [214, 48], [244, 24], [272, 30], [300, 10]];
+    var dots = [1, 3, 5, 7, 9, 11].map(function (k, n) {
+      var big = k === 11;
+      return '<circle class="odot' + (big ? ' odot-big' : '') + '" cx="' + pts[k][0] + '" cy="' + pts[k][1] + '" r="' + (big ? 9 : 6) +
+        '" style="animation-delay:' + (0.35 + n * 0.17).toFixed(2) + 's"/>';
+    }).join('');
+    return '<div class="tracker"><svg viewBox="-12 -12 324 136" aria-hidden="true">' +
+      '<polyline points="' + pts.map(function (p) { return p.join(','); }).join(' ') + '" fill="none" stroke="#e9e3ff" stroke-width="3" stroke-linejoin="round"/>' +
+      dots + '</svg></div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
       case 'salesman': return salesDeco(ctx);
@@ -628,10 +652,72 @@
       case 'helium': return { screen: '<div class="deco-sun"></div>', portrait: '<div class="dome-beam"></div>' };
       case 'xrparmy': return { screen: '<div class="deco-run">' + spans('🏃', 6) + '</div>' };
       case 'peerreview': return { screen: '<div class="deco-row deco-nerds">' + spans('🤓💻', 5) + '</div>' };
-      case 'nosecondbest': return { screen: '<div class="deco-drop">🐻</div>' };
+      case 'orangedot': return { screen: trackerChart() };
       case 'opreturn': return { screen: '<div class="deco-bytes">OP_RETURN 6a4c50' + randomHex(28) + '…</div>' };
     }
     return {};
+  }
+
+  // The astronaut DJ: white suit, dark visor, headphones, fist up, behind a booth with a ₿-stickered
+  // laptop, speakers on both sides, a giant eye on the big screen behind. mini = just the astronaut.
+  function astronautSVG(mini) {
+    var astro =
+      '<g class="astro">' +
+        '<path d="M136 176 Q136 134 160 132 Q184 134 184 176Z" fill="#f2f2f2" stroke="#222" stroke-width="2"/>' +
+        '<rect class="astro-arm" x="180" y="112" width="11" height="36" rx="5.5" fill="#f2f2f2" stroke="#222" stroke-width="2"/>' +
+        '<circle cx="185" cy="110" r="7" fill="#e6e6e6" stroke="#222" stroke-width="2"/>' +
+        '<circle cx="160" cy="114" r="20" fill="#f7f7f7" stroke="#222" stroke-width="2"/>' +
+        '<ellipse cx="162" cy="117" rx="13.5" ry="10.5" fill="#12141c"/>' +
+        '<ellipse cx="157" cy="112.5" rx="4.5" ry="2" fill="#56607a"/>' +
+        '<path d="M139 112 Q160 80 181 112" fill="none" stroke="#111" stroke-width="5" stroke-linecap="round"/>' +
+        '<rect x="134" y="106" width="9" height="16" rx="3" fill="#111"/><rect x="177" y="106" width="9" height="16" rx="3" fill="#111"/>' +
+      '</g>';
+    if (mini) return '<svg viewBox="128 74 70 104" aria-hidden="true">' + astro + '</svg>';
+    var speaker = function (x) {
+      return '<g class="spk"><rect x="' + x + '" y="118" width="46" height="84" rx="3" fill="#161616" stroke="#000" stroke-width="2"/>' +
+        '<circle cx="' + (x + 23) + '" cy="139" r="8" fill="#2c2c2c"/>' +
+        '<circle cx="' + (x + 23) + '" cy="172" r="15" fill="#cdb57c" stroke="#2c2c2c" stroke-width="4"/></g>';
+    };
+    return '<svg viewBox="0 0 320 232" aria-hidden="true">' +
+      '<defs><linearGradient id="djSun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5d17"/><stop offset="1" stop-color="#2b2008"/></linearGradient>' +
+      '<linearGradient id="djScreen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1e9f8"/><stop offset=".5" stop-color="#bfaedb"/><stop offset="1" stop-color="#57447f"/></linearGradient></defs>' +
+      '<rect width="320" height="232" fill="url(#djSun)"/>' +
+      '<g fill="#c99a3b" stroke="#3a2a08" stroke-width="2"><rect x="4" y="30" width="312" height="10"/><rect x="14" y="40" width="11" height="166"/><rect x="295" y="40" width="11" height="166"/></g>' +
+      '<rect x="60" y="10" width="200" height="98" rx="3" fill="url(#djScreen)" stroke="#111" stroke-width="4"/>' +
+      '<path d="M88 46 Q126 26 168 44" fill="none" stroke="#2e2440" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M94 64 Q128 40 164 62 Q128 80 94 64Z" fill="#fbf8ff" stroke="#3b2f55" stroke-width="2"/>' +
+      '<circle cx="129" cy="61" r="10" fill="#4a2f7a"/><circle cx="129" cy="61" r="4.5" fill="#111"/>' +
+      '<rect x="0" y="204" width="320" height="28" fill="#d8b058"/><rect x="0" y="204" width="320" height="4" fill="#efd08a"/>' +
+      speaker(30) + speaker(244) + astro +
+      '<rect x="108" y="154" width="104" height="9" fill="#1b1b1b" stroke="#000" stroke-width="2"/>' +
+      '<rect x="112" y="163" width="96" height="41" fill="#3a2a17" stroke="#000" stroke-width="2"/>' +
+      '<g stroke="#5a4426" stroke-width="2"><path d="M114 172H206M114 180H206M114 188H206M114 196H206"/></g>' +
+      '<path d="M116 154 L122 130 L158 130 L154 154Z" fill="#a7b0ba" stroke="#222" stroke-width="1.5"/>' +
+      '<circle cx="146" cy="140" r="6" fill="#f7931a"/><text x="146" y="143" font-size="8" font-weight="900" text-anchor="middle" fill="#fff">₿</text>' +
+      '<circle cx="131" cy="145" r="4.5" fill="#2f6fed"/><rect x="127" y="134" width="9" height="5" fill="#e33"/>' +
+      '</svg>';
+  }
+
+  function astronautScene() {
+    return new Promise(function (resolve) {
+      var el = $('#koscene');
+      $('.ks-art', el).innerHTML = astronautSVG(false);
+      el.hidden = false;
+      void el.offsetWidth;
+      el.classList.add('play');
+      var done = false;
+      var timer = later(finish, 3000);
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        el.onclick = null;
+        el.classList.remove('play');
+        el.hidden = true;
+        resolve();
+      }
+      later(function () { if (!done) el.onclick = finish; }, 600);
+    });
   }
 
   function cutIn(i, ctx) {
@@ -687,7 +773,8 @@
       mode: o.mode, n: o.n, player: f.f[0].id, cpu: f.f[1].id,
       won: f.winner === 0, turns: f.turn, hp: f.f[f.winner].hp, finish: f.finish,
       grid: f.grid.slice(), rules: f.rules.id, seed: f.seed, moves: f.moves.join(''),
-      koProp: koPropFor(f.winner, f.finishCause)
+      koProp: koPropFor(f.winner, f.finishCause),
+      koScene: koSceneFor(f.winner, f.finishCause)
     };
     if (o.mode === 'daily') {
       if (!store.get('daily.' + o.n)) {
@@ -732,6 +819,12 @@
       F.emoji + '</span>' + (prop ? '<i class="face-prop">' + prop + '</i>' : '') + '</span>';
   }
 
+  // Some Super KOs get an extra scene (Saylor: the astronaut DJ).
+  function koSceneFor(winner, cause) {
+    if (cause !== 'super' || !S.fight) return null;
+    return D.FIGHTERS[S.fight.f[winner].id].super.koScene || null;
+  }
+
   // Some Supers leave a prop on the loser (Toly's phone). Only when the Super did the KO.
   function koPropFor(winner, cause) {
     if (cause !== 'super' || !S.fight) return null;
@@ -746,6 +839,12 @@
     t.textContent = res.won ? 'YOU WIN' : 'YOU LOSE';
     t.classList.toggle('lose', !res.won);
     $('#res-faces').innerHTML = face(P, !res.won, !res.won && res.koProp) + '<span>VS</span>' + face(C, res.won, res.won && res.koProp);
+    // The astronaut stays in the background of the result card, headphones still on.
+    var astro = $('.res-astro');
+    if (astro) astro.remove();
+    if (res.koScene === 'astronaut') {
+      $('.result-card').insertAdjacentHTML('afterbegin', '<div class="res-astro">' + astronautSVG(true) + '</div>');
+    }
     $('#res-line').textContent = res.won
       ? P.name + ' beat ' + C.name + ' in ' + res.turns + ' turns · ' + res.hp + ' HP left'
       : C.name + ' beat your ' + P.name + ' in ' + res.turns + ' turns';
@@ -817,7 +916,9 @@
     $('#help-body').innerHTML =
       '<p>You and the CPU each pick a move at the same time. First to 0 HP loses.</p>' +
       '<h3>The five buttons</h3>' +
-      '<p>Some fighters have their own names for these (Mert\'s red button is Shitpost). Same color, same job.</p><ul>' +
+      '<p>Some fighters have their own names for these (Mert\'s red button is Shitpost). Same color, same job. ' +
+      'Damage and odds are on each button, and a few fighters hit harder or softer than the numbers below. ' +
+      'Saylor\'s blue button (STRF) never hides: it always works and halves the damage instead.</p><ul>' +
       '<li><b>🔴 Red (Strike)</b>: ' + R.strike + ' damage. Always hits unless they hid. The honest move.</li>' +
       '<li><b>🔵 Blue (Privacy)</b>: try to hide (odds depend on your fighter). Hidden means red and pink miss you' +
         (R.rugPiercesHidden ? '. Purple still gets you.' : ', and so does purple.') + '</li>' +

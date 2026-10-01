@@ -177,6 +177,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .pick-odds { font-size: .72rem; color: var(--muted); }
 .pick-moves { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0; }
 .pick-moves span { font-size: .68rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; color: #fff; }
+.pick-moves small { font-weight: 600; opacity: .8; }
 .role-strike, .f-chip.role-strike { background: var(--role-strike); }
 .role-privacy, .f-chip.role-privacy { background: var(--role-privacy); }
 .role-mint, .f-chip.role-mint { background: var(--role-mint); }
@@ -447,6 +448,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .move-icon { grid-row: span 2; font-size: 1.6rem; }
 .move-label { font-family: var(--display); font-size: 1rem; line-height: 1; }
 .move-sub { font-size: .72rem; opacity: .85; font-weight: 600; }
+.move-nick { font: 700 .68rem var(--body); opacity: .8; text-transform: none; letter-spacing: 0; }
 .move-strike { background: linear-gradient(#e8553f, #b8321f); }
 .move-privacy { background: linear-gradient(#2a8fb8, #1b5f86); }
 .move-mint { background: linear-gradient(#d0479a, #962f6e); }
@@ -562,6 +564,54 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   color: #7CFF9B; background: #000c; padding: 6px 10px; border-radius: 6px;
   animation: bytes 2.4s linear forwards;
 }
+
+/* Saylor: Another Orange Dot. His Sunday tracker, dots stamping onto the line. */
+.cutin.sup-orangedot { justify-content: flex-end; padding-bottom: 8vh; }
+.tracker {
+  position: absolute; left: 6%; right: 6%; top: 5%; height: 26%;
+  padding: 10px 12px;
+  border: 5px solid #111; border-radius: 10px;
+  background:
+    repeating-linear-gradient(90deg, #ffffff10 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(0deg, #ffffff10 0 1px, transparent 1px 30px),
+    #141018;
+  box-shadow: 0 0 30px #f7931a55;
+}
+.tracker svg { width: 100%; height: 100%; overflow: visible; }
+.odot { fill: #f7931a; stroke: #111; stroke-width: 2; transform-box: fill-box; transform-origin: center; }
+.odot-big { filter: drop-shadow(0 0 6px #ffb347); }
+.cutin.play .odot { animation: stamp .35s cubic-bezier(.3, 1.8, .5, 1) both; }
+
+/* Saylor's Super KO: the astronaut DJ. */
+.koscene {
+  position: fixed; inset: 0; z-index: 55;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  padding: 16px;
+  background: #0b0a12;
+  cursor: pointer;
+  text-align: center;
+}
+.ks-art { width: min(94vw, 520px); }
+.ks-art svg { display: block; width: 100%; height: auto; border: 4px solid #111; border-radius: 10px; }
+.ks-small { font: 900 clamp(14px, 4.4vw, 22px) var(--body); letter-spacing: .08em; color: #fff; opacity: 0; }
+.ks-big {
+  font-family: var(--display);
+  font-size: clamp(30px, 10vw, 56px);
+  line-height: 1;
+  color: var(--gold);
+  -webkit-text-stroke: 2px var(--line);
+  text-shadow: 0 5px 0 #b3261e, 0 9px 0 var(--line);
+  transform: rotate(-3deg);
+  opacity: 0;
+}
+.koscene.play .ks-small { animation: fadeUp .35s .35s ease-out forwards; }
+.koscene.play .ks-big { animation: slamSmall .45s 1.1s cubic-bezier(.2, 1.4, .4, 1) both; }
+.astro { animation: nod .46s ease-in-out infinite; }
+.astro-arm { transform-box: fill-box; transform-origin: 50% 100%; animation: pump .46s ease-in-out infinite; }
+.spk { transform-box: fill-box; transform-origin: 50% 100%; animation: thump .46s ease-out infinite; }
+.result-card { position: relative; overflow: hidden; }
+.res-astro { position: absolute; right: -4px; top: -2px; width: 70px; opacity: .9; transform: rotate(10deg); pointer-events: none; }
+.res-astro svg { width: 100%; height: auto; display: block; }
 
 /* Mert: CEO of Helium. Sun catches the dome, a beam sweeps out toward the opponent. */
 .dome-beam {
@@ -787,12 +837,17 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   25% { opacity: 1; }
   100% { opacity: .9; transform: scaleX(var(--dir)) rotate(12deg) scaleY(1); }
 }
+@keyframes stamp { from { opacity: 0; transform: scale(2.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes nod { 50% { transform: translateY(3px); } }
+@keyframes pump { 50% { transform: rotate(-14deg); } }
+@keyframes thump { 0% { transform: scale(1.05); } 100% { transform: scale(1); } }
 @keyframes glow { from { filter: brightness(1); } to { filter: brightness(1.35); } }
 @keyframes pulse { 50% { filter: brightness(1.15); transform: scale(1.015); } }
 
 @media (prefers-reduced-motion: reduce) {
   .f-bob, .title-roster span, .move-super.ready, .blocks.full i.on, .deco-sun, .deco-run, .deco-bytes,
-  .dancer .dz, .fighter.dance .f-bob, .f-bubble.spin, .fighter.hurt .f-sprite, .cutin-stripes {
+  .dancer .dz, .fighter.dance .f-bob, .f-bubble.spin, .fighter.hurt .f-sprite, .cutin-stripes,
+  .astro, .astro-arm, .spk {
     animation: none !important;
   }
   .fighter { transition: none; }
