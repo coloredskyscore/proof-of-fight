@@ -520,7 +520,9 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   text-shadow: 0 5px 0 var(--line);
   transform: rotate(-4deg);
 }
-.cutin-name.flicker { color: #9ff; text-shadow: -3px 0 0 #f0f, 3px 0 0 #0ff, 0 5px 0 var(--line); animation: glitch .17s steps(2) infinite; }
+.cutin-name.flicker { color: #9ff; text-shadow: -3px 0 0 #f0f, 3px 0 0 #0ff, 0 5px 0 var(--line); }
+.cutin-name.glitch { animation: glitch .16s steps(2) 1; }
+.cutin-name.lock { animation: lockPop .4s cubic-bezier(.2, 1.5, .4, 1); }
 .cutin-who { font: 900 1rem var(--body); letter-spacing: .2em; margin-top: 8px; color: #fff; text-shadow: 0 2px 0 #000; }
 .cutin-line {
   position: relative;
@@ -538,8 +540,8 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .cutin.play .cutin-portrait { animation: slideIn .35s cubic-bezier(.2, 1.3, .4, 1) both; }
 .cutin.play.from-c .cutin-portrait { animation-name: slideInR; }
 .cutin.play .cutin-card { animation: slamSmall .45s .15s cubic-bezier(.2, 1.4, .4, 1) both; }
-.cutin.play .cutin-line { animation: fadeUp .35s .6s ease-out forwards; }
-.cutin.play .cutin-flash { animation: flash 2.6s linear forwards; }
+.cutin.play .cutin-line { animation: fadeUp .35s var(--line-delay, .6s) ease-out forwards; }
+.cutin.play .cutin-flash { animation: flash var(--dur, 2.6s) linear forwards; }
 .cutin-deco { position: absolute; inset: 0; pointer-events: none; }
 
 .deco-row { position: absolute; left: 0; right: 0; top: 6%; text-align: center; font-size: 42px; letter-spacing: 4px; }
@@ -622,7 +624,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   transform-origin: 0 50%;
   opacity: 0;
 }
-.cutin.play .dome-beam { animation: beamSweep 1.3s .55s ease-out both; }
+.cutin.play .dome-beam { animation: beamSweep 1.3s var(--lock, .55s) ease-out both; }
 
 /* Toly: Second Best Salesman. Brochure of phone bricks fans open, one gets slapped in, airdrop confetti. */
 .cutin { --dir: 1; }
@@ -832,6 +834,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 }
 @keyframes boxDrop { from { transform: translateY(-120vh) rotate(-25deg); } to { transform: rotate(-6deg); } }
 @keyframes glitch { 50% { transform: rotate(-4deg) skewX(-12deg) translateX(4px); } }
+@keyframes lockPop { 0% { transform: rotate(-4deg) scale(1.5); } 100% { transform: rotate(-4deg) scale(1); } }
 @keyframes beamSweep {
   0% { opacity: 0; transform: scaleX(var(--dir)) rotate(-40deg) scaleY(.4); }
   25% { opacity: 1; }
