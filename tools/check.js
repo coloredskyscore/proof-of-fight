@@ -253,6 +253,29 @@ test('STRC KO reads STRETCH; Saylor beating Toly reads THERE IS NO SECOND BEST',
   assert.strictEqual(g.finish, 'THERE IS NO SECOND BEST');
 });
 
+test('Charles: Super KO reads LFG 2027, Glacier Drop KO reads BANK THE UNBANKED', function () {
+  var f = E.newFight({ player: 'charles', cpu: 'adam', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].hp = 10;
+  rig(f, [cpuRoll('adam', 'strike')]);
+  E.playTurn(f, 'super');
+  assert.strictEqual(f.finish, 'LFG 2027');
+  var g = E.newFight({ player: 'charles', cpu: 'adam', seed: 1 });
+  g.f[1].hp = 5;
+  rig(g, [cpuRoll('adam', 'strike')]);
+  E.playTurn(g, 'strike');
+  assert.strictEqual(g.finish, 'BANK THE UNBANKED');
+});
+
+test('Charles beating Mert, any way, reads BIGGER THAN ZOLANA', function () {
+  var f = E.newFight({ player: 'charles', cpu: 'mert', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].hp = 10;
+  rig(f, [cpuRoll('mert', 'strike')]);
+  E.playTurn(f, 'super');
+  assert.strictEqual(f.finish, 'BIGGER THAN ZOLANA');
+});
+
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {
   var rng = E.makeRng(99);
   for (var n = 0; n < 10000; n++) {
