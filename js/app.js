@@ -16,8 +16,13 @@
     });
   }
   function pct(p) { return Math.round(p * 100) + '%'; }
+  // Share text: "HATER CONVERTED" -> "Hater Converted", but acronyms stay as written ("LFG 2027").
+  var KEEP_CAPS = ['LFG', 'ZK', 'MSTR', 'STRC', 'RPCS', 'JPEG', 'XRP', 'NIGHT', 'OP_RETURN'];
   function titleCase(s) {
-    return s.toLowerCase().replace(/(^|[\s-])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
+    return s.split(' ').map(function (w) {
+      if (KEEP_CAPS.indexOf(w.replace(/[^A-Z_]/g, '')) >= 0) return w;
+      return w.toLowerCase().replace(/(^|-)([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
+    }).join(' ');
   }
 
   // localStorage can throw (private mode, blocked storage). The game still works, it just forgets.
@@ -327,7 +332,7 @@
     var cpu = f.f[1], note = '';
     if (!f.over) {
       if (st.skipped === 'blind') note = "🙈 BLINDED by the dome. You skip this turn.";
-      else if (st.skipped === 'sleep') note = '💤 You fell ASLEEP during the peer review. You skip this turn.';
+      else if (st.skipped === 'sleep') note = '💤 Lights out at midnight. You fell ASLEEP and skip this turn.';
       else if (st.hypnotized) {
         note = '🌀 HYPNOTIZED: ' + moveOf(me.id, 'strike').name + ', ' + moveOf(me.id, 'mint').name + ' and ' +
           moveOf(me.id, 'rug').name + ' hit YOU this turn. ' + moveOf(me.id, 'privacy').name + ' or Super is safe.';
@@ -408,9 +413,11 @@
       case 'miss':
         lunge(e.attacker);
         await sleep(170);
-        popup(e.target, 'MISS', 'miss');
+        var dodge = D.FIGHTERS[S.fight.f[e.target].id].dodgeLine; // Charles: I AM NOT ACCOUNTABLE
+        if (dodge) banner(dodge, (e.target === 0 ? 'You' : nm(e.target)) + ' dodged it');
+        else popup(e.target, 'MISS', 'miss');
         log(who(e.attacker) + ' whiffed. ' + (e.target === 0 ? "You're" : nm(e.target) + ' is') + ' hidden.');
-        await sleep(700);
+        await sleep(dodge ? 1150 : 700);
         break;
 
       case 'hide':
@@ -652,6 +659,19 @@
       dots + '</svg></div>';
   }
 
+  // Charles: the peer reviewers nod along, the lecture types out, and the lights go out mid-word.
+  function midnightDeco(lecture) {
+    var stars = '';
+    for (var k = 0; k < 26; k++) {
+      stars += '<i style="left:' + Math.round(Math.random() * 100) + '%;top:' + Math.round(Math.random() * 70) +
+        '%;animation-delay:' + (1.4 + Math.random() * 0.6).toFixed(2) + 's"></i>';
+    }
+    return '<div class="deco-row deco-nerds">' + spans('🤓💻', 5) + '</div>' +
+      '<div class="lecture"><span style="--chars:' + lecture.length + '">' + esc(lecture) + '</span></div>' +
+      '<div class="blackout"></div>' +
+      '<div class="night"><div class="moon"></div>' + stars + '</div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
       case 'salesman': return salesDeco(ctx);
@@ -662,7 +682,7 @@
         };
       case 'helium': return { screen: '<div class="deco-sun"></div>', portrait: '<div class="dome-beam"></div>' };
       case 'xrparmy': return { screen: '<div class="deco-run">' + spans('🏃', 6) + '</div>' };
-      case 'peerreview': return { screen: '<div class="deco-row deco-nerds">' + spans('🤓💻', 5) + '</div>' };
+      case 'midnight': return { screen: midnightDeco(D.FIGHTERS.charles.super.lecture) };
       case 'orangedot': return { screen: trackerChart() };
       case 'opreturn': return { screen: '<div class="deco-bytes">OP_RETURN 6a4c50' + randomHex(28) + '…</div>' };
     }
@@ -750,6 +770,7 @@
       nameEl.className = 'cutin-name';
       el.style.removeProperty('--lock');
       el.style.removeProperty('--line-delay');
+      el.style.removeProperty('--card-delay');
       if (sup.flicker) {
         var lockAt = FLICKER_START + sup.flicker.length * FLICKER_STEP;
         nameEl.textContent = sup.flicker[0];
@@ -767,6 +788,12 @@
         el.style.setProperty('--lock', (lockAt / 1000) + 's');
         el.style.setProperty('--line-delay', ((lockAt + 150) / 1000) + 's');
         duration = lockAt + 1700;
+      }
+      // Supers with their own pacing (Charles: the name card waits for the lights to go out).
+      if (sup.timing) {
+        el.style.setProperty('--card-delay', sup.timing.card + 's');
+        el.style.setProperty('--line-delay', sup.timing.line + 's');
+        duration = sup.timing.dur * 1000;
       }
       el.style.setProperty('--dur', (duration / 1000) + 's');
       $('.cutin-who', el).textContent = F.name.toUpperCase();

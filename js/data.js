@@ -147,16 +147,28 @@
       }
     },
     charles: {
-      id: 'charles', name: 'Charles', lane: 'Peer review / long speeches',
+      id: 'charles', name: 'Charles', lane: 'Midnight / Dire Wolf Mode',
       color: '#ef4444', emoji: '🤠',
-      hide: 0.50, mint: 0.40, rug: 0.25,
-      mintFail: 'PEER REVIEWERS HATED IT', rugFail: 'ROADMAP SAYS Q4',
+      hide: 0.55, mint: 0.40, rug: 0.25,
       ai: { strike: 2, privacy: 3, mint: 3, rug: 2 },
+      moves: {
+        strike:  { name: 'Glacier Drop', icon: '🧊', ko: 'BANK THE UNBANKED' },
+        privacy: { name: 'ZK Proof',     icon: '🔏', ok: 'SELECTIVE DISCLOSURE', fail: 'WELCOME TO FUD LAND' },
+        mint:    { name: 'Peer Review',  icon: '📜', ok: 'PEER REVIEWED',        fail: 'REVISE AND RESUBMIT' },
+        rug:     { name: 'Leios',        icon: '✨', ok: 'THE MAGIC OF LEIOS',   fail: 'ROADMAP SAYS Q4' }
+      },
+      dodgeLine: 'I AM NOT ACCOUNTABLE', // when an attack misses him because he hid
       super: {
-        id: 'peerreview', name: 'Peer Review', prop: '💻',
-        line: 'SO, TO GIVE SOME CONTEXT, BACK IN 2015 WE—',
-        blurb: 'Tiny hit + Sleep (skip next turn) + they lose 3 Blocks', finish: 'PEER REVIEWED'
-      }
+        id: 'midnight', name: 'Midnight Express', prop: '🐺',
+        // The lecture types out under the peer reviewers, then the lights go out mid-word.
+        lecture: 'SO, TO GIVE SOME CONTEXT, BACK IN 2015 WE—',
+        line: 'BIGGER THAN ZCASH',
+        timing: { card: 1.5, line: 1.95, dur: 3.4 }, // seconds: name card and line wait for the blackout
+        blurb: 'Hit + Sleep (skip next turn) + they lose 3 Blocks', finish: 'LFG 2027',
+        cpuAfter: "I'M HERE TO STAY",
+        skipLine: 'DEAL WITH IT.'
+      },
+      rivalKo: { mert: 'BIGGER THAN ZOLANA' }
     },
     saylor: {
       id: 'saylor', name: 'Saylor', lane: 'Tank / preferred stock',
@@ -192,7 +204,7 @@
     salesman:     { dmg: 35 },
     helium:       { dmg: 8, skip: 'blind' },
     xrparmy:      { dmg: 5, hits: 5 },
-    peerreview:   { dmg: 15, skip: 'sleep', drain: 3 },
+    midnight:     { dmg: 15, skip: 'sleep', drain: 3 },
     orangedot:    { dmg: 25, hodl: 2 },
     opreturn:     { dmg: 25, prune: true },
     dance:        { dmg: 15, hypno: true }

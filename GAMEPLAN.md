@@ -11,6 +11,14 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 2, 2026 (later): Charles's Midnight kit
+
+Full concept and build notes: [docs/supers/charles.md](docs/supers/charles.md).
+- **Buttons:** 🧊 Glacier Drop (KO: `BANK THE UNBANKED`) · 🔏 ZK Proof, now 55% (`SELECTIVE DISCLOSURE` / `WELCOME TO FUD LAND`) · 📜 Peer Review (`PEER REVIEWED` / `REVISE AND RESUBMIT`) · ✨ Leios (`THE MAGIC OF LEIOS` / `ROADMAP SAYS Q4`).
+- **Super: Midnight Express** replaces Peer Review, same effect (15 dmg + Sleep + they lose 3 Blocks): the peer reviewers nod, his sentence types out, the lights go out mid-word, then `MIDNIGHT EXPRESS` / `BIGGER THAN ZCASH`. KO `LFG 2027`.
+- `I AM NOT ACCOUNTABLE` when an attack misses him; `I'M HERE TO STAY` after CPU Charles's Super; `DEAL WITH IT.` on the opponent's sleeping turn; `BIGGER THAN ZOLANA` when he beats Mert.
+- Share text keeps acronyms as written (`LFG 2027`, not "Lfg 2027").
+
 ### Oct 2, 2026: MSTR replaces STRD on Saylor's purple button
 
 📈 **MSTR** *Strategy*: the common stock gets the big-gamble button. **High beta:** when it lands it rolls anywhere from 15 to 45 damage (average 30, the same as STRD had, so balance holds: still 75%). 25%, steals 2 Blocks, hits through dodges. Lands: `INFINITE MONEY GLITCH` with a green `MSTR ▲ 37%` ticker over Saylor (the roll is the day's move). Flops: `mNAV BELOW 1` / `MSTR ▼`. KO with it: `NUMBER GO UP`. STRD is retired; its lines stay in docs/supers/saylor.md.
@@ -147,6 +155,7 @@ Every fighter has the same five buttons: same colors, same jobs. A fighter can *
 |---|---|---|---|---|
 | Mert | 🗯️ Shitpost | 🕶️ Zolana | 🪙 Memecoin | ⛔ Rate Limit |
 | Saylor | 📬 STRC | 🛡️ STRF: *always works, halves damage, +1 Block, never hides* | 🔄 STRK: *20 dmg* | 📈 MSTR: *15–45 dmg, rolled each time* |
+| Charles | 🧊 Glacier Drop | 🔏 ZK Proof *(55%)* | 📜 Peer Review | ✨ Leios |
 
 The rest of this section uses the generic names.
 
@@ -211,7 +220,7 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 | `garlinghouse` | Garlinghouse | @bgarlinghouse | Lawyers and liquidity |
 | `vitalik` | Vitalik | @VitalikButerin | Research / questionable dance moves |
 | `adam` | Adam Back | @adam3us | Cypherpunk grind |
-| `charles` | Charles | @IOHK_Charles | Peer review / long speeches |
+| `charles` | Charles | @IOHK_Charles | Midnight / Dire Wolf Mode |
 | `saylor` | Saylor | @saylor | Tank / preferred stock |
 
 Anatoly Yakovenko is **Toly** in-game. Not "Antonoly."
@@ -228,7 +237,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 |---|---|---|
 | Adam Back | 70 | This is his whole personality |
 | Vitalik | 55 | Privacy researcher, public face |
-| Charles | 50 | Long paper, mid opsec |
+| Charles | 55 | ZK Proof: `SELECTIVE DISCLOSURE`. Selective disclosure is the whole pitch |
 | Mert | 45 | Infra guy who still lives on mainnet Twitter |
 | Toly | 35 | Transparent high-performance capitalist |
 | Garlinghouse | 30 | The lawsuit is the spotlight |
@@ -241,7 +250,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Garlinghouse | 55 | `UTILITY TBD` |
 | Toly | 50 | `FLOOR IS LATENCY` |
 | Mert | 45 | `RIGHT-CLICK SAVED` |
-| Charles | 40 | `PEER REVIEWERS HATED IT` |
+| Charles | 40 | Peer Review: `REVISE AND RESUBMIT` |
 | Vitalik | 35 | `SOULBOUND AND ALSO UGLY` |
 | Saylor | 45 | STRK: `STILL PREFERRED` (20 dmg) |
 | Adam Back | 15 | `THAT'S NOT WHAT BITCOIN IS FOR` |
@@ -253,7 +262,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Mert | 40 | `DEV WALLET WAS A DECOY` |
 | Garlinghouse | 35 | `SETTLEMENT PENDING` |
 | Toly | 30 | `OUTAGE HIT THE BRIDGE` |
-| Charles | 25 | `ROADMAP SAYS Q4` |
+| Charles | 25 | Leios: `ROADMAP SAYS Q4` |
 | Vitalik | 20 | `PUBLIC GOODS ONLY` |
 | Saylor | 25 | MSTR: `mNAV BELOW 1` (15–45 dmg) |
 | Adam Back | 10 | `CAN'T RUG A HASH` |
@@ -280,16 +289,16 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Mert | **CEO of Helium** ([doc](docs/supers/mert.md)) | Name card flickers HELIUS / HELIUM / HIVEMAPPER, then locks. Sun catches the dome, beam sweeps their eyes. "THE RPCS DID THIS" | **8 dmg + Blind** (they skip their next turn; `WHO WAS THAT`) | TRILLIONS |
 | Toly | **Second Best Salesman** ([doc](docs/supers/toly.md)) | A brochure of phone bricks fans open, he slaps a `BUY NOW` phone into them, airdrop confetti. "APPLE + SOLANA MOBILE: 3.469 BILLION" | **35 dmg**, one hit | HATER CONVERTED |
 | Garlinghouse | **XRP Army** | Polo-shirt normies jog across and body-check | **5 hits × 5 dmg = 25** | ARMY SETTLEMENT |
-| Charles | **Peer Review** | Five nerds with laptops; Charles starts a sentence that does not end | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** (peer review delays the roadmap) | PEER REVIEWED |
+| Charles | **Midnight Express** ([doc](docs/supers/charles.md)) | Five peer reviewers nod while his sentence types out; the lights go out mid-word; moon, stars, "BIGGER THAN ZCASH" | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** | LFG 2027 |
 | Saylor | **Another Orange Dot** ([doc](docs/supers/saylor.md)) | Orange dots stamp one by one onto his tracker chart. "A LITTLE MORE ORANGE". On a KO: the astronaut DJ, `FIAT AS A STORE OF VALUE` / `WE CALL THEM POOR` | **25 dmg + HODL** (Saylor takes half damage this turn and next) | WE CALL THEM POOR |
 | Adam Back | **OP_RETURN** | Long-barreled gun etched `OP_RETURN`, fires an **80 BYTES** blob | **Prune** (strips their HODL) **then 25 dmg** | 80 BYTES OF PAIN |
 | Vitalik | **Ultra Sound Moves** | A big screen behind him full of dancing bears, arms locked straight out, swaying. Vitalik in front doing the exact same awkward dance. "DON'T LOOK AT THE DANCE." | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | HYPNOTIZED |
 
 Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY`, hitting yourself `SELF-REKT`.
 
-**Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`.
+**Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`, Charles beating Mert reads `BIGGER THAN ZOLANA`.
 
-**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`.
+**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`.
 
 **CPU after-Super lines** show as a banner after a CPU's Super lands (not when it's the KO): CPU Toly says `SALES GOAL OF THE YEAR ACCOMPLISHED.`
 
@@ -481,6 +490,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Toly's Super: **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
 - Mert's Super: **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
 - Saylor's kit: **STRC / STRF / STRK / MSTR** + **Another Orange Dot** (`WE CALL THEM POOR`)
+- Charles's kit: **Glacier Drop / ZK Proof / Peer Review / Leios** + **Midnight Express** (`LFG 2027`)
 - Fighters can rename their buttons; jobs, colors and numbers stay shared
 - Roster: Toly, Mert, Garlinghouse, Vitalik, Adam Back, Charles, Saylor
 - Share: emoji grid (now), encoded result URL (next)
