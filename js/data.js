@@ -148,7 +148,7 @@
       dodgeLine: 'SOUNDPROOF WALL', // the hit did not travel
       super: {
         // The badger dance: a green screen of badgers and a stage of people, arms straight out, flapping in sync.
-        id: 'dance', name: 'Ultra Sound Moves', prop: '🕺',
+        id: 'dance', name: 'Badger Dance', prop: '🕺',
         line: "DON'T LOOK AT THE DANCE.",
         blurb: 'Small hit + Hypnotized (their next attack hits themselves)', finish: 'THERE IS ONLY LOVE',
         cpuAfter: 'MILADY IS BACK',

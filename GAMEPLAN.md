@@ -11,9 +11,9 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
-### Oct 2, 2026 (late night): Vitalik's kit and the badger dance
+### Oct 2, 2026 (late night): Vitalik's kit and the Badger Dance
 
-Full concept and build notes: [docs/supers/vitalik.md](docs/supers/vitalik.md).
+Full concept and build notes: [docs/supers/vitalik.md](docs/supers/vitalik.md). His Super is renamed from Ultra Sound Moves to **Badger Dance**.
 - **The cut-in is now the badger dance** from the conference video: a green screen of black-and-white badgers and a stage of people in lanyards, Vitalik front and center, everyone's arms straight out and flapping in sync. Same hypnosis effect (15 dmg + Hypnotized).
 - When someone he hypnotized hits themselves: `DEFENSIVE ACCELERATION` (d/acc). Super KO `THERE IS ONLY LOVE`, loser wears the Milady PFP (🎀). `MILADY IS BACK` after CPU Vitalik's Super.
 - **Buttons:** 📝 Essay Drop (KO: `READ THE BLOG POST`) · 🫥 Privacy Pool (`FIGHT CHAT CONTROL` / `I CHOOSE BALANCE`) · 🧸 Soulbound (`NON-TRANSFERABLE` / `SOULBOUND AND ALSO UGLY`) · 🌱 Public Goods (`QUADRATIC FUNDING` / `UNDERFUNDED`). `SOUNDPROOF WALL` when an attack misses him. He holds a 🍵 on stage.
@@ -318,7 +318,7 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Charles | **Midnight Express** ([doc](docs/supers/charles.md)) | Five peer reviewers nod while his sentence types out; the lights go out mid-word; moon, stars, "BIGGER THAN ZCASH" | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** | LFG 2027 |
 | Saylor | **Another Orange Dot** ([doc](docs/supers/saylor.md)) | Orange dots stamp one by one onto his tracker chart. "A LITTLE MORE ORANGE". On a KO: the astronaut DJ, `FIAT AS A STORE OF VALUE` / `WE CALL THEM POOR` | **25 dmg + HODL** (Saylor takes half damage this turn and next) | WE CALL THEM POOR |
 | Adam Back | **OP_RETURN** ([doc](docs/supers/adam.md)) | Long-barreled gun etched `OP_RETURN` fires a data blob. "FORK AROUND AND FIND OUT". `SALTY TEARS` if it strips a HODL | **Prune** (strips their HODL) **then 25 dmg** | CHECKMATE FORKERS |
-| Vitalik | **Ultra Sound Moves** ([doc](docs/supers/vitalik.md)) | The badger dance: a green screen of badgers and a stage of people in lanyards, arms straight out, flapping in sync; Vitalik front and center. "DON'T LOOK AT THE DANCE." Their self-hits read `DEFENSIVE ACCELERATION` | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | THERE IS ONLY LOVE |
+| Vitalik | **Badger Dance** ([doc](docs/supers/vitalik.md)) | The badger dance: a green screen of badgers and a stage of people in lanyards, arms straight out, flapping in sync; Vitalik front and center. "DON'T LOOK AT THE DANCE." Their self-hits read `DEFENSIVE ACCELERATION` | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | THERE IS ONLY LOVE |
 
 Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY`, hitting yourself `SELF-REKT`.
 
@@ -514,7 +514,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Buttons: **Strike / Privacy / Mint / Rug / Super** (10 / hide / 24 / 36 / Super)
 - Rug hits Hidden targets
 - Super: named cutscene, 2–3 seconds, never whiffs, can't be dodged; CPU fires at 10
-- Vitalik's Super: **Ultra Sound Moves** (the badger dance; hypnotizes; `THERE IS ONLY LOVE`). Buttons: **Essay Drop / Privacy Pool / Soulbound / Public Goods**
+- Vitalik's Super: **Badger Dance** (hypnotizes; `THERE IS ONLY LOVE`). Buttons: **Essay Drop / Privacy Pool / Soulbound / Public Goods**
 - Toly's Super: **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
 - Mert's Super: **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
 - Saylor's kit: **STRC / STRF / STRK / MSTR** + **Another Orange Dot** (`WE CALL THEM POOR`)

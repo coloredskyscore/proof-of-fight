@@ -68,4 +68,4 @@ A fighter can have their own damage or odds on a button (Saylor's STRK does 20 a
 | Charles | Midnight Express | yes | [charles.md](charles.md) |
 | Garlinghouse | XRP Army | yes | [garlinghouse.md](garlinghouse.md) |
 | Adam Back | OP_RETURN | yes | [adam.md](adam.md) |
-| Vitalik | Ultra Sound Moves (the badger dance) | yes | [vitalik.md](vitalik.md) |
+| Vitalik | Badger Dance | yes | [vitalik.md](vitalik.md) |

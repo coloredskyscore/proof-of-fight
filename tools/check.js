@@ -74,7 +74,7 @@ test('CEO of Helium blinds: the target skips its NEXT turn only', function () {
   assert(f.f[0].hp < hpBefore, 'CPU acts again on turn 3');
 });
 
-test('Ultra Sound Moves: hypnotized attacker hits itself next turn', function () {
+test('Badger Dance: hypnotized attacker hits itself next turn', function () {
   var f = E.newFight({ player: 'vitalik', cpu: 'charles', seed: 1 });
   f.f[0].blocks = 10;
   rig(f, [

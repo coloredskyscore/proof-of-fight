@@ -1,4 +1,4 @@
-# Vitalik kit — Ultra Sound Moves (the badger dance)
+# Vitalik kit — Badger Dance
 
 **Fighter:** Vitalik (`vitalik`)
 **Status:** Built Oct 2, 2026. Keeps the hypnosis dance (the user's original idea), now redrawn as the conference badger dance; new buttons and lines from Grok's research.
@@ -39,7 +39,7 @@ He should stay the only Super that deals no damage. Dance, wall goes up, teddy e
 
 - **When someone he hypnotized hits themselves:** `DEFENSIVE ACCELERATION` (sub: "Saylor hit themselves"). Replaces the generic SELF-REKT for his hypnosis only. Passive defense where the attack bounces back.
 
-**The cut-in is the badger dance**, redrawn from the user's screenshot of the conference video: a bright green screen full of black-and-white cartoon badgers (different sizes, one tiny one up in the corner), arms straight out, flapping up and down; in front, a stage of people in conference lanyards doing the same move, back row in the gaps of the front row, Vitalik front and center in a blue tee with a white diamond. Everyone flaps in sync. Name card `ULTRA SOUND MOVES`, line `DON'T LOOK AT THE DANCE.`
+**The cut-in is the badger dance**, redrawn from the user's screenshot of the conference video: a bright green screen full of black-and-white cartoon badgers (different sizes, one tiny one up in the corner), arms straight out, flapping up and down; in front, a stage of people in conference lanyards doing the same move, back row in the gaps of the front row, Vitalik front and center in a blue tee with a white diamond. Everyone flaps in sync. Name card `BADGER DANCE` (renamed from Ultra Sound Moves at the user's request), line `DON'T LOOK AT THE DANCE.`
 
 **Buttons** (numbers unchanged; Grok didn't name buttons, these are drafted and approved):
 
