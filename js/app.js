@@ -453,6 +453,12 @@
 
       case 'status':
         render(e.snap);
+        var pruneLine = e.status === 'pruned' && D.FIGHTERS[S.fight.f[1 - e.who].id].super.pruneLine;
+        if (pruneLine) {
+          banner(pruneLine, whose(e.who) + ' HODL pruned'); // Adam: SALTY TEARS
+          await sleep(1150);
+          break;
+        }
         popup(e.who, e.status === 'drain' ? '-' + e.amount + ' Blocks' : STATUS_TEXT[e.status], e.status === 'hodl' ? 'good' : 'status');
         await sleep(800);
         break;

@@ -145,15 +145,25 @@
       }
     },
     adam: {
-      id: 'adam', name: 'Adam Back', lane: 'Cypherpunk grind',
+      id: 'adam', name: 'Adam Back', lane: 'Cypherpunk / hashcash',
       color: '#94a3b8', emoji: '🔐',
       hide: 0.70, mint: 0.15, rug: 0.10,
-      mintFail: "THAT'S NOT WHAT BITCOIN IS FOR", rugFail: "CAN'T RUG A HASH",
       ai: { strike: 3, privacy: 6, mint: 0.5, rug: 0.5 },
+      moves: {
+        strike:  { name: 'Hashcash',    icon: '⛏️', ko: 'GAME OVER' },
+        privacy: { name: 'Cypherpunk',  icon: '🧅', ok: 'PRIORITIZE 1',        fail: 'FILTERED BY KNOTS' },
+        mint:    { name: 'Inscription', icon: '🖼️', ok: 'FEES ARE THE FILTER', fail: "THAT'S NOT WHAT BITCOIN IS FOR" },
+        rug:     { name: 'Soft Fork',   icon: '🍴', ok: 'THE LAST SOFT-FORK',  fail: 'NOT BY POPULAR VOTE',
+                   pierce: "CAN'T HIDE FROM CONSENSUS" }
+      },
       super: {
+        // The gun and its data blob are the picture, not a stance (he backed lifting the 80-byte limit).
         id: 'opreturn', name: 'OP_RETURN', prop: '🔫',
-        line: '80 BYTES. NOT ONE MORE.',
-        blurb: 'Medium hit + Prune (strips their HODL)', finish: '80 BYTES OF PAIN'
+        line: 'FORK AROUND AND FIND OUT',
+        blurb: 'Medium hit + Prune (strips their HODL)', finish: 'CHECKMATE FORKERS',
+        cpuAfter: 'SIT BY THE MEMPOOL LONG ENOUGH',
+        pruneLine: 'SALTY TEARS', // banner when the gun strips someone's HODL
+        koProp: '🧂'             // the salty tears of failed contentious fork proposers
       }
     },
     charles: {

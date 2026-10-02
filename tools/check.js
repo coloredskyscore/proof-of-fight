@@ -290,6 +290,20 @@ test('Garlinghouse: XRP Army KO reads WE WON. THEY LOST.; Settle KO reads PERFEC
   assert.strictEqual(g.finish, "PERFECT CAN'T BE THE ENEMY OF GOOD");
 });
 
+test('Adam: OP_RETURN KO reads CHECKMATE FORKERS, Hashcash KO reads GAME OVER', function () {
+  var f = E.newFight({ player: 'adam', cpu: 'toly', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].hp = 20;
+  rig(f, [cpuRoll('toly', 'strike')]);
+  E.playTurn(f, 'super');
+  assert.strictEqual(f.finish, 'CHECKMATE FORKERS');
+  var g = E.newFight({ player: 'adam', cpu: 'toly', seed: 1 });
+  g.f[1].hp = 5;
+  rig(g, [cpuRoll('toly', 'strike')]);
+  E.playTurn(g, 'strike');
+  assert.strictEqual(g.finish, 'GAME OVER');
+});
+
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {
   var rng = E.makeRng(99);
   for (var n = 0; n < 10000; n++) {
