@@ -63,3 +63,7 @@ He should stay the only Super that deals no damage. Dance, wall goes up, teddy e
 **Balance:** unchanged (numbers didn't move).
 
 **Where it lives:** `js/data.js` (`vitalik`), the scene in `js/app.js` (`badgerSVG`, `personSVG`, `badgerDanceDeco`) and `css/style.css` (search "badger dance").
+
+## Art (Oct 2, 2026)
+
+Vitalik is the first fighter with real art (see [docs/art/README.md](../art/README.md)): a late-90s arcade portrait in a purple unicorn tee, and a 16-bit sprite holding his green tea on stage. The 🍵 emoji is only used on the block body now. To match, the dancing Vitalik in the Badger Dance switched from a blue tee with a white diamond (an Ethereum-style logo, which the rules rule out) to the purple tee with a little unicorn.

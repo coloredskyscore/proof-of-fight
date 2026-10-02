@@ -136,7 +136,7 @@
           (mo.nick ? ' <small>' + esc(mo.nick) + '</small>' : '') + '</span>';
       }).join('') + '</span>' : '';
       return '<button class="pick-card" type="button" data-id="' + id + '" style="--c:' + F.color + '">' +
-        '<span class="pick-face">' + F.emoji + '</span>' +
+        '<span class="pick-face">' + faceHTML(F) + '</span>' +
         '<span class="pick-name">' + esc(F.name) + '</span>' +
         '<span class="pick-lane">' + esc(F.lane) + '</span>' +
         moves +
@@ -201,12 +201,23 @@
     }, 1100);
   }
 
+  // A fighter's face: their portrait if they have art, else their emoji.
+  function faceHTML(F) {
+    return F.art && F.art.head ? '<img class="art-head" src="' + F.art.head + '" alt="" decoding="async">' : F.emoji;
+  }
+
   function fighterHTML(F) {
-    return '<div class="f-chip"></div><div class="f-bubble"></div>' +
-      '<div class="f-flip"><div class="f-bob"><div class="f-sprite">' +
+    var top = '<div class="f-chip"></div><div class="f-bubble"></div><div class="f-flip"><div class="f-bob">';
+    // A sprite replaces the block body (and anything held, which the art draws itself).
+    if (F.art && F.art.body) {
+      return top + '<div class="f-sprite"><img class="f-art" src="' + F.art.body + '" alt="" decoding="async"></div>' +
+        '</div></div><div class="f-shadow"></div>';
+    }
+    return top + '<div class="f-sprite">' +
       '<div class="f-legs"><span></span><span></span></div>' +
       '<div class="f-torso"></div>' +
-      '<div class="f-head"><span>' + F.emoji + '</span></div>' +
+      // A portrait on the block body mirrors with it to face the opponent; an emoji is kept unflipped.
+      '<div class="f-head">' + (F.art && F.art.head ? faceHTML(F) : '<span>' + F.emoji + '</span>') + '</div>' +
       '<span class="f-fist f-fist-b"></span><span class="f-fist f-fist-a"></span>' +
       (F.heldProp ? '<span class="f-held">' + F.heldProp + '</span>' : '') +
       '</div></div></div><div class="f-shadow"></div>';
@@ -217,7 +228,7 @@
     [0, 1].forEach(function (i) {
       var F = D.FIGHTERS[f.f[i].id], side = SIDE[i];
       var el = $('#fighter-' + side);
-      el.className = 'fighter side-' + side;
+      el.className = 'fighter side-' + side + (F.art && F.art.body ? ' has-art' : '');
       el.style.setProperty('--c', F.color);
       el.innerHTML = fighterHTML(F);
       var hud = $('#hud-' + side);
@@ -632,8 +643,11 @@
     var hair = p.long
       ? '<path d="M38 30 Q36 8 50 9 Q64 8 62 30 L64 50 Q58 44 58 30 Q50 20 42 30 Q42 44 36 50Z" fill="' + p.hair + '"/>'
       : '<path d="M38 27 Q50 6 62 27 Q50 18 38 27Z" fill="' + p.hair + '"/>';
+    // Vitalik's tee matches his art: purple with a little white unicorn (no chain logos).
     var chest = p.vitalik
-      ? '<path d="M50 58 L56 69 L50 80 L44 69Z" fill="#e8eefc" stroke="#111" stroke-width="1"/>'
+      ? '<g stroke="#111" stroke-width=".8"><ellipse cx="52" cy="72" rx="6" ry="4" fill="#fff"/>' +
+        '<circle cx="46" cy="66" r="3.4" fill="#fff"/><path d="M45 63 L43.5 57 L47.5 62.4Z" fill="#f5c542"/>' +
+        '<path d="M48.5 63.5 Q52 63 51 68" fill="none" stroke="#c77dd8" stroke-width="1.6"/></g>'
       : '<path d="M42 47 L50 66 L58 47" fill="none" stroke="#d22" stroke-width="2.5"/><rect x="46" y="65" width="8" height="10" rx="1" fill="#fff" stroke="#111" stroke-width="1"/>';
     return '<svg class="person' + (p.vitalik ? ' vit' : '') + '" viewBox="0 0 100 150" aria-hidden="true"><g class="bob" stroke="#111" stroke-width="2">' +
       '<g class="flap-l"><rect x="5" y="50" width="34" height="8" rx="4" fill="' + p.shirt + '"/><circle cx="7" cy="54" r="4.5" fill="' + skin + '"/></g>' +
@@ -654,7 +668,7 @@
     // Back row stands in the gaps between the front row, like the video.
     var back = [{ shirt: '#f3f3f3', hair: '#5b3d26' }, { shirt: '#1f3d2a', hair: '#2a2a2a' }].map(personSVG).join('');
     var front = [
-      { shirt: '#222', hair: '#2a2a2a' }, { shirt: '#3e5c8f', hair: '#5b3d26', vitalik: true },
+      { shirt: '#222', hair: '#2a2a2a' }, { shirt: '#5b2fa3', hair: '#3a2a1f', vitalik: true },
       { shirt: '#2a2a2a', hair: '#3a2a1f', long: true }
     ].map(personSVG).join('');
     return '<div class="badger-screen">' + badgers + '</div>' +
@@ -807,7 +821,8 @@
       var F = D.FIGHTERS[S.fight.f[i].id], sup = F.super, el = $('#cutin');
       el.className = 'cutin from-' + SIDE[i] + ' sup-' + sup.id;
       el.style.setProperty('--c', F.color);
-      $('.cutin-head', el).textContent = F.emoji;
+      $('.cutin-head', el).innerHTML = faceHTML(F);
+      $('.cutin-head', el).classList.toggle('has-art', !!(F.art && F.art.head));
       $('.cutin-prop', el).textContent = sup.prop;
       // Name card flicker (Mert: HELIUS -> HELIUM -> HIVEMAPPER -> CEO OF HELIUM). Each word holds
       // long enough to read; the glitch only hits on the switch. The voice line, the beam and the
@@ -920,7 +935,7 @@
 
   function face(F, lost, prop) {
     return '<span class="face-wrap"><span class="face' + (lost ? ' lost' : '') + '" style="--c:' + F.color + '">' +
-      F.emoji + '</span>' + (prop ? '<i class="face-prop">' + prop + '</i>' : '') + '</span>';
+      faceHTML(F) + '</span>' + (prop ? '<i class="face-prop">' + prop + '</i>' : '') + '</span>';
   }
 
   // Some Super KOs get an extra scene (Saylor: the astronaut DJ).
@@ -1053,7 +1068,7 @@
   function init() {
     $('.title-roster').innerHTML = D.ROSTER.map(function (id) {
       var F = D.FIGHTERS[id];
-      return '<span style="--c:' + F.color + '">' + F.emoji + '</span>';
+      return '<span style="--c:' + F.color + '">' + faceHTML(F) + '</span>';
     }).join('');
     $('#rules-select').innerHTML = Object.keys(D.RULESETS).map(function (k) {
       return '<option value="' + k + '">' + esc(D.RULESETS[k].label) + '</option>';

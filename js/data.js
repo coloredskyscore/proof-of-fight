@@ -145,7 +145,10 @@
       color: '#9b7bff', emoji: '🦄',
       hide: 0.55, mint: 0.35, rug: 0.20,
       ai: { strike: 3, privacy: 3, mint: 2, rug: 2 },
-      heldProp: '🍵', // green tea in his hand on stage ("mi pinxe lo crino tcati")
+      // Art: head = round portrait (title, picker, cut-in, result card), body = stage sprite facing
+      // right. Fighters without art keep their emoji and block body.
+      art: { head: 'art/vitalik-head.webp', body: 'art/vitalik-body.webp' },
+      heldProp: '🍵', // green tea in his hand on the block body ("mi pinxe lo crino tcati"); his sprite has its own
       moves: {
         strike:  { name: 'Essay Drop',   icon: '📝', ko: 'READ THE BLOG POST' },
         privacy: { name: 'Privacy Pool', icon: '🫥', ok: 'FIGHT CHAT CONTROL', fail: 'I CHOOSE BALANCE',
