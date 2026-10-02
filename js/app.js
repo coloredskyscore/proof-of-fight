@@ -467,6 +467,8 @@
         S.koProp = koPropFor(e.winner, e.cause) ? { who: e.loser, prop: koPropFor(e.winner, e.cause) } : null;
         render(e.snap);
         fighterEl(e.loser).classList.add('is-ko');
+        var loseLine = D.FIGHTERS[S.fight.f[e.loser].id].loseLine;
+        if (loseLine) later(function () { popup(e.loser, loseLine, 'status'); }, 700);
         banner(e.timeout ? 'TIME!' : 'K.O.', e.finish, true);
         buzz(e.loser === 0 ? 250 : 80);
         var scene = koSceneFor(e.winner, e.cause);
@@ -672,6 +674,15 @@
       '<div class="night"><div class="moon"></div>' + stars + '</div>';
   }
 
+  // Garlinghouse: the polo-shirt army jogs across. One TikToker yells a price target, one carries a
+  // sign (the army says these, he doesn't), and a gold truck crawls along at 1940 speed behind them.
+  function armyDeco() {
+    return '<div class="deco-run">' +
+      '<span>🏃</span><span class="tiktoker">🏃<b class="army-bubble">$589 BY FRIDAY</b></span><span>🏃</span><span>🏃</span>' +
+      '<span class="signer">🏃<b class="army-sign">SWIFT IS DEAD</b></span><span>🏃</span></div>' +
+      '<div class="gold-truck">🚚<small>GOLD · 1940 SPEED</small></div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
       case 'salesman': return salesDeco(ctx);
@@ -681,7 +692,7 @@
           portrait: dancerSVG('vitalik')
         };
       case 'helium': return { screen: '<div class="deco-sun"></div>', portrait: '<div class="dome-beam"></div>' };
-      case 'xrparmy': return { screen: '<div class="deco-run">' + spans('🏃', 6) + '</div>' };
+      case 'xrparmy': return { screen: armyDeco() };
       case 'midnight': return { screen: midnightDeco(D.FIGHTERS.charles.super.lecture) };
       case 'orangedot': return { screen: trackerChart() };
       case 'opreturn': return { screen: '<div class="deco-bytes">OP_RETURN 6a4c50' + randomHex(28) + '…</div>' };
@@ -905,6 +916,10 @@
       ? P.name + ' beat ' + C.name + ' in ' + res.turns + ' turns · ' + res.hp + ' HP left'
       : C.name + ' beat your ' + P.name + ' in ' + res.turns + ' turns';
     $('#res-finish').textContent = res.finish;
+    // The loser's line, if they have one (Garlinghouse: THIS ONE STINGS).
+    var loser = D.FIGHTERS[res.won ? res.cpu : res.player];
+    $('#res-quote').hidden = !loser.loseLine;
+    $('#res-quote').textContent = loser.loseLine ? loser.name + ': “' + loser.loseLine + '”' : '';
     $('#res-grid').textContent = gridText(res);
     $('#res-share').textContent = navigator.share ? 'Share result' : 'Copy result';
     $('#res-x').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText(res));

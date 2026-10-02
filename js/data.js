@@ -111,15 +111,25 @@
       }
     },
     garlinghouse: {
-      id: 'garlinghouse', name: 'Garlinghouse', lane: 'Lawyers and liquidity',
+      id: 'garlinghouse', name: 'Garlinghouse', lane: 'Settlements / straight man',
       color: '#3b82f6', emoji: '⚖️',
-      hide: 0.30, mint: 0.55, rug: 0.35,
-      mintFail: 'UTILITY TBD', rugFail: 'SETTLEMENT PENDING',
+      hide: 0.25, mint: 0.55, rug: 0.20, // a settlements guy: bad at hiding, bad at rugs
       ai: { strike: 3, privacy: 2, mint: 4, rug: 4 },
+      moves: {
+        strike:  { name: 'Settle',      icon: '💸', ko: "PERFECT CAN'T BE THE ENEMY OF GOOD" },
+        privacy: { name: 'In The Room', icon: '🏛️', ok: 'PROUD TO BE IN THE ROOM', fail: 'BLOCKED BY THE ANTI-CRYPTO ARMY' },
+        mint:    { name: 'RLUSD',       icon: '💵', ok: "YOU'LL HEAR IT FROM RIPPLE FIRST", fail: 'UTILITY TBD' },
+        rug:     { name: 'Lawsuit',     icon: '⚖️', ok: 'WE WILL PREVAIL', fail: "I'M NOT SURPRISED. I'M PISSED.",
+                   pierce: "CAN'T HIDE FROM A SUBPOENA" }
+      },
+      loseLine: 'THIS ONE STINGS', // his quote on the result card (and over him on stage) when he loses
       super: {
-        id: 'xrparmy', name: 'XRP Army', prop: '👕',
-        line: 'ARMY, BODY-CHECK THEM!',
-        blurb: '5 hits of 5', finish: 'ARMY SETTLEMENT'
+        // The crowd is the meme: price calls come from the army, never from him.
+        id: 'xrparmy', name: 'XRP Army', prop: '😅',
+        line: 'RIPPLE 3, SEC 0',
+        timing: { card: 0.15, line: 0.6, dur: 3.2 },
+        blurb: '5 hits of 5', finish: 'WE WON. THEY LOST.',
+        cpuAfter: 'HOW ARE PEOPLE STILL FIGHTING THIS?!'
       }
     },
     vitalik: {
