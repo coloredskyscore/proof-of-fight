@@ -32,12 +32,13 @@ Every fighter has the same five buttons with the same colors and jobs. A fighter
 Every button can also have:
 - **a nickname**, shown small next to the name (Saylor: STRC *Stretch*)
 - **a KO line** used when that button lands the knockout (Saylor's STRC: STRETCH)
+- **a ticker** that pops over the fighter when it lands (`MSTR ▲ 37%`, where the number is the damage roll) and sits under the flop banner (`MSTR ▼`)
 
 **Button names: 12 characters max** (they have to fit on a phone). Banner lines: under ~25 characters reads best.
 
 ## Custom numbers and special buttons (needs a balance pass)
 
-A fighter can have their own damage or odds on a button (Saylor's STRK does 20 at 45%, STRD 30 at 25%), and a blue button can be a **brace** instead of a dodge: always works, halves incoming Strike/Mint/Rug damage, never hides (Saylor's STRF). Propose numbers freely; they get run through the simulator before building, and adjusted if a fighter ends up too strong or too weak. Rough guide: a sensible player should win about 60–78% with any fighter.
+A fighter can have their own damage or odds on a button (Saylor's STRK does 20 at 45%), damage can be a **range rolled each time** (Saylor's MSTR: 15–45, "high beta"), and a blue button can be a **brace** instead of a dodge: always works, halves incoming Strike/Mint/Rug damage, never hides (Saylor's STRF). Propose numbers freely; they get run through the simulator before building, and adjusted if a fighter ends up too strong or too weak. Rough guide: a sensible player should win about 60–78% with any fighter.
 
 ## Needs a little code (fine, just describe it)
 

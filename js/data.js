@@ -165,13 +165,15 @@
       // His blue button never hides: it always works and halves incoming Strike/Mint/Rug damage.
       brace: { blocks: 1 },
       // Damage that differs from the shared rules (Strike stays 10 like everyone).
-      dmg: { mint: 20, rug: 30 },
+      // [min, max] rolls each time it lands: MSTR is high beta.
+      dmg: { mint: 20, rug: [15, 45] },
       ai: { strike: 4, privacy: 2, mint: 3, rug: 1 },
       moves: {
         strike:  { name: 'STRC', nick: 'Stretch', icon: '📬', ko: 'STRETCH' },
         privacy: { name: 'STRF', nick: 'Strife',  icon: '🛡️', ok: 'SENIOR CLAIM' },
         mint:    { name: 'STRK', nick: 'Strike',  icon: '🔄', ok: 'CONVERTED',      fail: 'STILL PREFERRED' },
-        rug:     { name: 'STRD', nick: 'Stride',  icon: '🎲', ok: 'STRIDE CLEARED', fail: 'DIVIDEND FORFEITED' }
+        rug:     { name: 'MSTR', nick: 'Strategy', icon: '📈', ok: 'INFINITE MONEY GLITCH', fail: 'mNAV BELOW 1',
+                   ko: 'NUMBER GO UP', ticker: 'MSTR' } // ticker: shows MSTR ▲ / ▼ when it lands or flops
       },
       super: {
         id: 'orangedot', name: 'Another Orange Dot', prop: '🟠',

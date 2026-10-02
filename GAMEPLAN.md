@@ -11,6 +11,10 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 2, 2026: MSTR replaces STRD on Saylor's purple button
+
+📈 **MSTR** *Strategy*: the common stock gets the big-gamble button. **High beta:** when it lands it rolls anywhere from 15 to 45 damage (average 30, the same as STRD had, so balance holds: still 75%). 25%, steals 2 Blocks, hits through dodges. Lands: `INFINITE MONEY GLITCH` with a green `MSTR ▲ 37%` ticker over Saylor (the roll is the day's move). Flops: `mNAV BELOW 1` / `MSTR ▼`. KO with it: `NUMBER GO UP`. STRD is retired; its lines stay in docs/supers/saylor.md.
+
 ### Oct 1, 2026 (later): Saylor's ticker kit
 
 Full concept and build notes: [docs/supers/saylor.md](docs/supers/saylor.md). Saylor is the first fighter whose buttons also *work* differently, not just renamed:
@@ -142,7 +146,7 @@ Every fighter has the same five buttons: same colors, same jobs. A fighter can *
 | Fighter | 🔴 Red (Strike) | 🔵 Blue (Privacy) | 🩷 Pink (Mint) | 🟣 Purple (Rug) |
 |---|---|---|---|---|
 | Mert | 🗯️ Shitpost | 🕶️ Zolana | 🪙 Memecoin | ⛔ Rate Limit |
-| Saylor | 📬 STRC | 🛡️ STRF: *always works, halves damage, +1 Block, never hides* | 🔄 STRK: *20 dmg* | 🎲 STRD: *30 dmg* |
+| Saylor | 📬 STRC | 🛡️ STRF: *always works, halves damage, +1 Block, never hides* | 🔄 STRK: *20 dmg* | 📈 MSTR: *15–45 dmg, rolled each time* |
 
 The rest of this section uses the generic names.
 
@@ -251,10 +255,10 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Toly | 30 | `OUTAGE HIT THE BRIDGE` |
 | Charles | 25 | `ROADMAP SAYS Q4` |
 | Vitalik | 20 | `PUBLIC GOODS ONLY` |
-| Saylor | 25 | STRD: `DIVIDEND FORFEITED` (30 dmg) |
+| Saylor | 25 | MSTR: `mNAV BELOW 1` (15–45 dmg) |
 | Adam Back | 10 | `CAN'T RUG A HASH` |
 
-Adam is *bad* at rugs on purpose. Saylor's STRD lands more often but hits for less.
+Adam is *bad* at rugs on purpose. Saylor's MSTR lands more often than his old rug, and its damage swings (15–45).
 
 ---
 
@@ -285,7 +289,7 @@ Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `E
 
 **Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`.
 
-**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`.
+**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`.
 
 **CPU after-Super lines** show as a banner after a CPU's Super lands (not when it's the KO): CPU Toly says `SALES GOAL OF THE YEAR ACCOMPLISHED.`
 
@@ -314,7 +318,7 @@ Weights are "how often they try this." **Every CPU fires its Super the turn its 
 
 | Character | Strike | Privacy | Mint | Rug |
 |---|---|---|---|---|
-| Saylor | High (STRC) | Low (STRF) | Medium (STRK) | Rare (STRD) |
+| Saylor | High (STRC) | Low (STRF) | Medium (STRK) | Rare (MSTR) |
 | Adam Back | Medium | Very high | Almost never | Almost never |
 | Charles | Low | Medium | Medium | Low |
 | Garlinghouse | Medium | Low | High | High |
@@ -476,7 +480,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Vitalik's Super: **Ultra Sound Moves** (hypnotizing dance)
 - Toly's Super: **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
 - Mert's Super: **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
-- Saylor's kit: **STRC / STRF / STRK / STRD** + **Another Orange Dot** (`WE CALL THEM POOR`)
+- Saylor's kit: **STRC / STRF / STRK / MSTR** + **Another Orange Dot** (`WE CALL THEM POOR`)
 - Fighters can rename their buttons; jobs, colors and numbers stay shared
 - Roster: Toly, Mert, Garlinghouse, Vitalik, Adam Back, Charles, Saylor
 - Share: emoji grid (now), encoded result URL (next)

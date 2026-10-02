@@ -124,3 +124,20 @@ Result: 75% for a sensible player (same as before this kit), others beat CPU Say
 **Not built:** STRE (left off, as the concept says).
 
 **Where it lives:** `js/data.js` (`saylor`: `brace`, `dmg`, `moves`, `super`, `rivalKo`), `js/engine.js` (`brace`, `moveDamage`), cut-in and KO scene in `js/app.js` (`trackerChart`, `astronautSVG`, `astronautScene`) and `css/style.css` (search "Another Orange Dot" / "astronaut DJ").
+
+---
+
+## Update (Oct 2, 2026): MSTR replaces STRD
+
+The kit had no MSTR, so the common stock took the purple (big gamble) button from STRD, the most obscure of the four.
+
+| | |
+|---|---|
+| Button | 📈 **MSTR** *Strategy* (purple) |
+| Damage | **High beta:** rolls 15–45 each time it lands (average 30, same as STRD, so balance holds: Saylor still 75%) |
+| Odds | 25%, steals 2 Blocks, hits through dodges |
+| Lands | `INFINITE MONEY GLITCH` + a green `MSTR ▲ 37%` ticker over Saylor (the roll is the day's move) |
+| Flops | `mNAV BELOW 1` / `MSTR ▼` (loses 2 Blocks, or 5 HP if he has none) |
+| KO with it | `NUMBER GO UP` |
+
+**Retired, kept here for later:** 🎲 STRD *Stride*: `STRIDE CLEARED` / `DIVIDEND FORFEITED`.
