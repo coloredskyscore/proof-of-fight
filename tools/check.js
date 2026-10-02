@@ -276,6 +276,20 @@ test('Charles beating Mert, any way, reads BIGGER THAN ZOLANA', function () {
   assert.strictEqual(f.finish, 'BIGGER THAN ZOLANA');
 });
 
+test('Garlinghouse: XRP Army KO reads WE WON. THEY LOST.; Settle KO reads PERFECT CAN\'T BE THE ENEMY OF GOOD', function () {
+  var f = E.newFight({ player: 'garlinghouse', cpu: 'adam', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].hp = 12;
+  rig(f, [cpuRoll('adam', 'strike')]);
+  E.playTurn(f, 'super');
+  assert.strictEqual(f.finish, 'WE WON. THEY LOST.');
+  var g = E.newFight({ player: 'garlinghouse', cpu: 'adam', seed: 1 });
+  g.f[1].hp = 5;
+  rig(g, [cpuRoll('adam', 'strike')]);
+  E.playTurn(g, 'strike');
+  assert.strictEqual(g.finish, "PERFECT CAN'T BE THE ENEMY OF GOOD");
+});
+
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {
   var rng = E.makeRng(99);
   for (var n = 0; n < 10000; n++) {

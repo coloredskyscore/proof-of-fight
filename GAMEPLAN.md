@@ -11,6 +11,14 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 2, 2026 (evening): Garlinghouse's kit
+
+Full concept and build notes: [docs/supers/garlinghouse.md](docs/supers/garlinghouse.md). He's the straight man; the price calls belong to the crowd.
+- **Buttons:** 💸 Settle (KO: `PERFECT CAN'T BE THE ENEMY OF GOOD`) · 🏛️ In The Room, now 25% (`PROUD TO BE IN THE ROOM` / `BLOCKED BY THE ANTI-CRYPTO ARMY`) · 💵 RLUSD (`YOU'LL HEAR IT FROM RIPPLE FIRST` / `UTILITY TBD`) · ⚖️ Lawsuit, now 20% (`WE WILL PREVAIL` / `I'M NOT SURPRISED. I'M PISSED.`).
+- **Super: XRP Army** keeps its 5 × 5 chip damage, with a TikToker yelling `$589 BY FRIDAY`, a `SWIFT IS DEAD` sign, a gold truck at 1940 speed, and Garlinghouse saying `RIPPLE 3, SEC 0`. KO `WE WON. THEY LOST.`
+- `HOW ARE PEOPLE STILL FIGHTING THIS?!` after CPU Garlinghouse's Super; `THIS ONE STINGS` when he loses (new loser-line slot, shown on the result card).
+- CPU Garlinghouse was the hardest opponent (players won 54%); now about 68%, like everyone else.
+
 ### Oct 2, 2026 (later): Charles's Midnight kit
 
 Full concept and build notes: [docs/supers/charles.md](docs/supers/charles.md).
@@ -156,6 +164,7 @@ Every fighter has the same five buttons: same colors, same jobs. A fighter can *
 | Mert | 🗯️ Shitpost | 🕶️ Zolana | 🪙 Memecoin | ⛔ Rate Limit |
 | Saylor | 📬 STRC | 🛡️ STRF: *always works, halves damage, +1 Block, never hides* | 🔄 STRK: *20 dmg* | 📈 MSTR: *15–45 dmg, rolled each time* |
 | Charles | 🧊 Glacier Drop | 🔏 ZK Proof *(55%)* | 📜 Peer Review | ✨ Leios |
+| Garlinghouse | 💸 Settle | 🏛️ In The Room *(25%)* | 💵 RLUSD | ⚖️ Lawsuit *(20%)* |
 
 The rest of this section uses the generic names.
 
@@ -217,7 +226,7 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 |---|---|---|---|
 | `toly` | Toly | @toly | Throughput / phone sales |
 | `mert` | Mert | @mert | Infra / every bald guy ever |
-| `garlinghouse` | Garlinghouse | @bgarlinghouse | Lawyers and liquidity |
+| `garlinghouse` | Garlinghouse | @bgarlinghouse | Settlements / straight man |
 | `vitalik` | Vitalik | @VitalikButerin | Research / questionable dance moves |
 | `adam` | Adam Back | @adam3us | Cypherpunk grind |
 | `charles` | Charles | @IOHK_Charles | Midnight / Dire Wolf Mode |
@@ -240,14 +249,14 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Charles | 55 | ZK Proof: `SELECTIVE DISCLOSURE`. Selective disclosure is the whole pitch |
 | Mert | 45 | Infra guy who still lives on mainnet Twitter |
 | Toly | 35 | Transparent high-performance capitalist |
-| Garlinghouse | 30 | The lawsuit is the spotlight |
+| Garlinghouse | 25 | In The Room: `BLOCKED BY THE ANTI-CRYPTO ARMY`. A settlements guy, bad at hiding |
 | Saylor | — | His blue button (STRF) never hides; it always works and halves the damage |
 
 ### Mint (JPEG lands)
 
 | Character | Success % | Fail extra line |
 |---|---|---|
-| Garlinghouse | 55 | `UTILITY TBD` |
+| Garlinghouse | 55 | RLUSD: `UTILITY TBD` |
 | Toly | 50 | `FLOOR IS LATENCY` |
 | Mert | 45 | `RIGHT-CLICK SAVED` |
 | Charles | 40 | Peer Review: `REVISE AND RESUBMIT` |
@@ -260,7 +269,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Character | Success % | Fail line |
 |---|---|---|
 | Mert | 40 | `DEV WALLET WAS A DECOY` |
-| Garlinghouse | 35 | `SETTLEMENT PENDING` |
+| Garlinghouse | 20 | Lawsuit: `I'M NOT SURPRISED. I'M PISSED.` |
 | Toly | 30 | `OUTAGE HIT THE BRIDGE` |
 | Charles | 25 | Leios: `ROADMAP SAYS Q4` |
 | Vitalik | 20 | `PUBLIC GOODS ONLY` |
@@ -288,7 +297,7 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 |---|---|---|---|---|
 | Mert | **CEO of Helium** ([doc](docs/supers/mert.md)) | Name card flickers HELIUS / HELIUM / HIVEMAPPER, then locks. Sun catches the dome, beam sweeps their eyes. "THE RPCS DID THIS" | **8 dmg + Blind** (they skip their next turn; `WHO WAS THAT`) | TRILLIONS |
 | Toly | **Second Best Salesman** ([doc](docs/supers/toly.md)) | A brochure of phone bricks fans open, he slaps a `BUY NOW` phone into them, airdrop confetti. "APPLE + SOLANA MOBILE: 3.469 BILLION" | **35 dmg**, one hit | HATER CONVERTED |
-| Garlinghouse | **XRP Army** | Polo-shirt normies jog across and body-check | **5 hits × 5 dmg = 25** | ARMY SETTLEMENT |
+| Garlinghouse | **XRP Army** ([doc](docs/supers/garlinghouse.md)) | Polo-shirt army jogs across; a TikToker yells `$589 BY FRIDAY`, a `SWIFT IS DEAD` sign, a gold truck at 1940 speed; he says "RIPPLE 3, SEC 0", slightly embarrassed | **5 hits × 5 dmg = 25** | WE WON. THEY LOST. |
 | Charles | **Midnight Express** ([doc](docs/supers/charles.md)) | Five peer reviewers nod while his sentence types out; the lights go out mid-word; moon, stars, "BIGGER THAN ZCASH" | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** | LFG 2027 |
 | Saylor | **Another Orange Dot** ([doc](docs/supers/saylor.md)) | Orange dots stamp one by one onto his tracker chart. "A LITTLE MORE ORANGE". On a KO: the astronaut DJ, `FIAT AS A STORE OF VALUE` / `WE CALL THEM POOR` | **25 dmg + HODL** (Saylor takes half damage this turn and next) | WE CALL THEM POOR |
 | Adam Back | **OP_RETURN** | Long-barreled gun etched `OP_RETURN`, fires an **80 BYTES** blob | **Prune** (strips their HODL) **then 25 dmg** | 80 BYTES OF PAIN |
@@ -298,7 +307,9 @@ Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `E
 
 **Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`, Charles beating Mert reads `BIGGER THAN ZOLANA`.
 
-**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`.
+**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`.
+
+**Loser lines**: when Garlinghouse loses, `THIS ONE STINGS` pops over him and is quoted on the result card.
 
 **CPU after-Super lines** show as a banner after a CPU's Super lands (not when it's the KO): CPU Toly says `SALES GOAL OF THE YEAR ACCOMPLISHED.`
 
@@ -491,6 +502,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Mert's Super: **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
 - Saylor's kit: **STRC / STRF / STRK / MSTR** + **Another Orange Dot** (`WE CALL THEM POOR`)
 - Charles's kit: **Glacier Drop / ZK Proof / Peer Review / Leios** + **Midnight Express** (`LFG 2027`)
+- Garlinghouse's kit: **Settle / In The Room / RLUSD / Lawsuit** + **XRP Army** (`WE WON. THEY LOST.`); price calls come from the crowd, never him
 - Fighters can rename their buttons; jobs, colors and numbers stay shared
 - Roster: Toly, Mert, Garlinghouse, Vitalik, Adam Back, Charles, Saylor
 - Share: emoji grid (now), encoded result URL (next)
