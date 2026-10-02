@@ -98,11 +98,18 @@
     });
   }
 
-  // Damage for a fighter's Strike / Mint / Rug: their own number if they have one, else the rules'.
+  // Damage for a fighter's Strike / Mint / Rug as [min, max]: their own number or range
+  // (e.g. Saylor's MSTR rolls 15-45) if they have one, else the rules' flat number.
+  function damageRange(fighterId, move, rules) {
+    var F = D.FIGHTERS[fighterId], own = F.dmg && F.dmg[move];
+    if (own == null || rules.id !== 'balanced') return [rules[move], rules[move]];
+    return typeof own === 'number' ? [own, own] : own;
+  }
+
+  // Average damage (what the simulator and the odds use).
   function moveDamage(fighterId, move, rules) {
-    var F = D.FIGHTERS[fighterId];
-    if (F.dmg && F.dmg[move] != null && rules.id === 'balanced') return F.dmg[move];
-    return rules[move];
+    var r = damageRange(fighterId, move, rules);
+    return (r[0] + r[1]) / 2;
   }
 
   function clampBlocks(f) {
@@ -296,10 +303,13 @@
         me.blocks += stolen;
         clampBlocks(me);
       }
-      dealt = hurt(ti, moveDamage(me.id, move, R), true);
+      // Ranged damage rolls only when it lands, so fixed-damage fighters use exactly the same dice as before.
+      var range = damageRange(me.id, move, R);
+      var base = range[0] === range[1] ? range[0] : range[0] + Math.floor(rng() * (range[1] - range[0] + 1));
+      dealt = hurt(ti, base, true);
       tgt.blocks += D.BLOCKS.gotHit;
       clampBlocks(tgt);
-      push({ t: 'hit', attacker: who, target: ti, move: move, amount: dealt, self: self, stolen: stolen, pierced: pierced });
+      push({ t: 'hit', attacker: who, target: ti, move: move, amount: dealt, base: base, self: self, stolen: stolen, pierced: pierced });
       ko(ti, move, who);
       return { code: self ? 'self' : 'hit' };
     }
@@ -345,6 +355,7 @@
     canSuper: canSuper,
     snapshot: snapshot,
     moveDamage: moveDamage,
+    damageRange: damageRange,
     replay: replay
   };
 });

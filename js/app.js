@@ -255,6 +255,7 @@
       fail: own.fail || base.fail,
       // Purple hitting someone who hid: their own line, else their success line, else the default.
       pierce: own.pierce || own.ok || base.pierce,
+      ticker: own.ticker || null, // Saylor's MSTR: shows MSTR ▲ 37% / MSTR ▼
       // Default Mint/Rug banners put the fighter's joke line underneath.
       failSub: own.fail ? null : move === 'mint' ? F.mintFail : move === 'rug' ? F.rugFail : null
     };
@@ -288,14 +289,20 @@
     }
   }
 
+  // "10" for flat damage, "15–45" for a fighter whose damage rolls (Saylor's MSTR).
+  function dmgText(fighterId, move, rules) {
+    var r = E.damageRange(fighterId, move, rules);
+    return r[0] === r[1] ? String(r[0]) : r[0] + '–' + r[1];
+  }
+
   function updateControls() {
     var f = S.fight, st = E.playerStatus(f), me = f.f[0], F = D.FIGHTERS[me.id], R = f.rules;
     var locked = S.busy || f.over;
     var subs = {
-      strike: E.moveDamage(me.id, 'strike', R) + ' dmg · always',
+      strike: dmgText(me.id, 'strike', R) + ' dmg · always',
       privacy: F.brace ? '½ dmg · always' : 'Hide ' + pct(F.hide),
-      mint: E.moveDamage(me.id, 'mint', R) + ' dmg · ' + pct(F.mint),
-      rug: E.moveDamage(me.id, 'rug', R) + ' dmg · ' + pct(F.rug)
+      mint: dmgText(me.id, 'mint', R) + ' dmg · ' + pct(F.mint),
+      rug: dmgText(me.id, 'rug', R) + ' dmg · ' + pct(F.rug)
     };
     $all('#controls .move').forEach(function (b) {
       var m = b.dataset.move;
@@ -430,7 +437,7 @@
         var fm = moveOf(S.fight.f[e.who].id, e.move);
         wobble(e.who);
         render(e.snap);
-        banner(fm.fail, fm.failSub || whose(e.who) + ' ' + fm.name + ' flopped');
+        banner(fm.fail, fm.ticker ? fm.ticker + ' ▼' : fm.failSub || whose(e.who) + ' ' + fm.name + ' flopped');
         if (e.recoil) popup(e.who, '-' + e.recoil, 'dmg');
         else if (e.lost) popup(e.who, '-' + e.lost + ' Blocks', 'status');
         log(whose(e.who) + ' ' + fm.name + ' flopped.');
@@ -496,6 +503,8 @@
       return;
     }
     var hm = e.move === 'super' ? null : moveOf(S.fight.f[e.attacker].id, e.move);
+    // The stock ticker over the attacker: the roll is the day's move.
+    if (hm && hm.ticker) popup(e.attacker, hm.ticker + ' ▲ ' + e.base + '%', 'good ticker');
     if (e.pierced) banner(hm.pierce, stolen || "Hiding didn't help");
     else if (e.move === 'rug' || e.move === 'mint') banner(hm.ok, stolen);
     if (!multi) log(who(e.attacker) + ' hit ' + (e.target === 0 ? 'you' : nm(e.target)) + ' for ' + e.amount + '.');
@@ -540,9 +549,11 @@
     p.textContent = text;
     var x = el.offsetLeft + el.offsetWidth / 2 + (n ? ((n % 3) - 1) * 26 : 0);
     var y = el.offsetTop + el.offsetHeight * 0.1 - (n ? (n % 2) * 18 : 0);
-    p.style.left = x + 'px';
     p.style.top = y + 'px';
     layer.appendChild(p);
+    // Keep wide popups (MSTR ▲ 45%) inside the stage.
+    var half = p.offsetWidth / 2;
+    p.style.left = Math.max(half + 4, Math.min(layer.clientWidth - half - 4, x)) + 'px';
     setTimeout(function () { p.remove(); }, 1200);
   }
 

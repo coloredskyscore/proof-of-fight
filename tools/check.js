@@ -215,6 +215,31 @@ test('Saylor uses his own damage: STRK 20, STRD 30', function () {
   assert.strictEqual(f.f[1].hp, 80);
 });
 
+test('MSTR is high beta: rolls 15-45 when it lands, averages 30', function () {
+  var seen = {}, total = 0, n = 0;
+  for (var seed = 1; seed <= 4000; seed++) {
+    var f = E.newFight({ player: 'saylor', cpu: 'adam', seed: seed });
+    var ev = E.playTurn(f, 'rug');
+    ev.forEach(function (e) {
+      if (e.t === 'hit' && e.attacker === 0 && e.move === 'rug') {
+        assert(e.base >= 15 && e.base <= 45, 'MSTR rolled ' + e.base);
+        seen[e.base] = true; total += e.base; n++;
+      }
+    });
+  }
+  assert(n > 500, 'MSTR should land about a quarter of the time');
+  assert(seen[15] && seen[45], 'both extremes can happen');
+  assert(Math.abs(total / n - 30) < 1.5, 'average ' + (total / n).toFixed(1));
+});
+
+test('MSTR KO reads NUMBER GO UP', function () {
+  var f = E.newFight({ player: 'saylor', cpu: 'adam', seed: 1 });
+  f.f[1].hp = 5;
+  rig(f, [cpuRoll('adam', 'strike'), 0 /* MSTR lands */, 0.5 /* roll */]);
+  E.playTurn(f, 'rug');
+  assert.strictEqual(f.finish, 'NUMBER GO UP');
+});
+
 test('STRC KO reads STRETCH; Saylor beating Toly reads THERE IS NO SECOND BEST', function () {
   var f = E.newFight({ player: 'saylor', cpu: 'adam', seed: 1 });
   f.f[1].hp = 5;
