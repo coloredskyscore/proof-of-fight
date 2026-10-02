@@ -140,3 +140,78 @@ Added when this was built into the game. Everything above is the original concep
 **Not built yet:** blazer flip (waits for Toly portrait art), reviewer-ghost sting, v2 `Seeker'd` status, the other quotes.
 
 **Where it lives:** `js/data.js` (`toly.super`, `toly.rivalKo`), cut-in scene in `js/app.js` (`salesDeco`) and `css/style.css` (search "Second Best Salesman").
+
+---
+
+## Update (Oct 2, 2026): Grok's take on the four buttons
+
+Grok's research as pasted, unedited. The "Where they go" table arrived flattened in the paste, so it's rebuilt as a table here with the same words.
+
+> Second Best Salesman stays the Super. The rest of the feed is what the other four buttons should sound like.
+>
+> **What still memes**
+>
+> The phone, and he will not drop it. Bio still says “award winning phone creator.” The lines you already locked are real: “I am the second best solana dev phone salesman,” “Apple and Solana Mobile have combined sold 3.469 billion phones,” “you are gonna get what you are gonna get.” That is the cutscene. Do not spend it on a normal button.
+>
+> Slop cannon. He asked the timeline, “Have you been able to ship a slop cannon project to prod?” Older cousin: “Slop, kino, skibidi bop.” This is the Mint button. He fires junk. Sometimes it ships.
+>
+> Comrades. The fake Marx essays are still a format, not a one-off. A post that starts COMRADES, and ends as a factory ad. Too close to Charles if it is the Super. Fine as a Strike banner: he starts a speech, then just hits you.
+>
+> We can just drone the sandwichers. He posted a version of this again today after a hack returned the funds. One line, not a weapon. Use it as the Rug success banner: the MEV bot gets removed from the stage. Do not animate a real drone build.
+>
+> Cheap fast chain gud. Fees and delay are sand in the gears. Still the best non-phone slam if the salesman cutscene ever feels long. Park it as the KO alternate, not the name.
+>
+> Alpenglow. “It’s the final countdown,” 150ms finality, delay games get punished. Handbook flavor. The Europe song sting is funny for one frame and then old.
+>
+> 10x. “Can you do your job 10x better?” Afterimage punch. Backup Super if you ever retire the phone. Not needed while the Seeker slap is the joke.
+>
+> One-liners. “No chill with these listings.” “Based pope.” “Profitability at $1t mcap.” Emoji-only replies, crowns and skulls. Idle text, not buttons.
+>
+> **Where they go**
+>
+> | Bit | Slot |
+> |---|---|
+> | Second Best Salesman | Super. Locked. |
+> | 3.469 BILLION | Slam line |
+> | HATER CONVERTED | KO |
+> | SLOP CANNON | Mint. Fail: NOT IN PROD |
+> | COMRADES, | Strike banner, then a normal hit |
+> | DRONE THE SANDWICHERS | Rug success |
+> | CHEAP FAST CHAIN GUD | Alternate KO |
+> | NO CHILL | If he Mints twice in a row |
+> | YOU GONNA GET WHAT YOU GONNA GET | CPU after the Super |
+>
+> He should stay bad at Privacy. The salesman wants to be seen. The phone is the show. Everything else is chatter between closes.
+
+## Build notes (Oct 2, 2026): his buttons
+
+**Super:** unchanged. Second Best Salesman, `APPLE + SOLANA MOBILE: 3.469 BILLION`, `HATER CONVERTED`, and `THERE IS A SECOND BEST` whenever he beats Saylor.
+
+**Buttons** (numbers unchanged: bad at hiding, as Grok wants):
+
+| Button | Name | Lands | Flops |
+|---|---|---|---|
+| 🔴 Red (reliable hit, 10 dmg) | ✊ Comrades | no banner (the label `✊ COMRADES` pops over him, then a normal hit) · KO: `CHEAP FAST CHAIN GUD` | can't fail |
+| 🔵 Blue (dodge, 35%) | 🗝️ Seed Vault | `SEED VAULT HAS THE KEYS` | `THE PHONE IS THE SHOW` |
+| 🩷 Pink (medium gamble, 50%) | 🗑️ Slop Cannon | `SLOP, KINO, SKIBIDI BOP` | `NOT IN PROD` |
+| 🟣 Purple (big gamble, 30%) | 🥪 MEV Hunt | `DRONE THE SANDWICHERS` · through a dodge: `150MS FINALITY` | `OUTAGE HIT THE BRIDGE` |
+
+**Other moments:**
+- **Slop Cannon two turns running:** a pink `NO CHILL` popup over him. This is a new "repeat line" slot any fighter can use.
+- **When he loses:** `YOU GONNA GET WHAT YOU GONNA GET` over him and on the result card, as a fatalistic shrug.
+- **After CPU Toly's Super:** still `SALES GOAL OF THE YEAR ACCOMPLISHED.`
+
+**Where Grok's lines went:**
+- `COMRADES,` became the button name instead of a banner. Strike is the most-pressed button, and a banner on every press would slow fights down. The label already pops over his head each time, so you see COMRADES and then he just hits you.
+- `CHEAP FAST CHAIN GUD` is the KO line when Comrades lands the knockout, the alternate KO Grok asked for. The Super keeps `HATER CONVERTED`.
+- Grok gave Slop Cannon's flop (`NOT IN PROD`) but not a success line, so it uses his older `SLOP, KINO, SKIBIDI BOP`.
+- Alpenglow's "150ms finality, delay games get punished" is the line when MEV Hunt hits someone who tried to hide. Hiding is a delay game.
+- Seed Vault is named after Solana Mobile's key vault so the phone carries through. `THE PHONE IS THE SHOW` is Grok's "the salesman wants to be seen."
+- `YOU GONNA GET WHAT YOU GONNA GET` moved from CPU-after-Super to his loser line, since the existing sales-goal brag fits better after he lands a sale.
+- His old `FLOOR IS LATENCY` (Mint flop) is retired; `OUTAGE HIT THE BRIDGE` stays as the MEV Hunt flop.
+
+**Parked:** the 10x afterimage punch (backup Super), the Europe song sting, and the idle one-liners (`NO CHILL WITH THESE LISTINGS`, `BASED POPE`, `PROFITABILITY AT $1T MCAP`).
+
+**Balance:** unchanged (numbers didn't move; the simulator matches the previous build exactly).
+
+**Where it lives:** `js/data.js` (`toly.moves`, `toly.repeatLine`, `toly.loseLine`), the repeat popup in `js/app.js` (the `reveal` event) and `css/style.css` (`.popup.repeat`).

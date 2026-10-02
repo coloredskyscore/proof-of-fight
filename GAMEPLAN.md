@@ -11,6 +11,14 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 2, 2026 (late night, later): Toly's buttons
+
+Full concept and build notes: [docs/supers/toly.md](docs/supers/toly.md). His Super stays exactly as it is; the phone is the whole show.
+- **Buttons:** ✊ Comrades (KO: `CHEAP FAST CHAIN GUD`) · 🗝️ Seed Vault (`SEED VAULT HAS THE KEYS` / `THE PHONE IS THE SHOW`) · 🗑️ Slop Cannon (`SLOP, KINO, SKIBIDI BOP` / `NOT IN PROD`) · 🥪 MEV Hunt (`DRONE THE SANDWICHERS` / `OUTAGE HIT THE BRIDGE`; `150MS FINALITY` when it hits someone who hid). Numbers unchanged.
+- **Slop Cannon two turns running:** a pink `NO CHILL` pops over him (new repeat-line slot).
+- `YOU GONNA GET WHAT YOU GONNA GET` when he loses, over him and on the result card.
+- All seven fighters now have their own button names. Strike / Privacy / Mint / Rug remain the names of the jobs (help screen, docs).
+
 ### Oct 2, 2026 (late night): Vitalik's kit and the Badger Dance
 
 Full concept and build notes: [docs/supers/vitalik.md](docs/supers/vitalik.md). His Super is renamed from Ultra Sound Moves to **Badger Dance**.
@@ -172,10 +180,11 @@ Strike and Mint give their Blocks even if the target was Hidden.
 
 ## 6. The five buttons
 
-Every fighter has the same five buttons: same colors, same jobs. A fighter can **rename** the first four (name, emoji, banner lines); see `docs/supers/README.md` for the slots. A fighter can also have **their own numbers** for a button, or (rarely) a button that works differently, but only after a simulator pass. Custom so far:
+Every fighter has the same five buttons: same colors, same jobs. A fighter can **rename** the first four (name, emoji, banner lines); see `docs/supers/README.md` for the slots. A fighter can also have **their own numbers** for a button, or (rarely) a button that works differently, but only after a simulator pass. All seven have their own names:
 
 | Fighter | 🔴 Red (Strike) | 🔵 Blue (Privacy) | 🩷 Pink (Mint) | 🟣 Purple (Rug) |
 |---|---|---|---|---|
+| Toly | ✊ Comrades | 🗝️ Seed Vault *(35%)* | 🗑️ Slop Cannon *(50%)* | 🥪 MEV Hunt *(30%)* |
 | Mert | 🗯️ Shitpost | 🕶️ Zolana | 🪙 Memecoin | ⛔ Rate Limit |
 | Saylor | 📬 STRC | 🛡️ STRF: *always works, halves damage, +1 Block, never hides* | 🔄 STRK: *20 dmg* | 📈 MSTR: *15–45 dmg, rolled each time* |
 | Charles | 🧊 Glacier Drop | 🔏 ZK Proof *(55%)* | 📜 Peer Review | ✨ Leios |
@@ -183,7 +192,7 @@ Every fighter has the same five buttons: same colors, same jobs. A fighter can *
 | Adam Back | ⛏️ Hashcash | 🧅 Cypherpunk *(70%)* | 🖼️ Inscription *(15%)* | 🍴 Soft Fork *(10%)* |
 | Vitalik | 📝 Essay Drop | 🫥 Privacy Pool *(55%)* | 🧸 Soulbound *(35%)* | 🌱 Public Goods *(20%)* |
 
-The rest of this section uses the generic names.
+The rest of this section uses the generic names (the jobs).
 
 ### Strike
 The only honest move. Always hits if the target is not Hidden. **10 damage.** +2 Blocks. No joke banner unless it KOs.
@@ -264,8 +273,8 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Adam Back | 70 | Cypherpunk: `PRIORITIZE 1`. This is his whole personality |
 | Vitalik | 55 | Privacy Pool: `FIGHT CHAT CONTROL` / `I CHOOSE BALANCE` |
 | Charles | 55 | ZK Proof: `SELECTIVE DISCLOSURE`. Selective disclosure is the whole pitch |
-| Mert | 45 | Infra guy who still lives on mainnet Twitter |
-| Toly | 35 | Transparent high-performance capitalist |
+| Mert | 45 | Zolana: `EVERY BALD GUY EVER` / `VIEW KEY LEAKED` |
+| Toly | 35 | Seed Vault: `THE PHONE IS THE SHOW`. The salesman wants to be seen |
 | Garlinghouse | 25 | In The Room: `BLOCKED BY THE ANTI-CRYPTO ARMY`. A settlements guy, bad at hiding |
 | Saylor | — | His blue button (STRF) never hides; it always works and halves the damage |
 
@@ -274,8 +283,8 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Character | Success % | Fail extra line |
 |---|---|---|
 | Garlinghouse | 55 | RLUSD: `UTILITY TBD` |
-| Toly | 50 | `FLOOR IS LATENCY` |
-| Mert | 45 | `RIGHT-CLICK SAVED` |
+| Toly | 50 | Slop Cannon: `NOT IN PROD` |
+| Mert | 45 | Memecoin: `SNIPED IN BLOCK ZERO` |
 | Charles | 40 | Peer Review: `REVISE AND RESUBMIT` |
 | Vitalik | 35 | Soulbound: `SOULBOUND AND ALSO UGLY` |
 | Saylor | 45 | STRK: `STILL PREFERRED` (20 dmg) |
@@ -285,9 +294,9 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 
 | Character | Success % | Fail line |
 |---|---|---|
-| Mert | 40 | `DEV WALLET WAS A DECOY` |
+| Mert | 40 | Rate Limit: `STATUS PAGE: ALL GREEN` |
 | Garlinghouse | 20 | Lawsuit: `I'M NOT SURPRISED. I'M PISSED.` |
-| Toly | 30 | `OUTAGE HIT THE BRIDGE` |
+| Toly | 30 | MEV Hunt: `OUTAGE HIT THE BRIDGE` |
 | Charles | 25 | Leios: `ROADMAP SAYS Q4` |
 | Vitalik | 20 | Public Goods: `UNDERFUNDED` |
 | Saylor | 25 | MSTR: `mNAV BELOW 1` (15–45 dmg) |
@@ -324,9 +333,11 @@ Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `E
 
 **Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`, Charles beating Mert reads `BIGGER THAN ZOLANA`.
 
-**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`; Adam with Hashcash reads `GAME OVER`; Vitalik with Essay Drop reads `READ THE BLOG POST`.
+**Per-button KO lines**: Toly landing the KO with Comrades reads `CHEAP FAST CHAIN GUD`; Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`; Adam with Hashcash reads `GAME OVER`; Vitalik with Essay Drop reads `READ THE BLOG POST`.
 
-**Loser lines**: when Garlinghouse loses, `THIS ONE STINGS` pops over him and is quoted on the result card.
+**Loser lines** pop over the loser and are quoted on the result card: Garlinghouse `THIS ONE STINGS`, Toly `YOU GONNA GET WHAT YOU GONNA GET`.
+
+**Repeat lines** pop over a fighter who presses the same button two turns running: Toly's Slop Cannon twice reads `NO CHILL`.
 
 **CPU after-Super lines** show as a banner after a CPU's Super lands (not when it's the KO): CPU Toly says `SALES GOAL OF THE YEAR ACCOMPLISHED.`
 
@@ -515,13 +526,13 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Rug hits Hidden targets
 - Super: named cutscene, 2–3 seconds, never whiffs, can't be dodged; CPU fires at 10
 - Vitalik's Super: **Badger Dance** (hypnotizes; `THERE IS ONLY LOVE`). Buttons: **Essay Drop / Privacy Pool / Soulbound / Public Goods**
-- Toly's Super: **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
-- Mert's Super: **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
+- Toly's kit: **Comrades / Seed Vault / Slop Cannon / MEV Hunt** + **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
+- Mert's kit: **Shitpost / Zolana / Memecoin / Rate Limit** + **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
 - Saylor's kit: **STRC / STRF / STRK / MSTR** + **Another Orange Dot** (`WE CALL THEM POOR`)
 - Charles's kit: **Glacier Drop / ZK Proof / Peer Review / Leios** + **Midnight Express** (`LFG 2027`)
 - Garlinghouse's kit: **Settle / In The Room / RLUSD / Lawsuit** + **XRP Army** (`WE WON. THEY LOST.`); price calls come from the crowd, never him
 - Adam Back's kit: **Hashcash / Cypherpunk / Inscription / Soft Fork** + **OP_RETURN** (`CHECKMATE FORKERS`)
-- Fighters can rename their buttons; jobs, colors and numbers stay shared
+- Fighters rename their buttons (all seven do); jobs and colors stay shared, numbers only change after a simulator pass
 - Roster: Toly, Mert, Garlinghouse, Vitalik, Adam Back, Charles, Saylor
 - Share: emoji grid (now), encoded result URL (next)
 - Layout: phone-first portrait

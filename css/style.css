@@ -378,6 +378,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .popup.good { color: var(--good); }
 .popup.status { color: #fff; font-size: 1rem; }
 .popup.miss { color: #cfc8e6; }
+.popup.repeat { font-size: 1.15rem; color: #fff; padding: 2px 10px; border-radius: 6px; background: var(--role-mint); -webkit-text-stroke: 1px var(--line); }
 .popup.ticker { font-size: 1.15rem; padding: 2px 8px; border-radius: 6px; background: #0b2a1ccc; -webkit-text-stroke: 1px var(--line); }
 
 .banner {

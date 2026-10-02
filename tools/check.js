@@ -127,7 +127,7 @@ test('Fight ends the instant someone hits 0 (player acts first)', function () {
   assert.strictEqual(f.over, true);
   assert.strictEqual(f.winner, 0);
   assert.strictEqual(f.f[0].hp, 100, 'CPU never got to strike back');
-  assert.strictEqual(f.finish, D.FINISH.strike);
+  assert.strictEqual(f.finishCause, 'strike');
 });
 
 test('Rug fail at 0 Blocks costs 5 HP recoil', function () {
@@ -158,6 +158,19 @@ test('Toly beating Saylor, any way, reads THERE IS A SECOND BEST', function () {
   assert.strictEqual(f.finishCause, 'strike');
 });
 
+test('Toly: Comrades KO reads CHEAP FAST CHAIN GUD; MEV Hunt KO keeps EXIT LIQUIDITY', function () {
+  var f = E.newFight({ player: 'toly', cpu: 'mert', seed: 1 });
+  f.f[1].hp = 5;
+  rig(f, [cpuRoll('mert', 'strike')]);
+  E.playTurn(f, 'strike');
+  assert.strictEqual(f.finish, 'CHEAP FAST CHAIN GUD');
+  var g = E.newFight({ player: 'toly', cpu: 'mert', seed: 1 });
+  g.f[1].hp = 5;
+  rig(g, [cpuRoll('mert', 'strike'), 0 /* MEV Hunt lands */]);
+  E.playTurn(g, 'rug');
+  assert.strictEqual(g.finish, D.FINISH.rug);
+});
+
 test('Mert Super KO reads TRILLIONS', function () {
   var f = E.newFight({ player: 'mert', cpu: 'adam', seed: 1 });
   f.f[0].blocks = 10;
@@ -177,6 +190,10 @@ test('Renamed buttons fit on a phone and have their banner lines', function () {
       assert(mv.icon, id + ' ' + m + ': needs an icon');
       if (m !== 'strike') assert(mv.ok, id + ' ' + m + ': needs an ok line');
       if (m !== 'strike' && !(m === 'privacy' && F.brace)) assert(mv.fail, id + ' ' + m + ': needs a fail line');
+    });
+    Object.keys(F.repeatLine || {}).forEach(function (m) {
+      assert(D.DEFAULT_MOVES[m], id + ': repeatLine for unknown button ' + m);
+      assert(typeof F.repeatLine[m] === 'string' && F.repeatLine[m], id + ': repeatLine ' + m + ' needs text');
     });
     if (!F.moves || !F.moves.mint) assert(F.mintFail, id + ': needs mintFail');
     if (!F.moves || !F.moves.rug) assert(F.rugFail, id + ': needs rugFail');
