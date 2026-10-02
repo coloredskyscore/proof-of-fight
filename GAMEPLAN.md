@@ -11,6 +11,13 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 2, 2026 (late night): Vitalik's kit and the Badger Dance
+
+Full concept and build notes: [docs/supers/vitalik.md](docs/supers/vitalik.md). His Super is renamed from Ultra Sound Moves to **Badger Dance**.
+- **The cut-in is now the badger dance** from the conference video: a green screen of black-and-white badgers and a stage of people in lanyards, Vitalik front and center, everyone's arms straight out and flapping in sync. Same hypnosis effect (15 dmg + Hypnotized).
+- When someone he hypnotized hits themselves: `DEFENSIVE ACCELERATION` (d/acc). Super KO `THERE IS ONLY LOVE`, loser wears the Milady PFP (🎀). `MILADY IS BACK` after CPU Vitalik's Super.
+- **Buttons:** 📝 Essay Drop (KO: `READ THE BLOG POST`) · 🫥 Privacy Pool (`FIGHT CHAT CONTROL` / `I CHOOSE BALANCE`) · 🧸 Soulbound (`NON-TRANSFERABLE` / `SOULBOUND AND ALSO UGLY`) · 🌱 Public Goods (`QUADRATIC FUNDING` / `UNDERFUNDED`). `SOUNDPROOF WALL` when an attack misses him. He holds a 🍵 on stage.
+
 ### Oct 2, 2026 (night): Adam Back's kit
 
 Full concept and build notes: [docs/supers/adam.md](docs/supers/adam.md). The joke is his tone: short, technical, slightly smug, the other chain already lost.
@@ -174,6 +181,7 @@ Every fighter has the same five buttons: same colors, same jobs. A fighter can *
 | Charles | 🧊 Glacier Drop | 🔏 ZK Proof *(55%)* | 📜 Peer Review | ✨ Leios |
 | Garlinghouse | 💸 Settle | 🏛️ In The Room *(25%)* | 💵 RLUSD | ⚖️ Lawsuit *(20%)* |
 | Adam Back | ⛏️ Hashcash | 🧅 Cypherpunk *(70%)* | 🖼️ Inscription *(15%)* | 🍴 Soft Fork *(10%)* |
+| Vitalik | 📝 Essay Drop | 🫥 Privacy Pool *(55%)* | 🧸 Soulbound *(35%)* | 🌱 Public Goods *(20%)* |
 
 The rest of this section uses the generic names.
 
@@ -236,7 +244,7 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 | `toly` | Toly | @toly | Throughput / phone sales |
 | `mert` | Mert | @mert | Infra / every bald guy ever |
 | `garlinghouse` | Garlinghouse | @bgarlinghouse | Settlements / straight man |
-| `vitalik` | Vitalik | @VitalikButerin | Research / questionable dance moves |
+| `vitalik` | Vitalik | @VitalikButerin | Research / the badger dance |
 | `adam` | Adam Back | @adam3us | Cypherpunk / hashcash |
 | `charles` | Charles | @IOHK_Charles | Midnight / Dire Wolf Mode |
 | `saylor` | Saylor | @saylor | Tank / preferred stock |
@@ -254,7 +262,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Character | Hide % | Why |
 |---|---|---|
 | Adam Back | 70 | Cypherpunk: `PRIORITIZE 1`. This is his whole personality |
-| Vitalik | 55 | Privacy researcher, public face |
+| Vitalik | 55 | Privacy Pool: `FIGHT CHAT CONTROL` / `I CHOOSE BALANCE` |
 | Charles | 55 | ZK Proof: `SELECTIVE DISCLOSURE`. Selective disclosure is the whole pitch |
 | Mert | 45 | Infra guy who still lives on mainnet Twitter |
 | Toly | 35 | Transparent high-performance capitalist |
@@ -269,7 +277,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Toly | 50 | `FLOOR IS LATENCY` |
 | Mert | 45 | `RIGHT-CLICK SAVED` |
 | Charles | 40 | Peer Review: `REVISE AND RESUBMIT` |
-| Vitalik | 35 | `SOULBOUND AND ALSO UGLY` |
+| Vitalik | 35 | Soulbound: `SOULBOUND AND ALSO UGLY` |
 | Saylor | 45 | STRK: `STILL PREFERRED` (20 dmg) |
 | Adam Back | 15 | Inscription: `THAT'S NOT WHAT BITCOIN IS FOR` |
 
@@ -281,7 +289,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Garlinghouse | 20 | Lawsuit: `I'M NOT SURPRISED. I'M PISSED.` |
 | Toly | 30 | `OUTAGE HIT THE BRIDGE` |
 | Charles | 25 | Leios: `ROADMAP SAYS Q4` |
-| Vitalik | 20 | `PUBLIC GOODS ONLY` |
+| Vitalik | 20 | Public Goods: `UNDERFUNDED` |
 | Saylor | 25 | MSTR: `mNAV BELOW 1` (15–45 dmg) |
 | Adam Back | 10 | Soft Fork: `NOT BY POPULAR VOTE` |
 
@@ -310,13 +318,13 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Charles | **Midnight Express** ([doc](docs/supers/charles.md)) | Five peer reviewers nod while his sentence types out; the lights go out mid-word; moon, stars, "BIGGER THAN ZCASH" | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** | LFG 2027 |
 | Saylor | **Another Orange Dot** ([doc](docs/supers/saylor.md)) | Orange dots stamp one by one onto his tracker chart. "A LITTLE MORE ORANGE". On a KO: the astronaut DJ, `FIAT AS A STORE OF VALUE` / `WE CALL THEM POOR` | **25 dmg + HODL** (Saylor takes half damage this turn and next) | WE CALL THEM POOR |
 | Adam Back | **OP_RETURN** ([doc](docs/supers/adam.md)) | Long-barreled gun etched `OP_RETURN` fires a data blob. "FORK AROUND AND FIND OUT". `SALTY TEARS` if it strips a HODL | **Prune** (strips their HODL) **then 25 dmg** | CHECKMATE FORKERS |
-| Vitalik | **Ultra Sound Moves** | A big screen behind him full of dancing bears, arms locked straight out, swaying. Vitalik in front doing the exact same awkward dance. "DON'T LOOK AT THE DANCE." | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | HYPNOTIZED |
+| Vitalik | **Badger Dance** ([doc](docs/supers/vitalik.md)) | The badger dance: a green screen of badgers and a stage of people in lanyards, arms straight out, flapping in sync; Vitalik front and center. "DON'T LOOK AT THE DANCE." Their self-hits read `DEFENSIVE ACCELERATION` | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | THERE IS ONLY LOVE |
 
 Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY`, hitting yourself `SELF-REKT`.
 
 **Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`, Charles beating Mert reads `BIGGER THAN ZOLANA`.
 
-**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`; Adam with Hashcash reads `GAME OVER`.
+**Per-button KO lines**: Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`; Adam with Hashcash reads `GAME OVER`; Vitalik with Essay Drop reads `READ THE BLOG POST`.
 
 **Loser lines**: when Garlinghouse loses, `THIS ONE STINGS` pops over him and is quoted on the result card.
 
@@ -506,7 +514,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Buttons: **Strike / Privacy / Mint / Rug / Super** (10 / hide / 24 / 36 / Super)
 - Rug hits Hidden targets
 - Super: named cutscene, 2–3 seconds, never whiffs, can't be dodged; CPU fires at 10
-- Vitalik's Super: **Ultra Sound Moves** (hypnotizing dance)
+- Vitalik's Super: **Badger Dance** (hypnotizes; `THERE IS ONLY LOVE`). Buttons: **Essay Drop / Privacy Pool / Soulbound / Public Goods**
 - Toly's Super: **Second Best Salesman** (35-damage phone sale, `HATER CONVERTED`)
 - Mert's Super: **CEO of Helium** (8 dmg + Blind, `TRILLIONS`)
 - Saylor's kit: **STRC / STRF / STRK / MSTR** + **Another Orange Dot** (`WE CALL THEM POOR`)

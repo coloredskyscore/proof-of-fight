@@ -133,15 +133,27 @@
       }
     },
     vitalik: {
-      id: 'vitalik', name: 'Vitalik', lane: 'Research / questionable dance moves',
+      id: 'vitalik', name: 'Vitalik', lane: 'Research / the badger dance',
       color: '#9b7bff', emoji: '🦄',
       hide: 0.55, mint: 0.35, rug: 0.20,
-      mintFail: 'SOULBOUND AND ALSO UGLY', rugFail: 'PUBLIC GOODS ONLY',
       ai: { strike: 3, privacy: 3, mint: 2, rug: 2 },
+      heldProp: '🍵', // green tea in his hand on stage ("mi pinxe lo crino tcati")
+      moves: {
+        strike:  { name: 'Essay Drop',   icon: '📝', ko: 'READ THE BLOG POST' },
+        privacy: { name: 'Privacy Pool', icon: '🫥', ok: 'FIGHT CHAT CONTROL', fail: 'I CHOOSE BALANCE',
+                   okSub: 'You cannot make society secure by making people insecure' },
+        mint:    { name: 'Soulbound',    icon: '🧸', ok: 'NON-TRANSFERABLE',  fail: 'SOULBOUND AND ALSO UGLY' },
+        rug:     { name: 'Public Goods', icon: '🌱', ok: 'QUADRATIC FUNDING', fail: 'UNDERFUNDED' }
+      },
+      dodgeLine: 'SOUNDPROOF WALL', // the hit did not travel
       super: {
-        id: 'dance', name: 'Ultra Sound Moves', prop: '🕺',
+        // The badger dance: a green screen of badgers and a stage of people, arms straight out, flapping in sync.
+        id: 'dance', name: 'Badger Dance', prop: '🕺',
         line: "DON'T LOOK AT THE DANCE.",
-        blurb: 'Small hit + Hypnotized (their next attack hits themselves)', finish: 'HYPNOTIZED'
+        blurb: 'Small hit + Hypnotized (their next attack hits themselves)', finish: 'THERE IS ONLY LOVE',
+        cpuAfter: 'MILADY IS BACK',
+        koProp: '🎀',                           // the loser ends up in the Milady PFP
+        selfHitLine: 'DEFENSIVE ACCELERATION'   // when someone he hypnotized hits themselves (d/acc)
       }
     },
     adam: {

@@ -208,6 +208,7 @@
       '<div class="f-torso"></div>' +
       '<div class="f-head"><span>' + F.emoji + '</span></div>' +
       '<span class="f-fist f-fist-b"></span><span class="f-fist f-fist-a"></span>' +
+      (F.heldProp ? '<span class="f-held">' + F.heldProp + '</span>' : '') +
       '</div></div></div><div class="f-shadow"></div>';
   }
 
@@ -257,6 +258,7 @@
       nick: own.nick || '',
       icon: own.icon || base.icon,
       ok: own.ok || base.ok,
+      okSub: own.okSub || null,
       fail: own.fail || base.fail,
       // Purple hitting someone who hid: their own line, else their success line, else the default.
       pierce: own.pierce || own.ok || base.pierce,
@@ -430,7 +432,7 @@
           popup(e.who, pv.ok, 'good');
           await sleep(650);
         } else if (e.ok) {
-          banner(pv.ok, (e.who === 0 ? 'You' : nm(e.who)) + ' vanished');
+          banner(pv.ok, pv.okSub || (e.who === 0 ? 'You' : nm(e.who)) + ' vanished');
           await sleep(1150);
         } else {
           wobble(e.who);
@@ -505,7 +507,9 @@
     if (e.target === 0) buzz(40);
 
     if (e.self) {
-      banner('SELF-REKT', (e.attacker === 0 ? 'You are' : nm(e.attacker) + ' is') + ' hypnotized');
+      // Vitalik's hypnosis: DEFENSIVE ACCELERATION (d/acc). Anyone else's: SELF-REKT.
+      var selfHit = D.FIGHTERS[S.fight.f[1 - e.attacker].id].super.selfHitLine;
+      banner(selfHit || 'SELF-REKT', (e.attacker === 0 ? 'You hit' : nm(e.attacker) + ' hit') + (e.attacker === 0 ? ' yourself' : ' themselves'));
       log(who(e.attacker) + ' hit ' + (e.attacker === 0 ? 'yourself' : 'themselves') + ' for ' + e.amount + '.');
       await sleep(1350);
       return;
@@ -599,31 +603,57 @@
   }
 
   // Vitalik's dance: everyone on the big screen and on stage, arms locked straight out, swaying in sync.
-  function dancerSVG(kind) {
-    if (kind === 'bear') {
-      return '<svg class="dancer" viewBox="0 0 60 92" aria-hidden="true"><g class="dz" stroke="#111" stroke-width="2">' +
-        '<rect x="20" y="62" width="8" height="27" rx="4" fill="#7a4a1f"/>' +
-        '<rect x="32" y="62" width="8" height="27" rx="4" fill="#7a4a1f"/>' +
-        '<rect x="1" y="36" width="58" height="8" rx="4" fill="#8b5a2b"/>' +
-        '<ellipse cx="30" cy="52" rx="14" ry="16" fill="#a0692f"/>' +
-        '<ellipse cx="30" cy="55" rx="8" ry="9" fill="#d9a86c" stroke="none"/>' +
-        '<circle cx="19" cy="11" r="6" fill="#a0692f"/><circle cx="41" cy="11" r="6" fill="#a0692f"/>' +
-        '<circle cx="30" cy="22" r="13" fill="#a0692f"/>' +
-        '<ellipse cx="30" cy="27" rx="6" ry="4.5" fill="#d9a86c" stroke="none"/>' +
-        '<circle cx="30" cy="25.5" r="1.8" fill="#111" stroke="none"/>' +
-        '<circle cx="25" cy="19" r="1.6" fill="#111" stroke="none"/><circle cx="35" cy="19" r="1.6" fill="#111" stroke="none"/>' +
-        '</g></svg>';
-    }
-    return '<svg class="dancer vitalik-dancer" viewBox="0 0 80 150" aria-hidden="true"><g class="dz" stroke="#111" stroke-width="2.5">' +
-      '<rect x="31" y="92" width="7" height="54" rx="3.5" fill="#2b2b3a"/>' +
-      '<rect x="42" y="92" width="7" height="54" rx="3.5" fill="#2b2b3a"/>' +
-      '<rect x="2" y="50" width="76" height="7" rx="3.5" fill="#f2d4b6"/>' +
-      '<rect x="28" y="44" width="24" height="52" rx="6" fill="#9b7bff"/>' +
-      '<ellipse cx="40" cy="26" rx="12" ry="16" fill="#f2d4b6"/>' +
-      '<path d="M28 21 Q40 2 52 21 Q40 13 28 21Z" fill="#5b3d26"/>' +
-      '<circle cx="35.5" cy="26" r="1.8" fill="#111" stroke="none"/><circle cx="44.5" cy="26" r="1.8" fill="#111" stroke="none"/>' +
-      '<path d="M35 34 Q40 38 45 34" fill="none"/>' +
+  // Vitalik's badger dance (from the conference video): a green screen full of black-and-white badgers
+  // and a stage of people in lanyards, everyone's arms straight out, flapping up and down in sync.
+  function badgerSVG(style) {
+    var dark = '#2e2e33', white = '#f4f4f4';
+    return '<svg class="badger" viewBox="0 0 100 100" style="' + style + '" aria-hidden="true"><g class="bob" stroke="#111" stroke-width="2">' +
+      '<g class="flap-l"><rect x="4" y="40" width="31" height="11" rx="5.5" fill="' + dark + '"/><circle cx="6" cy="45.5" r="5" fill="' + white + '"/></g>' +
+      '<g class="flap-r"><rect x="65" y="40" width="31" height="11" rx="5.5" fill="' + dark + '"/><circle cx="94" cy="45.5" r="5" fill="' + white + '"/></g>' +
+      '<rect x="38" y="78" width="9" height="17" rx="4" fill="' + dark + '"/><rect x="53" y="78" width="9" height="17" rx="4" fill="' + dark + '"/>' +
+      '<ellipse cx="50" cy="60" rx="18" ry="22" fill="' + dark + '"/>' +
+      '<ellipse cx="50" cy="64" rx="11" ry="15" fill="' + white + '" stroke="none"/>' +
+      '<circle cx="38" cy="15" r="5" fill="' + dark + '"/><circle cx="62" cy="15" r="5" fill="' + dark + '"/>' +
+      '<ellipse cx="50" cy="26" rx="15" ry="17" fill="' + white + '"/>' +
+      '<ellipse cx="43" cy="24" rx="4" ry="12" fill="#1a1a1a" stroke="none" transform="rotate(10 43 24)"/>' +
+      '<ellipse cx="57" cy="24" rx="4" ry="12" fill="#1a1a1a" stroke="none" transform="rotate(-10 57 24)"/>' +
+      '<circle cx="44" cy="25" r="1.4" fill="#fff" stroke="none"/><circle cx="56" cy="25" r="1.4" fill="#fff" stroke="none"/>' +
+      '<ellipse cx="50" cy="40" rx="3.2" ry="2.3" fill="#1a1a1a" stroke="none"/>' +
       '</g></svg>';
+  }
+
+  function personSVG(p) {
+    var skin = p.skin || '#f2d4b6';
+    var hair = p.long
+      ? '<path d="M38 30 Q36 8 50 9 Q64 8 62 30 L64 50 Q58 44 58 30 Q50 20 42 30 Q42 44 36 50Z" fill="' + p.hair + '"/>'
+      : '<path d="M38 27 Q50 6 62 27 Q50 18 38 27Z" fill="' + p.hair + '"/>';
+    var chest = p.vitalik
+      ? '<path d="M50 58 L56 69 L50 80 L44 69Z" fill="#e8eefc" stroke="#111" stroke-width="1"/>'
+      : '<path d="M42 47 L50 66 L58 47" fill="none" stroke="#d22" stroke-width="2.5"/><rect x="46" y="65" width="8" height="10" rx="1" fill="#fff" stroke="#111" stroke-width="1"/>';
+    return '<svg class="person' + (p.vitalik ? ' vit' : '') + '" viewBox="0 0 100 150" aria-hidden="true"><g class="bob" stroke="#111" stroke-width="2">' +
+      '<g class="flap-l"><rect x="5" y="50" width="34" height="8" rx="4" fill="' + p.shirt + '"/><circle cx="7" cy="54" r="4.5" fill="' + skin + '"/></g>' +
+      '<g class="flap-r"><rect x="61" y="50" width="34" height="8" rx="4" fill="' + p.shirt + '"/><circle cx="93" cy="54" r="4.5" fill="' + skin + '"/></g>' +
+      '<rect x="40" y="96" width="8" height="50" rx="3" fill="' + (p.pants || '#2b2b3a') + '"/><rect x="52" y="96" width="8" height="50" rx="3" fill="' + (p.pants || '#2b2b3a') + '"/>' +
+      '<rect x="36" y="46" width="28" height="54" rx="7" fill="' + p.shirt + '"/>' + chest +
+      '<ellipse cx="50" cy="30" rx="11" ry="14" fill="' + skin + '"/>' + hair +
+      '<circle cx="46" cy="30" r="1.5" fill="#111" stroke="none"/><circle cx="54" cy="30" r="1.5" fill="#111" stroke="none"/>' +
+      '<path d="M46 37 Q50 40 54 37" fill="none" stroke-width="1.5"/>' +
+      '</g></svg>';
+  }
+
+  function badgerDanceDeco() {
+    var badgers = [
+      'left:-5%;top:34%;width:31%', 'left:24%;top:16%;width:24%', 'left:36%;top:34%;width:31%',
+      'left:58%;top:10%;width:22%', 'left:72%;top:30%;width:31%', 'left:5%;top:2%;width:13%'
+    ].map(badgerSVG).join('');
+    // Back row stands in the gaps between the front row, like the video.
+    var back = [{ shirt: '#f3f3f3', hair: '#5b3d26' }, { shirt: '#1f3d2a', hair: '#2a2a2a' }].map(personSVG).join('');
+    var front = [
+      { shirt: '#222', hair: '#2a2a2a' }, { shirt: '#3e5c8f', hair: '#5b3d26', vitalik: true },
+      { shirt: '#2a2a2a', hair: '#3a2a1f', long: true }
+    ].map(personSVG).join('');
+    return '<div class="badger-screen">' + badgers + '</div>' +
+      '<div class="badger-stage"><div class="row-back">' + back + '</div><div class="row-front">' + front + '</div></div>';
   }
 
   // Toly: generic thick phone slabs with a stupid camera bump. No real logos.
@@ -692,11 +722,7 @@
   function decoFor(id, ctx) {
     switch (id) {
       case 'salesman': return salesDeco(ctx);
-      case 'dance':
-        return {
-          screen: '<div class="bigscreen">' + dancerSVG('bear') + dancerSVG('bear') + dancerSVG('bear') + dancerSVG('bear') + '</div>',
-          portrait: dancerSVG('vitalik')
-        };
+      case 'dance': return { screen: badgerDanceDeco() };
       case 'helium': return { screen: '<div class="deco-sun"></div>', portrait: '<div class="dome-beam"></div>' };
       case 'xrparmy': return { screen: armyDeco() };
       case 'midnight': return { screen: midnightDeco(D.FIGHTERS.charles.super.lecture) };
