@@ -16,6 +16,7 @@ One file per fighter: their Super and, optionally, their own button names. Drop 
 | Skip line *(optional, Blind/Sleep Supers)* | Over the opponent on the turn they skip | WHO WAS THAT |
 | Rival KO line *(optional)* | Replaces the finish line when beating one specific fighter | Toly vs Saylor: THERE IS A SECOND BEST |
 | KO prop *(optional)* | What the loser is left holding on stage and on the result card | 🎈 |
+| Prune line *(optional, Prune Supers)* | Banner when the Super strips someone's HODL | Adam: SALTY TEARS |
 | Loser line *(optional, per fighter)* | Over them when they're KO'd, and quoted on the result card | Garlinghouse: THIS ONE STINGS |
 | Dodge line *(optional, per fighter)* | Banner when an attack misses this fighter because they hid | Charles: I AM NOT ACCOUNTABLE |
 | KO scene *(optional, needs a little code)* | A short extra scene when the Super lands the KO | Saylor's astronaut DJ: WE CALL THEM POOR |
@@ -65,3 +66,4 @@ A fighter can have their own damage or odds on a button (Saylor's STRK does 20 a
 | Saylor | Another Orange Dot | yes, plus his own numbers and the STRF brace | [saylor.md](saylor.md) |
 | Charles | Midnight Express | yes | [charles.md](charles.md) |
 | Garlinghouse | XRP Army | yes | [garlinghouse.md](garlinghouse.md) |
+| Adam Back | OP_RETURN | yes | [adam.md](adam.md) |
