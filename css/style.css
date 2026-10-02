@@ -727,32 +727,40 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .saga-box small { position: relative; display: block; font: 900 8px var(--body); letter-spacing: .05em; }
 .cutin.play .saga-box { animation: boxDrop .55s .95s cubic-bezier(.3, 1.6, .5, 1) both; }
 
-/* Vitalik: the big screen of dancers, everyone arms-out and in sync */
-.cutin.sup-dance { justify-content: flex-end; padding-bottom: 6vh; }
-.sup-dance .cutin-pdeco { position: static; }
-.sup-dance .cutin-portrait {
-  background: transparent; border: none; box-shadow: none; border-radius: 0;
-  width: min(28vw, 120px); aspect-ratio: auto;
+/* Vitalik: the badger dance. Green screen of badgers, a stage of people in front, everyone's arms
+   straight out and flapping up and down in sync. */
+.cutin.sup-dance { justify-content: flex-end; padding-bottom: 5vh; }
+.sup-dance .cutin-portrait { display: none; }
+.badger-screen {
+  position: absolute; left: 4%; right: 4%; top: 4%; height: 42%;
+  overflow: hidden;
+  border: 5px solid #111; border-radius: 8px;
+  background: radial-gradient(ellipse at 50% 40%, #9cff63, #4bd424 65%, #2f9f12);
+  box-shadow: 0 0 34px #8cff5a66;
 }
-.sup-dance .cutin-head, .sup-dance .cutin-prop { display: none; }
+.badger { position: absolute; height: auto; overflow: visible; }
+.badger-stage { position: absolute; left: 1%; right: 1%; top: 30%; height: 31%; }
+.badger-stage::after {
+  content: ''; position: absolute; left: -6%; right: -6%; bottom: -5%; height: 9%;
+  background: linear-gradient(#0000, #000c);
+}
+.row-back, .row-front { position: absolute; left: 0; right: 0; display: flex; justify-content: space-around; align-items: flex-end; }
+.row-back { bottom: 22%; height: 62%; justify-content: space-evenly; }
+.row-front { bottom: 0; height: 80%; z-index: 1; }
+.person { height: 100%; width: auto; overflow: visible; }
+.row-front .person { margin: 0 -14px; }
+.person.vit { height: 114%; }
+.flap-l { transform-box: fill-box; transform-origin: 100% 50%; animation: flapL .45s ease-in-out infinite alternate; }
+.flap-r { transform-box: fill-box; transform-origin: 0% 50%; animation: flapR .45s ease-in-out infinite alternate; }
+.bob { animation: dip .45s ease-in-out infinite alternate; }
 
-.bigscreen {
-  position: absolute; left: 6%; right: 6%; top: 5%; height: 30%;
-  display: flex; justify-content: space-evenly; align-items: flex-end;
-  padding: 8px 4% 4px;
-  border: 5px solid #111; border-radius: 10px;
-  background:
-    repeating-linear-gradient(#0000 0 3px, #0003 3px 4px),
-    radial-gradient(ellipse at center, #3b2a6b, #120c24);
-  box-shadow: 0 0 30px #b9a3ff66, inset 0 0 30px #0008;
-}
-.bigscreen .dancer { height: 92%; width: auto; }
-.dancer .dz {
-  transform-box: fill-box;
+/* Vitalik's green tea, in hand on stage */
+.f-held {
+  position: absolute; right: -14%; top: 24%;
+  font-size: 20cqw; z-index: 4;
   transform-origin: 50% 100%;
-  animation: awkward .45s steps(2, jump-none) infinite alternate;
+  animation: sip 4.5s ease-in-out infinite;
 }
-.vitalik-dancer { width: 100%; height: auto; }
 
 /* ---------- Modals ---------- */
 .modal {
@@ -841,6 +849,10 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   80% { transform: translateX(3px); }
 }
 @keyframes wobble { 25% { transform: rotate(-8deg); } 75% { transform: rotate(6deg); } }
+@keyframes flapL { from { transform: rotate(16deg); } to { transform: rotate(-16deg); } }
+@keyframes flapR { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+@keyframes dip { to { transform: translateY(3%); } }
+@keyframes sip { 0%, 82%, 100% { transform: rotate(-6deg); } 88%, 94% { transform: rotate(-38deg) translateY(-8%); } }
 @keyframes awkward {
   from { transform: rotate(-10deg) translateY(0); }
   to { transform: rotate(10deg) translateY(-4%); }
@@ -899,7 +911,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 
 @media (prefers-reduced-motion: reduce) {
   .f-bob, .title-roster span, .move-super.ready, .blocks.full i.on, .deco-sun, .deco-run, .deco-bytes,
-  .dancer .dz, .fighter.dance .f-bob, .f-bubble.spin, .fighter.hurt .f-sprite, .cutin-stripes,
+  .flap-l, .flap-r, .bob, .f-held, .fighter.dance .f-bob, .f-bubble.spin, .fighter.hurt .f-sprite, .cutin-stripes,
   .astro, .astro-arm, .spk {
     animation: none !important;
   }

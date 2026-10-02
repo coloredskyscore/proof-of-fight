@@ -304,6 +304,20 @@ test('Adam: OP_RETURN KO reads CHECKMATE FORKERS, Hashcash KO reads GAME OVER', 
   assert.strictEqual(g.finish, 'GAME OVER');
 });
 
+test('Vitalik: dance KO reads THERE IS ONLY LOVE, Essay Drop KO reads READ THE BLOG POST', function () {
+  var f = E.newFight({ player: 'vitalik', cpu: 'toly', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].hp = 10;
+  rig(f, [cpuRoll('toly', 'strike')]);
+  E.playTurn(f, 'super');
+  assert.strictEqual(f.finish, 'THERE IS ONLY LOVE');
+  var g = E.newFight({ player: 'vitalik', cpu: 'toly', seed: 1 });
+  g.f[1].hp = 5;
+  rig(g, [cpuRoll('toly', 'strike')]);
+  E.playTurn(g, 'strike');
+  assert.strictEqual(g.finish, 'READ THE BLOG POST');
+});
+
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {
   var rng = E.makeRng(99);
   for (var n = 0; n < 10000; n++) {
