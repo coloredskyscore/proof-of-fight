@@ -382,9 +382,14 @@
   async function handle(e) {
     switch (e.t) {
       case 'reveal':
-        S.lastMoves = e.moves;
         chip(0, e.moves[0], e.hyp[0]);
         chip(1, e.moves[1], e.hyp[1]);
+        for (var r = 0; r < 2; r++) {
+          // Same button two turns running (Toly's Slop Cannon: NO CHILL).
+          var rep = D.FIGHTERS[S.fight.f[r].id].repeatLine;
+          if (rep && rep[e.moves[r]] && S.lastMoves && S.lastMoves[r] === e.moves[r]) popup(r, rep[e.moves[r]], 'repeat');
+        }
+        S.lastMoves = e.moves;
         log(moveText(0, e.moves[0]) + '   ·   ' + moveText(1, e.moves[1]));
         await sleep(750);
         break;

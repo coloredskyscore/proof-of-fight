@@ -20,6 +20,7 @@ One file per fighter: their Super and, optionally, their own button names. Drop 
 | Prune line *(optional, Prune Supers)* | Banner when the Super strips someone's HODL | Adam: SALTY TEARS |
 | Loser line *(optional, per fighter)* | Over them when they're KO'd, and quoted on the result card | Garlinghouse: THIS ONE STINGS |
 | Dodge line *(optional, per fighter)* | Banner when an attack misses this fighter because they hid | Charles: I AM NOT ACCOUNTABLE |
+| Repeat line *(optional, per fighter)* | Pops over them when they press the same button two turns running | Toly's Slop Cannon twice: NO CHILL |
 | KO scene *(optional, needs a little code)* | A short extra scene when the Super lands the KO | Saylor's astronaut DJ: WE CALL THEM POOR |
 
 ## Button names (optional, per fighter)
@@ -62,7 +63,7 @@ A fighter can have their own damage or odds on a button (Saylor's STRK does 20 a
 
 | Fighter | Super | Own button names | Doc |
 |---|---|---|---|
-| Toly | Second Best Salesman | not yet | [toly.md](toly.md) |
+| Toly | Second Best Salesman | yes | [toly.md](toly.md) |
 | Mert | CEO of Helium | yes | [mert.md](mert.md) |
 | Saylor | Another Orange Dot | yes, plus his own numbers and the STRF brace | [saylor.md](saylor.md) |
 | Charles | Midnight Express | yes | [charles.md](charles.md) |

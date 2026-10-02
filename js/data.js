@@ -76,8 +76,16 @@
       id: 'toly', name: 'Toly', lane: 'Throughput / phone sales',
       color: '#19c6a0', emoji: '⚡',
       hide: 0.35, mint: 0.50, rug: 0.30,
-      mintFail: 'FLOOR IS LATENCY', rugFail: 'OUTAGE HIT THE BRIDGE',
       ai: { strike: 4, privacy: 2, mint: 3, rug: 3 },
+      moves: {
+        strike:  { name: 'Comrades',    icon: '✊', ko: 'CHEAP FAST CHAIN GUD' },
+        privacy: { name: 'Seed Vault',  icon: '🗝️', ok: 'SEED VAULT HAS THE KEYS', fail: 'THE PHONE IS THE SHOW' },
+        mint:    { name: 'Slop Cannon', icon: '🗑️', ok: 'SLOP, KINO, SKIBIDI BOP', fail: 'NOT IN PROD' },
+        rug:     { name: 'MEV Hunt',    icon: '🥪', ok: 'DRONE THE SANDWICHERS',   fail: 'OUTAGE HIT THE BRIDGE',
+                   pierce: '150MS FINALITY' }
+      },
+      repeatLine: { mint: 'NO CHILL' }, // over him when he picks the same button two turns running
+      loseLine: 'YOU GONNA GET WHAT YOU GONNA GET',
       super: {
         id: 'salesman', name: 'Second Best Salesman', prop: '📱',
         line: 'APPLE + SOLANA MOBILE: 3.469 BILLION',
