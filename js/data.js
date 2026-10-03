@@ -102,6 +102,7 @@
       color: '#ffc53d', emoji: '👨‍🦲',
       hide: 0.45, mint: 0.45, rug: 0.40,
       ai: { strike: 3, privacy: 3, mint: 3, rug: 3 },
+      art: { head: 'art/mert-head.webp', body: 'art/mert-body.webp' }, // black tee, khakis, tattoo sleeve, shades on the collar
       moves: {
         strike:  { name: 'Shitpost',   icon: '🗯️' },
         privacy: { name: 'Zolana',     icon: '🕶️', ok: 'EVERY BALD GUY EVER',    fail: 'VIEW KEY LEAKED' },

@@ -57,6 +57,18 @@ Late-1990s arcade fighting game character select portrait of Anatoly Yakovenko, 
 
 Grok added the cap and headset mic on its own; both stay.
 
+### Mert
+
+Black tee, khakis and the left-arm tattoo sleeve come from the user's reference photos (described in words, not attached to Grok). No prop: the shades hooked on his collar are his real look and a nod to his 🕶️ Zolana button. Grok put the tattoos on his right arm; nobody minds, and when he's the CPU the mirrored sprite shows them on the left.
+
+```
+Late-1990s arcade fighting game character select portrait of Mert Mumtaz, head and shoulders, centered with empty space around the head. Drawn dead serious like a hardened martial arts hero: intense determined glare, jaw set, dramatic lighting with hard-edged shadows. Shaved bald head with a bright shine on top, full thick black beard, thick dark eyebrows. Plain black t-shirt with sunglasses hooked on the collar. Three-quarter view, facing right. Bold black ink lines, hard cel shading with two or three tones, rich saturated colors, anime-influenced hand-drawn 2D arcade art. Plain flat white background. No text, no logos or symbols on clothing, not photorealistic, not cute.
+```
+
+```
+16-bit pixel art fighting game sprite of Mert Mumtaz, same character as the attached image, Sega Genesis era, full body. Shaved bald head with a bright shine on top, full thick black beard, serious determined face. Plain black t-shirt with sunglasses hooked on the collar, a full sleeve of tattoos on his left arm, khaki pants, white sneakers with red laces. Fighting stance facing right, both fists raised, his tattooed left arm toward the viewer. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing.
+```
+
 ## What happens to the images
 
 `tools/art.py` (needs Pillow) cuts out the white background and sizes them:
@@ -75,7 +87,11 @@ python3 tools/art.py head vitalik-portrait.webp art/vitalik-head.webp
 python3 tools/art.py body vitalik-sprite.jpg art/vitalik-body.webp --gap 416,548
 python3 tools/art.py head toly-portrait.jpg art/toly-head.webp --delogo 680,90,850,225
 python3 tools/art.py body toly-sprite.jpg art/toly-body.webp --delogo 560,80,670,165
+python3 tools/art.py head mert-portrait.jpg art/mert-head.webp --crop 0.0,-0.04,1.0,0.96
+python3 tools/art.py body mert-sprite.jpg art/mert-body.webp
 ```
+
+Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay.
 
 Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.webp' }` in `js/data.js`. On stage the sprite stands about 18% taller than the block body (a very wide pose shrinks to stay on screen); when KO'd it falls flat on its back at 70% size so it fits on a phone. A fighter with only a portrait shows it as the head on the block body.
 
@@ -85,7 +101,7 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 |---|---|---|
 | Vitalik | ✅ purple unicorn tee | ✅ unicorn tee, green tea |
 | Toly | ✅ black cap, blazer, headset mic (Solana logo painted off the cap) | ✅ blazer, holding a phone up to sell it |
-| Mert | | |
+| Mert | ✅ bald with the shine, full beard, black tee | ✅ black tee, khakis, tattoo sleeve, shades on the collar, white sneakers with red laces |
 | Garlinghouse | | |
 | Adam Back | | |
 | Charles | | |

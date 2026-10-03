@@ -695,6 +695,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   opacity: 0;
 }
 .cutin.play .dome-beam { animation: beamSweep 1.3s var(--lock, .55s) ease-out both; }
+.cutin-head.has-art ~ .cutin-pdeco .dome-beam { top: 9%; left: 55%; } /* off the shine on top of his portrait's dome */
 
 /* Toly: Second Best Salesman. Brochure of phone bricks fans open, one gets slapped in, airdrop confetti. */
 .cutin { --dir: 1; }
