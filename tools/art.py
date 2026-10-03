@@ -12,6 +12,9 @@ Pockets inside the art (sneakers, a mug, eye whites) are listed too: leave those
 Grok sometimes draws a logo anyway (Toly's cap came back with the Solana mark). Paint a colored logo
 out by giving a box around it; it's filled with the color right around it:
   --delogo 560,80,670,165
+
+A head crop can reach past the image to zoom out (a wide hat brim); write it with = so a leading
+minus isn't read as an option:  --crop=-0.06,-0.08,1.06,1.04
 """
 import argparse
 from PIL import Image, ImageDraw, ImageFilter

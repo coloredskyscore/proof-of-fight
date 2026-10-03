@@ -198,6 +198,7 @@
       color: '#ef4444', emoji: '🤠',
       hide: 0.55, mint: 0.40, rug: 0.25,
       ai: { strike: 2, privacy: 3, mint: 3, rug: 2 },
+      art: { head: 'art/charles-head.webp', body: 'art/charles-body.webp' }, // cowboy hat, blue plaid, the grin, a stack of papers
       moves: {
         strike:  { name: 'Glacier Drop', icon: '🧊', ko: 'BANK THE UNBANKED' },
         privacy: { name: 'ZK Proof',     icon: '🔏', ok: 'SELECTIVE DISCLOSURE', fail: 'WELCOME TO FUD LAND' },
