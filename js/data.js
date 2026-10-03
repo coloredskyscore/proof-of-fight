@@ -77,6 +77,7 @@
       color: '#19c6a0', emoji: '⚡',
       hide: 0.35, mint: 0.50, rug: 0.30,
       ai: { strike: 4, privacy: 2, mint: 3, rug: 3 },
+      art: { head: 'art/toly-head.webp', body: 'art/toly-body.webp' }, // blazer, black cap, phone held up to sell
       moves: {
         strike:  { name: 'Comrades',    icon: '✊', ko: 'CHEAP FAST CHAIN GUD' },
         privacy: { name: 'Seed Vault',  icon: '🗝️', ok: 'SEED VAULT HAS THE KEYS', fail: 'THE PHONE IS THE SHOW' },

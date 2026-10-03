@@ -364,6 +364,10 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   transform: translateX(-50%);
   pointer-events: none; user-select: none; -webkit-user-drag: none;
 }
+/* A wide sprite (arm out, big stance) shrinks to stay on screen instead of stretching past 150% of its spot. */
+@supports (width: 1cqw) {
+  .f-art { height: auto; max-height: 118cqh; max-width: 150cqw; }
+}
 .fighter.has-art .f-chip { top: calc(-18% - 58px); }
 .fighter.has-art .f-bubble { top: calc(-18% - 30px); }
 .fighter.has-art .f-shadow { left: -8%; right: -8%; }

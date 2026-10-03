@@ -8,9 +8,13 @@ The white background is removed by flooding in from the edges. White pockets the
 reach (the gap between an arm and the body) are listed; clear them by passing their position:
   --gap 390,600 --gap 412,980
 Pockets inside the art (sneakers, a mug, eye whites) are listed too: leave those alone.
+
+Grok sometimes draws a logo anyway (Toly's cap came back with the Solana mark). Paint a colored logo
+out by giving a box around it; it's filled with the color right around it:
+  --delogo 560,80,670,165
 """
 import argparse
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 WHITE = 215    # a pixel this bright (every channel) can start a background flood
 THRESH = 60    # how far the flood may drift from the starting white (JPEG noise, soft edges)
@@ -36,6 +40,33 @@ def cut_background(im, gaps):
     for x, y in gaps:
         clear(im, x, y)
     return im
+
+
+def delogo(im, box):
+    """Fill the colorful pixels inside box with the median color just around them."""
+    x0, y0, x1, y1 = box
+    src = im.load()
+    mask = Image.new('L', im.size, 0)
+    m = mask.load()
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            r, g, b = src[x, y][:3]
+            if max(r, g, b) - min(r, g, b) > 28 and max(r, g, b) > 55:
+                m[x, y] = 255
+    mask = mask.filter(ImageFilter.MaxFilter(7))   # take the logo's soft edges too
+    ring = mask.filter(ImageFilter.MaxFilter(15))  # the surface it sits on
+    m, rg = mask.load(), ring.load()
+    around = sorted((src[x, y] for y in range(y0, y1) for x in range(x0, x1) if rg[x, y] and not m[x, y]),
+                    key=lambda c: sum(c[:3]))
+    if not around:
+        return 0
+    fill, n = around[len(around) // 2], 0
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            if m[x, y]:
+                src[x, y] = fill
+                n += 1
+    return n
 
 
 def pockets(im, min_area):
@@ -71,9 +102,12 @@ def main():
     ap.add_argument('out')
     ap.add_argument('--gap', action='append', default=[], help='x,y of a white pocket to clear (source pixels)')
     ap.add_argument('--crop', help='head framing as left,top,right,bottom fractions of the source')
+    ap.add_argument('--delogo', action='append', default=[], help='x0,y0,x1,y1 box around a logo to paint out')
     args = ap.parse_args()
 
     im = Image.open(args.source).convert('RGBA')
+    for d in args.delogo:
+        print('logo painted out: %d px' % delogo(im, tuple(int(v) for v in d.split(','))))
     gaps = [tuple(int(v) for v in g.split(',')) for g in args.gap]
     cut_background(im, gaps)
 

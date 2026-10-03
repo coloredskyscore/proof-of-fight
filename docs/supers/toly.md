@@ -215,3 +215,8 @@ Grok's research as pasted, unedited. The "Where they go" table arrived flattened
 **Balance:** unchanged (numbers didn't move; the simulator matches the previous build exactly).
 
 **Where it lives:** `js/data.js` (`toly.moves`, `toly.repeatLine`, `toly.loseLine`), the repeat popup in `js/app.js` (the `reveal` event) and `css/style.css` (`.popup.repeat`).
+
+## Art (Oct 3, 2026)
+
+Toly has real art now (see [docs/art/README.md](../art/README.md)): a late-90s arcade portrait in a black cap, salesman blazer over the teal tee, and a headset mic (conference-stage Toly), and a 16-bit sprite holding a chunky phone up at his opponent like he's mid-pitch. The portrait shows in the Super cut-in behind the `BUY NOW` slap phone. Grok drew the Solana logo on his cap in both images; it was painted out, since the game uses no chain logos. The blazer from the original concept is in the art; the blazer flip animation still isn't built.
+

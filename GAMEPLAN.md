@@ -11,12 +11,13 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
-### Oct 2, 2026 (late night, last): Vitalik gets real art
+### Oct 2–3, 2026: fighter art (Vitalik, Toly)
 
-The art style is locked, and Vitalik is the first fighter with it. Guide, prompts and status: [docs/art/README.md](docs/art/README.md).
+The art style is locked. Fighters get it one at a time. Guide, prompts and status: [docs/art/README.md](docs/art/README.md).
 - **Portraits** are late-90s arcade character-select art (1:1); **bodies** are 16-bit pixel sprites (2:3). Both made in Grok Imagine. The joke is drawing the founders dead serious; the outfit carries the comedy.
 - **Vitalik:** a glaring portrait in a purple unicorn tee on the title screen, picker, cut-in and result card; on stage, a lanky 16-bit sprite holding his green tea, standing a bit taller than the block bodies. When KO'd he falls flat on his back.
-- In the Badger Dance he now wears the same purple unicorn tee (the old blue tee had an Ethereum-style diamond, and the rules say no chain logos).
+- **Toly:** a portrait in a black cap, blazer and headset mic; on stage, a 16-bit sprite holding a phone up at his opponent like he's selling it. Grok put the Solana logo on his cap in both images; it's painted out (no chain logos).
+- In the Badger Dance Vitalik now wears the same purple unicorn tee (the old blue tee had an Ethereum-style diamond, and the rules say no chain logos).
 - Everyone else keeps their emoji and block body until their art is made, one fighter at a time.
 
 ### Oct 2, 2026 (late night, later): Toly's buttons
@@ -503,7 +504,7 @@ Do not point DNS at an empty repo.
 1. ~~Drop this file in the `proof-of-fight` repo as `GAMEPLAN.md` (and a short `README.md` that points at it).~~ Done.
 2. ~~HTML dummy: two rectangles, HP, Blocks, five buttons, one CPU, banners in the console or on screen.~~ Done, plus Daily Fight and share grid.
 3. ~~Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.~~ Done: all seven kits.
-4. **← You are here.** Caricature portraits and sprites, one fighter at a time (Vitalik done; [docs/art/](docs/art/README.md)).
+4. **← You are here.** Caricature portraits and sprites, one fighter at a time (Vitalik and Toly done; [docs/art/](docs/art/README.md)).
 5. Then result URLs + the 49 matchup preview images.
 6. Then GitHub Pages or Cloudflare Pages.
 7. Then Porkbun DNS: `proofoffight.com` → that host.
