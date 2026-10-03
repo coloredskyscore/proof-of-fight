@@ -11,7 +11,7 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
-### Oct 2–3, 2026: fighter art (Vitalik, Toly, Mert, Garlinghouse, Adam, Charles)
+### Oct 2–3, 2026: fighter art for all seven
 
 The art style is locked. Fighters get it one at a time. Guide, prompts and status: [docs/art/README.md](docs/art/README.md).
 - **Portraits** are late-90s arcade character-select art (1:1); **bodies** are 16-bit pixel sprites (2:3). Both made in Grok Imagine. The joke is drawing the founders dead serious; the outfit carries the comedy.
@@ -21,8 +21,9 @@ The art style is locked. Fighters get it one at a time. Guide, prompts and statu
 - **Garlinghouse:** gray hair, stubble, navy suit with an open white collar; on stage he carries a beat-up leather briefcase (Settle, Lawsuit, the SEC years).
 - **Adam Back:** orange cap worn backwards, wire glasses, gray beard, striped shirt over a blue tee; on stage he carries a miner's pickaxe (proof of work, his ⛏️ Hashcash button).
 - **Charles:** the one fighter drawn grinning (he smiles in every photo): cowboy hat, glasses, beard, blue plaid; on stage, cowboy boots and a stack of papers under his arm (Peer Review).
+- **Saylor:** gray hair, charcoal suit, orange tie; on stage he holds up a plain orange shield (his 🛡️ STRF brace, Bitcoin orange without the logo).
 - In the Badger Dance Vitalik now wears the same purple unicorn tee (the old blue tee had an Ethereum-style diamond, and the rules say no chain logos).
-- Everyone else keeps their emoji and block body until their art is made, one fighter at a time.
+- The title screen, picker, cut-ins, stage and result card now show real art for the whole roster. A future fighter without art falls back to the emoji and block body.
 
 ### Oct 2, 2026 (late night, later): Toly's buttons
 
@@ -508,7 +509,8 @@ Do not point DNS at an empty repo.
 1. ~~Drop this file in the `proof-of-fight` repo as `GAMEPLAN.md` (and a short `README.md` that points at it).~~ Done.
 2. ~~HTML dummy: two rectangles, HP, Blocks, five buttons, one CPU, banners in the console or on screen.~~ Done, plus Daily Fight and share grid.
 3. ~~Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.~~ Done: all seven kits.
-4. **← You are here.** Caricature portraits and sprites, one fighter at a time (all but Saylor done; [docs/art/](docs/art/README.md)).
+4. ~~Caricature portraits and sprites.~~ Done: all seven ([docs/art/](docs/art/README.md)).
+   **← You are here.** Next up: sound (effects, music, mute button), then step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. Then GitHub Pages or Cloudflare Pages.
 7. Then Porkbun DNS: `proofoffight.com` → that host.

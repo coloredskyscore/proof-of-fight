@@ -1,6 +1,6 @@
 # Fighter art
 
-Each fighter gets two images, made in Grok Imagine. Until a fighter has art, they keep their emoji head and block body, so art rolls out one fighter at a time.
+Each fighter gets two images, made in Grok Imagine. All seven have theirs (Oct 3, 2026). A new fighter without art falls back to their emoji head and block body until theirs is made.
 
 ## The look (locked Oct 2, 2026)
 
@@ -103,6 +103,18 @@ Late-1990s arcade fighting game character select portrait of Charles Hoskinson, 
 16-bit pixel art fighting game sprite of Charles Hoskinson, same character as the attached image, Sega Genesis era, full body. Brown cowboy hat, full beard, a big confident grin. Blue plaid button-up shirt, jeans, cowboy boots. Fighting stance facing right, one fist raised, a thick stack of blank research papers tucked under the other arm. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing or the hat.
 ```
 
+### Saylor
+
+The tank of the roster, so his prop is a shield: a plain orange one, for his 🛡️ STRF brace and a nod to Bitcoin orange without the logo. Charcoal suit and orange tie keep him apart from Garlinghouse's navy.
+
+```
+Late-1990s arcade fighting game character select portrait of Michael Saylor, head and shoulders, centered with empty space around the head. Drawn dead serious like a hardened martial arts hero: intense determined glare, jaw set, dramatic lighting with hard-edged shadows. Charcoal suit, white shirt, orange tie. Three-quarter view, facing right. Bold black ink lines, hard cel shading with two or three tones, rich saturated colors, anime-influenced hand-drawn 2D arcade art. Plain flat white background. No text, no logos or symbols on clothing, no Bitcoin symbol, not photorealistic, not cute.
+```
+
+```
+16-bit pixel art fighting game sprite of Michael Saylor, same character as the attached image, Sega Genesis era, full body. Serious determined face. Charcoal suit, white shirt, orange tie, polished dress shoes. Braced fighting stance facing right, one fist raised, a plain round orange shield held up in the other hand. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing or the shield, no Bitcoin symbol.
+```
+
 ## What happens to the images
 
 `tools/art.py` (needs Pillow) cuts out the white background and sizes them:
@@ -129,6 +141,8 @@ python3 tools/art.py head adam-portrait.jpg art/adam-head.webp --gap 1044,504 --
 python3 tools/art.py body adam-sprite.jpg art/adam-body.webp --gap 376,608
 python3 tools/art.py head charles-portrait.jpg art/charles-head.webp --crop=-0.06,-0.08,1.06,1.04
 python3 tools/art.py body charles-sprite.jpg art/charles-body.webp
+python3 tools/art.py head saylor-portrait.jpg art/saylor-head.webp --crop=0.0,-0.04,1.0,0.96
+python3 tools/art.py body saylor-sprite.jpg art/saylor-body.webp
 ```
 
 Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased). Adam's portrait pocket was background seen through his glasses past his cheek, and his cap touched the top of the image, so he got Mert's extra headroom too. Charles's hat brim ran past the image edges, so his crop zooms out on every side (write `--crop=` with an equals sign when a number starts with a minus).
@@ -145,4 +159,4 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | Garlinghouse | ✅ gray hair, stubble, navy suit, open white collar | ✅ navy suit, beat-up leather briefcase |
 | Adam Back | ✅ orange cap backwards, wire glasses, gray beard, striped shirt over a blue tee | ✅ same outfit, miner's pickaxe |
 | Charles | ✅ cowboy hat, glasses, beard, blue plaid, the knowing grin | ✅ same outfit, cowboy boots, a stack of papers (Peer Review) |
-| Saylor | | |
+| Saylor | ✅ gray hair, charcoal suit, orange tie | ✅ same suit, plain orange shield (STRF) |

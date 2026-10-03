@@ -228,6 +228,7 @@
       // [min, max] rolls each time it lands: MSTR is high beta.
       dmg: { mint: 20, rug: [15, 45] },
       ai: { strike: 4, privacy: 2, mint: 3, rug: 1 },
+      art: { head: 'art/saylor-head.webp', body: 'art/saylor-body.webp' }, // charcoal suit, orange tie, plain orange shield (STRF)
       moves: {
         strike:  { name: 'STRC', nick: 'Stretch', icon: '📬', ko: 'STRETCH' },
         privacy: { name: 'STRF', nick: 'Strife',  icon: '🛡️', ok: 'SENIOR CLAIM' },
