@@ -79,6 +79,18 @@ Late-1990s arcade fighting game character select portrait of Brad Garlinghouse, 
 16-bit pixel art fighting game sprite of Brad Garlinghouse, same character as the attached image, Sega Genesis era, full body. Serious determined face. Navy blue suit jacket over an open-collar white shirt, no tie, matching suit pants, dress shoes. Fighting stance facing right, one fist raised, a beat-up leather briefcase in the other hand. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing.
 ```
 
+### Adam Back
+
+The orange cap (worn backwards, the "now it's on" move), wire glasses and the striped shirt over a blue tee come from the user's reference photos, described in words. The pickaxe is proof of work and his ⛏️ Hashcash button.
+
+```
+Late-1990s arcade fighting game character select portrait of Adam Back, head and shoulders, centered with empty space around the head. Drawn dead serious like a hardened martial arts hero: intense determined glare, jaw set, dramatic lighting with hard-edged shadows. Plain orange baseball cap worn backwards, thin wire-rim rectangular glasses, short gray hair, short gray-white beard. Blue t-shirt under an open light blue striped button-up shirt. Three-quarter view, facing right. Bold black ink lines, hard cel shading with two or three tones, rich saturated colors, anime-influenced hand-drawn 2D arcade art. Plain flat white background. No text, no logos or symbols on clothing or the cap, no Bitcoin symbol, not photorealistic, not cute.
+```
+
+```
+16-bit pixel art fighting game sprite of Adam Back, same character as the attached image, Sega Genesis era, full body. Plain orange baseball cap worn backwards, thin wire-rim glasses, short gray-white beard, serious determined face. Blue t-shirt under an open light blue striped button-up shirt, dark jeans, sneakers. Fighting stance facing right, one fist raised, a miner's pickaxe held in the other hand. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing or the cap, no Bitcoin symbol.
+```
+
 ## What happens to the images
 
 `tools/art.py` (needs Pillow) cuts out the white background and sizes them:
@@ -101,9 +113,11 @@ python3 tools/art.py head mert-portrait.jpg art/mert-head.webp --crop 0.0,-0.04,
 python3 tools/art.py body mert-sprite.jpg art/mert-body.webp
 python3 tools/art.py head garlinghouse-portrait.jpg art/garlinghouse-head.webp
 python3 tools/art.py body garlinghouse-sprite.jpg art/garlinghouse-body.webp --gap 408,612
+python3 tools/art.py head adam-portrait.jpg art/adam-head.webp --gap 1044,504 --crop 0.0,-0.04,1.0,0.96
+python3 tools/art.py body adam-sprite.jpg art/adam-body.webp --gap 376,608
 ```
 
-Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased).
+Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased). Adam's portrait pocket was background seen through his glasses past his cheek, and his cap touched the top of the image, so he got Mert's extra headroom too.
 
 Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.webp' }` in `js/data.js`. On stage the sprite stands about 18% taller than the block body (a very wide pose shrinks to stay on screen); when KO'd it falls flat on its back at 70% size so it fits on a phone. A fighter with only a portrait shows it as the head on the block body.
 
@@ -115,6 +129,6 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | Toly | ✅ black cap, blazer, headset mic (Solana logo painted off the cap) | ✅ blazer, holding a phone up to sell it |
 | Mert | ✅ bald with the shine, full beard, black tee | ✅ black tee, khakis, tattoo sleeve, shades on the collar, white sneakers with red laces |
 | Garlinghouse | ✅ gray hair, stubble, navy suit, open white collar | ✅ navy suit, beat-up leather briefcase |
-| Adam Back | | |
+| Adam Back | ✅ orange cap backwards, wire glasses, gray beard, striped shirt over a blue tee | ✅ same outfit, miner's pickaxe |
 | Charles | | |
 | Saylor | | |

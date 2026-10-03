@@ -175,6 +175,7 @@
       color: '#94a3b8', emoji: '🔐',
       hide: 0.70, mint: 0.15, rug: 0.10,
       ai: { strike: 3, privacy: 6, mint: 0.5, rug: 0.5 },
+      art: { head: 'art/adam-head.webp', body: 'art/adam-body.webp' }, // orange cap backwards, wire glasses, pickaxe
       moves: {
         strike:  { name: 'Hashcash',    icon: '⛏️', ko: 'GAME OVER' },
         privacy: { name: 'Cypherpunk',  icon: '🧅', ok: 'PRIORITIZE 1',        fail: 'FILTERED BY KNOTS' },
