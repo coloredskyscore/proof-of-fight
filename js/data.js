@@ -125,6 +125,7 @@
       color: '#3b82f6', emoji: '⚖️',
       hide: 0.25, mint: 0.55, rug: 0.20, // a settlements guy: bad at hiding, bad at rugs
       ai: { strike: 3, privacy: 2, mint: 4, rug: 4 },
+      art: { head: 'art/garlinghouse-head.webp', body: 'art/garlinghouse-body.webp' }, // navy suit, beat-up briefcase
       moves: {
         strike:  { name: 'Settle',      icon: '💸', ko: "PERFECT CAN'T BE THE ENEMY OF GOOD" },
         privacy: { name: 'In The Room', icon: '🏛️', ok: 'PROUD TO BE IN THE ROOM', fail: 'BLOCKED BY THE ANTI-CRYPTO ARMY' },

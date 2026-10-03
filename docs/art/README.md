@@ -69,6 +69,16 @@ Late-1990s arcade fighting game character select portrait of Mert Mumtaz, head a
 16-bit pixel art fighting game sprite of Mert Mumtaz, same character as the attached image, Sega Genesis era, full body. Shaved bald head with a bright shine on top, full thick black beard, serious determined face. Plain black t-shirt with sunglasses hooked on the collar, a full sleeve of tattoos on his left arm, khaki pants, white sneakers with red laces. Fighting stance facing right, both fists raised, his tattooed left arm toward the viewer. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing.
 ```
 
+### Garlinghouse
+
+```
+Late-1990s arcade fighting game character select portrait of Brad Garlinghouse, head and shoulders, centered with empty space around the head. Drawn dead serious like a hardened martial arts hero: intense determined glare, jaw set, dramatic lighting with hard-edged shadows. Navy blue suit jacket over an open-collar white shirt, no tie. Three-quarter view, facing right. Bold black ink lines, hard cel shading with two or three tones, rich saturated colors, anime-influenced hand-drawn 2D arcade art. Plain flat white background. No text, no logos or symbols on clothing, not photorealistic, not cute.
+```
+
+```
+16-bit pixel art fighting game sprite of Brad Garlinghouse, same character as the attached image, Sega Genesis era, full body. Serious determined face. Navy blue suit jacket over an open-collar white shirt, no tie, matching suit pants, dress shoes. Fighting stance facing right, one fist raised, a beat-up leather briefcase in the other hand. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing.
+```
+
 ## What happens to the images
 
 `tools/art.py` (needs Pillow) cuts out the white background and sizes them:
@@ -89,9 +99,11 @@ python3 tools/art.py head toly-portrait.jpg art/toly-head.webp --delogo 680,90,8
 python3 tools/art.py body toly-sprite.jpg art/toly-body.webp --delogo 560,80,670,165
 python3 tools/art.py head mert-portrait.jpg art/mert-head.webp --crop 0.0,-0.04,1.0,0.96
 python3 tools/art.py body mert-sprite.jpg art/mert-body.webp
+python3 tools/art.py head garlinghouse-portrait.jpg art/garlinghouse-head.webp
+python3 tools/art.py body garlinghouse-sprite.jpg art/garlinghouse-body.webp --gap 408,612
 ```
 
-Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay.
+Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased).
 
 Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.webp' }` in `js/data.js`. On stage the sprite stands about 18% taller than the block body (a very wide pose shrinks to stay on screen); when KO'd it falls flat on its back at 70% size so it fits on a phone. A fighter with only a portrait shows it as the head on the block body.
 
@@ -102,7 +114,7 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | Vitalik | ✅ purple unicorn tee | ✅ unicorn tee, green tea |
 | Toly | ✅ black cap, blazer, headset mic (Solana logo painted off the cap) | ✅ blazer, holding a phone up to sell it |
 | Mert | ✅ bald with the shine, full beard, black tee | ✅ black tee, khakis, tattoo sleeve, shades on the collar, white sneakers with red laces |
-| Garlinghouse | | |
+| Garlinghouse | ✅ gray hair, stubble, navy suit, open white collar | ✅ navy suit, beat-up leather briefcase |
 | Adam Back | | |
 | Charles | | |
 | Saylor | | |

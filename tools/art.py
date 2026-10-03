@@ -29,11 +29,13 @@ def clear(im, x, y):
         ImageDraw.floodfill(im, (x, y), (255, 255, 255, 0), thresh=THRESH)
 
 
-def cut_background(im, gaps):
+def cut_background(im, gaps, bottom=True):
+    # A portrait's bottom edge is always clothing (a white shirt would get eaten), so heads skip it.
     w, h = im.size
     for x in range(0, w, 8):
         clear(im, x, 0)
-        clear(im, x, h - 1)
+        if bottom:
+            clear(im, x, h - 1)
     for y in range(0, h, 8):
         clear(im, 0, y)
         clear(im, w - 1, y)
@@ -109,7 +111,7 @@ def main():
     for d in args.delogo:
         print('logo painted out: %d px' % delogo(im, tuple(int(v) for v in d.split(','))))
     gaps = [tuple(int(v) for v in g.split(',')) for g in args.gap]
-    cut_background(im, gaps)
+    cut_background(im, gaps, bottom=args.kind == 'body')
 
     left = pockets(im, min_area=im.size[0] * im.size[1] // 2000)
     for area, seed, box in left:
