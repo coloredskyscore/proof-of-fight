@@ -11,6 +11,15 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 3, 2026 (evening): sound
+
+Music and sound effects. Details: [docs/audio/README.md](docs/audio/README.md).
+- **PRESS START:** every visit opens on it (browsers need a tap before sound). The tap starts the menu song two bars before its drop; a portrait pops in on each beat and the logo slams in on the drop.
+- **Two songs** (made in Suno): a dubstep menu track and a 16-bit dubstep fight track, cut into seamless loops on bar lines. The fight song ducks under Supers and cuts at the K.O.; the menu song returns on the result screen.
+- **About 70 synthesized arcade sound effects:** every fighter's buttons (land and flop) and every Super, timed to its animation. Plus a K.O. sting, win/lose jingles, a Super-ready chime and button taps.
+- **Switches:** Music and Sounds on the title screen, a mute button in the fight HUD. `?sounds` opens a sound test with every sound by name.
+- Long fighter names (Garlinghouse) now shrink to fit the fight HUD instead of being cut off.
+
 ### Oct 3, 2026: Charles's Super cleaned up, KO lines fixed
 
 - **Midnight Express is readable now.** The peer-reviewer emojis are gone (they didn't read for casual players). Instead Charles is on a video, `SURPRISE AMA` at `0:07 / 3:47:12`, and his captions type at reading speed: `SO, TO GIVE SOME CONTEXT,` / `BACK IN 2015 WE—`. The lights go out mid-word, a 💤 rises (the Sleep effect explained), then `MIDNIGHT EXPRESS` / `BIGGER THAN ZCASH` with time to read them. About 5 seconds; tap to skip still works.
@@ -409,6 +418,7 @@ v1 AI is a weighted random pick from that row. No pathfinding. No combo solver. 
 - Banners in the center, huge, ugly, screenshottable.
 - Caricature art, thick line, shared palette so it looks like one roster.
 - No official logos.
+- **Sound:** a menu song and a fight song (loops), synthesized arcade sound effects for every button and Super, PRESS START to start the music. See [docs/audio/README.md](docs/audio/README.md).
 - **Art style (locked):** late-90s arcade portraits for the round faces (title, picker, cut-in, result card) and 16-bit pixel sprites on the stage. See [docs/art/README.md](docs/art/README.md) for the prompts and status.
 
 The first playable used simple block fighters (colored body, emoji head). Fighters without art still do; art replaces them one fighter at a time.
@@ -517,7 +527,8 @@ Do not point DNS at an empty repo.
 2. ~~HTML dummy: two rectangles, HP, Blocks, five buttons, one CPU, banners in the console or on screen.~~ Done, plus Daily Fight and share grid.
 3. ~~Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.~~ Done: all seven kits.
 4. ~~Caricature portraits and sprites.~~ Done: all seven ([docs/art/](docs/art/README.md)).
-   **← You are here.** Next up: sound (effects, music, mute button), then step 5.
+   ~~Sound: music, effects, mute.~~ Done ([docs/audio/](docs/audio/README.md)).
+   **← You are here.** Next: step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. Then GitHub Pages or Cloudflare Pages.
 7. Then Porkbun DNS: `proofoffight.com` → that host.
@@ -543,6 +554,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Domain: **proofoffight.com**
 - Mode: **single player vs CPU**, with a **Daily Fight** (same fight for everyone) and **Free Play**
 - Look: **2D fighter stage**; art is **late-90s arcade portraits + 16-bit pixel sprites**
+- Sound: **dubstep menu + fight songs, synthesized retro sound effects, PRESS START**
 - Play: **turn-based buttons**
 - Meter: **Blocks**, 10 squares
 - Buttons: **Strike / Privacy / Mint / Rug / Super** (10 / hide / 24 / 36 / Super)
@@ -588,3 +600,8 @@ It's the suggested fight in Free Play and it's **Daily Fight #1**.
 | `art/` | Fighter portraits and sprites (`<id>-head.webp`, `<id>-body.webp`). |
 | `tools/art.py` | Cuts the white background off a Grok image and sizes it for the game (needs Pillow). |
 | `docs/art/` | The art style, the Grok prompt templates, and which fighters have art. |
+| `js/audio.js` | Music playback and every sound effect (synthesized recipes). |
+| `audio/` | The two songs, cut into loops (`menu.mp3`, `fight.mp3`). |
+| `tools/music.py` | Cuts a song into a seamless game loop. |
+| `tools/sfx-levels.js` | Re-measures sound effect levels after a recipe changes. |
+| `docs/audio/` | How the sound works, the songs' loop points, every fighter's sounds. |

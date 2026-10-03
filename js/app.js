@@ -1,7 +1,7 @@
 // Proof of Fight — screens, animation and sharing. Game rules live in engine.js.
 (function () {
   'use strict';
-  var D = window.POF_DATA, E = window.POF_ENGINE;
+  var D = window.POF_DATA, E = window.POF_ENGINE, AU = window.POF_AUDIO;
 
   // ?speed=0.2 plays animations 5x faster (handy for testing).
   var SPEED = Number(new URLSearchParams(location.search).get('speed')) || 1;
@@ -121,10 +121,12 @@
       : 'Same fight for everyone, every day. Fewest turns wins.';
     $('#rules-select').value = S.rules;
     show('screen-title');
+    AU.music('menu', { from: 'loop', fade: 0.8 });
   }
 
   function renderPick(step) {
     S.pickStep = step;
+    AU.music('menu', { from: 'loop', fade: 0.8 });
     $('#pick-title').textContent = step === 'player' ? 'Pick your fighter' : 'Pick your opponent';
     $('#pick-suggest').hidden = step !== 'player';
     var R = D.RULESETS[S.rules];
@@ -188,7 +190,9 @@
     render(E.snapshot(S.fight));
     $('#turn-num').textContent = S.fight.turn;
     show('screen-fight');
+    fitNames(); // measured once the screen is showing
     if (S.fight.over) { finishFight(); return; }
+    AU.music('fight', { fade: 0.12, restart: true }); // opens on the song's drop hit
 
     S.busy = true;
     updateControls();
@@ -221,6 +225,23 @@
       '<span class="f-fist f-fist-b"></span><span class="f-fist f-fist-a"></span>' +
       (F.heldProp ? '<span class="f-held">' + F.heldProp + '</span>' : '') +
       '</div></div></div><div class="f-shadow"></div>';
+  }
+
+  // A long name (Garlinghouse, on a small phone) shrinks just enough to fit next to the YOU/CPU tag.
+  function fitNames() {
+    $all('.hud-name').forEach(function (row) {
+      var name = $('.hud-fname', row);
+      name.style.fontSize = '';
+      // Width of the name plus its tag against the room there is (the CPU side overflows to the left,
+      // which scrollWidth doesn't count).
+      var used = 0, kids = row.children;
+      for (var k = 0; k < kids.length; k++) used += kids[k].offsetWidth;
+      used += (parseFloat(getComputedStyle(row).columnGap) || 0) * (kids.length - 1);
+      var over = used - row.clientWidth;
+      if (over <= 0) return;
+      var size = parseFloat(getComputedStyle(name).fontSize), w = name.offsetWidth;
+      name.style.fontSize = Math.max(9, size * (w - over - 2) / w) + 'px';
+    });
   }
 
   function buildArena() {
@@ -325,6 +346,7 @@
     $all('#controls .move').forEach(function (b) {
       var m = b.dataset.move;
       if (m === 'super') {
+        if (st.canSuper && !b.classList.contains('ready') && !f.over) AU.play('ready');
         b.classList.toggle('ready', st.canSuper);
         $('.move-label', b).textContent = st.canSuper ? F.super.name.toUpperCase() : 'SUPER';
         $('.move-sub', b).textContent = st.canSuper ? 'READY!' : me.blocks + '/' + D.MAX_BLOCKS + ' Blocks';
@@ -407,6 +429,7 @@
 
       case 'skip':
         bubble(e.who, e.reason === 'blind' ? '🙈' : '💤');
+        AU.play(e.reason === 'blind' ? 'huh' : 'snore');
         var skipLine = D.FIGHTERS[S.fight.f[1 - e.who].id].super.skipLine;
         if (skipLine) {
           banner(skipLine, (e.who === 0 ? 'You skip' : nm(e.who) + ' skips') + ' this turn');
@@ -431,6 +454,7 @@
       case 'miss':
         lunge(e.attacker);
         await sleep(170);
+        AU.play('whiff');
         var dodge = D.FIGHTERS[S.fight.f[e.target].id].dodgeLine; // Charles: I AM NOT ACCOUNTABLE
         if (dodge) banner(dodge, (e.target === 0 ? 'You' : nm(e.target)) + ' dodged it');
         else popup(e.target, 'MISS', 'miss');
@@ -440,6 +464,7 @@
 
       case 'hide':
         render(e.snap);
+        AU.move(S.fight.f[e.who].id, 'privacy', e.ok ? 'ok' : 'fail');
         var pv = moveOf(S.fight.f[e.who].id, 'privacy');
         if (e.brace) {
           banner(pv.ok, 'Half damage this turn');
@@ -460,6 +485,8 @@
 
       case 'fail':
         var fm = moveOf(S.fight.f[e.who].id, e.move);
+        AU.move(S.fight.f[e.who].id, e.move, 'fail');
+        if (e.recoil) AU.play('hit');
         wobble(e.who);
         render(e.snap);
         banner(fm.fail, fm.ticker ? fm.ticker + ' ▼' : fm.failSub || whose(e.who) + ' ' + fm.name + ' flopped');
@@ -471,6 +498,7 @@
 
       case 'status':
         render(e.snap);
+        AU.play({ pruned: 'prune', drain: 'drain', hodl: 'hodl' }[e.status]);
         var pruneLine = e.status === 'pruned' && D.FIGHTERS[S.fight.f[1 - e.who].id].super.pruneLine;
         if (pruneLine) {
           banner(pruneLine, whose(e.who) + ' HODL pruned'); // Adam: SALTY TEARS
@@ -483,6 +511,7 @@
 
       case 'banner':
         render(e.snap);
+        AU.play('flop');
         banner(e.text, e.sub);
         await sleep(1250);
         break;
@@ -491,6 +520,8 @@
         S.koProp = koPropFor(e.winner, e.cause) ? { who: e.loser, prop: koPropFor(e.winner, e.cause) } : null;
         render(e.snap);
         fighterEl(e.loser).classList.add('is-ko');
+        AU.stopMusic(0.6);
+        AU.play('ko');
         var loseLine = D.FIGHTERS[S.fight.f[e.loser].id].loseLine;
         if (loseLine) later(function () { popup(e.loser, loseLine, 'status'); }, 700);
         banner(e.timeout ? 'TIME!' : 'K.O.', e.finish, true);
@@ -511,6 +542,14 @@
     }
   }
 
+  // A landed hit: the shared punch plus the attacker's signature (Slop Cannon's boom and splat...).
+  function hitSound(e) {
+    if (e.self) { AU.play('hit'); AU.play('selfhit'); return; }
+    var id = S.fight.f[e.attacker].id;
+    if (e.move === 'super') AU.play(D.FIGHTERS[id].super.id === 'xrparmy' ? 'stomp' : 'heavy');
+    else if (!(e.of > 1 && e.n > 1)) AU.move(id, e.move, 'ok');
+  }
+
   async function doHit(e) {
     var multi = e.of > 1;
     if (e.move !== 'super') {
@@ -519,6 +558,7 @@
     }
     render(e.snap);
     hurtFx(e.target);
+    hitSound(e);
     popup(e.target, '-' + e.amount, 'dmg', multi ? e.n : 0);
     if (e.target === 0) buzz(40);
 
@@ -719,6 +759,15 @@
   // Charles: his nearly-four-hour video. Captions type at reading speed, a beat, then lights out
   // mid-word, moon and stars, 💤. Everything after the blackout is timed from when it lands.
   var TYPE_CPS = 22;        // caption typing speed, characters per second (about reading speed)
+
+  // When each caption letter appears and when the lights go out, for the typing clicks.
+  function midnightInfo(sup) {
+    var T = lectureTiming(sup.lecture), chars = [];
+    sup.lecture.forEach(function (txt, k) {
+      for (var i = 0; i < txt.length; i++) if (txt[i] !== ' ') chars.push(T.lines[k].delay + (i + 1) / TYPE_CPS);
+    });
+    return { chars: chars, off: T.blackout };
+  }
   function lectureTiming(lines) {
     var t = 0.4, out = [];
     lines.forEach(function (txt) {
@@ -819,12 +868,14 @@
       el.hidden = false;
       void el.offsetWidth;
       el.classList.add('play');
+      var snd = AU.play('super.astronaut');
       var done = false;
       var timer = later(finish, 3000);
       function finish() {
         if (done) return;
         done = true;
         clearTimeout(timer);
+        snd.stop(0.2);
         el.onclick = null;
         el.classList.remove('play');
         el.hidden = true;
@@ -896,6 +947,8 @@
       el.hidden = false;
       void el.offsetWidth;
       el.classList.add('play');
+      AU.duck(true);
+      var snd = AU.play('super.' + sup.id, 0, sup.lecture ? midnightInfo(sup) : null);
 
       var done = false;
       var timer = later(finish, duration);
@@ -906,6 +959,8 @@
         el.onclick = null;
         el.hidden = true;
         el.classList.remove('play');
+        snd.stop(0.15);
+        AU.duck(false);
         resolve();
       }
       // Tap to skip, but not instantly (so a stray tap doesn't eat the whole thing).
@@ -1018,6 +1073,10 @@
       meta.textContent = '';
     }
     $('#modal-result').hidden = false;
+    AU.play(res.won ? 'win' : 'lose');
+    setTimeout(function () {
+      if (!$('#modal-result').hidden) AU.music('menu', { from: 'loop', fade: 1.5 });
+    }, 1800);
   }
 
   function closeResult() {
@@ -1092,8 +1151,140 @@
     $('#modal-help').hidden = false;
   }
 
+  // ---------- Sound ----------
+  function renderSoundButtons() {
+    var st = AU.settings;
+    $('#btn-music').textContent = st.music ? '🎵 Music on' : '🎵 Music off';
+    $('#btn-music').setAttribute('aria-pressed', st.music);
+    $('#btn-sfx').textContent = st.sfx ? '🔊 Sounds on' : '🔈 Sounds off';
+    $('#btn-sfx').setAttribute('aria-pressed', st.sfx);
+    $('#btn-mute').textContent = st.music || st.sfx ? '🔊' : '🔇';
+    $('#press-hint').textContent = st.music || st.sfx ? '🔊 Sound on' : '🔇 Sound off';
+  }
+
+  // First visit of the page: PRESS START. The tap starts the menu song 8 beats before its drop; a portrait
+  // pops in on each beat and the logo slams in on the drop. With sound off it plays straight through, quickly.
+  function boot() {
+    var title = $('#screen-title'), gate = $('#press-start');
+    var quiet = !AU.supported() || (!AU.settings.music && !AU.settings.sfx);
+    if (AU.settings.music && AU.supported()) AU.load('menu').catch(function () {});
+    if (quiet) { intro(); return; }
+    title.classList.add('boot');
+    gate.hidden = false;
+    var started = false;
+    function start(ev) {
+      if (started) return;
+      started = true;
+      if (ev) ev.preventDefault();
+      AU.unlock();
+      gate.hidden = true;
+      title.classList.remove('boot');
+      // Wait (briefly) for the song so the slam lands on its drop.
+      var waited = AU.settings.music ? Promise.race([AU.load('menu'), new Promise(function (r) { setTimeout(r, 2500); })]) : Promise.resolve();
+      waited.catch(function () {}).then(intro);
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(ev) { if (ev.key === 'Enter' || ev.key === ' ') start(ev); }
+    gate.addEventListener('click', start);
+    document.addEventListener('keydown', onKey);
+  }
+
+  function intro() {
+    var title = $('#screen-title'), faces = $all('.title-roster span');
+    title.classList.add('intro');
+    var r = AU.music('menu', { from: 'start', fade: 2.4, restart: true });
+    var drop = r ? r.dropIn : 0.85, beat = drop / 8, slammed = false, timers = [];
+    faces.forEach(function (f, k) { timers.push(setTimeout(function () { f.classList.add('in'); }, beat * (k + 1) * 1000)); });
+    timers.push(setTimeout(slam, drop * 1000));
+    // An impatient second tap slams now (attached late, so the PRESS START tap itself can't count).
+    timers.push(setTimeout(function () { if (!slammed) title.addEventListener('click', slam); }, 500));
+    function slam() {
+      if (slammed) return;
+      slammed = true;
+      timers.forEach(clearTimeout);
+      title.removeEventListener('click', slam);
+      if (!r) AU.play('slam');               // no song (off or still loading): the boom is the slam
+      faces.forEach(function (f) { f.classList.remove('in'); });
+      title.classList.remove('intro');
+      $('.logo').classList.add('slam');
+      title.classList.add('reveal');
+      restartClass($('#app'), 'quake', 500);
+      var flash = document.createElement('div');
+      flash.className = 'slam-flash';
+      document.body.appendChild(flash);
+      setTimeout(function () { flash.remove(); }, 500);
+      setTimeout(function () { title.classList.remove('reveal'); $('.logo').classList.remove('slam'); }, 1200);
+      if (AU.settings.music && AU.supported()) AU.load('fight').catch(function () {}); // ready before the first fight
+      if (/[?&]sounds\b/.test(location.search)) openSounds();
+    }
+  }
+
+  // ?sounds: every sound effect, for listening through them on a phone.
+  function openSounds() {
+    var groups = [['Music', [
+      ['Menu: intro + drop', function () { AU.music('menu', { restart: true }); }],
+      ['Menu: loop', function () { AU.music('menu', { from: 'loop', restart: true }); }],
+      ['Fight', function () { AU.music('fight', { restart: true }); }],
+      ['Stop music', function () { AU.stopMusic(0.3); }]
+    ]], ['Everyone', [
+      ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
+      ['MUTUAL REKT', 'flop'], ['Hit yourself (hypnotized)', 'selfhit'], ['Super ready', 'ready'], ['K.O.', 'ko'],
+      ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
+      ['Blinded, skips a turn', 'huh'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
+    ]]];
+    D.ROSTER.forEach(function (id) {
+      var F = D.FIGHTERS[id], m = function (b) { return moveOf(id, b); }, items = [];
+      items.push([m('strike').icon + ' ' + m('strike').name + ' hits', function () { AU.move(id, 'strike', 'ok'); }]);
+      items.push([m('privacy').icon + ' ' + m('privacy').name + (F.brace ? ' (brace)' : ' works'), function () { AU.move(id, 'privacy', 'ok'); }]);
+      ['mint', 'rug'].forEach(function (b) {
+        items.push([m(b).icon + ' ' + m(b).name + ' lands', function () { AU.move(id, b, 'ok'); }]);
+        items.push([m(b).icon + ' ' + m(b).name + ' flops', function () { AU.move(id, b, 'fail'); }]);
+      });
+      items.push(['⚡ ' + F.super.name, function () { AU.play('super.' + F.super.id, 0, F.super.lecture ? midnightInfo(F.super) : null); }]);
+      if (F.super.koScene === 'astronaut') items.push(['🧑‍🚀 Astronaut DJ (Super KO)', 'super.astronaut']);
+      if (F.super.pruneLine) items.push(['🧂 ' + F.super.pruneLine, 'prune']);
+      groups.push([F.name, items, F]);
+    });
+    var actions = [];
+    $('#sounds-body').innerHTML = '<p class="res-meta">Tap to listen. Tell Claude which ones to change by name.</p>' +
+      groups.map(function (g) {
+        var head = g[2] ? '<span class="snd-face" style="--c:' + g[2].color + '">' + faceHTML(g[2]) + '</span>' : '';
+        return '<h3>' + head + esc(g[0]) + '</h3><div class="snd-grid">' + g[1].map(function (it) {
+          actions.push(it[1]);
+          return '<button type="button" data-k="' + (actions.length - 1) + '">' + esc(it[0]) + '</button>';
+        }).join('') + '</div>';
+      }).join('');
+    $('#sounds-body').onclick = function (ev) {
+      var b = ev.target.closest('button[data-k]');
+      if (!b) return;
+      AU.unlock();
+      var a = actions[+b.dataset.k];
+      if (typeof a === 'function') a(); else AU.play(a);
+    };
+    $('#modal-sounds').hidden = false;
+  }
+
   // ---------- Wiring ----------
   function init() {
+    AU.setup({
+      music: store.get('music', true), sfx: store.get('sfx', true),
+      onChange: function (st) { store.set('music', st.music); store.set('sfx', st.sfx); renderSoundButtons(); }
+    });
+    renderSoundButtons();
+    $('#btn-music').addEventListener('click', function () { AU.unlock(); AU.set('music', !AU.settings.music); });
+    $('#btn-sfx').addEventListener('click', function () { AU.unlock(); AU.set('sfx', !AU.settings.sfx); });
+    $('#btn-mute').addEventListener('click', function () {
+      var on = AU.settings.music || AU.settings.sfx;
+      AU.unlock();
+      AU.set('music', !on);
+      AU.set('sfx', !on);
+    });
+    $('#sounds-close').addEventListener('click', function () { $('#modal-sounds').hidden = true; });
+    // A small tap on every button (moves have their own sounds once the turn plays out).
+    document.addEventListener('click', function (ev) {
+      if (ev.target.closest('button, a.btn, select') && !ev.target.closest('#press-start')) AU.play('tap');
+    }, true);
+
     $('.title-roster').innerHTML = D.ROSTER.map(function (id) {
       var F = D.FIGHTERS[id];
       return '<span style="--c:' + F.color + '">' + faceHTML(F) + '</span>';
@@ -1170,7 +1361,12 @@
       }
     });
 
+    // The display font loads after the page; names are measured again once it has, and on rotation.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (S.fight) fitNames(); });
+    window.addEventListener('resize', function () { if (S.fight) fitNames(); });
+
     renderTitle();
+    boot();
   }
 
   init();

@@ -21,6 +21,12 @@
 
     <!-- TITLE -->
     <section id="screen-title" class="screen">
+      <!-- First visit: browsers only allow sound after a tap, so the game opens on PRESS START.
+           The tap starts the menu song; the logo slams in on its drop. -->
+      <div class="press-start" id="press-start" hidden>
+        <button class="press-btn" id="press-btn" type="button">PRESS START</button>
+        <p class="press-hint" id="press-hint">🔊 Sound on</p>
+      </div>
       <div class="title-wrap">
         <div class="title-roster" aria-hidden="true"></div>
         <h1 class="logo"><span>PROOF</span><span class="logo-of">OF</span><span>FIGHT</span></h1>
@@ -36,6 +42,11 @@
           <span>Free play rules</span>
           <select id="rules-select"></select>
         </label>
+
+        <div class="sound-row">
+          <button id="btn-music" class="btn btn-ghost btn-sm" type="button" aria-pressed="true">🎵 Music on</button>
+          <button id="btn-sfx" class="btn btn-ghost btn-sm" type="button" aria-pressed="true">🔊 Sounds on</button>
+        </div>
 
         <p class="disclaimer">Parody. Caricatures of public figures, not affiliated with or endorsed by any of them. No wallet, no tokens, no sign-up. Not financial advice.</p>
       </div>
@@ -64,6 +75,7 @@
           <div class="hud-turn">TURN <b id="turn-num">1</b></div>
           <div class="hud-mode" id="hud-mode"></div>
           <div class="hud-buttons">
+            <button id="btn-mute" class="icon-btn" type="button" aria-label="Sound on or off">🔊</button>
             <button id="btn-fight-help" class="icon-btn" type="button" aria-label="How to play">?</button>
             <button id="btn-quit" class="icon-btn" type="button" aria-label="Leave fight">✕</button>
           </div>
@@ -155,10 +167,20 @@
     </div>
   </div>
 
+  <!-- SOUND TEST (?sounds): every sound effect and both songs, for listening on a phone -->
+  <div class="modal" id="modal-sounds" hidden>
+    <div class="modal-card sounds-card" role="dialog" aria-modal="true" aria-labelledby="sounds-title">
+      <h2 id="sounds-title">Sound test</h2>
+      <div id="sounds-body"></div>
+      <button class="btn btn-gold" id="sounds-close" type="button">Done</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
   <script src="js/data.js"></script>
   <script src="js/engine.js"></script>
+  <script src="js/audio.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -360,6 +360,37 @@ test('Vitalik: dance KO reads THERE IS ONLY LOVE, Essay Drop KO reads READ THE B
   assert.strictEqual(g.finish, 'READ THE BLOG POST');
 });
 
+test('Sound: every fighter has a sound for every button outcome and their Super; recipes are valid', function () {
+  var AU = require('../js/audio.js');
+  var WAVES = ['sine', 'square', 'sawtooth', 'triangle', 'noise'];
+  function check(id, info) {
+    var r = AU.SFX[id];
+    assert(r, 'missing sound ' + id);
+    var vs = typeof r === 'function' ? r(info) : r;
+    assert(vs.length, id + ': no voices');
+    vs.forEach(function (v) {
+      assert(WAVES.indexOf(v.w) >= 0, id + ': bad wave ' + v.w);
+      assert(v.w === 'noise' || v.f, id + ': needs a pitch');
+      assert(!(v.v > 1), id + ': volume above 1');
+      assert(v.d > 0 && v.d < 6, id + ': length');
+    });
+  }
+  D.ROSTER.forEach(function (id) {
+    [['strike', 'ok'], ['strike', 'miss'], ['privacy', 'ok'], ['privacy', 'fail'], ['mint', 'ok'], ['mint', 'fail'],
+      ['rug', 'ok'], ['rug', 'fail']].forEach(function (p) {
+      AU.moveSounds(id, p[0], p[1]).forEach(function (s) { check(s); });
+    });
+    check('super.' + D.FIGHTERS[id].super.id, { chars: [0.5, 0.6], off: 2.8 });
+  });
+  ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'flop', 'selfhit', 'super.astronaut']
+    .forEach(function (s) { check(s); });
+  Object.keys(AU.MUSIC).forEach(function (k) {
+    var m = AU.MUSIC[k];
+    assert(m.loopStart < m.loopEnd, k + ': loop points');
+    assert(require('fs').existsSync(require('path').join(__dirname, '..', m.src)), k + ': missing ' + m.src);
+  });
+});
+
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {
   var rng = E.makeRng(99);
   for (var n = 0; n < 10000; n++) {
