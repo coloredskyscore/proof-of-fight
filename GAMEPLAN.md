@@ -11,6 +11,20 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 2–3, 2026: fighter art for all seven
+
+The art style is locked. Fighters get it one at a time. Guide, prompts and status: [docs/art/README.md](docs/art/README.md).
+- **Portraits** are late-90s arcade character-select art (1:1); **bodies** are 16-bit pixel sprites (2:3). Both made in Grok Imagine. The joke is drawing the founders dead serious; the outfit carries the comedy.
+- **Vitalik:** a glaring portrait in a purple unicorn tee on the title screen, picker, cut-in and result card; on stage, a lanky 16-bit sprite holding his green tea, standing a bit taller than the block bodies. When KO'd he falls flat on his back.
+- **Toly:** a portrait in a black cap, blazer and headset mic; on stage, a 16-bit sprite holding a phone up at his opponent like he's selling it. Grok put the Solana logo on his cap in both images; it's painted out (no chain logos).
+- **Mert:** bald with the shine, full beard, black tee; on stage, khakis, a tattoo sleeve and shades hooked on his collar. In his Super the sun beam now comes off the top of his portrait's dome.
+- **Garlinghouse:** gray hair, stubble, navy suit with an open white collar; on stage he carries a beat-up leather briefcase (Settle, Lawsuit, the SEC years).
+- **Adam Back:** orange cap worn backwards, wire glasses, gray beard, striped shirt over a blue tee; on stage he carries a miner's pickaxe (proof of work, his ⛏️ Hashcash button).
+- **Charles:** the one fighter drawn grinning (he smiles in every photo): cowboy hat, glasses, beard, blue plaid; on stage, cowboy boots and a stack of papers under his arm (Peer Review).
+- **Saylor:** gray hair, charcoal suit, orange tie; on stage he holds up a plain orange shield (his 🛡️ STRF brace, Bitcoin orange without the logo).
+- In the Badger Dance Vitalik now wears the same purple unicorn tee (the old blue tee had an Ethereum-style diamond, and the rules say no chain logos).
+- The title screen, picker, cut-ins, stage and result card now show real art for the whole roster. A future fighter without art falls back to the emoji and block body.
+
 ### Oct 2, 2026 (late night, later): Toly's buttons
 
 Full concept and build notes: [docs/supers/toly.md](docs/supers/toly.md). His Super stays exactly as it is; the phone is the whole show.
@@ -388,8 +402,9 @@ v1 AI is a weighted random pick from that row. No pathfinding. No combo solver. 
 - Banners in the center, huge, ugly, screenshottable.
 - Caricature art, thick line, shared palette so it looks like one roster.
 - No official logos.
+- **Art style (locked):** late-90s arcade portraits for the round faces (title, picker, cut-in, result card) and 16-bit pixel sprites on the stage. See [docs/art/README.md](docs/art/README.md) for the prompts and status.
 
-First playable dummy uses simple block fighters (colored body, emoji head) and the five buttons. Art comes after the loop is funny.
+The first playable used simple block fighters (colored body, emoji head). Fighters without art still do; art replaces them one fighter at a time.
 
 ---
 
@@ -493,8 +508,9 @@ Do not point DNS at an empty repo.
 
 1. ~~Drop this file in the `proof-of-fight` repo as `GAMEPLAN.md` (and a short `README.md` that points at it).~~ Done.
 2. ~~HTML dummy: two rectangles, HP, Blocks, five buttons, one CPU, banners in the console or on screen.~~ Done, plus Daily Fight and share grid.
-3. **← You are here.** Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.
-4. Then caricature portraits.
+3. ~~Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.~~ Done: all seven kits.
+4. ~~Caricature portraits and sprites.~~ Done: all seven ([docs/art/](docs/art/README.md)).
+   **← You are here.** Next up: sound (effects, music, mute button), then step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. Then GitHub Pages or Cloudflare Pages.
 7. Then Porkbun DNS: `proofoffight.com` → that host.
@@ -519,7 +535,7 @@ Do not open Pages or touch nameservers before step 2 exists.
 - Title: **Proof of Fight**
 - Domain: **proofoffight.com**
 - Mode: **single player vs CPU**, with a **Daily Fight** (same fight for everyone) and **Free Play**
-- Look: **2D fighter stage**
+- Look: **2D fighter stage**; art is **late-90s arcade portraits + 16-bit pixel sprites**
 - Play: **turn-based buttons**
 - Meter: **Blocks**, 10 squares
 - Buttons: **Strike / Privacy / Mint / Rug / Super** (10 / hide / 24 / 36 / Super)
@@ -562,3 +578,6 @@ It's the suggested fight in Free Play and it's **Daily Fight #1**.
 | `tools/sim.js` | `node tools/sim.js` plays thousands of fights and prints win rates per fighter. Run it after changing numbers. |
 | `tools/check.js` | `node tools/check.js` checks the rules still work (Supers can't be dodged, Blind skips one turn, etc.). |
 | `docs/supers/` | One doc per fighter (Super concept, button names), plus a README of the slots the game supports. |
+| `art/` | Fighter portraits and sprites (`<id>-head.webp`, `<id>-body.webp`). |
+| `tools/art.py` | Cuts the white background off a Grok image and sizes it for the game (needs Pillow). |
+| `docs/art/` | The art style, the Grok prompt templates, and which fighters have art. |

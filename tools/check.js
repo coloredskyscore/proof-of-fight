@@ -200,6 +200,17 @@ test('Renamed buttons fit on a phone and have their banner lines', function () {
   });
 });
 
+test('Fighter art files exist (head = portrait, body = stage sprite)', function () {
+  var fs = require('fs'), path = require('path');
+  D.ROSTER.forEach(function (id) {
+    var art = D.FIGHTERS[id].art || {};
+    Object.keys(art).forEach(function (k) {
+      assert(k === 'head' || k === 'body', id + ': unknown art slot ' + k);
+      assert(fs.existsSync(path.join(__dirname, '..', art[k])), id + ': missing ' + art[k]);
+    });
+  });
+});
+
 test('STRF always works: half damage from Strike/Mint/Rug, +1 Block, never hidden', function () {
   var f = E.newFight({ player: 'saylor', cpu: 'garlinghouse', seed: 1 });
   rig(f, [cpuRoll('garlinghouse', 'rug'), 0 /* rug lands */]);

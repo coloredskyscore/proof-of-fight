@@ -77,6 +77,7 @@
       color: '#19c6a0', emoji: '⚡',
       hide: 0.35, mint: 0.50, rug: 0.30,
       ai: { strike: 4, privacy: 2, mint: 3, rug: 3 },
+      art: { head: 'art/toly-head.webp', body: 'art/toly-body.webp' }, // blazer, black cap, phone held up to sell
       moves: {
         strike:  { name: 'Comrades',    icon: '✊', ko: 'CHEAP FAST CHAIN GUD' },
         privacy: { name: 'Seed Vault',  icon: '🗝️', ok: 'SEED VAULT HAS THE KEYS', fail: 'THE PHONE IS THE SHOW' },
@@ -101,6 +102,7 @@
       color: '#ffc53d', emoji: '👨‍🦲',
       hide: 0.45, mint: 0.45, rug: 0.40,
       ai: { strike: 3, privacy: 3, mint: 3, rug: 3 },
+      art: { head: 'art/mert-head.webp', body: 'art/mert-body.webp' }, // black tee, khakis, tattoo sleeve, shades on the collar
       moves: {
         strike:  { name: 'Shitpost',   icon: '🗯️' },
         privacy: { name: 'Zolana',     icon: '🕶️', ok: 'EVERY BALD GUY EVER',    fail: 'VIEW KEY LEAKED' },
@@ -123,6 +125,7 @@
       color: '#3b82f6', emoji: '⚖️',
       hide: 0.25, mint: 0.55, rug: 0.20, // a settlements guy: bad at hiding, bad at rugs
       ai: { strike: 3, privacy: 2, mint: 4, rug: 4 },
+      art: { head: 'art/garlinghouse-head.webp', body: 'art/garlinghouse-body.webp' }, // navy suit, beat-up briefcase
       moves: {
         strike:  { name: 'Settle',      icon: '💸', ko: "PERFECT CAN'T BE THE ENEMY OF GOOD" },
         privacy: { name: 'In The Room', icon: '🏛️', ok: 'PROUD TO BE IN THE ROOM', fail: 'BLOCKED BY THE ANTI-CRYPTO ARMY' },
@@ -145,7 +148,10 @@
       color: '#9b7bff', emoji: '🦄',
       hide: 0.55, mint: 0.35, rug: 0.20,
       ai: { strike: 3, privacy: 3, mint: 2, rug: 2 },
-      heldProp: '🍵', // green tea in his hand on stage ("mi pinxe lo crino tcati")
+      // Art: head = round portrait (title, picker, cut-in, result card), body = stage sprite facing
+      // right. Fighters without art keep their emoji and block body.
+      art: { head: 'art/vitalik-head.webp', body: 'art/vitalik-body.webp' },
+      heldProp: '🍵', // green tea in his hand on the block body ("mi pinxe lo crino tcati"); his sprite has its own
       moves: {
         strike:  { name: 'Essay Drop',   icon: '📝', ko: 'READ THE BLOG POST' },
         privacy: { name: 'Privacy Pool', icon: '🫥', ok: 'FIGHT CHAT CONTROL', fail: 'I CHOOSE BALANCE',
@@ -169,6 +175,7 @@
       color: '#94a3b8', emoji: '🔐',
       hide: 0.70, mint: 0.15, rug: 0.10,
       ai: { strike: 3, privacy: 6, mint: 0.5, rug: 0.5 },
+      art: { head: 'art/adam-head.webp', body: 'art/adam-body.webp' }, // orange cap backwards, wire glasses, pickaxe
       moves: {
         strike:  { name: 'Hashcash',    icon: '⛏️', ko: 'GAME OVER' },
         privacy: { name: 'Cypherpunk',  icon: '🧅', ok: 'PRIORITIZE 1',        fail: 'FILTERED BY KNOTS' },
@@ -191,6 +198,7 @@
       color: '#ef4444', emoji: '🤠',
       hide: 0.55, mint: 0.40, rug: 0.25,
       ai: { strike: 2, privacy: 3, mint: 3, rug: 2 },
+      art: { head: 'art/charles-head.webp', body: 'art/charles-body.webp' }, // cowboy hat, blue plaid, the grin, a stack of papers
       moves: {
         strike:  { name: 'Glacier Drop', icon: '🧊', ko: 'BANK THE UNBANKED' },
         privacy: { name: 'ZK Proof',     icon: '🔏', ok: 'SELECTIVE DISCLOSURE', fail: 'WELCOME TO FUD LAND' },
@@ -220,6 +228,7 @@
       // [min, max] rolls each time it lands: MSTR is high beta.
       dmg: { mint: 20, rug: [15, 45] },
       ai: { strike: 4, privacy: 2, mint: 3, rug: 1 },
+      art: { head: 'art/saylor-head.webp', body: 'art/saylor-body.webp' }, // charcoal suit, orange tie, plain orange shield (STRF)
       moves: {
         strike:  { name: 'STRC', nick: 'Stretch', icon: '📬', ko: 'STRETCH' },
         privacy: { name: 'STRF', nick: 'Strife',  icon: '🛡️', ok: 'SENIOR CLAIM' },

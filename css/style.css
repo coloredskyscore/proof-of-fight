@@ -353,6 +353,31 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .f-chip.show { opacity: 1; transform: translateX(-50%) scale(1); }
 .f-chip.role-super { background: var(--gold); color: #1a1200; }
 
+/* Fighter art: round portraits and a stage sprite. Fighters without art keep the emoji and block body. */
+.art-head { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.pick-face, .title-roster span, .res-faces span.face, .f-head { overflow: hidden; }
+.cutin-head.has-art { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
+/* The sprite stands a bit taller than the block body, so its label and status bubble sit higher. */
+.f-art {
+  position: absolute; bottom: 0; left: 50%;
+  height: 118%; width: auto; max-width: none;
+  transform: translateX(-50%);
+  pointer-events: none; user-select: none; -webkit-user-drag: none;
+}
+/* A wide sprite (arm out, big stance) shrinks to stay on screen instead of stretching past 150% of its spot. */
+@supports (width: 1cqw) {
+  .f-art { height: auto; max-height: 118cqh; max-width: 150cqw; }
+}
+.fighter.has-art .f-chip { top: calc(-18% - 58px); }
+.fighter.has-art .f-bubble { top: calc(-18% - 30px); }
+.fighter.has-art .f-shadow { left: -8%; right: -8%; }
+/* KO: the sprite falls flat on its back, at 70% so it fits on its own side of a phone-width stage.
+   The CPU side is mirrored, so the same transform drops it the other way. */
+.f-art { transform-origin: 50% 100%; transition: transform .35s ease-in; }
+.fighter.has-art.is-ko.side-p, .fighter.has-art.is-ko.side-c { transform: none; }
+.fighter.has-art.is-ko .f-art { transform: translateX(-50%) rotate(-90deg) translate(35%, 40%) scale(.7); }
+.fighter.has-art.is-ko .f-bubble { top: auto; bottom: 22%; }
+
 .fighter.lunge.side-p { transform: translateX(38%); }
 .fighter.lunge.side-c { transform: translateX(-38%); }
 .fighter.wobble .f-sprite { animation: wobble .5s ease; }
@@ -670,6 +695,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   opacity: 0;
 }
 .cutin.play .dome-beam { animation: beamSweep 1.3s var(--lock, .55s) ease-out both; }
+.cutin-head.has-art ~ .cutin-pdeco .dome-beam { top: 9%; left: 55%; } /* off the shine on top of his portrait's dome */
 
 /* Toly: Second Best Salesman. Brochure of phone bricks fans open, one gets slapped in, airdrop confetti. */
 .cutin { --dir: 1; }

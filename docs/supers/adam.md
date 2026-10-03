@@ -63,3 +63,8 @@ He is not a catchphrase account. The joke is the tone: short, technical, slightl
 **Balance:** unchanged at 70% for a sensible player.
 
 **Where it lives:** `js/data.js` (`adam`); the gun's data blob is `case 'opreturn'` in `js/app.js`.
+
+## Art (Oct 3, 2026)
+
+Adam has real art now (see [docs/art/README.md](../art/README.md)): a late-90s arcade portrait in a plain orange cap worn backwards, wire-rim glasses, gray beard and a striped shirt over a blue tee, and a 16-bit sprite in the same outfit carrying a miner's pickaxe (proof of work; his ⛏️ Hashcash button). Orange nods to Bitcoin without a logo. The portrait shows in the OP_RETURN cut-in next to the gun.
+

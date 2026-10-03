@@ -60,3 +60,8 @@ He should be bad at Privacy and bad at rugs. He is a settlements guy. The chip-d
 **Balance:** as a player he's unchanged (68% for a sensible player; his 55% RLUSD carries him). As the CPU he was the hardest opponent in the game (players won only 54%), because CPU Garlinghouse spammed a 35% rug. Now players beat him about 68% of the time, in line with everyone else.
 
 **Where it lives:** `js/data.js` (`garlinghouse`), cut-in in `js/app.js` (`armyDeco`) and `css/style.css` (search "army-bubble" / "gold-truck").
+
+## Art (Oct 3, 2026)
+
+Garlinghouse has real art now (see [docs/art/README.md](../art/README.md)): a late-90s arcade portrait (gray hair, stubble, navy suit, open white collar, the straight man's glare) and a 16-bit sprite in the navy suit carrying a beat-up leather briefcase, a nod to Settle, Lawsuit and the SEC years without any text. The portrait shows in the XRP Army cut-in under the running army.
+

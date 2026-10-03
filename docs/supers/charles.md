@@ -68,3 +68,8 @@ Prop on the portrait: 🐺 (Dire Wolf Mode).
 **Balance:** unchanged at 66% for a sensible player (roster average about 68%).
 
 **Where it lives:** `js/data.js` (`charles`), cut-in in `js/app.js` (`midnightDeco`) and `css/style.css` (search "Midnight Express").
+
+## Art (Oct 3, 2026)
+
+Charles has real art now (see [docs/art/README.md](../art/README.md)). He's the one fighter drawn grinning, since he smiles in every photo: the guy who already knows he's won, which fits `DEAL WITH IT.` and `I'M HERE TO STAY`. Portrait: cowboy hat, glasses, beard, blue plaid shirt. Sprite: the same outfit with jeans and cowboy boots, and a stack of papers under one arm (Peer Review). The portrait shows in the Midnight Express cut-in under the nodding peer reviewers, then the lights go out.
+

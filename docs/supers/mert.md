@@ -120,3 +120,8 @@ Added when this was built into the game. Everything above is the original concep
 **Balance note:** 8 damage instead of 10 matters more than it looks. Strike does 10, so a 10-damage Super lines up exactly with the KO line, and at 8 a Strike-only Mert needs an extra turn (simulator: 64% → 51% for Strike-only). For players who mix moves he barely changes (72% → 71%) and stays mid-pack.
 
 **Where it lives:** `js/data.js` (`mert.moves`, `mert.super`), cut-in in `js/app.js` (`case 'helium'`, name-card flicker in `cutIn`) and `css/style.css` (search "CEO of Helium").
+
+## Art (Oct 3, 2026)
+
+Mert has real art now (see [docs/art/README.md](../art/README.md)): a late-90s arcade portrait (bald with a shine on the dome, full black beard, black tee) and a 16-bit sprite in a black tee and khakis with a tattoo sleeve, shades hooked on his collar and white sneakers with red laces. No balloon prop. In the CEO of Helium cut-in, the sun beam now sweeps off the shine on top of his portrait's dome instead of across his eyes.
+

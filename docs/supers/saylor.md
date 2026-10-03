@@ -141,3 +141,8 @@ The kit had no MSTR, so the common stock took the purple (big gamble) button fro
 | KO with it | `NUMBER GO UP` |
 
 **Retired, kept here for later:** 🎲 STRD *Stride*: `STRIDE CLEARED` / `DIVIDEND FORFEITED`.
+
+## Art (Oct 3, 2026)
+
+Saylor has real art now (see [docs/art/README.md](../art/README.md)): a late-90s arcade portrait in a charcoal suit and orange tie, and a 16-bit sprite in a braced stance holding up a plain orange shield, his 🛡️ STRF brace made literal, in Bitcoin orange without the logo. The portrait shows in the Another Orange Dot cut-in under the tracker chart; the astronaut DJ KO scene is unchanged.
+
