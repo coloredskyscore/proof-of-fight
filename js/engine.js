@@ -142,7 +142,9 @@
       if (attacker === loser) { cause = 'self'; fight.finish = D.FINISH.self; }
       else if (rival) fight.finish = rival;
       else if (cause === 'super') fight.finish = W.super.finish;
-      else if (W.moves && W.moves[cause] && W.moves[cause].ko) fight.finish = W.moves[cause].ko;
+      // A renamed button's own KO line, else its success line (Charles's Peer Review: PEER REVIEWED),
+      // so a pink-button KO never falls back to the generic JPEG TO THE FACE.
+      else if (W.moves && W.moves[cause] && (W.moves[cause].ko || W.moves[cause].ok)) fight.finish = W.moves[cause].ko || W.moves[cause].ok;
       else fight.finish = D.FINISH[cause];
       fight.finishCause = cause;
       push({ t: 'ko', winner: fight.winner, loser: loser, finish: fight.finish, cause: cause });

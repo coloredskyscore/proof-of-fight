@@ -123,6 +123,17 @@ def main():
     if args.kind == 'head':
         c = [float(v) for v in args.crop.split(',')] if args.crop else HEAD_CROP
         w, h = im.size
+        # Reaching past an edge the art touches leaves an empty strip with a straight cut (Charles's
+        # shirt once ended short of the frame, showing his red behind it).
+        a = im.getchannel('A')
+        edges = {'left': (c[0] < 0, [a.getpixel((0, y)) for y in range(h)]),
+                 'top': (c[1] < 0, [a.getpixel((x, 0)) for x in range(w)]),
+                 'right': (c[2] > 1, [a.getpixel((w - 1, y)) for y in range(h)]),
+                 'bottom': (c[3] > 1, [a.getpixel((x, h - 1)) for x in range(w)])}
+        for side, (past, line) in edges.items():
+            if past and sum(1 for v in line if v) > len(line) // 100:
+                print('WARNING: the crop reaches past the %s edge, where the art touches it; '
+                      'that edge will show a straight cut in the round frames' % side)
         im = im.crop((round(c[0] * w), round(c[1] * h), round(c[2] * w), round(c[3] * h)))
         im = im.resize((HEAD_SIZE, HEAD_SIZE), Image.LANCZOS)
     else:

@@ -11,6 +11,13 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 3, 2026: Charles's Super cleaned up, KO lines fixed
+
+- **Midnight Express is readable now.** The peer-reviewer emojis are gone (they didn't read for casual players). Instead Charles is on a video, `SURPRISE AMA` at `0:07 / 3:47:12`, and his captions type at reading speed: `SO, TO GIVE SOME CONTEXT,` / `BACK IN 2015 WE—`. The lights go out mid-word, a 💤 rises (the Sleep effect explained), then `MIDNIGHT EXPRESS` / `BIGGER THAN ZCASH` with time to read them. About 5 seconds; tap to skip still works.
+- **KO lines match the button.** A renamed button without its own KO line now finishes with its success line, so a Peer Review KO reads `PEER REVIEWED` instead of the generic `JPEG TO THE FACE`. Same for every fighter's pink and purple buttons (Slop Cannon: `SLOP, KINO, SKIBIDI BOP`, Lawsuit: `WE WILL PREVAIL`, Leios: `THE MAGIC OF LEIOS`, ...).
+- **Charles's portrait** no longer shows a strip of red under his shirt in the round frames. The art tool now warns when a crop would cause that.
+- **Landscape phones:** Super cut-ins get a smaller portrait and text so everything fits; Charles's video, Toly's brochure and Saylor's chart move to the side.
+
 ### Oct 2–3, 2026: fighter art for all seven
 
 The art style is locked. Fighters get it one at a time. Guide, prompts and status: [docs/art/README.md](docs/art/README.md).
@@ -338,12 +345,12 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Mert | **CEO of Helium** ([doc](docs/supers/mert.md)) | Name card flickers HELIUS / HELIUM / HIVEMAPPER, then locks. Sun catches the dome, beam sweeps their eyes. "THE RPCS DID THIS" | **8 dmg + Blind** (they skip their next turn; `WHO WAS THAT`) | TRILLIONS |
 | Toly | **Second Best Salesman** ([doc](docs/supers/toly.md)) | A brochure of phone bricks fans open, he slaps a `BUY NOW` phone into them, airdrop confetti. "APPLE + SOLANA MOBILE: 3.469 BILLION" | **35 dmg**, one hit | HATER CONVERTED |
 | Garlinghouse | **XRP Army** ([doc](docs/supers/garlinghouse.md)) | Polo-shirt army jogs across; a TikToker yells `$589 BY FRIDAY`, a `SWIFT IS DEAD` sign, a gold truck at 1940 speed; he says "RIPPLE 3, SEC 0", slightly embarrassed | **5 hits × 5 dmg = 25** | WE WON. THEY LOST. |
-| Charles | **Midnight Express** ([doc](docs/supers/charles.md)) | Five peer reviewers nod while his sentence types out; the lights go out mid-word; moon, stars, "BIGGER THAN ZCASH" | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** | LFG 2027 |
+| Charles | **Midnight Express** ([doc](docs/supers/charles.md)) | His nearly-four-hour video (`SURPRISE AMA`, `0:07 / 3:47:12`), captions typing at reading speed; the lights go out mid-word; moon, stars, 💤, "BIGGER THAN ZCASH" | **15 dmg + Sleep** (skip next turn) **+ they lose 3 Blocks** | LFG 2027 |
 | Saylor | **Another Orange Dot** ([doc](docs/supers/saylor.md)) | Orange dots stamp one by one onto his tracker chart. "A LITTLE MORE ORANGE". On a KO: the astronaut DJ, `FIAT AS A STORE OF VALUE` / `WE CALL THEM POOR` | **25 dmg + HODL** (Saylor takes half damage this turn and next) | WE CALL THEM POOR |
 | Adam Back | **OP_RETURN** ([doc](docs/supers/adam.md)) | Long-barreled gun etched `OP_RETURN` fires a data blob. "FORK AROUND AND FIND OUT". `SALTY TEARS` if it strips a HODL | **Prune** (strips their HODL) **then 25 dmg** | CHECKMATE FORKERS |
 | Vitalik | **Badger Dance** ([doc](docs/supers/vitalik.md)) | The badger dance: a green screen of badgers and a stage of people in lanyards, arms straight out, flapping in sync; Vitalik front and center. "DON'T LOOK AT THE DANCE." Their self-hits read `DEFENSIVE ACCELERATION` | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | THERE IS ONLY LOVE |
 
-Non-Super KO finish lines: Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY`, hitting yourself `SELF-REKT`.
+Non-Super KO finish lines: a button's own KO line if it has one (below), else that button's success line (Peer Review: `PEER REVIEWED`). The generic Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY` only show for a button with neither (today: Mert's Shitpost reads `HONEST WORK`). Hitting yourself: `SELF-REKT`.
 
 **Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`, Charles beating Mert reads `BIGGER THAN ZOLANA`.
 

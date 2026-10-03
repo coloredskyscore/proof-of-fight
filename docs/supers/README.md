@@ -36,7 +36,7 @@ Every fighter has the same five buttons with the same colors and jobs. A fighter
 
 Every button can also have:
 - **a nickname**, shown small next to the name (Saylor: STRC *Stretch*)
-- **a KO line** used when that button lands the knockout (Saylor's STRC: STRETCH)
+- **a KO line** used when that button lands the knockout (Saylor's STRC: STRETCH). Without one, a knockout with that button reads its success line (Charles's Peer Review: PEER REVIEWED).
 - **a ticker** that pops over the fighter when it lands (`MSTR ▲ 37%`, where the number is the damage roll) and sits under the flop banner (`MSTR ▼`)
 
 **Button names: 12 characters max** (they have to fit on a phone). Banner lines: under ~25 characters reads best.

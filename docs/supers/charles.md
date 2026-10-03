@@ -71,5 +71,21 @@ Prop on the portrait: 🐺 (Dire Wolf Mode).
 
 ## Art (Oct 3, 2026)
 
-Charles has real art now (see [docs/art/README.md](../art/README.md)). He's the one fighter drawn grinning, since he smiles in every photo: the guy who already knows he's won, which fits `DEAL WITH IT.` and `I'M HERE TO STAY`. Portrait: cowboy hat, glasses, beard, blue plaid shirt. Sprite: the same outfit with jeans and cowboy boots, and a stack of papers under one arm (Peer Review). The portrait shows in the Midnight Express cut-in under the nodding peer reviewers, then the lights go out.
+Charles has real art now (see [docs/art/README.md](../art/README.md)). He's the one fighter drawn grinning, since he smiles in every photo: the guy who already knows he's won, which fits `DEAL WITH IT.` and `I'M HERE TO STAY`. Portrait: cowboy hat, glasses, beard, blue plaid shirt. Sprite: the same outfit with jeans and cowboy boots, and a stack of papers under one arm (Peer Review). The portrait shows in the Midnight Express cut-in (and, dimmed, on the video), then the lights go out.
+
+## Update (Oct 3, 2026): Midnight Express, cleaned up
+
+Playtest notes from the user: the cut-in was too quick to read, and the peer-reviewer emojis (🤓💻) didn't make sense to casual players. Also, a Peer Review KO read `JPEG TO THE FACE`.
+
+**The cut-in now:**
+1. A video player at the top: his portrait (dimmed) as the video, titled `SURPRISE AMA`, timestamp `0:07 / 3:47:12`, progress bar barely started. Anyone gets "this video is almost four hours long".
+2. His captions type out at reading speed (22 characters a second), two lines: `SO, TO GIVE SOME CONTEXT,` / `BACK IN 2015 WE—`. His round portrait sits below.
+3. The last line hangs for a beat, then the lights go out mid-word. Moon, stars, and a 💤 rises: the lecture put the opponent to sleep (the Sleep effect, explained without words).
+4. `MIDNIGHT EXPRESS` / `CHARLES`, then `"BIGGER THAN ZCASH"`, each with time to read.
+
+About 5.2 seconds (it was 3.4); tap to skip still works after the first half second. All the timing is worked out from the caption lines in `js/data.js` (`charles.super.lecture`), so editing them keeps it in sync.
+
+**KO lines:** a renamed button without its own KO line now finishes with its success line, so Peer Review reads `PEER REVIEWED`. Any button can still get its own KO line later.
+
+**Where it lives:** `js/data.js` (`charles.super.lecture`, `video`), `js/app.js` (`lectureTiming`, `midnightDeco`), `css/style.css` (search "Midnight Express").
 

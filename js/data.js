@@ -208,10 +208,11 @@
       dodgeLine: 'I AM NOT ACCOUNTABLE', // when an attack misses him because he hid
       super: {
         id: 'midnight', name: 'Midnight Express', prop: '🐺',
-        // The lecture types out under the peer reviewers, then the lights go out mid-word.
-        lecture: 'SO, TO GIVE SOME CONTEXT, BACK IN 2015 WE—',
+        // His nearly-four-hour video: the captions type out at reading speed (one entry per line), then
+        // the lights go out mid-word. The cut-in's pacing is worked out from these lines.
+        lecture: ['SO, TO GIVE SOME CONTEXT,', 'BACK IN 2015 WE—'],
+        video: { title: 'SURPRISE AMA', time: '0:07 / 3:47:12' },
         line: 'BIGGER THAN ZCASH',
-        timing: { card: 1.5, line: 1.95, dur: 3.4 }, // seconds: name card and line wait for the blackout
         blurb: 'Hit + Sleep (skip next turn) + they lose 3 Blocks', finish: 'LFG 2027',
         cpuAfter: "I'M HERE TO STAY",
         skipLine: 'DEAL WITH IT.'
