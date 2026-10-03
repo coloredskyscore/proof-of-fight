@@ -139,13 +139,13 @@ python3 tools/art.py head garlinghouse-portrait.jpg art/garlinghouse-head.webp
 python3 tools/art.py body garlinghouse-sprite.jpg art/garlinghouse-body.webp --gap 408,612
 python3 tools/art.py head adam-portrait.jpg art/adam-head.webp --gap 1044,504 --crop 0.0,-0.04,1.0,0.96
 python3 tools/art.py body adam-sprite.jpg art/adam-body.webp --gap 376,608
-python3 tools/art.py head charles-portrait.jpg art/charles-head.webp --crop=-0.06,-0.08,1.06,1.04
+python3 tools/art.py head charles-portrait.jpg art/charles-head.webp --crop=0,0,1,1
 python3 tools/art.py body charles-sprite.jpg art/charles-body.webp
 python3 tools/art.py head saylor-portrait.jpg art/saylor-head.webp --crop=0.0,-0.04,1.0,0.96
 python3 tools/art.py body saylor-sprite.jpg art/saylor-body.webp
 ```
 
-Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased). Adam's portrait pocket was background seen through his glasses past his cheek, and his cap touched the top of the image, so he got Mert's extra headroom too. Charles's hat brim ran past the image edges, so his crop zooms out on every side (write `--crop=` with an equals sign when a number starts with a minus).
+Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased). Adam's portrait pocket was background seen through his glasses past his cheek, and his cap touched the top of the image, so he got Mert's extra headroom too. Charles's hat brim ran wide, so his crop uses the whole image. A crop can also reach past an edge to zoom out (write `--crop=` with an equals sign when a number starts with a minus), but only past edges the art doesn't touch: his first crop reached past the bottom and right, where his shirt runs off the image, and left a strip of his red showing under it. The tool now warns about that.
 
 Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.webp' }` in `js/data.js`. On stage the sprite stands about 18% taller than the block body (a very wide pose shrinks to stay on screen); when KO'd it falls flat on its back at 70% size so it fits on a phone. A fighter with only a portrait shows it as the head on the block body.
 

@@ -716,17 +716,38 @@
       dots + '</svg></div>';
   }
 
-  // Charles: the peer reviewers nod along, the lecture types out, and the lights go out mid-word.
-  function midnightDeco(lecture) {
+  // Charles: his nearly-four-hour video. Captions type at reading speed, a beat, then lights out
+  // mid-word, moon and stars, 💤. Everything after the blackout is timed from when it lands.
+  var TYPE_CPS = 22;        // caption typing speed, characters per second (about reading speed)
+  function lectureTiming(lines) {
+    var t = 0.4, out = [];
+    lines.forEach(function (txt) {
+      var dur = txt.length / TYPE_CPS;
+      out.push({ delay: t, dur: dur });
+      t += dur + 0.15;
+    });
+    return { lines: out, blackout: t + 0.3 }; // the last line hangs for a beat, then lights out
+  }
+
+  function midnightDeco(sup) {
+    var T = lectureTiming(sup.lecture), off = T.blackout;
     var stars = '';
     for (var k = 0; k < 26; k++) {
       stars += '<i style="left:' + Math.round(Math.random() * 100) + '%;top:' + Math.round(Math.random() * 70) +
-        '%;animation-delay:' + (1.4 + Math.random() * 0.6).toFixed(2) + 's"></i>';
+        '%;animation-delay:' + (off + 0.05 + Math.random() * 0.6).toFixed(2) + 's"></i>';
     }
-    return '<div class="deco-row deco-nerds">' + spans('🤓💻', 5) + '</div>' +
-      '<div class="lecture"><span style="--chars:' + lecture.length + '">' + esc(lecture) + '</span></div>' +
+    var F = D.FIGHTERS.charles;
+    var caps = sup.lecture.map(function (txt, k) {
+      return '<span style="--chars:' + txt.length + ';--t:' + T.lines[k].dur.toFixed(2) + 's;--d:' +
+        T.lines[k].delay.toFixed(2) + 's">' + esc(txt) + '</span>';
+    }).join('');
+    return '<div class="midnight" style="--off:' + off.toFixed(2) + 's">' +
+      '<div class="vplayer"><div class="vp-frame">' + faceHTML(F) + '</div>' +
+      '<div class="vp-title">' + esc(sup.video.title) + '</div>' +
+      '<div class="vp-caps">' + caps + '</div>' +
+      '<div class="vp-time">' + esc(sup.video.time) + '</div><div class="vp-bar"><i></i></div></div>' +
       '<div class="blackout"></div>' +
-      '<div class="night"><div class="moon"></div>' + stars + '</div>';
+      '<div class="night"><div class="moon"></div>' + stars + '<div class="zzz">💤</div></div></div>';
   }
 
   // Garlinghouse: the polo-shirt army jogs across. One TikToker yells a price target, one carries a
@@ -744,7 +765,7 @@
       case 'dance': return { screen: badgerDanceDeco() };
       case 'helium': return { screen: '<div class="deco-sun"></div>', portrait: '<div class="dome-beam"></div>' };
       case 'xrparmy': return { screen: armyDeco() };
-      case 'midnight': return { screen: midnightDeco(D.FIGHTERS.charles.super.lecture) };
+      case 'midnight': return { screen: midnightDeco(D.FIGHTERS.charles.super) };
       case 'orangedot': return { screen: trackerChart() };
       case 'opreturn': return { screen: '<div class="deco-bytes">OP_RETURN 6a4c50' + randomHex(28) + '…</div>' };
     }
@@ -852,7 +873,14 @@
         el.style.setProperty('--line-delay', ((lockAt + 150) / 1000) + 's');
         duration = lockAt + 1700;
       }
-      // Supers with their own pacing (Charles: the name card waits for the lights to go out).
+      // Charles: the name card and line wait for the lights to go out, then get time to be read.
+      if (sup.lecture) {
+        var off = lectureTiming(sup.lecture).blackout;
+        el.style.setProperty('--card-delay', (off + 0.15) + 's');
+        el.style.setProperty('--line-delay', (off + 0.6) + 's');
+        duration = Math.round((off + 2.3) * 1000);
+      }
+      // Supers with their own pacing.
       if (sup.timing) {
         el.style.setProperty('--card-delay', sup.timing.card + 's');
         el.style.setProperty('--line-delay', sup.timing.line + 's');

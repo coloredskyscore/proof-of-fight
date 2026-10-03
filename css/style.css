@@ -600,8 +600,6 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .gold-truck small { font: 900 10px var(--body); color: var(--gold); background: #000b; padding: 2px 6px; border-radius: 4px; margin-top: 4px; }
 .deco-run span { display: inline-block; animation: rise .25s ease-in-out infinite alternate; }
 .deco-run span:nth-child(odd) { animation-delay: -.12s; }
-.deco-nerds { font-size: 30px; }
-.deco-nerds span { display: inline-block; margin: 0 4px; animation: rise .6s ease-in-out infinite alternate; }
 .deco-drop { position: absolute; left: 8%; top: 4%; font-size: 90px; animation: drop .6s cubic-bezier(.3, 1.6, .5, 1) both; }
 .deco-bytes {
   position: absolute; left: 0; top: 7%; white-space: nowrap;
@@ -658,24 +656,46 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .res-astro { position: absolute; right: -4px; top: -2px; width: 70px; opacity: .9; transform: rotate(10deg); pointer-events: none; }
 .res-astro svg { width: 100%; height: auto; display: block; }
 
-/* Charles: Midnight Express. Lecture under the peer reviewers, lights out mid-word, moon and stars. */
+/* Charles: Midnight Express. His nearly-four-hour video, captions typing at reading speed, then lights
+   out mid-word, moon, stars and 💤. --off (when the lights go out) is worked out from the captions. */
 .sup-midnight .cutin-card, .sup-midnight .cutin-line { z-index: 5; }
-.lecture {
-  position: absolute; left: 50%; top: 15%;
+.cutin.sup-midnight { justify-content: flex-end; padding-bottom: 7vh; } /* the video takes the top */
+.midnight { position: absolute; inset: 0; }
+.vplayer {
+  position: absolute; left: 50%; top: 4%;
   transform: translateX(-50%);
-  max-width: calc(100% - 24px);
-  padding: 8px 12px;
-  border: 3px solid var(--line); border-radius: 12px;
-  background: #fff; color: #111;
-  font: 800 clamp(10px, 3.2vw, 14px) ui-monospace, SFMono-Regular, Menlo, monospace;
-  white-space: nowrap; overflow: hidden;
+  width: min(90%, 440px); aspect-ratio: 16 / 9;
+  border: 3px solid var(--line); border-radius: 12px; overflow: hidden;
+  background: #15131f;
+  box-shadow: 0 6px 0 #0006;
 }
-.lecture span { display: inline-block; overflow: hidden; vertical-align: bottom; width: 0; }
-.cutin.play .lecture span { animation: typeOn 1.05s .25s steps(42, end) forwards; }
+.vp-frame { position: absolute; inset: 0; display: grid; place-items: center; font-size: 70px; filter: brightness(.55) saturate(.8); }
+.vp-frame .art-head { border-radius: 0; object-position: 50% 30%; }
+.vp-title {
+  position: absolute; left: 10px; top: 8px;
+  font: 800 clamp(10px, 3vw, 13px) var(--body); letter-spacing: .06em; color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+.vp-caps {
+  position: absolute; left: 0; right: 0; bottom: 30px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.vp-caps span {
+  display: block; overflow: hidden; white-space: nowrap; width: 0;
+  padding: 2px 0;
+  background: #000d; color: #fff;
+  font: 800 clamp(12px, 4.1vw, 17px) ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.cutin.play .vp-caps span { animation: typeOn var(--t) var(--d) steps(var(--chars), end) forwards; }
+.vp-time { position: absolute; left: 10px; bottom: 9px; font: 700 clamp(9px, 2.8vw, 12px) var(--body); color: #fff; }
+.vp-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: #fff4; }
+.vp-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 3%; background: #ef4444; }
 .blackout { position: absolute; inset: 0; background: #04050c; opacity: 0; z-index: 2; }
-.cutin.play .blackout { animation: lightsOut .01s 1.35s forwards; }
+.cutin.play .blackout { animation: lightsOut .01s var(--off, 1.35s) forwards; }
 .night { position: absolute; inset: 0; z-index: 3; opacity: 0; }
-.cutin.play .night { animation: fadeIn .4s 1.4s forwards; }
+.cutin.play .night { animation: fadeIn .4s calc(var(--off, 1.35s) + .05s) forwards; }
+.zzz { position: absolute; left: 20%; top: 34%; font-size: 40px; opacity: 0; }
+.cutin.play .zzz { animation: zzzRise 1.8s calc(var(--off, 1.35s) + .3s) ease-out forwards; }
 .moon {
   position: absolute; right: 14%; top: 7%;
   width: min(22vw, 110px); aspect-ratio: 1; border-radius: 50%;
@@ -862,6 +882,16 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   }
   .move { min-height: 48px; }
   .fighter { height: 70%; width: auto; aspect-ratio: .6; }
+  /* Cut-ins: a smaller portrait so portrait, name card and line fit a short screen. */
+  .cutin { gap: 10px; }
+  .cutin-portrait { width: min(36vh, 200px); }
+  .cutin-head { font-size: min(20vh, 100px); }
+  .cutin-name { font-size: min(13vh, 56px); }
+  .cutin-line { font-size: min(6.5vh, 26px); max-width: 70vw; }
+  /* Toly's brochure and Saylor's chart move to the left half, clear of the portrait. */
+  .brochure { left: 18%; top: 22%; }
+  .tracker { left: 3%; right: auto; width: 34%; top: 8%; height: 46%; }
+  .saga-box { left: 4%; bottom: 5%; }
 }
 
 /* ---------- Keyframes ---------- */
@@ -929,12 +959,19 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 @keyframes pump { 50% { transform: rotate(-14deg); } }
 @keyframes thump { 0% { transform: scale(1.05); } 100% { transform: scale(1); } }
 @keyframes typeOn { to { width: calc(var(--chars) * 1ch); } }
+@keyframes zzzRise { 0% { opacity: 0; transform: translateY(20px) scale(.7); } 30% { opacity: 1; } 100% { opacity: .9; transform: translateY(-40px) scale(1.1); } }
 @keyframes lightsOut { to { opacity: 1; } }
 @keyframes fadeIn { to { opacity: 1; } }
 @keyframes twinkle { from { opacity: .2; } to { opacity: 1; } }
 @keyframes creep { to { transform: translateX(8vw); } }
 @keyframes glow { from { filter: brightness(1); } to { filter: brightness(1.35); } }
 @keyframes pulse { 50% { filter: brightness(1.15); transform: scale(1.015); } }
+
+/* Landscape phones: Charles's video on the left, his portrait and name card on the right. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .cutin.sup-midnight { justify-content: center; align-items: flex-end; padding: 16px 5vw 16px 16px; }
+  .sup-midnight .vplayer { left: 4%; top: 50%; transform: translateY(-50%); width: min(50%, 440px); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .f-bob, .title-roster span, .move-super.ready, .blocks.full i.on, .deco-sun, .deco-run, .deco-bytes,

@@ -158,7 +158,7 @@ test('Toly beating Saylor, any way, reads THERE IS A SECOND BEST', function () {
   assert.strictEqual(f.finishCause, 'strike');
 });
 
-test('Toly: Comrades KO reads CHEAP FAST CHAIN GUD; MEV Hunt KO keeps EXIT LIQUIDITY', function () {
+test('Toly: Comrades KO reads CHEAP FAST CHAIN GUD; MEV Hunt KO reads its success line', function () {
   var f = E.newFight({ player: 'toly', cpu: 'mert', seed: 1 });
   f.f[1].hp = 5;
   rig(f, [cpuRoll('mert', 'strike')]);
@@ -168,7 +168,21 @@ test('Toly: Comrades KO reads CHEAP FAST CHAIN GUD; MEV Hunt KO keeps EXIT LIQUI
   g.f[1].hp = 5;
   rig(g, [cpuRoll('mert', 'strike'), 0 /* MEV Hunt lands */]);
   E.playTurn(g, 'rug');
-  assert.strictEqual(g.finish, D.FINISH.rug);
+  assert.strictEqual(g.finish, 'DRONE THE SANDWICHERS');
+});
+
+test('A renamed button without its own KO line finishes with its success line, never the generic one', function () {
+  var f = E.newFight({ player: 'charles', cpu: 'adam', seed: 1 });
+  f.f[1].hp = 5;
+  rig(f, [cpuRoll('adam', 'strike'), 0 /* Peer Review lands */]);
+  E.playTurn(f, 'mint');
+  assert.strictEqual(f.finish, 'PEER REVIEWED');
+  D.ROSTER.forEach(function (id) {
+    var M = D.FIGHTERS[id].moves || {};
+    ['mint', 'rug'].forEach(function (m) {
+      if (M[m]) assert(M[m].ko || M[m].ok, id + ' ' + m + ': needs a KO or success line');
+    });
+  });
 });
 
 test('Mert Super KO reads TRILLIONS', function () {
