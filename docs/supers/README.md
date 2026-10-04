@@ -43,7 +43,7 @@ Every button can also have:
 
 ## Custom numbers and special buttons (needs a balance pass)
 
-A fighter can have their own damage or odds on a button (Saylor's STRK does 20 at 45%), damage can be a **range rolled each time** (Saylor's MSTR: 15–45, "high beta"), and a blue button can be a **brace** instead of a dodge: always works, halves incoming Strike/Mint/Rug damage, never hides (Saylor's STRF). Propose numbers freely; they get run through the simulator before building, and adjusted if a fighter ends up too strong or too weak. Rough guide: a sensible player should win about 60–78% with any fighter.
+A fighter can have their own damage or odds on a button (Saylor's STRK does 20 at 45%), damage can be a **range rolled each time** (Saylor's MSTR: 15–45, "high beta"), and a blue button can be a **brace** instead of a dodge: always works, halves incoming Strike/Mint/Rug damage, never hides (Saylor's STRF). Or a **stun**: never hides, but when it works (the hide odds) the opponent loses their next turn (Sergey's The Shirt, with its own line over them on the turn they lose). Propose numbers freely; they get run through the simulator before building, and adjusted if a fighter ends up too strong or too weak. Rough guide: a sensible player should win about 60–78% with any fighter.
 
 ## Needs a little code (fine, just describe it)
 

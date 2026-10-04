@@ -360,6 +360,65 @@ test('Vitalik: dance KO reads THERE IS ONLY LOVE, Essay Drop KO reads READ THE B
   assert.strictEqual(g.finish, 'READ THE BLOG POST');
 });
 
+test('Sergey: The Shirt never hides; when it works they lose their NEXT turn and he gets +3 Blocks', function () {
+  var f = E.newFight({ player: 'sergey', cpu: 'mert', seed: 1 });
+  rig(f, [cpuRoll('mert', 'strike'), 0 /* the shirt works */, /* turn 2: Mert stares, no roll */ /* turn 3: */ cpuRoll('mert', 'strike')]);
+  var t1 = E.playTurn(f, 'privacy');
+  assert.strictEqual(f.f[0].hp, 100 - D.RULESETS.balanced.strike, 'Mert still hits him on the shirt turn');
+  assert(has(t1, function (e) { return e.t === 'hide' && e.ok && e.stun; }));
+  assert(!has(t1, function (e) { return e.t === 'miss'; }), 'nothing misses: he did not hide');
+  assert.strictEqual(f.f[0].blocks, D.BLOCKS.privacyOk + D.BLOCKS.gotHit);
+  assert.strictEqual(f.f[1].skipNext, 'stun');
+  var t2 = E.playTurn(f, 'strike');
+  assert(has(t2, function (e) { return e.t === 'skip' && e.who === 1 && e.reason === 'stun'; }), 'Mert loses turn 2');
+  assert.strictEqual(f.f[0].hp, 90, 'nobody hit Sergey on turn 2');
+  E.playTurn(f, 'strike');
+  assert.strictEqual(f.f[0].hp, 80, 'Mert acts again on turn 3');
+
+  var g = E.newFight({ player: 'sergey', cpu: 'mert', seed: 1 });
+  rig(g, [cpuRoll('mert', 'strike'), 0.99 /* the shirt flops */]);
+  var ev = E.playTurn(g, 'privacy');
+  assert(has(ev, function (e) { return e.t === 'hide' && !e.ok && e.stun; }));
+  assert.strictEqual(g.f[1].skipNext, null);
+  assert.strictEqual(g.f[0].blocks, D.BLOCKS.privacyFail + D.BLOCKS.gotHit);
+});
+
+test('Sergey: Link Marines hit 4 times for 6 and drain 3 Blocks; KO lines', function () {
+  var f = E.newFight({ player: 'sergey', cpu: 'toly', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].blocks = 5;
+  rig(f, [cpuRoll('toly', 'privacy'), 0 /* Toly hides: no help against a Super */]);
+  var ev = E.playTurn(f, 'super');
+  assert.strictEqual(ev.filter(function (e) { return e.t === 'hit' && e.move === 'super'; }).length, 4);
+  assert.strictEqual(f.f[1].hp, 100 - 24);
+  assert.strictEqual(f.f[1].blocks, 5 - 3 + D.BLOCKS.privacyOk);
+  var k = E.newFight({ player: 'sergey', cpu: 'toly', seed: 1 });
+  k.f[0].blocks = 10;
+  k.f[1].hp = 20;
+  rig(k, [cpuRoll('toly', 'strike')]);
+  E.playTurn(k, 'super');
+  assert.strictEqual(k.finish, 'THE TOKEN IS NEEDED');
+  var g = E.newFight({ player: 'sergey', cpu: 'toly', seed: 1 });
+  g.f[1].hp = 5;
+  rig(g, [cpuRoll('toly', 'strike')]);
+  E.playTurn(g, 'strike');
+  assert.strictEqual(g.finish, 'THE DATA ARRIVED');
+  var r = E.newFight({ player: 'sergey', cpu: 'garlinghouse', seed: 1 });
+  r.f[1].hp = 5;
+  rig(r, [cpuRoll('garlinghouse', 'strike')]);
+  E.playTurn(r, 'strike');
+  assert.strictEqual(r.finish, 'THE MARINES OUTRANK THE ARMY');
+});
+
+test('A fighter joining the Daily Fight draw later says when (dailyFrom is a real date)', function () {
+  D.ROSTER.forEach(function (id) {
+    var from = D.FIGHTERS[id].dailyFrom;
+    if (!from) return;
+    assert(/^\d{4}-\d\d-\d\d$/.test(from) && !isNaN(new Date(from + 'T12:00:00')), id + ': dailyFrom ' + from);
+    assert(from > D.DAILY_EPOCH, id + ': dailyFrom before the first daily');
+  });
+});
+
 test('Sound: every fighter has a sound for every button outcome and their Super; recipes are valid', function () {
   var AU = require('../js/audio.js');
   var WAVES = ['sine', 'square', 'sawtooth', 'triangle', 'noise'];
@@ -382,7 +441,7 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
     });
     check('super.' + D.FIGHTERS[id].super.id, { chars: [0.5, 0.6], off: 2.8 });
   });
-  ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'flop', 'selfhit', 'super.astronaut']
+  ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'flop', 'selfhit', 'super.astronaut']
     .forEach(function (s) { check(s); });
   Object.keys(AU.MUSIC).forEach(function (k) {
     var m = AU.MUSIC[k];
@@ -394,7 +453,7 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {
   var rng = E.makeRng(99);
   for (var n = 0; n < 10000; n++) {
-    var p = D.ROSTER[Math.floor(rng() * 7)], c = D.ROSTER[Math.floor(rng() * 7)];
+    var p = D.ROSTER[Math.floor(rng() * D.ROSTER.length)], c = D.ROSTER[Math.floor(rng() * D.ROSTER.length)];
     var opts = { player: p, cpu: c, seed: Math.floor(rng() * 4294967296), rules: rng() < 0.5 ? 'balanced' : 'original' };
     var f = E.newFight(opts);
     while (!f.over) {

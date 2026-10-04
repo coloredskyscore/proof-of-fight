@@ -1,6 +1,6 @@
 # Fighter art
 
-Each fighter gets two images, made in Grok Imagine. All seven have theirs (Oct 3, 2026). A new fighter without art falls back to their emoji head and block body until theirs is made.
+Each fighter gets two images, made in Grok Imagine. The first seven got theirs Oct 3, 2026, Sergey Oct 4. A new fighter without art falls back to their emoji head and block body until theirs is made.
 
 ## The look (locked Oct 2, 2026)
 
@@ -115,6 +115,18 @@ Late-1990s arcade fighting game character select portrait of Michael Saylor, hea
 16-bit pixel art fighting game sprite of Michael Saylor, same character as the attached image, Sega Genesis era, full body. Serious determined face. Charcoal suit, white shirt, orange tie, polished dress shoes. Braced fighting stance facing right, one fist raised, a plain round orange shield held up in the other hand. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing or the shield, no Bitcoin symbol.
 ```
 
+### Sergey
+
+The flannel is his running joke, so it's the costume. The prompts asked for dark navy-and-black plaid to keep him apart from Charles; Grok came back with light blue-and-white plaid on the portrait (still easy to tell apart: Charles has the hat and a darker plaid) and gray plaid on the sprite, so the sprite's shirt gets tinted to match (below).
+
+```
+Late-1990s arcade fighting game character select portrait of Sergey Nazarov, co-founder of Chainlink, head and shoulders, centered with empty space around the head. Drawn dead serious and deadpan, completely calm, dramatic lighting with hard-edged shadows. Dark navy-and-black plaid flannel shirt, a conference lanyard with a blank badge. Three-quarter view, facing right. Bold black ink lines, hard cel shading with two or three tones, rich saturated colors, anime-influenced hand-drawn 2D arcade art. Plain flat white background. No text, no logos or symbols on clothing or the badge, not photorealistic, not cute.
+```
+
+```
+16-bit pixel art fighting game sprite of Sergey Nazarov, same character as the attached image, Sega Genesis era, full body. Calm deadpan face. Dark navy-and-black plaid flannel shirt, conference lanyard with a blank badge, dark jeans, dress shoes. Fighting stance facing right, both fists raised. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing or the badge.
+```
+
 ## What happens to the images
 
 `tools/art.py` (needs Pillow) cuts out the white background and sizes them:
@@ -124,7 +136,7 @@ python3 tools/art.py head <portrait> art/<id>-head.webp     # 600×600, framed f
 python3 tools/art.py body <sprite> art/<id>-body.webp       # trimmed, 960 tall
 ```
 
-It lists any white pockets the background cut can't reach (like the gap between an arm and the body); clear those with `--gap x,y`. Pockets that are part of the art (sneakers, a mug) stay. A colored logo gets painted out with `--delogo x0,y0,x1,y1` (a box around it, in source pixels); it's filled with the color around it.
+It lists any white pockets the background cut can't reach (like the gap between an arm and the body); clear those with `--gap x,y`. Pockets that are part of the art (sneakers, a mug) stay. A colored logo gets painted out with `--delogo x0,y0,x1,y1` (a box around it, in source pixels); it's filled with the color around it. When the two images disagree on a color, `--tint x0,y0,x1,y1,RRGGBB` turns the grays in a box into shades of that color (whites stay white, outlines stay dark).
 
 The exact commands used so far:
 
@@ -143,9 +155,11 @@ python3 tools/art.py head charles-portrait.jpg art/charles-head.webp --crop=0,0,
 python3 tools/art.py body charles-sprite.jpg art/charles-body.webp
 python3 tools/art.py head saylor-portrait.jpg art/saylor-head.webp --crop=0.0,-0.04,1.0,0.96
 python3 tools/art.py body saylor-sprite.jpg art/saylor-body.webp
+python3 tools/art.py head sergey-portrait.jpg art/sergey-head.webp --crop=0.11,0,0.93,0.661
+python3 tools/art.py body sergey-sprite.jpg art/sergey-body.webp --tint 280,260,970,915,486aaf
 ```
 
-Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased). Adam's portrait pocket was background seen through his glasses past his cheek, and his cap touched the top of the image, so he got Mert's extra headroom too. Charles's hat brim ran wide, so his crop uses the whole image. A crop can also reach past an edge to zoom out (write `--crop=` with an equals sign when a number starts with a minus), but only past edges the art doesn't touch: his first crop reached past the bottom and right, where his shirt runs off the image, and left a strip of his red showing under it. The tool now warns about that.
+Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased). Adam's portrait pocket was background seen through his glasses past his cheek, and his cap touched the top of the image, so he got Mert's extra headroom too. Charles's hat brim ran wide, so his crop uses the whole image. Sergey's portrait came back taller than wide (1264×1568), so his crop picks a square: the full width minus a little, from the top down to his collar. The white pockets listed on him are the plaid's white squares and his badge, so they stay. A crop can also reach past an edge to zoom out (write `--crop=` with an equals sign when a number starts with a minus), but only past edges the art doesn't touch: his first crop reached past the bottom and right, where his shirt runs off the image, and left a strip of his red showing under it. The tool now warns about that.
 
 Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.webp' }` in `js/data.js`. On stage the sprite stands about 18% taller than the block body (a very wide pose shrinks to stay on screen); when KO'd it falls flat on its back at 70% size so it fits on a phone. A fighter with only a portrait shows it as the head on the block body.
 
@@ -160,3 +174,6 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | Adam Back | ✅ orange cap backwards, wire glasses, gray beard, striped shirt over a blue tee | ✅ same outfit, miner's pickaxe |
 | Charles | ✅ cowboy hat, glasses, beard, blue plaid, the knowing grin | ✅ same outfit, cowboy boots, a stack of papers (Peer Review) |
 | Saylor | ✅ gray hair, charcoal suit, orange tie | ✅ same suit, plain orange shield (STRF) |
+| Sergey | ✅ beard, blue-and-white plaid, red lanyard, blank badge | ✅ same plaid (tinted from gray), blank badge, jeans |
+| CZ | prompts ready (waiting on Grok credits) | |
+| Adeniyi | prompts ready (waiting on Grok credits) | |
