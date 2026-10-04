@@ -443,6 +443,13 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
   });
   ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'flop', 'selfhit', 'super.astronaut']
     .forEach(function (s) { check(s); });
+  Object.keys(AU.CLIPS).forEach(function (id) {
+    var c = AU.CLIPS[id];
+    assert(/\.mp3$/.test(c.src), id + ': clips are MP3 (every browser plays it)');
+    assert(require('fs').existsSync(require('path').join(__dirname, '..', c.src)), id + ': missing ' + c.src);
+    assert(c.level > 0 && c.level <= 1, id + ': level');
+    if (c.fallback) check(c.fallback);
+  });
   Object.keys(AU.MUSIC).forEach(function (k) {
     var m = AU.MUSIC[k];
     assert(m.loopStart < m.loopEnd, k + ': loop points');

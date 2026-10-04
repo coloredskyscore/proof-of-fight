@@ -332,6 +332,21 @@
     return outcome === 'fail' ? [own + '.fail'] : [base, own + '.ok'];
   }
 
+  // ---------- Recorded clips ----------
+  // Sound files, for what a synth can't do. The announcer is Kenney's Voiceover Pack: Fighter (CC0,
+  // kenney.nl), cut with tools/clip.py, every file leveled to the same peak. Clips load after the first
+  // tap; until one has, its fallback synth sound plays (YOU WIN's old jingle), or nothing.
+  //   level  how loud it plays     duck  the music dips under it
+  var CLIPS = {
+    'vo.round1':   { src: 'audio/vo/round_1.mp3', level: 0.9, duck: true },
+    'vo.fight':    { src: 'audio/vo/fight.mp3', level: 0.9, duck: true },
+    'vo.time':     { src: 'audio/vo/time.mp3', level: 0.9, duck: true },
+    'vo.win':      { src: 'audio/vo/you_win.mp3', level: 0.9, duck: true, fallback: 'win' },
+    'vo.flawless': { src: 'audio/vo/flawless_victory.mp3', level: 0.9, duck: true, fallback: 'win' }, // won at full HP
+    'vo.lose':     { src: 'audio/vo/you_lose.mp3', level: 0.9, duck: true, fallback: 'lose' },
+    'vo.choose':   { src: 'audio/vo/choose_your_character.mp3', level: 0.8, duck: true }
+  };
+
   // ---------- Music ----------
   // loopStart/loopEnd come from tools/music.py (seconds in the cut file). The menu song starts 8 beats
   // before its drop: the title slams on the drop. vol keeps the music under the sound effects.
@@ -341,9 +356,9 @@
   };
 
   // ---------- Engine (browser only) ----------
-  var ctx = null, musicBus = null, sfxBus = null, unlocked = false;
+  var ctx = null, musicBus = null, voiceDuck = null, sfxBus = null, unlocked = false;
   var settings = { music: true, sfx: true }, onChange = null;
-  var buffers = {}, loading = {}, current = null, want = null, ducked = false;
+  var buffers = {}, loading = {}, clipBuffers = {}, current = null, want = null, ducked = false;
 
   function supported() { return typeof window !== 'undefined' && !!(window.AudioContext || window.webkitAudioContext); }
 
@@ -351,7 +366,9 @@
     if (ctx || !supported()) return ctx;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     musicBus = ctx.createGain();
-    musicBus.connect(ctx.destination);
+    voiceDuck = ctx.createGain();                       // dips the music under the announcer
+    musicBus.connect(voiceDuck);
+    voiceDuck.connect(ctx.destination);
     var comp = limiter(ctx);                            // keeps stacked hits from clipping
     comp.connect(ctx.destination);
     sfxBus = ctx.createGain();
@@ -450,6 +467,12 @@
   var SILENT = { stop: function () {} };
   function play(id, delay, info) {
     if (!settings.sfx || !ensure() || ctx.state !== 'running') return SILENT;
+    var clip = CLIPS[id];
+    if (clip) {
+      if (clipBuffers[id]) return playClip(clip, clipBuffers[id], delay);
+      if (!clip.fallback) return SILENT;
+      id = clip.fallback;
+    }
     var vs = voicesOf(id, info);
     if (!vs) return SILENT;
     var t0 = ctx.currentTime + 0.01 + (delay || 0), g = ctx.createGain();
@@ -461,6 +484,29 @@
         var now = ctx.currentTime;
         g.gain.cancelScheduledValues(now);
         g.gain.setTargetAtTime(0, now, (fade || 0.1) / 3);
+      }
+    };
+  }
+
+  function playClip(clip, buf, delay) {
+    var t0 = ctx.currentTime + 0.01 + (delay || 0), src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = buf;
+    g.gain.value = clip.level;
+    src.connect(g);
+    g.connect(sfxBus);
+    src.start(t0);
+    if (clip.duck) {
+      voiceDuck.gain.cancelScheduledValues(t0);
+      voiceDuck.gain.setTargetAtTime(0.4, t0, 0.03);
+      voiceDuck.gain.setTargetAtTime(1, t0 + buf.duration, 0.15);
+    }
+    return {
+      stop: function (fade) {
+        var now = ctx.currentTime;
+        g.gain.cancelScheduledValues(now);
+        g.gain.setTargetAtTime(0, now, (fade || 0.1) / 3);
+        voiceDuck.gain.cancelScheduledValues(now);
+        voiceDuck.gain.setTargetAtTime(1, now, 0.1);
       }
     };
   }
@@ -488,18 +534,32 @@
     });
   }
 
+  function fetchBuffer(src) {
+    return fetch(src)
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(function (ab) {
+        return new Promise(function (res, rej) { ctx.decodeAudioData(ab, res, rej); }); // callback form for older Safari
+      });
+  }
+
   function load(name) {
     if (buffers[name]) return Promise.resolve(buffers[name]);
     if (loading[name]) return loading[name];
     if (!ensure()) return Promise.reject(new Error('no audio'));
-    loading[name] = fetch(MUSIC[name].src)
-      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
-      .then(function (ab) {
-        return new Promise(function (res, rej) { ctx.decodeAudioData(ab, res, rej); }); // callback form for older Safari
-      })
+    loading[name] = fetchBuffer(MUSIC[name].src)
       .then(function (buf) { buffers[name] = buf; return buf; })
       .catch(function (e) { delete loading[name]; throw e; });
     return loading[name];
+  }
+
+  // The clips are small (about 15 KB each): fetch them all once sound is allowed.
+  var clipsLoading = false;
+  function loadClips() {
+    if (clipsLoading || !ensure()) return;
+    clipsLoading = true;
+    Object.keys(CLIPS).forEach(function (id) {
+      fetchBuffer(CLIPS[id].src).then(function (buf) { clipBuffers[id] = buf; }).catch(function () { /* the fallback plays */ });
+    });
   }
 
   function latency() { return ctx ? (ctx.outputLatency || ctx.baseLatency || 0) : 0; }
@@ -564,12 +624,14 @@
       s.connect(ctx.destination);
       s.start(0);
       unlocked = true;
+      if (settings.sfx) loadClips();
     }
   }
 
   function set(key, on) {
     settings[key] = !!on;
     if (onChange) onChange(settings);
+    if (key === 'sfx' && on && unlocked) loadClips();
     if (key === 'music') {
       if (!on) stopMusic(0.3);
       else if (want) { load(want.name).catch(function () {}); music(want.name, { from: 'loop', fade: 1 }); }
@@ -589,7 +651,7 @@
   }
 
   return {
-    SFX: SFX, MUSIC: MUSIC, N: N, PEAK: PEAK, target: target, moveSounds: moveSounds,
+    SFX: SFX, CLIPS: CLIPS, MUSIC: MUSIC, N: N, PEAK: PEAK, target: target, moveSounds: moveSounds,
     setup: setup, unlock: unlock, load: load, music: music, stopMusic: function (f) { if (ctx) stopMusic(f); },
     duck: duck, play: play, measure: measure, set: set,
     move: function (fighter, move, outcome) {

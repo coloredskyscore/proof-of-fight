@@ -11,6 +11,13 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 4, 2026 (evening): an arcade announcer replaces the win/lose jingles
+
+A free, royalty-free announcer: Kenney's Voiceover Pack: Fighter (CC0). Details: [docs/audio/README.md](docs/audio/README.md#the-announcer).
+- "CHOOSE YOUR CHARACTER" on Free play, "ROUND ONE... FIGHT!" when a fight starts, "TIME!" at the turn limit.
+- The result screen calls **YOU WIN**, **FLAWLESS VICTORY** (won without losing any HP) or **YOU LOSE** instead of the old jingles. The music dips under every line.
+- Seven small clips (120 KB in all), loaded after PRESS START. If one can't load, the old sound plays.
+
 ### Oct 4, 2026 (later): Sergey joins the roster
 
 The eighth fighter, and the first of the three new ones (CZ and Adeniyi wait on their art). Details: [docs/supers/sergey.md](docs/supers/sergey.md).
