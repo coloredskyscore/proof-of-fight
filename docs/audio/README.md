@@ -44,4 +44,6 @@ Each sound is a short recipe of synthesized voices (square, triangle, saw, sine 
 
 **Levels:** each sound plays at a target loudness (punches and the K.O. on top, signatures a step under, the button tap quiet, music under the effects). `PEAK` in `js/audio.js` holds each recipe's measured raw peak. New sounds get measured with `tools/sfx-levels.js` (needs a local server and Playwright, see the file); after changing a recipe, pass its name so it's measured again. Sounds you didn't name keep their levels (noise makes every measurement differ a little). A limiter on the effects keeps stacked hits from clipping.
 
+**Replacing them with recorded sounds:** [suno-prompts.md](suno-prompts.md) has a Suno prompt for every sound (plus the announcer lines and the Super parts), named by the IDs above. A sound without a file keeps its synthesized version.
+
 Nothing copies a real song: the Badger Dance groove is original (the famous badgers song is copyrighted), and no real voices are used.
