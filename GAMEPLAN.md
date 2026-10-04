@@ -11,6 +11,16 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 4, 2026 (later): Sergey joins the roster
+
+The eighth fighter, and the first of the three new ones (CZ and Adeniyi wait on their art). Details: [docs/supers/sergey.md](docs/supers/sergey.md).
+- **Buttons:** 📡 CCIP (`THE DATA ARRIVED`), 👕 The Shirt, 🏦 Bank Pilot 50% (`LIVE AT SIBOS` / `STILL A PILOT`), 💰 Next $600T 15% (`THE NEXT $600 TRILLION` / `NO PRICE CALLS`).
+- **The Shirt** is a new kind of blue button: he never hides (their attack still lands), but when it works (30%) they stare at the pattern and **lose their next turn** (👀 STARING, `LOST IN THE PATTERN`).
+- **Super: Link Marines.** The target says `THE TOKEN ISN'T NEEDED`; a column of Marines in helmets and blue flannel charges through them (one carries a `$1,000 EOY` sign). `$34 TRILLION`. 4 hits of 6, and they lose 3 Blocks. KO: `THE TOKEN IS NEEDED`. CPU after-Super: `STAY POOR`. Loses: `SEE YOU AT SIBOS`. Beating Garlinghouse: `THE MARINES OUTRANK THE ARMY`.
+- **Art and sound:** portrait and 16-bit sprite (the sprite's gray plaid tinted to match the portrait's blue), and his own sound effects (data chirp, hypnotic warble, PA chime, a busy signal for NO PRICE CALLS, a bugle charge for the Marines).
+- **Daily Fight:** he's in Free play now and joins the daily draw on Oct 12, so no day's matchup changes halfway through. A daily in progress also remembers its matchup.
+- The title intro fits eight portraits on the beats before the drop (half-beats once there are more than eight).
+
 ### Oct 4, 2026: How to Play brought up to date
 
 The help screen still described the old generic buttons (Strike / Privacy / Mint / Rug, "ARTWORK SUCKS"). It's now built from the game data, so it can't drift again:
@@ -217,7 +227,7 @@ Strike and Mint give their Blocks even if the target was Hidden.
 
 ## 6. The five buttons
 
-Every fighter has the same five buttons: same colors, same jobs. A fighter can **rename** the first four (name, emoji, banner lines); see `docs/supers/README.md` for the slots. A fighter can also have **their own numbers** for a button, or (rarely) a button that works differently, but only after a simulator pass. All seven have their own names:
+Every fighter has the same five buttons: same colors, same jobs. A fighter can **rename** the first four (name, emoji, banner lines); see `docs/supers/README.md` for the slots. A fighter can also have **their own numbers** for a button, or (rarely) a button that works differently, but only after a simulator pass. All of them have their own names:
 
 | Fighter | 🔴 Red (Strike) | 🔵 Blue (Privacy) | 🩷 Pink (Mint) | 🟣 Purple (Rug) |
 |---|---|---|---|---|
@@ -228,6 +238,7 @@ Every fighter has the same five buttons: same colors, same jobs. A fighter can *
 | Garlinghouse | 💸 Settle | 🏛️ In The Room *(25%)* | 💵 RLUSD | ⚖️ Lawsuit *(20%)* |
 | Adam Back | ⛏️ Hashcash | 🧅 Cypherpunk *(70%)* | 🖼️ Inscription *(15%)* | 🍴 Soft Fork *(10%)* |
 | Vitalik | 📝 Essay Drop | 🫥 Privacy Pool *(55%)* | 🧸 Soulbound *(35%)* | 🌱 Public Goods *(20%)* |
+| Sergey | 📡 CCIP | 👕 The Shirt: *30%, never hides; when it works they lose their next turn* | 🏦 Bank Pilot *(50%)* | 💰 Next $600T *(15%)* |
 
 The rest of this section uses the generic names (the jobs).
 
@@ -294,10 +305,11 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 | `adam` | Adam Back | @adam3us | Cypherpunk / hashcash |
 | `charles` | Charles | @IOHK_Charles | Midnight / Dire Wolf Mode |
 | `saylor` | Saylor | @saylor | Tank / preferred stock |
+| `sergey` | Sergey | @SergeyNazarov | Oracles / the shirt |
 
 Anatoly Yakovenko is **Toly** in-game. Not "Antonoly."
 
-Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-person arena is fun.
+Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the arena is fun. CZ and Adeniyi are drafted and next in line (waiting on art).
 
 ---
 
@@ -314,12 +326,14 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Toly | 35 | Seed Vault: `THE PHONE IS THE SHOW`. The salesman wants to be seen |
 | Garlinghouse | 25 | In The Room: `BLOCKED BY THE ANTI-CRYPTO ARMY`. A settlements guy, bad at hiding |
 | Saylor | — | His blue button (STRF) never hides; it always works and halves the damage |
+| Sergey | 30 (stun) | The Shirt never hides. When it works, they lose their next turn: `THE PATTERN MOVES` / `IT'S NOT ABOUT FASHION` |
 
 ### Mint (JPEG lands)
 
 | Character | Success % | Fail extra line |
 |---|---|---|
 | Garlinghouse | 55 | RLUSD: `UTILITY TBD` |
+| Sergey | 50 | Bank Pilot: `STILL A PILOT` |
 | Toly | 50 | Slop Cannon: `NOT IN PROD` |
 | Mert | 45 | Memecoin: `SNIPED IN BLOCK ZERO` |
 | Charles | 40 | Peer Review: `REVISE AND RESUBMIT` |
@@ -338,6 +352,7 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the seven-perso
 | Vitalik | 20 | Public Goods: `UNDERFUNDED` |
 | Saylor | 25 | MSTR: `mNAV BELOW 1` (15–45 dmg) |
 | Adam Back | 10 | Soft Fork: `NOT BY POPULAR VOTE` |
+| Sergey | 15 | Next $600T: `NO PRICE CALLS` |
 
 Adam is *bad* at rugs on purpose. Saylor's MSTR lands more often than his old rug, and its damage swings (15–45).
 
@@ -365,14 +380,15 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Saylor | **Another Orange Dot** ([doc](docs/supers/saylor.md)) | Orange dots stamp one by one onto his tracker chart. "A LITTLE MORE ORANGE". On a KO: the astronaut DJ, `FIAT AS A STORE OF VALUE` / `WE CALL THEM POOR` | **25 dmg + HODL** (Saylor takes half damage this turn and next) | WE CALL THEM POOR |
 | Adam Back | **OP_RETURN** ([doc](docs/supers/adam.md)) | Long-barreled gun etched `OP_RETURN` fires a data blob. "FORK AROUND AND FIND OUT". `SALTY TEARS` if it strips a HODL | **Prune** (strips their HODL) **then 25 dmg** | CHECKMATE FORKERS |
 | Vitalik | **Badger Dance** ([doc](docs/supers/vitalik.md)) | The badger dance: a green screen of badgers and a stage of people in lanyards, arms straight out, flapping in sync; Vitalik front and center. "DON'T LOOK AT THE DANCE." Their self-hits read `DEFENSIVE ACCELERATION` | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | THERE IS ONLY LOVE |
+| Sergey | **Link Marines** ([doc](docs/supers/sergey.md)) | The target says `THE TOKEN ISN'T NEEDED`; Marines in helmets and blue flannel charge through them, one with a `$1,000 EOY` sign. "$34 TRILLION" | **4 hits × 6 dmg = 24 + they lose 3 Blocks** | THE TOKEN IS NEEDED |
 
 Non-Super KO finish lines: a button's own KO line if it has one (below), else that button's success line (Peer Review: `PEER REVIEWED`). The generic Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY` only show for a button with neither (today: Mert's Shitpost reads `HONEST WORK`). Hitting yourself: `SELF-REKT`.
 
-**Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`, Charles beating Mert reads `BIGGER THAN ZOLANA`.
+**Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`, Charles beating Mert reads `BIGGER THAN ZOLANA`, Sergey beating Garlinghouse reads `THE MARINES OUTRANK THE ARMY`.
 
-**Per-button KO lines**: Toly landing the KO with Comrades reads `CHEAP FAST CHAIN GUD`; Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`; Adam with Hashcash reads `GAME OVER`; Vitalik with Essay Drop reads `READ THE BLOG POST`.
+**Per-button KO lines**: Toly landing the KO with Comrades reads `CHEAP FAST CHAIN GUD`; Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`; Adam with Hashcash reads `GAME OVER`; Vitalik with Essay Drop reads `READ THE BLOG POST`; Sergey with CCIP reads `THE DATA ARRIVED`.
 
-**Loser lines** pop over the loser and are quoted on the result card: Garlinghouse `THIS ONE STINGS`, Toly `YOU GONNA GET WHAT YOU GONNA GET`.
+**Loser lines** pop over the loser and are quoted on the result card: Garlinghouse `THIS ONE STINGS`, Toly `YOU GONNA GET WHAT YOU GONNA GET`, Sergey `SEE YOU AT SIBOS`.
 
 **Repeat lines** pop over a fighter who presses the same button two turns running: Toly's Slop Cannon twice reads `NO CHILL`.
 
@@ -387,11 +403,12 @@ Non-Super KO finish lines: a button's own KO line if it has one (below), else th
 | Hidden | Incoming Strike and Mint miss this turn. Rug and Supers still hit. | End of turn |
 | Blind | Skip your next turn | After the skipped turn |
 | Sleep | Skip your next turn | After the skipped turn |
+| Staring (Sergey's The Shirt) | Skip your next turn | After the skipped turn |
 | Hypnotized | Your next turn's Strike / Mint / Rug hits yourself (normal odds, full damage). Privacy and Super are safe, so a smart player hides. | After that turn |
 | HODL | Take half damage (rounded up) this turn and next | Timer, or Adam's Prune |
 | Braced (Saylor's STRF) | Half damage from Strike / Mint / Rug this turn (not Supers). Doesn't stack with HODL. | End of turn |
 
-Blind and Sleep do not stack into a two-turn skip. If both land, still one skipped turn.
+Blind, Sleep and Staring do not stack into a two-turn skip. If more than one lands, still one skipped turn.
 
 ---
 
@@ -535,6 +552,7 @@ Do not point DNS at an empty repo.
 3. ~~Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.~~ Done: all seven kits.
 4. ~~Caricature portraits and sprites.~~ Done: all seven ([docs/art/](docs/art/README.md)).
    ~~Sound: music, effects, mute.~~ Done ([docs/audio/](docs/audio/README.md)).
+   New fighters: Sergey done; CZ and Adeniyi drafted, waiting on art. Then story mode.
    **← You are here.** Next: step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. Then GitHub Pages or Cloudflare Pages.

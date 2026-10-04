@@ -203,7 +203,28 @@
       [0, 1, 2, 3, 4, 5].map(function (k) { return { w: 'noise', t: k * 0.46 + 0.23, d: 0.03, v: 0.15, hp: 7000 }; }),
       [1.1, 1.25, 1.4].map(function (t) { return { w: 'sawtooth', f: 466, t: t, d: 0.1, v: 0.13, lp: 3000, drive: 2 }; }),
       [{ w: 'sawtooth', f: 466, t: 1.55, d: 0.6, v: 0.13, lp: 3000, drive: 2, hold: 0.6 },
-        { w: 'sawtooth', f: 469, t: 1.55, d: 0.6, v: 0.1, lp: 3000, hold: 0.6 }])
+        { w: 'sawtooth', f: 469, t: 1.55, d: 0.6, v: 0.1, lp: 3000, hold: 0.6 }]),
+
+    // ---------- Sergey ----------
+    'sergey.strike': seq({ w: 'square', v: 0.1, lp: 7000 }, [[1800, 0, 0.025], [2400, 0.035, 0.025], [3000, 0.07, 0.025]])
+      .concat([{ w: 'sine', f: 2400, t: 0.1, d: 0.12, v: 0.12 }]),                                   // CCIP: the data arrives
+    'sergey.privacy': [{ w: 'sine', f: [300, 700, 300], d: 0.7, v: 0.28, vib: [9, 60] },
+      { w: 'triangle', f: [600, 1400, 600], d: 0.7, v: 0.1, vib: [9, 90] }],                         // The Shirt: the pattern moves
+    'sergey.mint.ok': seq({ w: 'triangle', v: 0.22, hold: 0.3 }, [[N.C5, 0, 0.5], [N.E5, 0.16, 0.5], [N.G5, 0.32, 0.7]]), // LIVE AT SIBOS: PA chime
+    'sergey.mint.fail': seq({ w: 'triangle', v: 0.2, hold: 0.3 }, [[N.G5, 0, 0.4], [N.E5, 0.16, 0.4], [N.C5, 0.32, 0.6, 0.14]]), // STILL A PILOT
+    'sergey.rug.ok': [{ w: 'sawtooth', f: [150, 1500], d: 0.5, v: 0.12, lp: 3000 }]
+      .concat(seq({ w: 'triangle', v: 0.14 }, [[N.C6, 0.45, 0.2], [N.E6, 0.5, 0.2], [N.G6, 0.55, 0.2], [N.C7, 0.6, 0.4]])), // $600 TRILLION: up and up
+    'sergey.rug.fail': [0, 0.25, 0.5].reduce(function (out, t) {
+      return out.concat([{ w: 'sine', f: 480, t: t, d: 0.13, v: 0.18, hold: 0.9 }, { w: 'sine', f: 620, t: t, d: 0.13, v: 0.18, hold: 0.9 }]);
+    }, []),                                                                                          // NO PRICE CALLS: busy signal
+    stare: [{ w: 'sine', f: [700, 380], d: 0.8, v: 0.25, vib: [6, 45] }, { w: 'triangle', f: [1400, 760], d: 0.8, v: 0.06, vib: [6, 90] }], // lost in the pattern
+    // Link Marines: the target's line hangs, a bugle sounds the charge, then the boots and the crowd. Each of the 4 hits is a stomp.
+    'super.linkmarines': cat(
+      seq({ w: 'sawtooth', v: 0.14, lp: 2600, hold: 0.5 },
+        [[N.G4, 0.3, 0.12], [N.C5, 0.43, 0.12], [N.E5, 0.56, 0.12], [N.G5, 0.69, 0.28], [N.E5, 1.0, 0.12], [N.G5, 1.13, 0.5]]),
+      Array.apply(null, Array(12)).map(function (_, k) { return { w: 'noise', t: 0.7 + k * 0.2, d: 0.05, v: k % 2 ? 0.18 : 0.3, lp: 700 }; }),
+      Array.apply(null, Array(12)).map(function (_, k) { return { w: 'noise', t: 0.8 + k * 0.2, d: 0.03, v: 0.12, bp: 2500 }; }),
+      [{ w: 'noise', t: 0.9, d: 2.3, v: 0.1, bp: [500, 1500], hold: 0.7, a: 0.4 }])
   };
 
   // ---------- Levels ----------
@@ -289,7 +310,15 @@
     'saylor.rug.ok': 0.412,
     'saylor.rug.fail': 0.130,
     'super.orangedot': 0.326,
-    'super.astronaut': 0.896
+    'super.astronaut': 0.896,
+    'sergey.strike': 0.120,
+    'sergey.privacy': 0.322,
+    'sergey.mint.ok': 0.366,
+    'sergey.mint.fail': 0.249,
+    'sergey.rug.ok': 0.153,
+    'sergey.rug.fail': 0.360,
+    'stare': 0.269,
+    'super.linkmarines': 0.190
   };
   // PEAK:end
 

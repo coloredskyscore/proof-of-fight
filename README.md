@@ -3,7 +3,7 @@
 A turn-based crypto founder brawl that runs in any browser. It looks like a 2D arcade fighter and plays like a card game: pick one of five buttons, the CPU picks at the same time, a short scene plays, repeat until someone hits 0 HP.
 
 - **Daily Fight:** the same matchup and luck for everyone each day. One try, then share your emoji grid.
-- **Free Play:** any of the seven fighters against any CPU.
+- **Free Play:** any fighter against any CPU.
 - Parody. No wallet, no tokens, no sign-up.
 
 The full design is in **[GAMEPLAN.md](GAMEPLAN.md)**.

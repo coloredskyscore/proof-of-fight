@@ -13,6 +13,11 @@ Grok sometimes draws a logo anyway (Toly's cap came back with the Solana mark). 
 out by giving a box around it; it's filled with the color right around it:
   --delogo 560,80,670,165
 
+Grok sometimes colors the same shirt differently in the two images (Sergey's portrait plaid is blue,
+his sprite's came back gray). Recolor the gray pixels inside a box to shades of a color; whites stay
+white and dark outlines stay dark:
+  --tint 290,270,960,910,486aaf
+
 A head crop can reach past the image to zoom out (a wide hat brim); write it with = so a leading
 minus isn't read as an option:  --crop=-0.06,-0.08,1.06,1.04
 """
@@ -74,6 +79,27 @@ def delogo(im, box):
     return n
 
 
+def tint(im, box, color):
+    """Turn the gray pixels inside box into shades of color (light grays toward white)."""
+    x0, y0, x1, y1 = box
+    c = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+    src, n = im.load(), 0
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            r, g, b, a = src[x, y]
+            lum = 0.299 * r + 0.587 * g + 0.114 * b
+            if not a or max(r, g, b) - min(r, g, b) > 40 or lum < 60 or lum >= 232:
+                continue
+            if lum <= 150:
+                new = tuple(round(v * lum / 150) for v in c)
+            else:
+                t = min(1, (lum - 150) / 90)
+                new = tuple(round(v + (255 - v) * t) for v in c)
+            src[x, y] = new + (a,)
+            n += 1
+    return n
+
+
 def pockets(im, min_area):
     """Opaque near-white areas left after the cut: candidate gaps, or white parts of the art."""
     w, h = im.size
@@ -108,6 +134,7 @@ def main():
     ap.add_argument('--gap', action='append', default=[], help='x,y of a white pocket to clear (source pixels)')
     ap.add_argument('--crop', help='head framing as left,top,right,bottom fractions of the source')
     ap.add_argument('--delogo', action='append', default=[], help='x0,y0,x1,y1 box around a logo to paint out')
+    ap.add_argument('--tint', action='append', default=[], help='x0,y0,x1,y1,RRGGBB: recolor the grays in a box')
     args = ap.parse_args()
 
     im = Image.open(args.source).convert('RGBA')
@@ -115,6 +142,9 @@ def main():
         print('logo painted out: %d px' % delogo(im, tuple(int(v) for v in d.split(','))))
     gaps = [tuple(int(v) for v in g.split(',')) for g in args.gap]
     cut_background(im, gaps, bottom=args.kind == 'body')
+    for t in args.tint:
+        *box, color = t.split(',')
+        print('tinted: %d px' % tint(im, tuple(int(v) for v in box), color.lstrip('#')))
 
     left = pockets(im, min_area=im.size[0] * im.size[1] // 2000)
     for area, seed, box in left:

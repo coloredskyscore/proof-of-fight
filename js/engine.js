@@ -228,6 +228,17 @@
     for (i = 0; i < 2 && !fight.over; i++) {
       if (act[i] !== 'privacy') continue;
       var me = fight.f[i], brace = D.FIGHTERS[me.id].brace;
+      if (D.FIGHTERS[me.id].stun) {
+        // Sergey's shirt: he never hides. When it works, the pattern holds them and they lose
+        // their next turn (an attack this turn still hits him).
+        var ok = rng() < D.FIGHTERS[me.id].hide;
+        me.blocks += ok ? D.BLOCKS.privacyOk : D.BLOCKS.privacyFail;
+        clampBlocks(me);
+        if (ok) fight.f[1 - i].skipNext = 'stun';
+        result[i] = { code: ok ? 'hid' : 'fail' };
+        push({ t: 'hide', who: i, ok: ok, stun: true });
+        continue;
+      }
       if (brace) {
         // Always works, no dice: half damage from Strike/Mint/Rug this turn.
         braced[i] = true;

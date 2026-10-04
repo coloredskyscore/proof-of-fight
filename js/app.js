@@ -17,7 +17,7 @@
   }
   function pct(p) { return Math.round(p * 100) + '%'; }
   // Share text: "HATER CONVERTED" -> "Hater Converted", but acronyms stay as written ("LFG 2027").
-  var KEEP_CAPS = ['LFG', 'ZK', 'MSTR', 'STRC', 'RPCS', 'JPEG', 'XRP', 'NIGHT', 'OP_RETURN'];
+  var KEEP_CAPS = ['LFG', 'ZK', 'MSTR', 'STRC', 'RPCS', 'JPEG', 'XRP', 'NIGHT', 'OP_RETURN', 'SIBOS', 'CCIP'];
   function titleCase(s) {
     return s.split(' ').map(function (w) {
       if (KEEP_CAPS.indexOf(w.replace(/[^A-Z_]/g, '')) >= 0) return w;
@@ -42,7 +42,13 @@
   var BUTTONS = ['strike', 'privacy', 'mint', 'rug'];
   var STATUS_TEXT = {
     blind: '🙈 BLINDED', sleep: '💤 ASLEEP', hypno: '🌀 HYPNOTIZED',
-    hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks'
+    hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks', stun: '👀 STARING'
+  };
+  // Why someone skips a turn: Mert's dome, Charles's midnight, Sergey's shirt.
+  var SKIP = {
+    blind: { icon: '🙈', chip: 'BLIND', word: 'BLINDED', sound: 'huh' },
+    sleep: { icon: '💤', chip: 'ASLEEP', word: 'ASLEEP', sound: 'snore' },
+    stun:  { icon: '👀', chip: 'STARING', word: 'STARING', sound: 'stare' }
   };
   var GRID_EMOJI = { hit: '🟩', hid: '🟦', super: '🟨', fail: '🟥', miss: '🟥', skip: '⬛', self: '🌀', none: '⬛' };
   var SIDE = ['p', 'c'];
@@ -62,9 +68,14 @@
     return Math.max(1, Math.floor((today - epoch) / 86400000) + 1);
   }
 
+  // A new fighter joins the Daily Fight draw from its dailyFrom day, so shipping one never changes
+  // a day's matchup (or a daily someone already started) halfway through.
   function dailySetup(n) {
     var rng = E.makeRng(E.hashString('pof-daily-' + n));
-    var roster = D.ROSTER, p, c;
+    var roster = D.ROSTER.filter(function (id) {
+      var from = D.FIGHTERS[id].dailyFrom;
+      return !from || dayNumber(new Date(from + 'T12:00:00')) <= n;
+    }), p, c;
     if (n === 1) {
       p = D.FIRST_FIGHT.player;
       c = D.FIRST_FIGHT.cpu;
@@ -144,7 +155,8 @@
         moves +
         '<span class="pick-super">⚡ ' + esc(F.super.name) + '</span>' +
         '<span class="pick-odds">' + (R.hp[id] || R.hp.default) + ' HP · ' +
-        (F.brace ? esc(moveOf(id, 'privacy').name) + ' halves dmg' : 'Hide ' + pct(F.hide)) +
+        (F.brace ? esc(moveOf(id, 'privacy').name) + ' halves dmg'
+          : F.stun ? esc(moveOf(id, 'privacy').name) + ' stuns ' + pct(F.hide) : 'Hide ' + pct(F.hide)) +
         ' · ' + esc(moveOf(id, 'mint').name) + ' ' + pct(F.mint) +
         ' · ' + esc(moveOf(id, 'rug').name) + ' ' + pct(F.rug) + '</span>' +
         '</button>';
@@ -171,7 +183,7 @@
     var t = S.today, done = store.get('daily.' + t.n);
     if (done) { S.result = done; showResult(done); return; }
     var prog = store.get('progress');
-    var moves = prog && prog.n === t.n ? prog.moves : '';
+    var moves = prog && prog.n === t.n && (!prog.player || (prog.player === t.player && prog.cpu === t.cpu)) ? prog.moves : '';
     try {
       startFight(t, moves);
     } catch (err) {
@@ -295,6 +307,7 @@
       // Purple hitting someone who hid: their own line, else their success line, else the default.
       pierce: own.pierce || own.ok || base.pierce,
       ticker: own.ticker || null, // Saylor's MSTR: shows MSTR ▲ 37% / MSTR ▼
+      skipLine: own.skipLine || null, // Sergey's shirt: over them on the turn they lose
       // Default Mint/Rug banners put the fighter's joke line underneath.
       failSub: own.fail ? null : move === 'mint' ? F.mintFail : move === 'rug' ? F.rugFail : null
     };
@@ -317,13 +330,12 @@
       $('.blocks', hud).classList.toggle('full', s.blocks >= D.MAX_BLOCKS);
       var chips = [];
       if (s.hodl > 0) chips.push('<span class="chip good">💎 HODL</span>');
-      if (s.skipNext === 'blind') chips.push('<span class="chip bad">🙈 BLIND</span>');
-      if (s.skipNext === 'sleep') chips.push('<span class="chip bad">💤 ASLEEP</span>');
+      if (SKIP[s.skipNext]) chips.push('<span class="chip bad">' + SKIP[s.skipNext].icon + ' ' + SKIP[s.skipNext].chip + '</span>');
       if (s.hypnoNext) chips.push('<span class="chip bad">🌀 HYPNO</span>');
       $('.chips', hud).innerHTML = chips.join('');
       fighterEl(i).classList.toggle('is-hidden', !!s.hidden);
       bubble(i, S.koProp && S.koProp.who === i ? S.koProp.prop
-        : s.hypnoNext ? '🌀' : s.skipNext === 'sleep' ? '💤' : s.skipNext === 'blind' ? '🙈'
+        : s.hypnoNext ? '🌀' : SKIP[s.skipNext] ? SKIP[s.skipNext].icon
         : s.hidden ? '🕶️' : s.braced ? '🛡️' : '');
     }
   }
@@ -339,7 +351,7 @@
     var locked = S.busy || f.over;
     var subs = {
       strike: dmgText(me.id, 'strike', R) + ' dmg · always',
-      privacy: F.brace ? '½ dmg · always' : 'Hide ' + pct(F.hide),
+      privacy: F.brace ? '½ dmg · always' : F.stun ? 'Stun · ' + pct(F.hide) : 'Hide ' + pct(F.hide),
       mint: dmgText(me.id, 'mint', R) + ' dmg · ' + pct(F.mint),
       rug: dmgText(me.id, 'rug', R) + ' dmg · ' + pct(F.rug)
     };
@@ -368,6 +380,7 @@
     if (!f.over) {
       if (st.skipped === 'blind') note = "🙈 BLINDED by the dome. You skip this turn.";
       else if (st.skipped === 'sleep') note = '💤 Lights out at midnight. You fell ASLEEP and skip this turn.';
+      else if (st.skipped === 'stun') note = "👀 You can't stop STARING at the shirt. You skip this turn.";
       else if (st.hypnotized) {
         note = '🌀 HYPNOTIZED: ' + moveOf(me.id, 'strike').name + ', ' + moveOf(me.id, 'mint').name + ' and ' +
           moveOf(me.id, 'rug').name + ' hit YOU this turn. ' + moveOf(me.id, 'privacy').name + ' or Super is safe.';
@@ -380,7 +393,7 @@
 
   function saveProgress() {
     if (S.opts.mode !== 'daily') return;
-    store.set('progress', { n: S.opts.n, moves: S.fight.moves.join('') });
+    store.set('progress', { n: S.opts.n, player: S.opts.player, cpu: S.opts.cpu, moves: S.fight.moves.join('') });
   }
 
   function onMove(move) {
@@ -428,14 +441,16 @@
         break;
 
       case 'skip':
-        bubble(e.who, e.reason === 'blind' ? '🙈' : '💤');
-        AU.play(e.reason === 'blind' ? 'huh' : 'snore');
-        var skipLine = D.FIGHTERS[S.fight.f[1 - e.who].id].super.skipLine;
+        var why = SKIP[e.reason], by = S.fight.f[1 - e.who].id;
+        bubble(e.who, why.icon);
+        AU.play(why.sound);
+        // The line belongs to whoever caused it: their Super's (WHO WAS THAT), or Sergey's shirt.
+        var skipLine = e.reason === 'stun' ? moveOf(by, 'privacy').skipLine : D.FIGHTERS[by].super.skipLine;
         if (skipLine) {
           banner(skipLine, (e.who === 0 ? 'You skip' : nm(e.who) + ' skips') + ' this turn');
           await sleep(1200);
         } else {
-          popup(e.who, e.reason === 'blind' ? 'BLINDED' : 'ASLEEP', 'status');
+          popup(e.who, why.word, 'status');
           await sleep(800);
         }
         break;
@@ -443,7 +458,7 @@
       case 'super':
         render(e.snap);
         if (S.fight.f[e.who].id === 'vitalik') fighterEl(e.who).classList.add('dance');
-        await cutIn(e.who, { targetTriedToHide: !!S.lastMoves && S.lastMoves[1 - e.who] === 'privacy' });
+        await cutIn(e.who, { target: S.fight.f[1 - e.who].id, targetTriedToHide: !!S.lastMoves && S.lastMoves[1 - e.who] === 'privacy' });
         log(who(e.who) + ' used ' + D.FIGHTERS[S.fight.f[e.who].id].super.name + '!');
         break;
 
@@ -469,6 +484,11 @@
         if (e.brace) {
           banner(pv.ok, 'Half damage this turn');
           await sleep(1050);
+        } else if (e.stun && e.ok) {
+          // Sergey's shirt: no hiding, the pattern does the work. They lose their next turn.
+          bubble(1 - e.who, SKIP.stun.icon);
+          banner(pv.ok, (e.who === 0 ? nm(1) + ' loses' : 'You lose') + ' the next turn');
+          await sleep(1250);
         } else if (e.ok && pv.ok === D.DEFAULT_MOVES.privacy.ok) {
           popup(e.who, pv.ok, 'good');
           await sleep(650);
@@ -478,7 +498,7 @@
         } else {
           wobble(e.who);
           // Default Privacy rolls a random fail line in the engine; renamed ones bring their own.
-          banner(pv.fail || e.line, whose(e.who) + ' ' + pv.name + ' failed');
+          banner(pv.fail || e.line, e.stun ? 'Nobody looked at the shirt' : whose(e.who) + ' ' + pv.name + ' failed');
           await sleep(1250);
         }
         break;
@@ -546,9 +566,11 @@
   function hitSound(e) {
     if (e.self) { AU.play('hit'); AU.play('selfhit'); return; }
     var id = S.fight.f[e.attacker].id;
-    if (e.move === 'super') AU.play(D.FIGHTERS[id].super.id === 'xrparmy' ? 'stomp' : 'heavy');
+    if (e.move === 'super') AU.play(CROWDS.indexOf(D.FIGHTERS[id].super.id) >= 0 ? 'stomp' : 'heavy');
     else if (!(e.of > 1 && e.n > 1)) AU.move(id, e.move, 'ok');
   }
+
+  var CROWDS = ['xrparmy', 'linkmarines']; // multi-hit Supers that are a crowd running over you
 
   async function doHit(e) {
     var multi = e.of > 1;
@@ -808,8 +830,20 @@
       '<div class="gold-truck">🚚<small>GOLD · 1940 SPEED</small></div>';
   }
 
+  // Sergey: the target says the line first, then the Marines charge: helmets, flannel, a $1,000 sign.
+  function marinesDeco(ctx) {
+    var T = D.FIGHTERS[ctx.target], sup = D.FIGHTERS.sergey.super, marine = function (extra) {
+      return '<span class="marine">🪖<u></u><i></i>' + (extra || '') + '</span>';
+    };
+    return '<div class="doubter"><span class="doubter-face">' + faceHTML(T) + '</span>' +
+      '<b class="doubt-bubble">' + esc(sup.doubt) + '</b></div>' +
+      '<div class="deco-march">' + marine() + marine() + marine('<b class="army-sign">$1,000 EOY</b>') + marine() + marine() +
+      marine() + marine() + '</div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
+      case 'linkmarines': return { screen: marinesDeco(ctx) };
       case 'salesman': return salesDeco(ctx);
       case 'dance': return { screen: badgerDanceDeco() };
       case 'helium': return { screen: '<div class="deco-sun"></div>', portrait: '<div class="dome-beam"></div>' };
@@ -1153,6 +1187,8 @@
         'Your fighter\'s damage and odds are on each button.</p>';
     var blue = F && F.brace
       ? 'never hides. It always works, halves damage from red, pink and purple this turn, and gives +' + F.brace.blocks + ' Block.'
+      : F && F.stun
+      ? 'never hides, so their attack this turn still lands. When it works' + odds('hide') + ', they stare at the pattern and lose their next turn.'
       : 'try to hide' + odds('hide') + '. Hidden, red and pink miss you' +
         (R.rugPiercesHidden ? '; purple and Supers still hit.' : '; so does purple. Supers still hit.');
     // Fighters who break the shared numbers (Saylor), named only on the menu version.
@@ -1162,6 +1198,7 @@
         if (dmgText(id, b, R) !== String(R[b])) bits.push(moveOf(id, b).name + ' does ' + dmgText(id, b, R));
       });
       if (X.brace) bits.push(moveOf(id, 'privacy').name + ' never hides (it halves the damage instead)');
+      if (X.stun) bits.push(moveOf(id, 'privacy').name + ' never hides (when it works, they lose their next turn)');
       if (!bits.length) return '';
       var list = bits.length > 1 ? bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1] : bits[0];
       return esc(X.name) + ' plays by his own numbers: ' + esc(list) + '.';
@@ -1186,7 +1223,7 @@
         return '<li><b>' + esc(X.name) + ' · ' + esc(X.super.name) + '</b>: ' + superEffect(X) + '.</li>';
       }).join('') + '</ul>' +
       '<h3>Statuses</h3><ul>' +
-      '<li>🙈 <b>Blind</b> / 💤 <b>Asleep</b>: skip your next turn.</li>' +
+      '<li>🙈 <b>Blind</b> / 💤 <b>Asleep</b> / 👀 <b>Staring</b> (Sergey\'s shirt): skip your next turn.</li>' +
       '<li>🌀 <b>Hypnotized</b>: your next red, pink or purple hits yourself. Blue or Super is safe.</li>' +
       '<li>💎 <b>HODL</b>: take half damage this turn and next.</li>' +
       '<li>🛡️ <b>Braced</b> (Saylor\'s STRF): half damage from red, pink and purple this turn. Supers aren\'t halved.</li></ul>' +
@@ -1244,7 +1281,9 @@
     title.classList.add('intro');
     var r = AU.music('menu', { from: 'start', fade: 2.4, restart: true });
     var drop = r ? r.dropIn : 0.85, beat = drop / 8, slammed = false, timers = [];
-    faces.forEach(function (f, k) { timers.push(setTimeout(function () { f.classList.add('in'); }, beat * (k + 1) * 1000)); });
+    // A portrait per beat, the last one on the beat before the drop (half-beats past 8 fighters).
+    var step = faces.length > 8 ? 0.5 : 1, first = 8 - faces.length * step;
+    faces.forEach(function (f, k) { timers.push(setTimeout(function () { f.classList.add('in'); }, (first + k * step) * beat * 1000)); });
     timers.push(setTimeout(slam, drop * 1000));
     // An impatient second tap slams now (attached late, so the PRESS START tap itself can't count).
     timers.push(setTimeout(function () { if (!slammed) title.addEventListener('click', slam); }, 500));
@@ -1280,12 +1319,13 @@
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
       ['MUTUAL REKT', 'flop'], ['Hit yourself (hypnotized)', 'selfhit'], ['Super ready', 'ready'], ['K.O.', 'ko'],
       ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
-      ['Blinded, skips a turn', 'huh'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
+      ['Blinded, skips a turn', 'huh'], ['Staring at the shirt, skips a turn', 'stare'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
     ]]];
     D.ROSTER.forEach(function (id) {
       var F = D.FIGHTERS[id], m = function (b) { return moveOf(id, b); }, items = [];
       items.push([m('strike').icon + ' ' + m('strike').name + ' hits', function () { AU.move(id, 'strike', 'ok'); }]);
       items.push([m('privacy').icon + ' ' + m('privacy').name + (F.brace ? ' (brace)' : ' works'), function () { AU.move(id, 'privacy', 'ok'); }]);
+      if (F.stun) items.push([m('privacy').icon + ' ' + m('privacy').name + ' flops', function () { AU.move(id, 'privacy', 'fail'); }]);
       ['mint', 'rug'].forEach(function (b) {
         items.push([m(b).icon + ' ' + m(b).name + ' lands', function () { AU.move(id, b, 'ok'); }]);
         items.push([m(b).icon + ' ' + m(b).name + ' flops', function () { AU.move(id, b, 'fail'); }]);

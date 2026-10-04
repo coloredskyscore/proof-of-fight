@@ -246,6 +246,37 @@
         koScene: 'astronaut'   // Super KO plays the astronaut DJ: FIAT AS A STORE OF VALUE / WE CALL THEM POOR
       },
       rivalKo: { toly: 'THERE IS NO SECOND BEST' }
+    },
+    sergey: {
+      id: 'sergey', name: 'Sergey', lane: 'Oracles / the shirt',
+      color: '#375bd2', emoji: '🔗',
+      hide: 0.30, mint: 0.50, rug: 0.15, // bad at rugs and price calls; half his bank pilots go live
+      // His blue button never hides. When it works (the hide odds), the shirt's pattern holds them:
+      // they lose their next turn.
+      stun: true,
+      ai: { strike: 4, privacy: 3, mint: 3, rug: 1 },
+      art: { head: 'art/sergey-head.webp', body: 'art/sergey-body.webp' }, // blue plaid, lanyard with a blank badge, jeans
+      moves: {
+        strike:  { name: 'CCIP',       icon: '📡', ko: 'THE DATA ARRIVED' },
+        privacy: { name: 'The Shirt',  icon: '👕', ok: 'THE PATTERN MOVES', fail: "IT'S NOT ABOUT FASHION",
+                   skipLine: 'LOST IN THE PATTERN' }, // over them on the turn they lose
+        mint:    { name: 'Bank Pilot', icon: '🏦', ok: 'LIVE AT SIBOS',     fail: 'STILL A PILOT' },
+        rug:     { name: 'Next $600T', icon: '💰', ok: 'THE NEXT $600 TRILLION', fail: 'NO PRICE CALLS',
+                   pierce: "CAN'T HIDE FROM AN ORACLE" }
+      },
+      loseLine: 'SEE YOU AT SIBOS',
+      dailyFrom: '2026-10-12', // joins the Daily Fight draw on this day (so no daily already started changes)
+      super: {
+        // The crowd is the meme, like the XRP Army: price targets come from the Marines, never from him.
+        id: 'linkmarines', name: 'Link Marines', prop: '🪖',
+        doubt: "THE TOKEN ISN'T NEEDED", // the target says it first, then the flannel crowd charges
+        line: '$34 TRILLION',
+        timing: { card: 0.15, line: 1.1, dur: 3.4 },
+        blurb: '4 hits of 6 + they lose 3 Blocks', finish: 'THE TOKEN IS NEEDED',
+        cpuAfter: 'STAY POOR',
+        koProp: '👕' // the loser ends up in the flannel
+      },
+      rivalKo: { garlinghouse: 'THE MARINES OUTRANK THE ARMY' }
     }
   };
 
@@ -257,10 +288,11 @@
     midnight:     { dmg: 15, skip: 'sleep', drain: 3 },
     orangedot:    { dmg: 25, hodl: 2 },
     opreturn:     { dmg: 25, prune: true },
-    dance:        { dmg: 15, hypno: true }
+    dance:        { dmg: 15, hypno: true },
+    linkmarines:  { dmg: 6, hits: 4, drain: 3 }
   };
 
-  var ROSTER = ['toly', 'mert', 'garlinghouse', 'vitalik', 'adam', 'charles', 'saylor'];
+  var ROSTER = ['toly', 'mert', 'garlinghouse', 'vitalik', 'adam', 'charles', 'saylor', 'sergey'];
 
   return {
     MAX_BLOCKS: MAX_BLOCKS,
