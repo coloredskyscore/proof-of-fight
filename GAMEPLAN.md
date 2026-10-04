@@ -11,6 +11,13 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 4, 2026: How to Play brought up to date
+
+The help screen still described the old generic buttons (Strike / Privacy / Mint / Rug, "ARTWORK SUCKS"). It's now built from the game data, so it can't drift again:
+- Opened in a fight, it shows **your fighter's** buttons, damage and odds (Toly: Comrades, Seed Vault 35%, Slop Cannon 50%, MEV Hunt 30%) and what your Super does.
+- From the menu, it explains the five jobs by color, notes that every fighter renames them, and calls out Saylor's own numbers.
+- New: a **Supers** list (what each one actually does, from its real effect), the **Braced** status, the 30-turn rule (more HP left wins, ties go to you), and sound switches and keyboard keys.
+
 ### Oct 3, 2026 (evening): sound
 
 Music and sound effects. Details: [docs/audio/README.md](docs/audio/README.md).

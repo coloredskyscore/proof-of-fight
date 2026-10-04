@@ -1121,33 +1121,83 @@
   }
 
   // ---------- Help ----------
+  // What a Super does, from its real effect (so the help can't drift from the rules).
+  function superEffect(F) {
+    var fx = D.SUPERS[F.super.id];
+    var hit = fx.hits > 1 ? fx.hits + ' hits of ' + fx.dmg + ' damage' : fx.dmg + ' damage', parts = [];
+    parts.push(fx.prune ? 'strips their HODL, then ' + hit : hit);
+    if (fx.skip === 'blind') parts.push('Blind (they skip their next turn)');
+    if (fx.skip === 'sleep') parts.push('Asleep (they skip their next turn)');
+    if (fx.drain) parts.push('they lose ' + fx.drain + ' Blocks');
+    if (fx.hypno) parts.push('Hypnotized (their next red, pink or purple hits themselves)');
+    if (fx.hodl) parts.push('HODL (you take half damage this turn and next)');
+    var out = parts.join(' + ');
+    return out.charAt(0).toUpperCase() + out.slice(1);
+  }
+
+  // Opened mid-fight it uses your fighter's buttons, damage and odds; from the menu it explains the jobs.
   function openHelp() {
-    var R = S.fight && !$('#screen-fight').hidden ? S.fight.rules : D.RULESETS[S.rules];
+    var inFight = S.fight && !$('#screen-fight').hidden;
+    var R = inFight ? S.fight.rules : D.RULESETS[S.rules];
+    var me = inFight ? S.fight.f[0].id : null, F = me && D.FIGHTERS[me];
+    function label(color, b) {
+      var m = me && moveOf(me, b);
+      return '<b>' + color + (m ? ' · ' + m.icon + ' ' + esc(m.name) : '') + '</b>';
+    }
+    function dmg(b) { return me ? dmgText(me, b, R) : String(R[b]); }
+    function odds(b) { return me ? ' (' + pct(F[b]) + ' for ' + esc(F.name) + ')' : ' (odds depend on your fighter)'; }
+
+    var intro = me
+      ? '<p>Your buttons as ' + esc(F.name) + '. Every fighter has the same five, under their own names: same color, same job.</p>'
+      : '<p>Every fighter has the same five buttons under their own names (Toly\'s red is Comrades, Saylor\'s purple is MSTR): same color, same job. ' +
+        'Your fighter\'s damage and odds are on each button.</p>';
+    var blue = F && F.brace
+      ? 'never hides. It always works, halves damage from red, pink and purple this turn, and gives +' + F.brace.blocks + ' Block.'
+      : 'try to hide' + odds('hide') + '. Hidden, red and pink miss you' +
+        (R.rugPiercesHidden ? '; purple and Supers still hit.' : '; so does purple. Supers still hit.');
+    // Fighters who break the shared numbers (Saylor), named only on the menu version.
+    var odd = me ? '' : D.ROSTER.map(function (id) {
+      var X = D.FIGHTERS[id], bits = [];
+      ['strike', 'mint', 'rug'].forEach(function (b) {
+        if (dmgText(id, b, R) !== String(R[b])) bits.push(moveOf(id, b).name + ' does ' + dmgText(id, b, R));
+      });
+      if (X.brace) bits.push(moveOf(id, 'privacy').name + ' never hides (it halves the damage instead)');
+      if (!bits.length) return '';
+      var list = bits.length > 1 ? bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1] : bits[0];
+      return esc(X.name) + ' plays by his own numbers: ' + esc(list) + '.';
+    }).filter(Boolean).join(' ');
+
     $('#help-body').innerHTML =
       '<p>You and the CPU each pick a move at the same time. First to 0 HP loses.</p>' +
-      '<h3>The five buttons</h3>' +
-      '<p>Some fighters have their own names for these (Mert\'s red button is Shitpost). Same color, same job. ' +
-      'Damage and odds are on each button, and a few fighters hit harder or softer than the numbers below. ' +
-      'Saylor\'s blue button (STRF) never hides: it always works and halves the damage instead.</p><ul>' +
-      '<li><b>🔴 Red (Strike)</b>: ' + R.strike + ' damage. Always hits unless they hid. The honest move.</li>' +
-      '<li><b>🔵 Blue (Privacy)</b>: try to hide (odds depend on your fighter). Hidden means red and pink miss you' +
-        (R.rugPiercesHidden ? '. Purple still gets you.' : ', and so does purple.') + '</li>' +
-      '<li><b>🩷 Pink (Mint)</b>: ' + R.mint + ' damage if it lands. If not: ARTWORK SUCKS.</li>' +
-      '<li><b>🟣 Purple (Rug)</b>: ' + R.rug + ' damage and steal 2 Blocks.' +
-        (R.rugPiercesHidden ? " Hits even if they're hidden." : '') +
-        ' Fail and you lose 2 Blocks (or take ' + R.rugRecoil + ' damage if you have none).</li>' +
-      "<li><b>🟡 Gold (Super)</b>: needs all 10 Blocks. Plays a cut-in. Can't be dodged.</li></ul>" +
+      '<h3>The five buttons</h3>' + intro + '<ul>' +
+      '<li>' + label('🔴 Red', 'strike') + ': ' + dmg('strike') + ' damage. Always lands unless they hid. The honest move.</li>' +
+      '<li>' + label('🔵 Blue', 'privacy') + ': ' + blue + '</li>' +
+      '<li>' + label('🩷 Pink', 'mint') + ': ' + dmg('mint') + ' damage if it lands' + odds('mint') + '.</li>' +
+      '<li>' + label('🟣 Purple', 'rug') + ': ' + dmg('rug') + ' damage and steals 2 Blocks' +
+        (R.rugPiercesHidden ? ', even if they hid' : '') + odds('rug') + '. If it flops you lose 2 Blocks (or take ' + R.rugRecoil + ' damage if you have none).</li>' +
+      '<li><b>🟡 Gold · ⚡ ' + (F ? esc(F.super.name) : 'Super') + '</b>: once all 10 Blocks are full. Plays a cut-in and can\'t be dodged.' +
+        (F ? ' ' + superEffect(F) + '.' : ' Every fighter\'s is different (below).') + '</li></ul>' +
+      (odd ? '<p>' + odd + '</p>' : '') +
       '<h3>Blocks</h3>' +
-      '<p>Red +2 · blue +3 if you hid, +1 if not · pink +2 (or +1 on a dud) · getting hit +1. ' +
+      '<p>Red +2 · blue +3 if you hid, +1 if not · pink +2, or +1 if it flops · purple steals 2 when it lands · getting hit +1. ' +
       'The CPU fires its Super the moment its row is full, and you get a warning first.</p>' +
+      '<h3>Supers</h3><ul>' + D.ROSTER.map(function (id) {
+        var X = D.FIGHTERS[id];
+        return '<li><b>' + esc(X.name) + ' · ' + esc(X.super.name) + '</b>: ' + superEffect(X) + '.</li>';
+      }).join('') + '</ul>' +
       '<h3>Statuses</h3><ul>' +
       '<li>🙈 <b>Blind</b> / 💤 <b>Asleep</b>: skip your next turn.</li>' +
-      '<li>🌀 <b>Hypnotized</b>: your next red, pink or purple move hits yourself. Blue or Super is safe.</li>' +
-      '<li>💎 <b>HODL</b>: take half damage this turn and next.</li></ul>' +
+      '<li>🌀 <b>Hypnotized</b>: your next red, pink or purple hits yourself. Blue or Super is safe.</li>' +
+      '<li>💎 <b>HODL</b>: take half damage this turn and next.</li>' +
+      '<li>🛡️ <b>Braced</b> (Saylor\'s STRF): half damage from red, pink and purple this turn. Supers aren\'t halved.</li></ul>' +
       '<h3>Order of a turn</h3>' +
-      '<p>Supers, then blue (hiding), then red / pink / purple. You go first in each step. The fight ends the instant someone hits 0.</p>' +
+      '<p>Skips and hypnosis from last turn, then Supers, then blue, then red / pink / purple. You go first in each step. ' +
+      'The fight ends the instant someone hits 0. After ' + D.TURN_CAP + ' turns the chain halts: whoever has more HP left wins (ties go to you).</p>' +
       '<h3>Daily Fight</h3>' +
-      '<p>Everyone gets the same matchup and the same luck each day. One try. Share your grid; fewer turns is better.</p>';
+      '<p>Everyone gets the same matchup and the same luck each day. One try. Share your grid; fewer turns is better.</p>' +
+      '<h3>Sound and keys</h3>' +
+      '<p>Music and sounds have switches on the title screen; 🔊 in a fight mutes everything. ' +
+      'On a keyboard: 1 to 4 for the four buttons, 5 or Space for your Super.</p>';
     $('#modal-help').hidden = false;
   }
 
