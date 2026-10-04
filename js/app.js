@@ -542,6 +542,7 @@
         fighterEl(e.loser).classList.add('is-ko');
         AU.stopMusic(0.6);
         AU.play('ko');
+        AU.play('ko.bell');
         var loseLine = D.FIGHTERS[S.fight.f[e.loser].id].loseLine;
         if (loseLine) later(function () { popup(e.loser, loseLine, 'status'); }, 700);
         banner(e.timeout ? 'TIME!' : 'K.O.', e.finish, true);
@@ -1020,7 +1021,7 @@
       store.set('progress', null);
     }
     S.result = res;
-    showResult(res);
+    showResult(res, true);
   }
 
   function gridText(res) {
@@ -1067,7 +1068,8 @@
     return D.FIGHTERS[S.fight.f[winner].id].super.koProp || null;
   }
 
-  function showResult(res) {
+  // fresh: the fight just ended (play the win/lose sound); not when looking back at a finished daily.
+  function showResult(res, fresh) {
     var P = D.FIGHTERS[res.player], C = D.FIGHTERS[res.cpu];
     $('#res-kicker').textContent = res.mode === 'daily' ? 'DAILY FIGHT #' + res.n
       : res.rules === 'original' ? 'FREE PLAY · ORIGINAL RULES' : 'FREE PLAY';
@@ -1107,7 +1109,7 @@
       meta.textContent = '';
     }
     $('#modal-result').hidden = false;
-    AU.play(res.won ? 'win' : 'lose');
+    if (fresh) AU.play(res.won ? 'win' : 'lose');
     setTimeout(function () {
       if (!$('#modal-result').hidden) AU.music('menu', { from: 'loop', fade: 1.5 });
     }, 1800);
@@ -1317,7 +1319,7 @@
       ['Stop music', function () { AU.stopMusic(0.3); }]
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
-      ['MUTUAL REKT', 'flop'], ['Hit yourself (hypnotized)', 'selfhit'], ['Super ready', 'ready'], ['K.O.', 'ko'],
+      ['MUTUAL REKT', 'flop'], ['Hit yourself (hypnotized)', 'selfhit'], ['Super ready', 'ready'], ['K.O.', 'ko'], ['K.O. bell (with the boom)', 'ko.bell'],
       ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
       ['Blinded, skips a turn', 'huh'], ['Staring at the shirt, skips a turn', 'stare'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
     ]]];

@@ -11,6 +11,15 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 4, 2026 (night): new win, lose and hit sounds
+
+Picked by ear from free CC0 sound packs (Kenney, OpenGameArt). Details and credits: [docs/audio/README.md](docs/audio/README.md#recorded-sounds-picked-oct-4-2026).
+- **You win / You lose:** two chiptune tunes replace the old jingles.
+- **Punches:** a real punch for red and pink hits, a bigger one for purple and Super hits.
+- **K.O.:** a heavy boxing bell rings over the boom.
+- **Super ready** chime and a softer **button tap**.
+- Each fighter's own sounds are unchanged. If a file can't load, the old synth sound plays.
+
 ### Oct 4, 2026 (later): Sergey joins the roster
 
 The eighth fighter, and the first of the three new ones (CZ and Adeniyi wait on their art). Details: [docs/supers/sergey.md](docs/supers/sergey.md).

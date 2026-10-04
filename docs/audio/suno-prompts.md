@@ -1,5 +1,7 @@
 # Suno prompts: every sound in the game
 
+> **Update (Oct 4, 2026):** not needed for now. With 20 Suno downloads a month this was too much work, so the sounds that mattered most (win, lose, punches, the K.O. bell, Super ready, button tap) were picked from free CC0 packs instead; see [README.md](README.md#recorded-sounds-picked-oct-4-2026). Kept as a reference for any one sound worth spending a download on later.
+
 One prompt per sound, grouped by Suno mode. Each heading is the sound's **ID**: name the download after it (`toly.mint.ok.mp3`), or send them with the ID in the message, so it lands in the right place.
 
 **How to use these**
