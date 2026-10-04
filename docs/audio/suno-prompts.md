@@ -1,11 +1,5 @@
 # Suno prompts: every sound in the game
 
-> **Update (Oct 4, 2026):** the announcer now comes from a free CC0 pack (Kenney's Voiceover Pack: Fighter; see [README.md](README.md#the-announcer)), so none of these are needed. With 20 Suno downloads a month, the only ones worth spending on, if the game still feels like it's missing something:
-> 1. `vo.lose` as **YOU GOT RUGGED!** (2–3 tries), to replace the pack's plain "You lose".
-> 2. The two **result stingers** under Songs mode (bottom of this page), if the result screen feels bare with just the voice.
->
-> The rest stays here as a reference.
-
 One prompt per sound, grouped by Suno mode. Each heading is the sound's **ID**: name the download after it (`toly.mint.ok.mp3`), or send them with the ID in the message, so it lands in the right place.
 
 **How to use these**

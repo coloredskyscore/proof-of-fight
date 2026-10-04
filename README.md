@@ -43,10 +43,10 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | `js/data.js` | Fighters, odds, damage, Supers, banners |
 | `js/engine.js` | Game rules (no graphics; runs in Node too) |
 | `js/app.js` | Screens, animations, Daily Fight, sharing |
-| `tools/` | Balance simulator, rules checks, art cut-out, music loop cutter, voice clip cutter, sound level meter |
+| `tools/` | Balance simulator, rules checks, art cut-out, music loop cutter, sound clip cutter, sound level meter |
 | `docs/supers/` | Fighter kits (Super concepts, button names), one per fighter, and the slots the game supports |
 | `art/` | Fighter portraits and stage sprites |
 | `docs/art/` | Art style, Grok prompt templates, which fighters have art |
 | `js/audio.js` | Music and sound effects |
-| `audio/` | The menu and fight songs; `audio/vo/` the announcer (Kenney, CC0) |
+| `audio/` | The menu and fight songs |
 | `docs/audio/` | How the sound works; `?sounds` opens a sound test |

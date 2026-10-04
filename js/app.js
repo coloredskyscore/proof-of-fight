@@ -210,14 +210,11 @@
     updateControls();
     log(resumeMoves ? 'Picking up where you left off.' : 'Tap a move. The CPU picks at the same time.');
     banner(resumeMoves ? 'RESUME' : 'ROUND 1', 'FIGHT!');
-    // The announcer: "ROUND ONE... FIGHT!" (just "FIGHT!" on a resume). Your buttons wake up on "FIGHT!".
-    if (resumeMoves) AU.play('vo.fight');
-    else { AU.play('vo.round1'); AU.play('vo.fight', 1.25); }
     later(function () {
       S.busy = false;
       updateControls();
       if (!store.get('seenHelp')) { store.set('seenHelp', true); openHelp(); }
-    }, resumeMoves || !AU.settings.sfx ? 1100 : 1500);
+    }, 1100);
   }
 
   // A fighter's face: their portrait if they have art, else their emoji.
@@ -545,7 +542,6 @@
         fighterEl(e.loser).classList.add('is-ko');
         AU.stopMusic(0.6);
         AU.play('ko');
-        if (e.timeout) AU.play('vo.time');
         var loseLine = D.FIGHTERS[S.fight.f[e.loser].id].loseLine;
         if (loseLine) later(function () { popup(e.loser, loseLine, 'status'); }, 700);
         banner(e.timeout ? 'TIME!' : 'K.O.', e.finish, true);
@@ -1071,7 +1067,7 @@
     return D.FIGHTERS[S.fight.f[winner].id].super.koProp || null;
   }
 
-  // fresh: the fight just ended (the announcer calls it); not when looking back at a finished daily.
+  // fresh: the fight just ended (play the win/lose sound); not when looking back at a finished daily.
   function showResult(res, fresh) {
     var P = D.FIGHTERS[res.player], C = D.FIGHTERS[res.cpu];
     $('#res-kicker').textContent = res.mode === 'daily' ? 'DAILY FIGHT #' + res.n
@@ -1112,9 +1108,7 @@
       meta.textContent = '';
     }
     $('#modal-result').hidden = false;
-    var R = D.RULESETS[res.rules] || D.RULESETS.balanced;
-    var flawless = res.won && res.hp >= (R.hp[res.player] || R.hp.default);
-    if (fresh) AU.play(res.won ? (flawless ? 'vo.flawless' : 'vo.win') : 'vo.lose');
+    if (fresh) AU.play(res.won ? 'win' : 'lose');
     setTimeout(function () {
       if (!$('#modal-result').hidden) AU.music('menu', { from: 'loop', fade: 1.5 });
     }, 1800);
@@ -1322,13 +1316,10 @@
       ['Menu: loop', function () { AU.music('menu', { from: 'loop', restart: true }); }],
       ['Fight', function () { AU.music('fight', { restart: true }); }],
       ['Stop music', function () { AU.stopMusic(0.3); }]
-    ]], ['Announcer', [
-      ['CHOOSE YOUR CHARACTER', 'vo.choose'], ['ROUND ONE', 'vo.round1'], ['FIGHT!', 'vo.fight'], ['TIME!', 'vo.time'],
-      ['YOU WIN', 'vo.win'], ['FLAWLESS VICTORY (won at full HP)', 'vo.flawless'], ['YOU LOSE', 'vo.lose']
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
       ['MUTUAL REKT', 'flop'], ['Hit yourself (hypnotized)', 'selfhit'], ['Super ready', 'ready'], ['K.O.', 'ko'],
-      ['Win jingle (backup if the voice can\'t load)', 'win'], ['Lose jingle (backup)', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
+      ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
       ['Blinded, skips a turn', 'huh'], ['Staring at the shirt, skips a turn', 'stare'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
     ]]];
     D.ROSTER.forEach(function (id) {
@@ -1398,7 +1389,7 @@
     });
 
     $('#btn-daily').addEventListener('click', startDaily);
-    $('#btn-free').addEventListener('click', function () { S.pickPlayer = null; renderPick('player'); AU.play('vo.choose'); });
+    $('#btn-free').addEventListener('click', function () { S.pickPlayer = null; renderPick('player'); });
     $('#btn-help').addEventListener('click', openHelp);
     $('#btn-fight-help').addEventListener('click', openHelp);
     $('#help-close').addEventListener('click', function () { $('#modal-help').hidden = true; });

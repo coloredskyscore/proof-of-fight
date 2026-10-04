@@ -333,19 +333,10 @@
   }
 
   // ---------- Recorded clips ----------
-  // Sound files, for what a synth can't do. The announcer is Kenney's Voiceover Pack: Fighter (CC0,
-  // kenney.nl), cut with tools/clip.py, every file leveled to the same peak. Clips load after the first
-  // tap; until one has, its fallback synth sound plays (YOU WIN's old jingle), or nothing.
-  //   level  how loud it plays     duck  the music dips under it
-  var CLIPS = {
-    'vo.round1':   { src: 'audio/vo/round_1.mp3', level: 0.9, duck: true },
-    'vo.fight':    { src: 'audio/vo/fight.mp3', level: 0.9, duck: true },
-    'vo.time':     { src: 'audio/vo/time.mp3', level: 0.9, duck: true },
-    'vo.win':      { src: 'audio/vo/you_win.mp3', level: 0.9, duck: true, fallback: 'win' },
-    'vo.flawless': { src: 'audio/vo/flawless_victory.mp3', level: 0.9, duck: true, fallback: 'win' }, // won at full HP
-    'vo.lose':     { src: 'audio/vo/you_lose.mp3', level: 0.9, duck: true, fallback: 'lose' },
-    'vo.choose':   { src: 'audio/vo/choose_your_character.mp3', level: 0.8, duck: true }
-  };
+  // Sound files, for what a synth can't do, cut with tools/clip.py (every file leveled to the same peak).
+  // Clips load after the first tap; until one has, its fallback synth sound plays, or nothing.
+  //   level  how loud it plays     duck  the music dips under it     fallback  synth sound to use meanwhile
+  var CLIPS = {};
 
   // ---------- Music ----------
   // loopStart/loopEnd come from tools/music.py (seconds in the cut file). The menu song starts 8 beats

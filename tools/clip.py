@@ -36,7 +36,7 @@ def main():
     a = max(0, loud[0] - int(LEAD * sr))
     b = min(len(x), tail[-1] + int(TAIL * sr))
     x = x[a:b] * (PEAK / np.abs(x[a:b]).max())
-    fin, fout = int(0.005 * sr), int(TAIL * sr)
+    fin, fout = min(int(0.005 * sr), len(x) // 4), min(int(TAIL * sr), len(x) // 2)  # a very short click gets shorter fades
     x[:fin] *= np.linspace(0, 1, fin)
     x[-fout:] *= np.linspace(1, 0, fout)
 
