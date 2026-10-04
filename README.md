@@ -48,5 +48,5 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | `art/` | Fighter portraits and stage sprites |
 | `docs/art/` | Art style, Grok prompt templates, which fighters have art |
 | `js/audio.js` | Music and sound effects |
-| `audio/` | The menu and fight songs |
+| `audio/` | The menu and fight songs; `audio/sfx/` the recorded sounds (free CC0 packs) |
 | `docs/audio/` | How the sound works; `?sounds` opens a sound test |

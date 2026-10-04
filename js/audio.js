@@ -333,10 +333,21 @@
   }
 
   // ---------- Recorded clips ----------
-  // Sound files, for what a synth can't do, cut with tools/clip.py (every file leveled to the same peak).
-  // Clips load after the first tap; until one has, its fallback synth sound plays, or nothing.
-  //   level  how loud it plays     duck  the music dips under it     fallback  synth sound to use meanwhile
-  var CLIPS = {};
+  // Sound files picked from free CC0 packs (sources in docs/audio/README.md), cut with tools/clip.py so every
+  // file peaks at the same level. A clip with the same name as a synth sound replaces it; until the clip has
+  // loaded (it loads after the first tap), the synth sound plays.
+  //   level  how loud it plays (0.89 x level is its peak)     skip  seconds cut off the start
+  //   duck   the music dips under it
+  var CLIPS = {
+    hit:       { src: 'audio/sfx/hit.mp3', level: 0.8, skip: 0.03 },  // every red and pink hit (Punch D)
+    heavy:     { src: 'audio/sfx/heavy.mp3', level: 1, skip: 0.09 },  // purple and Super hits (Punch E): most of its
+                                                                       // swish is cut so the hit lands on the frame
+    'ko.bell': { src: 'audio/sfx/ko-bell.mp3', level: 0.65 },         // rings over the K.O. boom
+    win:       { src: 'audio/sfx/win.mp3', level: 0.62 },
+    lose:      { src: 'audio/sfx/lose.mp3', level: 0.62 },
+    ready:     { src: 'audio/sfx/ready.mp3', level: 0.5 },            // your Super is ready
+    tap:       { src: 'audio/sfx/tap.mp3', level: 0.25 }              // any button
+  };
 
   // ---------- Music ----------
   // loopStart/loopEnd come from tools/music.py (seconds in the cut file). The menu song starts 8 beats
@@ -458,12 +469,7 @@
   var SILENT = { stop: function () {} };
   function play(id, delay, info) {
     if (!settings.sfx || !ensure() || ctx.state !== 'running') return SILENT;
-    var clip = CLIPS[id];
-    if (clip) {
-      if (clipBuffers[id]) return playClip(clip, clipBuffers[id], delay);
-      if (!clip.fallback) return SILENT;
-      id = clip.fallback;
-    }
+    if (CLIPS[id] && clipBuffers[id]) return playClip(CLIPS[id], clipBuffers[id], delay);
     var vs = voicesOf(id, info);
     if (!vs) return SILENT;
     var t0 = ctx.currentTime + 0.01 + (delay || 0), g = ctx.createGain();
@@ -485,7 +491,7 @@
     g.gain.value = clip.level;
     src.connect(g);
     g.connect(sfxBus);
-    src.start(t0);
+    src.start(t0, clip.skip || 0);
     if (clip.duck) {
       voiceDuck.gain.cancelScheduledValues(t0);
       voiceDuck.gain.setTargetAtTime(0.4, t0, 0.03);
@@ -549,7 +555,7 @@
     if (clipsLoading || !ensure()) return;
     clipsLoading = true;
     Object.keys(CLIPS).forEach(function (id) {
-      fetchBuffer(CLIPS[id].src).then(function (buf) { clipBuffers[id] = buf; }).catch(function () { /* the fallback plays */ });
+      fetchBuffer(CLIPS[id].src).then(function (buf) { clipBuffers[id] = buf; }).catch(function () { /* the synth sound plays instead */ });
     });
   }
 

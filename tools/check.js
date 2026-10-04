@@ -448,7 +448,7 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
     assert(/\.mp3$/.test(c.src), id + ': clips are MP3 (every browser plays it)');
     assert(require('fs').existsSync(require('path').join(__dirname, '..', c.src)), id + ': missing ' + c.src);
     assert(c.level > 0 && c.level <= 1, id + ': level');
-    if (c.fallback) check(c.fallback);
+    assert(!(c.skip >= 0.2), id + ': skip cuts too much');
   });
   Object.keys(AU.MUSIC).forEach(function (k) {
     var m = AU.MUSIC[k];
