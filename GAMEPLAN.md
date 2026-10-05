@@ -11,6 +11,12 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 5, 2026: launch kit and link previews
+
+- **Link previews:** shared links now show a big card (all eight fighters facing off) instead of a tiny square. The image is `art/social/og.jpg`; the tags in `index.html` move to proofoffight.com when the domain is live.
+- **X account kit** in [docs/social/](docs/social/README.md): profile photo, header, handle and bio, a pinned launch post, and two weeks of posts (one spotlight per fighter, the Daily Fight, rivalries, a poll).
+- **Launch clip:** 23 seconds, vertical, with the game's own sound, cut from a real fight with lucky dice (real damage and odds).
+
 ### Oct 4, 2026 (night): new win, lose and hit sounds
 
 Picked by ear from free CC0 sound packs (Kenney, OpenGameArt). Details and credits: [docs/audio/README.md](docs/audio/README.md#recorded-sounds-picked-oct-4-2026).

@@ -50,3 +50,4 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | `js/audio.js` | Music and sound effects |
 | `audio/` | The menu and fight songs; `audio/sfx/` the recorded sounds (free CC0 packs) |
 | `docs/audio/` | How the sound works; `?sounds` opens a sound test |
+| `docs/social/` | X account kit: profile photo, header, bio, first posts; `art/social/og.jpg` is the link-preview image |
