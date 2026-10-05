@@ -18,7 +18,7 @@ The full design is in **[GAMEPLAN.md](GAMEPLAN.md)**.
 3. Pick the branch with the game (e.g. `main`), folder **/ (root)**, then **Save**.
 4. After a minute the game is live at `https://<your-github-username>.github.io/proof-of-fight/`.
 
-The `github.io` address is only for testing. The plan is to point `proofoffight.com` at it later (GAMEPLAN.md, section 17).
+The game is live at **https://proofoffight.com**: GitHub Pages serves `main`, and the domain (registered at Porkbun) points at it. The `CNAME` file tells GitHub which domain this repo answers to; the old `github.io` address redirects there.
 
 ## Tweak it
 
@@ -50,3 +50,4 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | `js/audio.js` | Music and sound effects |
 | `audio/` | The menu and fight songs; `audio/sfx/` the recorded sounds (free CC0 packs) |
 | `docs/audio/` | How the sound works; `?sounds` opens a sound test |
+| `docs/social/` | X account kit: profile photo, header, bio, first posts; `art/social/og.jpg` is the link-preview image |

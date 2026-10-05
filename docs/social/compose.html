@@ -1,0 +1,108 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Proof of Fight social images</title>
+<!-- Header (1500x500), profile photo (800x800), clip end card (780x1688) and link preview (1200x630).
+     Serve the repo root, open /docs/social/compose.html, and screenshot each .frame at its size. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&display=swap">
+<style>
+:root {
+  --bg: #0b0a12; --line: #07060b; --gold: #ffd23f; --ink: #f6f3ff; --muted: #c9c2dc;
+  --display: 'Bungee', Impact, sans-serif; --body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+body { margin: 0; background: #222; display: grid; gap: 40px; padding: 40px; justify-items: start; }
+.frame { position: relative; overflow: hidden; background: var(--bg); }
+.sky { position: absolute; inset: 0; background: linear-gradient(#150f2b 0%, #3a1d53 45%, #a0435a 72%, #f08a4b 78%); }
+.skyline { position: absolute; left: 0; right: 0; bottom: 22%; height: 42%; opacity: .55; }
+.candle { position: absolute; bottom: 0; }
+.candle i { position: absolute; left: 50%; width: 3px; transform: translateX(-50%); background: currentColor; }
+.candle b { position: absolute; left: 18%; right: 18%; background: currentColor; border-radius: 1px; }
+.up { color: #2fd18a; } .down { color: #ff5470; }
+.ground { position: absolute; left: 0; right: 0; bottom: 0; height: 22%;
+  background: repeating-linear-gradient(90deg, #ffffff08 0 2px, transparent 2px 60px), linear-gradient(#35203c, #120b17);
+  border-top: 4px solid #0006; }
+.logo { position: absolute; margin: 0; font-family: var(--display); font-weight: 400; line-height: .95; display: flex; flex-direction: column;
+  color: var(--gold); -webkit-text-stroke: 3px var(--line); text-shadow: 0 7px 0 #b3261e, 0 13px 0 var(--line); transform: rotate(-3deg); }
+.logo .of { font-size: .45em; color: #fff; -webkit-text-stroke: 0; text-shadow: 0 4px 0 var(--line); }
+.lineup { position: absolute; display: flex; align-items: flex-end; }
+.lineup img { display: block; filter: drop-shadow(0 6px 0 #0008); }
+.lineup img.flip { transform: scaleX(-1); }
+.tag { position: absolute; font: 700 24px/1.25 var(--body); color: var(--ink); text-shadow: 0 2px 0 var(--line); }
+.url { position: absolute; font: 400 22px var(--display); color: var(--gold); -webkit-text-stroke: 1px var(--line); letter-spacing: .02em; }
+.stripes { position: absolute; inset: -30%; background: repeating-linear-gradient(-20deg, #2a1f45 0 46px, #16112a 46px 92px); }
+.glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 52%, #ff5a3633 0, transparent 60%); }
+
+/* X banner 1500x500: the avatar covers the bottom-left, so the logo sits top-left and the lineup starts past it. */
+#banner { width: 1500px; height: 500px; }
+#banner .logo { left: 42px; top: 34px; font-size: 76px; }
+#banner .lineup { left: 356px; right: 10px; bottom: 26px; justify-content: space-between; }
+#banner .lineup img { height: 272px; margin-inline: -9px; }
+#banner .tag { left: 372px; top: 26px; font-size: 25px; }
+#banner .url { right: 34px; top: 30px; }
+
+/* Profile 800x800 (shown as a circle). */
+#avatar { width: 800px; height: 800px; }
+#avatar .logo { left: 50%; top: 50%; font-size: 138px; transform: translate(-50%, -54%) rotate(-3deg); align-items: center; }
+
+/* Clip end card, the clip's own frame size (780x1688). */
+#endcard { width: 780px; height: 1688px; }
+#endcard .logo { left: 50%; top: 430px; font-size: 140px; transform: translateX(-50%) rotate(-3deg); align-items: center; }
+#endcard .tag { left: 40px; right: 40px; top: 900px; text-align: center; font-size: 36px; }
+#endcard .play { position: absolute; left: 0; right: 0; top: 1060px; text-align: center; font: 700 30px var(--body); color: var(--muted); }
+#endcard .url { left: 0; right: 0; top: 1112px; text-align: center; font-size: 54px; -webkit-text-stroke: 2px var(--line); text-shadow: 0 4px 0 var(--line); }
+
+/* Link preview 1200x630. */
+#og { width: 1200px; height: 630px; }
+#og .logo { left: 50%; top: 22px; font-size: 84px; transform: translateX(-50%) rotate(-3deg); align-items: center; }
+#og .lineup { left: 14px; right: 14px; bottom: 24px; justify-content: space-between; }
+#og .lineup img { height: 268px; margin-inline: -10px; }
+#og .tag { left: 0; right: 0; top: 268px; text-align: center; font-size: 25px; }
+</style>
+
+<div class="frame" id="banner">
+  <div class="sky"></div><div class="skyline"></div><div class="ground"></div>
+  <h1 class="logo"><span>PROOF</span><span class="of">OF</span><span>FIGHT</span></h1>
+  <div class="tag">Crypto founders. Five buttons. One bad decision per turn.</div>
+  <div class="url">PROOFOFFIGHT.COM</div>
+  <div class="lineup"></div>
+</div>
+
+<div class="frame" id="avatar">
+  <div class="stripes"></div><div class="glow"></div>
+  <h1 class="logo"><span>PROOF</span><span class="of">OF</span><span>FIGHT</span></h1>
+</div>
+
+<div class="frame" id="endcard">
+  <div class="stripes"></div><div class="glow"></div>
+  <h1 class="logo"><span>PROOF</span><span class="of">OF</span><span>FIGHT</span></h1>
+  <div class="tag">Crypto founders. Five buttons. One bad decision per turn.</div>
+  <div class="play">Play free in your browser</div>
+  <div class="url">PROOFOFFIGHT.COM</div>
+</div>
+
+<div class="frame" id="og">
+  <div class="sky"></div><div class="skyline"></div><div class="ground"></div>
+  <h1 class="logo"><span>PROOF</span><span class="of">OF</span><span>FIGHT</span></h1>
+  <div class="tag">Crypto founders. Five buttons. One bad decision per turn.</div>
+  <div class="lineup"></div>
+</div>
+
+<script>
+// Two teams facing off: the left four face right, the right four are mirrored.
+var TEAM = ['saylor', 'charles', 'mert', 'toly', 'vitalik', 'garlinghouse', 'sergey', 'adam'];
+document.querySelectorAll('.lineup').forEach(function (row) {
+  row.innerHTML = TEAM.map(function (id, k) {
+    return '<img src="../../art/' + id + '-body.webp" alt="" class="' + (k >= 4 ? 'flip' : '') + '">';
+  }).join('');
+});
+// Candlestick skyline, seeded so every render matches.
+var s = 7; function rnd() { s = (s * 16807) % 2147483647; return s / 2147483647; }
+document.querySelectorAll('.skyline').forEach(function (sk) {
+  var html = '', n = 34;
+  for (var i = 0; i < n; i++) {
+    var h = 20 + rnd() * 70, body = 30 + rnd() * 50, up = rnd() > 0.45;
+    html += '<div class="candle ' + (up ? 'up' : 'down') + '" style="left:' + (i * 100 / n) + '%;width:' + (100 / n * 0.6) + '%;height:' + h + '%">' +
+      '<i style="top:0;bottom:0"></i><b style="top:' + (100 - body) / 2 + '%;bottom:' + (100 - body) / 2 + '%"></b></div>';
+  }
+  sk.innerHTML = html;
+});
+</script>
