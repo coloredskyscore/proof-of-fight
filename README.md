@@ -18,7 +18,7 @@ The full design is in **[GAMEPLAN.md](GAMEPLAN.md)**.
 3. Pick the branch with the game (e.g. `main`), folder **/ (root)**, then **Save**.
 4. After a minute the game is live at `https://<your-github-username>.github.io/proof-of-fight/`.
 
-The `github.io` address is only for testing. The plan is to point `proofoffight.com` at it later (GAMEPLAN.md, section 17).
+The game is live at **https://proofoffight.com**: GitHub Pages serves `main`, and the domain (registered at Porkbun) points at it. The `CNAME` file tells GitHub which domain this repo answers to; the old `github.io` address redirects there.
 
 ## Tweak it
 

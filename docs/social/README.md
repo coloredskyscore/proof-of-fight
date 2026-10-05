@@ -21,7 +21,9 @@ The accounts sign in with the project's own Gmail (kept out of this public repo 
 
 ## Link previews
 
-Shared links now show a big card (`art/social/og.jpg`, 1200×630) instead of a tiny square. The tags in `index.html` hold full URLs; when proofoffight.com goes live, they switch to it. To check a card, paste the link into a draft post on X and wait a few seconds.
+Shared links show a big card (`art/social/og.jpg`, 1200×630) credited to @ProofOfFight. The tags are in `index.html` and use full proofoffight.com URLs.
+
+**X keeps its first copy of a card for about a week.** If a link was posted before the card existed, X keeps showing the old one. To get the new card right away, post the link with something on the end, like `proofoffight.com/?x` or `proofoffight.com/?launch`: X treats it as a new link and fetches it fresh, and the game loads the same. Paste it into a draft post first and wait a few seconds to see the card before posting.
 
 ## First two weeks
 

@@ -1,7 +1,7 @@
 # Proof of Fight — Gameplan
 
 **Working title:** Proof of Fight  
-**Live URL (planned):** https://proofoffight.com  
+**Live URL:** https://proofoffight.com  
 **Repo:** `github.com/coloredskyscore/proof-of-fight` (separate project — not coloredskyscore)  
 **Status:** First playable build is in the repo (steps 1–2 of the build order). No hosting pointed yet. No wallet. No on-chain mint.
 
@@ -11,9 +11,11 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
-### Oct 5, 2026: launch kit and link previews
+### Oct 5, 2026: domain, favicon, launch kit and link previews
 
-- **Link previews:** shared links now show a big card (all eight fighters facing off) instead of a tiny square. The image is `art/social/og.jpg`; the tags in `index.html` move to proofoffight.com when the domain is live.
+- **proofoffight.com is live** (GitHub Pages, DNS at Porkbun), and hello@proofoffight.com forwards to the project inbox.
+- **Link previews:** shared links now show a big card (all eight fighters facing off) instead of a tiny square, credited to @ProofOfFight. The image is `art/social/og.jpg`.
+- **Favicon:** a gold PF tile in the browser tab (16, 32 and 48 px, drawn at each size so it stays sharp) and the full logo as the phone home-screen icon. It replaces the 🥊 emoji, which some browsers didn't show.
 - **X account kit** in [docs/social/](docs/social/README.md): profile photo, header, handle and bio, a pinned launch post, and two weeks of posts (one spotlight per fighter, the Daily Fight, rivalries, a poll).
 - **Launch clip:** 23 seconds, vertical, with the game's own sound, cut from a real fight with lucky dice (real damage and odds).
 
@@ -571,7 +573,7 @@ Do not point DNS at an empty repo.
    **← You are here.** Next: step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. ~~Then GitHub Pages or Cloudflare Pages.~~ Staying on GitHub Pages (free; soft limit 100 GB of traffic a month, roughly 40,000 first visits). Move to Cloudflare Pages only if traffic gets near that.
-7. Then Porkbun DNS: `proofoffight.com` → that host.
+7. ~~Then Porkbun DNS: `proofoffight.com` → that host.~~ Done Oct 5: Porkbun DNS points at GitHub Pages; hello@proofoffight.com forwards to the project inbox.
 8. Then tell anyone.
 
 Do not open Pages or touch nameservers before step 2 exists.
