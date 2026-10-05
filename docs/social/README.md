@@ -6,7 +6,7 @@ Everything here is ready to paste. The images are in this folder; the launch cli
 
 | Field | Value |
 |---|---|
-| Handle | `@ProofOfFight` (fallbacks: `@ProofOfFightGG`, `@PlayProofOfFight`) |
+| Handle | [@ProofOfFight](https://x.com/ProofOfFight) (Reddit: [u/Proof-of-Fight](https://www.reddit.com/user/Proof-of-Fight)) |
 | Name | Proof of Fight |
 | Bio | A parody fighting game starring crypto founders. Five buttons, one bad decision per turn. New Daily Fight every day. Not affiliated with anyone in it. |
 | Location | The mempool |
@@ -15,7 +15,7 @@ Everything here is ready to paste. The images are in this folder; the launch cli
 | Header | `x-banner.jpg` (1500×500; the left corner is kept empty for the profile photo) |
 | Pinned post | Post 1 below |
 
-Sign up with the project's own email (not a personal one), turn on two-factor login with an authenticator app, and save the backup codes somewhere safe.
+The accounts sign in with the project's own Gmail (kept out of this public repo on purpose; the public contact will be hello@proofoffight.com). Turn on two-factor login with an authenticator app on each, and save the backup codes somewhere safe.
 
 **Parody rules of thumb.** The game is the brand, not any of the people in it, so the account never talks *as* a founder. "Not affiliated with anyone in it" stays in the bio. Tag a founder once, in their own spotlight post, and never in replies to strangers.
 

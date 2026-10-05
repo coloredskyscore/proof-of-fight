@@ -570,7 +570,7 @@ Do not point DNS at an empty repo.
    New fighters: Sergey done; CZ and Adeniyi drafted, waiting on art. Then story mode.
    **← You are here.** Next: step 5.
 5. Then result URLs + the 49 matchup preview images.
-6. Then GitHub Pages or Cloudflare Pages.
+6. ~~Then GitHub Pages or Cloudflare Pages.~~ Staying on GitHub Pages (free; soft limit 100 GB of traffic a month, roughly 40,000 first visits). Move to Cloudflare Pages only if traffic gets near that.
 7. Then Porkbun DNS: `proofoffight.com` → that host.
 8. Then tell anyone.
 
