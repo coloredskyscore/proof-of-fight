@@ -459,7 +459,9 @@
   // before its drop: the title slams on the drop. vol keeps the music under the sound effects.
   var MUSIC = {
     menu: { src: 'audio/menu.mp3', loopStart: 3.3674, loopEnd: 43.7774, drop: 3.3674, beat: 60 / 142.54, vol: 0.55 },
-    fight: { src: 'audio/fight.mp3', loopStart: 0.56, loopEnd: 59.728, vol: 0.42 }
+    fight: { src: 'audio/fight.mp3', loopStart: 0.56, loopEnd: 59.728, vol: 0.42 },
+    // Story bosses. Each opens on its drop hit, like the fight song. vol matches the fight song's loudness.
+    schiff: { src: 'audio/schiff.mp3', loopStart: 3.233, loopEnd: 34.557, vol: 0.37 }
   };
 
   // ---------- Engine (browser only) ----------

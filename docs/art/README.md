@@ -205,3 +205,5 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | Sergey | ✅ beard, blue-and-white plaid, red lanyard, blank badge | ✅ same plaid (tinted from gray), blank badge, jeans |
 | CZ | ✅ short black hair, rimless glasses, black hoodie, four fingers up | ✅ same hoodie, fist up, four fingers raised |
 | Adeniyi | ✅ bald, beard, square black glasses, half-grin, pointing, sky-blue track jacket | ✅ same outfit, gray joggers, a swirling ball of water over his palm |
+| *Story:* Schiff | ✅ silver hair, gray beard, charcoal suit, gold tie, a gold bar | ✅ same suit, gold bar in hand (stage: the gold vault) |
+| *Story:* Satoshi | ✅ sliced steel hood, gold glow (`art.py glow`) | not needed |

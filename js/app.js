@@ -1231,8 +1231,7 @@
   function satoshiScene(kind) {
     return new Promise(function (resolve) {
       var el = $('#satoshi'), T = D.STORY.satoshi, lines = kind === 'ending' ? T.ending : T.revive;
-      var art = T.art && T.art.body;
-      $('.sat-fig', el).innerHTML = art ? '<img src="' + art + '" alt="">' : satoshiSVG();
+      $('.sat-fig', el).innerHTML = T.art ? '<img src="' + T.art + '" alt="">' : satoshiSVG();
       $('.sat-small', el).textContent = lines[0];
       $('.sat-big', el).textContent = lines[1];
       $('.sat-vanish', el).textContent = T.vanish;
@@ -1746,6 +1745,7 @@
       ['Menu: intro + drop', function () { AU.music('menu', { restart: true }); }],
       ['Menu: loop', function () { AU.music('menu', { from: 'loop', restart: true }); }],
       ['Fight', function () { AU.music('fight', { restart: true }); }],
+      ['Boss: Schiff', function () { AU.music('schiff', { restart: true }); }],
       ['Stop music', function () { AU.stopMusic(0.3); }]
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],

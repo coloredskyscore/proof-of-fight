@@ -226,6 +226,15 @@ test('Fighter art files exist (head = portrait, body = stage sprite)', function 
   });
 });
 
+test('Story art files exist (boss stages, Satoshi)', function () {
+  var fs = require('fs'), path = require('path');
+  Object.keys(D.BOSSES).forEach(function (id) {
+    var bg = D.BOSSES[id].boss.stage.bg;
+    if (bg) assert(fs.existsSync(path.join(__dirname, '..', bg)), id + ': missing ' + bg);
+  });
+  if (D.STORY.satoshi.art) assert(fs.existsSync(path.join(__dirname, '..', D.STORY.satoshi.art)), 'missing ' + D.STORY.satoshi.art);
+});
+
 test('STRF always works: half damage from Strike/Mint/Rug, +1 Block, never hidden', function () {
   var f = E.newFight({ player: 'saylor', cpu: 'garlinghouse', seed: 1 });
   rig(f, [cpuRoll('garlinghouse', 'rug'), 0 /* rug lands */]);

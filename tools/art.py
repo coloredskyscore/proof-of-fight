@@ -20,6 +20,10 @@ white and dark outlines stay dark:
 
 A head crop can reach past the image to zoom out (a wide hat brim); write it with = so a leading
 minus isn't read as an option:  --crop=-0.06,-0.08,1.06,1.04
+
+A glowing figure (Satoshi's golden aura) keeps its glow: the whole picture is kept and the white is
+taken out of the light around the figure, so the glow fades softly over a dark screen:
+  python3 tools/art.py glow SOURCE art/satoshi.webp      # 720x720
 """
 import argparse
 from PIL import Image, ImageDraw, ImageFilter
@@ -29,6 +33,7 @@ THRESH = 60    # how far the flood may drift from the starting white (JPEG noise
 HEAD_CROP = (0.076, 0.034, 0.924, 0.88)  # portrait framing (left, top, right, bottom) of the source
 HEAD_SIZE = 600
 BODY_HEIGHT = 960
+GLOW_SIZE = 720
 
 
 def clear(im, x, y):
@@ -100,6 +105,41 @@ def tint(im, box, color):
     return n
 
 
+def unblend_glow(im):
+    """Light pixels reachable from the edges (white, or a warm glow) become see-through: each keeps
+    only what it adds over white, so a pale gold glow turns into transparent gold. The figure, and
+    neutral highlights on it, stay solid."""
+    w, h = im.size
+    src = im.load()
+    mask = Image.new('L', im.size, 0)
+    m = mask.load()
+    for y in range(h):
+        for x in range(w):
+            r, g, b, _ = src[x, y]
+            if r >= 200 and (min(r, g, b) >= 230 or r - b >= 25):
+                m[x, y] = 255
+    for x in range(0, w, 4):
+        for y in (0, h - 1):
+            if m[x, y] == 255:
+                ImageDraw.floodfill(mask, (x, y), 128)
+    for y in range(0, h, 4):
+        for x in (0, w - 1):
+            if m[x, y] == 255:
+                ImageDraw.floodfill(mask, (x, y), 128)
+    for y in range(h):
+        for x in range(w):
+            if m[x, y] != 128:
+                continue
+            r, g, b, _ = src[x, y]
+            a = 1 - min(r, g, b) / 255
+            if a < 0.02:
+                src[x, y] = (0, 0, 0, 0)
+                continue
+            un = [max(0, min(255, round((c - 255 * (1 - a)) / a))) for c in (r, g, b)]
+            src[x, y] = (un[0], un[1], un[2], round(a * 255))
+    return im
+
+
 def pockets(im, min_area):
     """Opaque near-white areas left after the cut: candidate gaps, or white parts of the art."""
     w, h = im.size
@@ -128,7 +168,7 @@ def pockets(im, min_area):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('kind', choices=['head', 'body'])
+    ap.add_argument('kind', choices=['head', 'body', 'glow'])
     ap.add_argument('source')
     ap.add_argument('out')
     ap.add_argument('--gap', action='append', default=[], help='x,y of a white pocket to clear (source pixels)')
@@ -138,6 +178,11 @@ def main():
     args = ap.parse_args()
 
     im = Image.open(args.source).convert('RGBA')
+    if args.kind == 'glow':
+        im = unblend_glow(im).resize((GLOW_SIZE, GLOW_SIZE), Image.LANCZOS)
+        im.save(args.out, 'WEBP', quality=90, method=6)
+        print('%s: %dx%d' % (args.out, im.size[0], im.size[1]))
+        return
     for d in args.delogo:
         print('logo painted out: %d px' % delogo(im, tuple(int(v) for v in d.split(','))))
     gaps = [tuple(int(v) for v in g.split(',')) for g in args.gap]

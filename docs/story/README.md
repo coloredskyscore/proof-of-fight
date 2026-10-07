@@ -114,7 +114,7 @@ Late-1990s arcade fighting game character select portrait of WICK, a mysterious 
 
 ### Satoshi
 
-If you have the photo of the Lugano statue, attach it to the portrait prompt too.
+**Done Oct 7, 2026:** the portrait is all the game needs. Of two takes, the one built from separate curved steel slices with gaps between them was picked: the gaps stay see-through and the glow fades softly over the dark revive screen (`python3 tools/art.py glow`, below). The other take, a solid ribbed robe with a big yellow halo, turned muddy brown when cut out. The sprite below is optional now.
 
 **Portrait (1:1 Square)**
 ```
@@ -158,6 +158,17 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
 
+**Made so far:** Schiff (portrait, sprite, stage, song) and Satoshi (portrait).
+
+**How they go in:**
+```
+python3 tools/art.py head schiff-portrait.jpg art/schiff-head.webp --crop=0.0,-0.04,1.0,0.96
+python3 tools/art.py body schiff-sprite.jpg art/schiff-body.webp
+python3 tools/art.py glow satoshi-portrait.jpg art/satoshi.webp
+python3 tools/music.py Schiff-music.mp3 audio/schiff.mp3 --start 142.97 --loop 146.203 177.527
+```
+A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>.webp` (WebP, quality 82). Then the boss gets `art`, `boss.stage.bg` and `boss.music` in `js/data.js`, and the song an entry in `MUSIC` in `js/audio.js`.
+
 ## What's in the game (Oct 7, 2026)
 
 - **📖 Story** on the title screen (after `?story`), or **Resume story · Boss N** when a run is saved.
@@ -191,7 +202,9 @@ Drafted from his public record, so every line is something he said or is famous 
 
 **Rivals:** Saylor beating him: `THERE IS NO SECOND BEST`. CZ beating him: `TRUST ME BRO` (what CZ called tokenized gold before their debate). Schiff beating Saylor: `NO MORE STRC` (his Oct 2026 take on Strategy). As allies against him, Saylor shouts `THERE IS NO SECOND BEST` and CZ `TRUST ME BRO`; everyone else shouts their own line.
 
-**Until the art:** a gold coin face 🪙 on the block body, on a gold-vault-colored stage.
+**Art (Oct 7, 2026):** silver hair swept back, a short gray beard, charcoal suit, gold tie, a gold bar in his hand, and a pixel-art gold vault for his stage (a round vault door open in the middle, gold bars on shelves, his radio mic on a desk). Grok gave him a beard and a full head of hair; the prompt asked for clean-shaven and mostly bald, like the real Schiff. Kept as is: the gold bar and the name do the work.
+
+**Song (Oct 7, 2026):** `audio/schiff.mp3` from the user's Suno track (193s, about 153 BPM). It starts on the hit of the last drop (142.97s) and loops the 20 bars after it (146.20s to 177.53s), the song's loudest stretch. Played a little quieter than the fight song so the two match.
 
 ## The kits
 

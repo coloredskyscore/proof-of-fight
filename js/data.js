@@ -355,6 +355,7 @@
       id: 'schiff', name: 'Peter Schiff', lane: 'Gold bug / boss 1',
       color: '#c9a227', emoji: '🪙',
       hide: 0.25, mint: 0.40, rug: 0.20,
+      art: { head: 'art/schiff-head.webp', body: 'art/schiff-body.webp' }, // charcoal suit, gold tie, a gold bar
       ai: { strike: 4, privacy: 2, mint: 3, rug: 2 },
       moves: {
         strike:  { name: 'Fake Asset', icon: '🫥', ko: 'BACKED BY NOTHING' },
@@ -367,7 +368,7 @@
       rivalKo: { saylor: 'NO MORE STRC' },
       super: {
         // Gold bars rain down. The line is the catchphrase.
-        id: 'goldrush', name: 'Gold Rush', prop: '🪙',
+        id: 'goldrush', name: 'Gold Rush', prop: '', // his portrait already holds the gold bar
         line: 'BUY GOLD',
         blurb: '4 hits of 7', finish: 'TOLD YOU SO',
         cpuAfter: "STILL THINK IT'S DIGITAL GOLD?"
@@ -375,7 +376,7 @@
       boss: {
         hp: 110,
         music: 'schiff',
-        stage: { name: 'The Gold Vault', sky: 'linear-gradient(#1b1408 0%, #4a3510 50%, #8a6420 78%, #c9a227 82%)', floor: 'linear-gradient(#3b2c12, #140e05)' },
+        stage: { name: 'The Gold Vault', bg: 'art/stages/schiff.webp', sky: 'linear-gradient(#1b1408 0%, #4a3510 50%, #8a6420 78%, #c9a227 82%)', floor: 'linear-gradient(#3b2c12, #140e05)' },
         allyLines: { saylor: 'THERE IS NO SECOND BEST', cz: 'TRUST ME BRO' }
       }
     }
@@ -413,7 +414,7 @@
       { id: 'wick', name: 'WICK', emoji: '🕯️', stage: 'The Chart' }
     ],
     satoshi: {
-      art: null,          // { body: 'art/satoshi-body.webp' } once it's made; until then he's drawn in SVG
+      art: 'art/satoshi.webp',   // sliced steel and a gold glow (tools/art.py glow); without it he's drawn in SVG
       revive: ['STAND UP.', "WE'RE ALL COUNTING ON YOU."],
       vanish: "I'VE MOVED ON TO OTHER THINGS.",   // his last known message, 2011
       ending: ['IT WAS NEVER THE BANKERS.', 'IT WAS THE 100X.']
