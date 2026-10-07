@@ -41,6 +41,7 @@ The shared sounds that play most often are recordings, chosen by ear on a listen
 | `lose` | `audio/sfx/lose.mp3` | result screen, you lost | `jingles_NES00` from the same pack |
 | `ready` | `audio/sfx/ready.mp3` | your Super meter fills | `confirmation_002` from Kenney's [Interface Sounds](https://kenney.nl/assets/interface-sounds) |
 | `tap` | `audio/sfx/tap.mp3` | any button | `select_001` from the same pack |
+| `satoshi` | `audio/sfx/satoshi.mp3` | Story: Satoshi's revive and the ending | the first 6.2 seconds of the user's Suno track Soft_Bell_Pads (stereo, 1.4s fade): `python3 tools/clip.py Soft_Bell_Pads.mp3 audio/sfx/satoshi.mp3 --from 0 --to 6.2 --fade 1.4 --stereo` |
 
 The files came from the [open-game-sfx-index](https://github.com/Mcamento8/open-game-sfx-index) mirror (kenney.nl and OpenGameArt aren't reachable from the build machine); each matched the mirror's checksum. `tools/clip.py` trims the silence, makes them mono, levels every file to the same peak and saves a small MP3; `CLIPS` in `js/audio.js` sets how loud each plays. To swap one:
 

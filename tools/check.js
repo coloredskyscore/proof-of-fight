@@ -232,7 +232,8 @@ test('Story art files exist (boss stages, Satoshi)', function () {
     var bg = D.BOSSES[id].boss.stage.bg;
     if (bg) assert(fs.existsSync(path.join(__dirname, '..', bg)), id + ': missing ' + bg);
   });
-  if (D.STORY.satoshi.art) assert(fs.existsSync(path.join(__dirname, '..', D.STORY.satoshi.art)), 'missing ' + D.STORY.satoshi.art);
+  var sat = D.STORY.satoshi.art || {};
+  Object.keys(sat).forEach(function (k) { assert(fs.existsSync(path.join(__dirname, '..', sat[k])), 'missing ' + sat[k]); });
 });
 
 test('STRF always works: half damage from Strike/Mint/Rug, +1 Block, never hidden', function () {

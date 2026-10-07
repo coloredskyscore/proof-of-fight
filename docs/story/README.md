@@ -114,7 +114,7 @@ Late-1990s arcade fighting game character select portrait of WICK, a mysterious 
 
 ### Satoshi
 
-**Done Oct 7, 2026:** the portrait is all the game needs. Of two takes, the one built from separate curved steel slices with gaps between them was picked: the gaps stay see-through and the glow fades softly over the dark revive screen (`python3 tools/art.py glow`, below). The other take, a solid ribbed robe with a big yellow halo, turned muddy brown when cut out. The sprite below is optional now.
+**Done Oct 7, 2026:** the portrait and the sprite, both cut with `python3 tools/art.py glow` so the gold aura stays soft (and turned up a little so it reads as gold, not olive, on the dark screen). The sprite floats down from the top for the revive; the portrait is the ending. Of two portrait takes, the one built from separate curved steel slices with gaps between them was picked: the gaps stay see-through. The other, a solid ribbed robe with a big yellow halo, turned muddy brown when cut out. His music is the start of the user's Suno track Soft_Bell_Pads (see docs/audio).
 
 **Portrait (1:1 Square)**
 ```
@@ -158,13 +158,14 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
 
-**Made so far:** Schiff (portrait, sprite, stage, song) and Satoshi (portrait).
+**Made so far:** Schiff (portrait, sprite, stage, song) and Satoshi (portrait, sprite, music).
 
 **How they go in:**
 ```
 python3 tools/art.py head schiff-portrait.jpg art/schiff-head.webp --crop=0.0,-0.04,1.0,0.96
 python3 tools/art.py body schiff-sprite.jpg art/schiff-body.webp
 python3 tools/art.py glow satoshi-portrait.jpg art/satoshi.webp
+python3 tools/art.py glow satoshi-sprite.jpg art/satoshi-sprite.webp
 python3 tools/music.py Schiff-music.mp3 audio/schiff.mp3 --start 142.97 --loop 146.203 177.527
 ```
 A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>.webp` (WebP, quality 82). Then the boss gets `art`, `boss.stage.bg` and `boss.music` in `js/data.js`, and the song an entry in `MUSIC` in `js/audio.js`.

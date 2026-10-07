@@ -1231,7 +1231,8 @@
   function satoshiScene(kind) {
     return new Promise(function (resolve) {
       var el = $('#satoshi'), T = D.STORY.satoshi, lines = kind === 'ending' ? T.ending : T.revive;
-      $('.sat-fig', el).innerHTML = T.art ? '<img src="' + T.art + '" alt="">' : satoshiSVG();
+      var art = T.art && (kind === 'ending' ? T.art.portrait : T.art.sprite);
+      $('.sat-fig', el).innerHTML = art ? '<img src="' + art + '" alt="">' : satoshiSVG();
       $('.sat-small', el).textContent = lines[0];
       $('.sat-big', el).textContent = lines[1];
       $('.sat-vanish', el).textContent = T.vanish;

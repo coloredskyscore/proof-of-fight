@@ -414,7 +414,9 @@
       { id: 'wick', name: 'WICK', emoji: '🕯️', stage: 'The Chart' }
     ],
     satoshi: {
-      art: 'art/satoshi.webp',   // sliced steel and a gold glow (tools/art.py glow); without it he's drawn in SVG
+      // Sliced steel and a gold glow (tools/art.py glow). The sprite floats down for the revive; the portrait
+      // is the ending. Without art he's drawn in SVG.
+      art: { sprite: 'art/satoshi-sprite.webp', portrait: 'art/satoshi.webp' },
       revive: ['STAND UP.', "WE'RE ALL COUNTING ON YOU."],
       vanish: "I'VE MOVED ON TO OTHER THINGS.",   // his last known message, 2011
       ending: ['IT WAS NEVER THE BANKERS.', 'IT WAS THE 100X.']

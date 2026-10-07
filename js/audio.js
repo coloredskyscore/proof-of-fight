@@ -451,7 +451,8 @@
     win:       { src: 'audio/sfx/win.mp3', level: 0.62 },
     lose:      { src: 'audio/sfx/lose.mp3', level: 0.62 },
     ready:     { src: 'audio/sfx/ready.mp3', level: 0.5 },            // your Super is ready
-    tap:       { src: 'audio/sfx/tap.mp3', level: 0.25 }              // any button
+    tap:       { src: 'audio/sfx/tap.mp3', level: 0.25 },             // any button
+    satoshi:   { src: 'audio/sfx/satoshi.mp3', level: 0.6 }           // the first 6s of the user's Suno pads (story)
   };
 
   // ---------- Music ----------

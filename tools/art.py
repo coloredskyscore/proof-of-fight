@@ -23,7 +23,7 @@ minus isn't read as an option:  --crop=-0.06,-0.08,1.06,1.04
 
 A glowing figure (Satoshi's golden aura) keeps its glow: the whole picture is kept and the white is
 taken out of the light around the figure, so the glow fades softly over a dark screen:
-  python3 tools/art.py glow SOURCE art/satoshi.webp      # 720x720
+  python3 tools/art.py glow SOURCE art/satoshi.webp      # longest side 720
 """
 import argparse
 from PIL import Image, ImageDraw, ImageFilter
@@ -34,6 +34,7 @@ HEAD_CROP = (0.076, 0.034, 0.924, 0.88)  # portrait framing (left, top, right, b
 HEAD_SIZE = 600
 BODY_HEIGHT = 960
 GLOW_SIZE = 720
+GLOW_BOOST = 1.8
 
 
 def clear(im, x, y):
@@ -136,7 +137,8 @@ def unblend_glow(im):
                 src[x, y] = (0, 0, 0, 0)
                 continue
             un = [max(0, min(255, round((c - 255 * (1 - a)) / a))) for c in (r, g, b)]
-            src[x, y] = (un[0], un[1], un[2], round(a * 255))
+            # Over a dark screen a faint gold reads as olive; the glow is turned up to stay gold.
+            src[x, y] = (un[0], un[1], un[2], round(min(1, a * GLOW_BOOST) * 255))
     return im
 
 
@@ -179,7 +181,8 @@ def main():
 
     im = Image.open(args.source).convert('RGBA')
     if args.kind == 'glow':
-        im = unblend_glow(im).resize((GLOW_SIZE, GLOW_SIZE), Image.LANCZOS)
+        k = GLOW_SIZE / max(im.size)
+        im = unblend_glow(im).resize((round(im.size[0] * k), round(im.size[1] * k)), Image.LANCZOS)
         im.save(args.out, 'WEBP', quality=90, method=6)
         print('%s: %dx%d' % (args.out, im.size[0], im.size[1]))
         return
