@@ -273,7 +273,7 @@
       $('.blocks', hud).innerHTML = new Array(D.MAX_BLOCKS + 1).join('<i></i>');
     });
     $('#hud-mode').textContent = S.opts.mode === 'daily' ? 'DAILY #' + S.opts.n
-      : S.opts.mode === 'story' ? 'STORY · BOSS ' + (S.opts.rung + 1)
+      : S.opts.mode === 'story' ? (S.opts.practice ? 'REMATCH · BOSS ' : 'STORY · BOSS ') + (S.opts.rung + 1)
       : f.rules.id === 'original' ? 'ORIGINAL RULES' : 'FREE PLAY';
     // A boss fight has its own stage: their background art once it's made, their colors until then.
     var boss = S.opts.mode === 'story' && D.FIGHTERS[f.f[1].id].boss, st = boss && boss.stage;
@@ -1139,27 +1139,36 @@
       var B = D.BOSSES[r.id], state = k < run.rung ? 'beaten' : k === run.rung ? 'next' : 'locked';
       var hidden = isFinal(k) && k > run.rung;
       var face = hidden ? '?' : B ? faceHTML(B) : r.emoji;
-      var tag = state === 'beaten' ? '✓' : state === 'next' ? (B ? 'NEXT' : 'SOON') : hidden ? '' : B ? '' : 'SOON';
-      return '<li class="rung is-' + state + (B ? '' : ' is-soon') + '" style="--c:' + (B && !hidden ? B.color : '#4a4460') + '">' +
+      var tag = state === 'beaten' ? '↻ REMATCH' : state === 'next' ? (B ? 'NEXT' : 'SOON') : hidden ? '' : B ? '' : 'SOON';
+      // A boss you've beaten can be fought again any time, as a rematch that doesn't touch the run.
+      var replay = state === 'beaten' && B ? ' tabindex="0" role="button" data-rung="' + k + '" aria-label="Rematch ' + esc(r.name) + '"' : '';
+      return '<li class="rung is-' + state + (B ? '' : ' is-soon') + '" style="--c:' + (B && !hidden ? B.color : '#4a4460') + '"' + replay + '>' +
         '<span class="rung-n">' + (k + 1) + '</span>' +
         '<span class="face rung-face">' + face + '</span>' +
         '<span class="rung-txt"><b>' + esc(hidden ? '???' : r.name) + '</b><small>' + esc(hidden ? 'Final boss' : r.stage) + '</small></span>' +
         (tag ? '<span class="rung-tag">' + tag + '</span>' : '') + '</li>';
     }).reverse().join('');
     var next = L[run.rung], B = next && D.BOSSES[next.id], btn = $('#story-fight');
-    btn.disabled = !B;
-    btn.textContent = B ? 'Fight ' + B.name + ' ▶' : next.name + ': coming soon';
+    // Waiting on a boss that isn't built yet: the big button replays the last one you beat.
+    var last = !B && run.rung > 0 ? ladderBoss(run.rung - 1) : null;
+    btn.disabled = !B && !last;
+    btn.textContent = B ? 'Fight ' + B.name + ' ▶' : last ? 'Rematch ' + last.name + ' ▶' : next.name + ': coming soon';
+    btn.dataset.rung = B ? run.rung : last ? run.rung - 1 : '';
+    btn.dataset.practice = B ? '' : '1';
+    $('#story-quit').textContent = B ? 'Abandon this run' : 'Start a new run';
     $('#story-note').textContent = run.rung === 0 && !run.beaten.length
       ? 'The naysayers are coming. Beat ' + L.length + ' bosses in a row. Before each fight you pick an ally from the other founders; at ' +
         pct(D.STORY.assistAt) + ' HP they jump in once. And once per run, Satoshi picks you up off the floor.'
-      : B ? '' : next.name + ' is still being built. Your run is saved right here.';
+      : B ? 'Tap a boss you\'ve beaten to fight them again. Rematches don\'t change your run.'
+      : next.name + ' is still being built. Your run is saved right here: come back when ' + next.name + ' is in. Meanwhile, rematch anyone you\'ve beaten, or start a new run with another fighter.';
     show('screen-story');
     AU.music('menu', { from: 'loop', fade: 0.8 });
   }
 
-  function openAllyPick() {
-    var run = S.run, B = ladderBoss(run.rung), pairs = B.boss.allyLines || {};
-    $('#assist-kicker').textContent = 'BOSS ' + (run.rung + 1) + ' · ' + B.name.toUpperCase();
+  function openAllyPick(rung, practice) {
+    var run = S.run, B = ladderBoss(rung), pairs = B.boss.allyLines || {};
+    S.pick = { rung: rung, practice: !!practice };
+    $('#assist-kicker').textContent = (practice ? 'REMATCH · ' : '') + 'BOSS ' + (rung + 1) + ' · ' + B.name.toUpperCase();
     $('#ally-grid').innerHTML = D.ROSTER.filter(function (id) { return id !== run.player; }).map(function (id) {
       var F = D.FIGHTERS[id];
       return '<button class="ally' + (run.ally === id ? ' last' : '') + '" data-id="' + id + '" type="button">' +
@@ -1169,9 +1178,11 @@
     $('#modal-assist').hidden = false;
   }
 
-  function startStoryFight(run) {
-    var B = ladderBoss(run.rung);
-    startFight({ mode: 'story', rung: run.rung, player: run.player, cpu: B.id, ally: run.ally, seed: randomSeed(), rules: 'balanced' });
+  function startStoryFight(run, rung, practice) {
+    if (rung == null) rung = run.rung;
+    var B = ladderBoss(rung);
+    startFight({ mode: 'story', rung: rung, practice: !!practice, player: run.player, cpu: B.id, ally: run.ally,
+      seed: randomSeed(), rules: 'balanced' });
   }
 
   function onAssist() {
@@ -1256,29 +1267,42 @@
     });
   }
 
+  // Satoshi gets a knocked-out player back up with half their HP, and the fight goes on.
+  async function satoshiRevive() {
+    var f = S.fight;
+    S.busy = true;
+    updateControls();
+    await sleep(300);
+    await satoshiScene('revive');
+    var ev = E.revive(f, 0)[0];
+    fighterEl(0).classList.remove('is-ko');
+    S.koProp = null;
+    render(ev.snap);
+    $('#turn-num').textContent = f.turn;
+    AU.music(fightSong(), { from: 'loop', fade: 0.6, restart: true });
+    AU.play('hodl');
+    banner('BACK UP', 'Satoshi gave you ' + ev.hp + ' HP');
+    log('Satoshi picked you up. ' + ev.hp + ' HP.');
+    await sleep(1200);
+    S.busy = false;
+    updateControls();
+  }
+
   async function finishStoryFight() {
     var f = S.fight, o = S.opts, run = runGet();
     if (!run) { renderTitle(); return; }
+    var knockedOut = f.winner === 1 && f.f[0].hp === 0;
+    if (o.practice) {
+      // A rematch has its own Satoshi, once, and never touches the run.
+      if (knockedOut && !f.revived) { await satoshiRevive(); return; }
+      practiceCard(run, o);
+      return;
+    }
     // Knocked out with Satoshi still unused: he picks you up and the fight goes on.
-    if (f.winner === 1 && f.f[0].hp === 0 && run.satoshi) {
+    if (knockedOut && run.satoshi) {
       run.satoshi = false;
       runSave(run);
-      S.busy = true;
-      updateControls();
-      await sleep(300);
-      await satoshiScene('revive');
-      var ev = E.revive(f, 0)[0];
-      fighterEl(0).classList.remove('is-ko');
-      S.koProp = null;
-      render(ev.snap);
-      $('#turn-num').textContent = f.turn;
-      AU.music(fightSong(), { from: 'loop', fade: 0.6, restart: true });
-      AU.play('hodl');
-      banner('BACK UP', 'Satoshi gave you ' + ev.hp + ' HP');
-      log('Satoshi picked you up. ' + ev.hp + ' HP.');
-      await sleep(1200);
-      S.busy = false;
-      updateControls();
+      await satoshiRevive();
       return;
     }
     run.turns += f.turn;
@@ -1314,6 +1338,21 @@
     }
     runSave(run);
     continueCard(run, res);
+  }
+
+  function practiceCard(run, o) {
+    var f = S.fight, P = D.FIGHTERS[o.player], B = D.FIGHTERS[o.cpu], won = f.winner === 0;
+    storyCard({
+      kicker: 'STORY · REMATCH', title: won ? 'BOSS DOWN' : 'YOU LOSE', lose: !won,
+      faces: face(P, !won) + '<span>VS</span>' + face(B, won),
+      line: won ? P.name + ' beat ' + B.name + ' in ' + plural(f.turn, 'turn') : B.name + ' beat your ' + P.name,
+      finish: f.finish, quote: won && B.loseLine ? B.name + ': “' + B.loseLine + '”' : '',
+      meta: 'Rematches don\'t change your run.',
+      actions: [['Rematch ▶', 'btn-gold', function () { closeStory(); openAllyPick(o.rung, true); }],
+        ['Back to the ladder', '', function () { closeStory(); renderLadder(run); }]]
+    });
+    AU.play(won ? 'win' : 'lose');
+    later(function () { if (!$('#modal-story').hidden) AU.music('menu', { from: 'loop', fade: 1.5 }); }, 1800);
   }
 
   // CONTINUE? Ten seconds to put another coin in; then it's game over.
@@ -1833,9 +1872,22 @@
     });
     $('#btn-story').addEventListener('click', openStory);
     $('#story-back').addEventListener('click', renderTitle);
-    $('#story-fight').addEventListener('click', openAllyPick);
+    $('#story-fight').addEventListener('click', function (ev) {
+      var d = ev.currentTarget.dataset;
+      if (d.rung !== '') openAllyPick(+d.rung, d.practice === '1');
+    });
+    function rematch(ev) {
+      var rung = ev.target.closest('.rung[data-rung]');
+      if (rung && (ev.type === 'click' || ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); openAllyPick(+rung.dataset.rung, true); }
+    }
+    $('#ladder').addEventListener('click', rematch);
+    $('#ladder').addEventListener('keydown', rematch);
     $('#story-quit').addEventListener('click', function () {
-      if (window.confirm('Abandon this run? You start over from the first boss.')) { store.set('story', null); renderTitle(); }
+      var stuck = $('#story-quit').textContent === 'Start a new run';
+      if (window.confirm(stuck ? 'Start a new run? This one ends, and you pick a fighter again.' : 'Abandon this run? You start over from the first boss.')) {
+        store.set('story', null);
+        openStory();
+      }
     });
     $('#assist-cancel').addEventListener('click', function () { $('#modal-assist').hidden = true; });
     $('#ally-grid').addEventListener('click', function (ev) {
@@ -1844,7 +1896,7 @@
       S.run.ally = b.dataset.id;
       runSave(S.run);
       $('#modal-assist').hidden = true;
-      startStoryFight(S.run);
+      startStoryFight(S.run, S.pick.rung, S.pick.practice);
     });
     $('#btn-assist').addEventListener('click', onAssist);
     $('#pick-suggest').addEventListener('click', function () {
@@ -1873,7 +1925,7 @@
       if (S.busy) return;
       var msg = S.opts.mode === 'daily' && !S.fight.over
         ? 'Leave? Your daily fight is saved. Come back to finish it.'
-        : S.opts.mode === 'story' ? 'Leave? Your story run is saved at this boss (this fight starts over).'
+        : S.opts.mode === 'story' ? (S.opts.practice ? 'Leave this rematch?' : 'Leave? Your story run is saved at this boss (this fight starts over).')
         : 'Leave this fight?';
       if (window.confirm(msg)) renderTitle();
     });

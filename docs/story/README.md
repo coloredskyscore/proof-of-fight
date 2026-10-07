@@ -180,6 +180,7 @@ A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>
 - **Losing after that:** **CONTINUE?** with a 10-second countdown. Continue restarts that boss fight (a coin goes in); Give up or zero ends the run with a **GAME OVER** card you can share.
 - **Winning:** a **BOSS DOWN** card (the boss's loser line, share, Post on X, Next boss). After the final boss, Satoshi's ending lines, then **STORY COMPLETE**.
 - **Saving:** the run is saved between fights. Leaving mid-fight keeps your place on the ladder; that fight starts over.
+- **Rematches:** tap any boss you've beaten on the ladder to fight them again (pick an ally, full stage and song, and a Satoshi of its own). Rematches never change the run. While the next boss is still being built, the big button is **Rematch** the last boss, and **Start a new run** lets you begin again with another fighter.
 - **Music:** each boss plays their own song once it's added; until then, the fight song.
 
 **Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi.
