@@ -69,7 +69,8 @@
   function makeFighter(id, rules) {
     if (!D.FIGHTERS[id]) throw new Error('Unknown fighter: ' + id);
     var hp = rules.hp[id] || rules.hp.default;
-    return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0 };
+    // shield: turns left of CZ's FUD-proof (red, pink and purple do nothing). stored: Adeniyi's Walrus bonus.
+    return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0, shield: 0, stored: 0 };
   }
 
   function canSuper(fight, who) {
@@ -91,7 +92,7 @@
   function snapshot(fight, hidden, braced) {
     return fight.f.map(function (f, i) {
       return {
-        hp: f.hp, maxHp: f.maxHp, blocks: f.blocks, hodl: f.hodl,
+        hp: f.hp, maxHp: f.maxHp, blocks: f.blocks, hodl: f.hodl, shield: f.shield, stored: f.stored,
         skipNext: f.skipNext, hypnoNext: f.hypnoNext,
         hidden: !!(hidden && hidden[i]), braced: !!(braced && braced[i])
       };
@@ -203,6 +204,10 @@
         me.hodl = fx.hodl;
         push({ t: 'status', who: who, status: 'hodl' });
       }
+      if (fx.shield) {
+        me.shield = fx.shield;
+        push({ t: 'status', who: who, status: 'shield' });
+      }
       var hits = fx.hits || 1;
       for (var h = 0; h < hits && !fight.over; h++) {
         var dealt = hurt(ti, fx.dmg);
@@ -299,14 +304,24 @@
       if (move === 'mint') me.blocks += D.BLOCKS.mintOk;
       clampBlocks(me);
 
-      var pierced = false;
+      var pierced = false, T = D.FIGHTERS[tgt.id];
       if (!self && hidden[ti]) {
         if (move === 'rug' && R.rugPiercesHidden) {
           pierced = true;
         } else {
           push({ t: 'miss', attacker: who, target: ti, move: move });
+          // Adeniyi's Walrus: the hit he dodged is stored and comes back on his next hit that lands.
+          if (T.walrus) {
+            tgt.stored = Math.max(tgt.stored, damageRange(me.id, move, R)[0]);
+            push({ t: 'status', who: ti, status: 'stored', amount: tgt.stored });
+          }
           return { code: 'miss' };
         }
+      }
+      // CZ: his Ignore FUD shrugs off red and pink; after his Super nothing but a Super touches him.
+      if (!self && (tgt.shield > 0 || (braced[ti] && T.brace.ignore && T.brace.ignore.indexOf(move) >= 0))) {
+        push({ t: 'miss', attacker: who, target: ti, move: move, ignored: true });
+        return { code: 'miss' };
       }
 
       var stolen = 0;
@@ -319,17 +334,22 @@
       // Ranged damage rolls only when it lands, so fixed-damage fighters use exactly the same dice as before.
       var range = damageRange(me.id, move, R);
       var base = range[0] === range[1] ? range[0] : range[0] + Math.floor(rng() * (range[1] - range[0] + 1));
-      dealt = hurt(ti, base, true);
+      var bonus = !self && me.stored ? me.stored : 0; // Walrus remembers
+      me.stored -= bonus;
+      dealt = hurt(ti, base + bonus, true);
       tgt.blocks += D.BLOCKS.gotHit;
       clampBlocks(tgt);
-      push({ t: 'hit', attacker: who, target: ti, move: move, amount: dealt, base: base, self: self, stolen: stolen, pierced: pierced });
+      push({ t: 'hit', attacker: who, target: ti, move: move, amount: dealt, base: base, bonus: bonus, self: self, stolen: stolen, pierced: pierced });
       ko(ti, move, who);
       return { code: self ? 'self' : 'hit' };
     }
 
     // Step 4: end of turn.
     if (!fight.over) {
-      for (i = 0; i < 2; i++) if (fight.f[i].hodl > 0) fight.f[i].hodl--;
+      for (i = 0; i < 2; i++) {
+        if (fight.f[i].hodl > 0) fight.f[i].hodl--;
+        if (fight.f[i].shield > 0) fight.f[i].shield--;
+      }
       if (fight.turn >= D.TURN_CAP) {
         var p = fight.f[0].hp / fight.f[0].maxHp, c = fight.f[1].hp / fight.f[1].maxHp;
         fight.over = true;

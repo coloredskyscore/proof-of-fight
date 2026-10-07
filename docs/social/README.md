@@ -89,10 +89,13 @@ One post a day is plenty. On x.com (desktop), the composer's calendar icon sched
 >
 > There are more. Find them.
 
-**12. Next fighters (poll).** Use X's poll option.
-> Two new fighters are coming. Who's first?
-> - CZ
-> - Adeniyi
+**12. New fighters.** Attach CZ's and Adeniyi's Super cut-ins.
+> Two new fighters.
+>
+> CZ ignores your FUD. Literally: red and pink do nothing to him.
+> Adeniyi stores the hit he dodged and gives it back.
+>
+> proofoffight.com
 
 **13. A Daily Fight reminder.**
 > Today's Daily Fight is up. Everyone gets the same fight. Post your grid below.
@@ -100,7 +103,7 @@ One post a day is plenty. On x.com (desktop), the composer's calendar icon sched
 > proofoffight.com
 
 **14. Behind the build.** Attach `x-banner.jpg` or a portrait next to its sprite.
-> Every fighter has a late-90s arcade portrait and a 16-bit sprite, eight so far. Ten soon.
+> Every fighter has a late-90s arcade portrait and a 16-bit sprite. Ten so far: CZ and Adeniyi just joined.
 
 ## The launch clip
 

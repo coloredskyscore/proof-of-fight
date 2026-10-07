@@ -410,6 +410,70 @@ test('Sergey: Link Marines hit 4 times for 6 and drain 3 Blocks; KO lines', func
   assert.strictEqual(r.finish, 'THE MARINES OUTRANK THE ARMY');
 });
 
+test('CZ: Ignore FUD always works: red and pink do nothing, purple does half', function () {
+  var f = E.newFight({ player: 'cz', cpu: 'toly', seed: 1 });
+  rig(f, [cpuRoll('toly', 'strike')]);
+  var ev = E.playTurn(f, 'privacy');
+  assert.strictEqual(f.f[0].hp, 100, 'Comrades bounced off');
+  assert(has(ev, function (e) { return e.t === 'miss' && e.ignored; }));
+  rig(f, [cpuRoll('toly', 'mint'), 0 /* Slop Cannon lands */]);
+  E.playTurn(f, 'privacy');
+  assert.strictEqual(f.f[0].hp, 100, 'Slop Cannon bounced off');
+  rig(f, [cpuRoll('toly', 'rug'), 0 /* MEV Hunt lands */]);
+  E.playTurn(f, 'privacy');
+  assert.strictEqual(f.f[0].hp, 100 - D.RULESETS.balanced.rug / 2, 'purple does half');
+});
+
+test('CZ: 4 hits for 20, then red, pink and purple do nothing to him this turn and next; Supers still do', function () {
+  var f = E.newFight({ player: 'cz', cpu: 'toly', seed: 1 });
+  f.f[0].blocks = 10;
+  rig(f, [cpuRoll('toly', 'strike')]);
+  E.playTurn(f, 'super');
+  assert.strictEqual(f.f[1].hp, 80);
+  assert.strictEqual(f.f[0].hp, 100, 'Toly hit him the same turn: nothing');
+  rig(f, [cpuRoll('toly', 'strike')]);
+  E.playTurn(f, 'strike');
+  assert.strictEqual(f.f[0].hp, 100, 'next turn: still nothing');
+  rig(f, [cpuRoll('toly', 'strike')]);
+  E.playTurn(f, 'strike');
+  assert.strictEqual(f.f[0].hp, 90, 'the turn after: it wore off');
+  var g = E.newFight({ player: 'cz', cpu: 'toly', seed: 1 });
+  g.f[0].blocks = 10;
+  g.f[1].blocks = 10;
+  rig(g, []);
+  E.playTurn(g, 'super');
+  assert.strictEqual(g.f[0].hp, 100 - D.SUPERS.salesman.dmg, "Toly's Super still lands");
+});
+
+test('Adeniyi: Walrus stores a dodged hit and adds it to his next hit that lands', function () {
+  var f = E.newFight({ player: 'adeniyi', cpu: 'toly', seed: 1 });
+  rig(f, [cpuRoll('toly', 'mint'), 0 /* Walrus hides */, 0 /* Slop Cannon "lands" on nobody */]);
+  var ev = E.playTurn(f, 'privacy');
+  assert.strictEqual(f.f[0].hp, 100);
+  assert.strictEqual(f.f[0].stored, D.RULESETS.balanced.mint);
+  assert(has(ev, function (e) { return e.t === 'status' && e.status === 'stored'; }));
+  rig(f, [cpuRoll('toly', 'strike')]);
+  var t2 = E.playTurn(f, 'strike');
+  assert.strictEqual(f.f[1].hp, 100 - 10 - D.RULESETS.balanced.mint, 'Zero Fee + the stored Slop Cannon');
+  assert(has(t2, function (e) { return e.t === 'hit' && e.attacker === 0 && e.bonus === D.RULESETS.balanced.mint; }));
+  assert.strictEqual(f.f[0].stored, 0);
+});
+
+test('CZ and Adeniyi KO lines', function () {
+  function ko(p, move, line) {
+    var f = E.newFight({ player: p, cpu: 'toly', seed: 1 });
+    if (move === 'super') f.f[0].blocks = 10;
+    f.f[1].hp = 5;
+    rig(f, [cpuRoll('toly', 'strike')]);
+    E.playTurn(f, move);
+    assert.strictEqual(f.finish, line, p + ' ' + move);
+  }
+  ko('cz', 'super', '4 MONTHS');
+  ko('cz', 'strike', 'FUNDS ARE SAFU');
+  ko('adeniyi', 'super', 'MATERIALISED.');
+  ko('adeniyi', 'strike', 'NO FEE. STILL HITS.');
+});
+
 test('A fighter joining the Daily Fight draw later says when (dailyFrom is a real date)', function () {
   D.ROSTER.forEach(function (id) {
     var from = D.FIGHTERS[id].dailyFrom;
@@ -441,7 +505,7 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
     });
     check('super.' + D.FIGHTERS[id].super.id, { chars: [0.5, 0.6], off: 2.8 });
   });
-  ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'flop', 'selfhit', 'super.astronaut']
+  ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'deflect', 'stored', 'splash', 'flop', 'selfhit', 'super.astronaut']
     .forEach(function (s) { check(s); });
   Object.keys(AU.CLIPS).forEach(function (id) {
     var c = AU.CLIPS[id];

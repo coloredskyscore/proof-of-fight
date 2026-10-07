@@ -10,7 +10,7 @@ One file per fighter: their Super and, optionally, their own button names. Drop 
 | Name card flicker *(optional)* | Words that flash on the name card before it locks | HELIUS → HELIUM → HIVEMAPPER |
 | Voice line | Big text on the cut-in. Under ~40 characters. | THE RPCS DID THIS |
 | KO finish line | K.O. banner, result card, share text | TRILLIONS |
-| Effect | Pick from what exists: damage, multi-hit, Blind, Sleep, drain Blocks, HODL, Prune, Hypnotized | 8 damage + Blind |
+| Effect | Pick from what exists: damage, multi-hit, Blind, Sleep, drain Blocks, HODL, FUD-proof, Prune, Hypnotized | 8 damage + Blind |
 | Prop emoji | Next to the fighter's portrait on the cut-in | ☀️ |
 | CPU after-Super line *(optional)* | Banner after the CPU's Super lands | THE PLAN IS WORKING |
 | Skip line *(optional, Blind/Sleep Supers)* | Over the opponent on the turn they skip | WHO WAS THAT |
@@ -43,7 +43,7 @@ Every button can also have:
 
 ## Custom numbers and special buttons (needs a balance pass)
 
-A fighter can have their own damage or odds on a button (Saylor's STRK does 20 at 45%), damage can be a **range rolled each time** (Saylor's MSTR: 15–45, "high beta"), and a blue button can be a **brace** instead of a dodge: always works, halves incoming Strike/Mint/Rug damage, never hides (Saylor's STRF). Or a **stun**: never hides, but when it works (the hide odds) the opponent loses their next turn (Sergey's The Shirt, with its own line over them on the turn they lose). Propose numbers freely; they get run through the simulator before building, and adjusted if a fighter ends up too strong or too weak. Rough guide: a sensible player should win about 60–78% with any fighter.
+A fighter can have their own damage or odds on a button (Saylor's STRK does 20 at 45%), damage can be a **range rolled each time** (Saylor's MSTR: 15–45, "high beta"), and a blue button can be a **brace** instead of a dodge: always works, halves incoming Strike/Mint/Rug damage, never hides (Saylor's STRF). Or a **stun**: never hides, but when it works (the hide odds) the opponent loses their next turn (Sergey's The Shirt, with its own line over them on the turn they lose). A brace can also **ignore** buttons outright (CZ's Ignore FUD: red and pink do nothing, purple half, a pop-up line over him), and a dodge can **store** what it dodged for the fighter's next hit (Adeniyi's Walrus). Propose numbers freely; they get run through the simulator before building, and adjusted if a fighter ends up too strong or too weak. Rough guide: a sensible player should win about 60–78% with any fighter.
 
 ## Needs a little code (fine, just describe it)
 

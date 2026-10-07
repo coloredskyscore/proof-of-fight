@@ -35,7 +35,7 @@ body { margin: 0; background: #222; display: grid; gap: 40px; padding: 40px; jus
 #banner { width: 1500px; height: 500px; }
 #banner .logo { left: 42px; top: 34px; font-size: 76px; }
 #banner .lineup { left: 356px; right: 10px; bottom: 26px; justify-content: space-between; }
-#banner .lineup img { height: 272px; margin-inline: -9px; }
+#banner .lineup img { height: 236px; margin-inline: -10px; }
 #banner .tag { left: 372px; top: 26px; font-size: 25px; }
 #banner .url { right: 34px; top: 30px; }
 
@@ -54,7 +54,7 @@ body { margin: 0; background: #222; display: grid; gap: 40px; padding: 40px; jus
 #og { width: 1200px; height: 630px; }
 #og .logo { left: 50%; top: 22px; font-size: 84px; transform: translateX(-50%) rotate(-3deg); align-items: center; }
 #og .lineup { left: 14px; right: 14px; bottom: 24px; justify-content: space-between; }
-#og .lineup img { height: 268px; margin-inline: -10px; }
+#og .lineup img { height: 246px; margin-inline: -12px; }
 #og .tag { left: 0; right: 0; top: 268px; text-align: center; font-size: 25px; }
 </style>
 
@@ -87,11 +87,11 @@ body { margin: 0; background: #222; display: grid; gap: 40px; padding: 40px; jus
 </div>
 
 <script>
-// Two teams facing off: the left four face right, the right four are mirrored.
-var TEAM = ['saylor', 'charles', 'mert', 'toly', 'vitalik', 'garlinghouse', 'sergey', 'adam'];
+// Two teams facing off: the left half faces right, the right half is mirrored.
+var TEAM = ['saylor', 'charles', 'mert', 'toly', 'cz', 'adeniyi', 'vitalik', 'garlinghouse', 'sergey', 'adam'];
 document.querySelectorAll('.lineup').forEach(function (row) {
   row.innerHTML = TEAM.map(function (id, k) {
-    return '<img src="../../art/' + id + '-body.webp" alt="" class="' + (k >= 4 ? 'flip' : '') + '">';
+    return '<img src="../../art/' + id + '-body.webp" alt="" class="' + (k >= TEAM.length / 2 ? 'flip' : '') + '">';
   }).join('');
 });
 // Candlestick skyline, seeded so every render matches.

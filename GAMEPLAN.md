@@ -11,6 +11,19 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 7, 2026: CZ and Adeniyi join the roster
+
+Fighters nine and ten. Details: [docs/supers/cz.md](docs/supers/cz.md), [docs/supers/adeniyi.md](docs/supers/adeniyi.md).
+- **CZ:** 🔐 SAFU (`FUNDS ARE SAFU`), 4️⃣ Ignore FUD, 📋 Top 4 List 45% (`1, 2, 3, 4.` / `ONLY GOT TO 3`), 🛥️ Da Moon 25% (`TO DA MOON` / `STILL DOCKED`).
+  - **Ignore FUD** is the strongest brace in the game: it always works, red and pink do nothing to him (a big `4.` pops up), purple does half.
+  - **Super "4":** the white Nissan SUV rolls in (`MY LAMBORGHINI`), and FUD, FAKE NEWS and ATTACKS shatter. 20 damage, then he's FUD-proof this turn and next. KO: `4 MONTHS`. Loses: `BACK TO GIGGLE ACADEMY`.
+- **Adeniyi:** 🆓 Zero Fee (`NO FEE. STILL HITS.`), 🦭 Walrus 40%, 🎲 YOLO 45% (`ALL GOOD THINGS COME TO THOSE WHO… YOLO` / `…WAIT`), 🤖 Agents 24/7 25% (`AGENTS NEVER SLEEP` / `THE AGENT HALLUCINATED`).
+  - **Walrus** stores a hit he dodged and adds it to his next hit that lands (`MEMWAL REMEMBERS`).
+  - **Super "Agent Swarm":** a water wave of little agents, 8 hits of 4. `YOU HAVE NO IDEA HOW FAST`. KO: `MATERIALISED.` Loses: `SEE YOU IN CYCLE 2`.
+- **Art and sound:** portraits and 16-bit sprites, and their own sound effects.
+- **Daily Fight:** both join the daily draw on Oct 12, with Sergey. They're in Free play right away.
+- The title intro fits ten portraits on the half-beats before the drop.
+
 ### Oct 5, 2026: domain, favicon, launch kit and link previews
 
 - **proofoffight.com is live** (GitHub Pages, DNS at Porkbun), and hello@proofoffight.com forwards to the project inbox.
@@ -256,6 +269,8 @@ Every fighter has the same five buttons: same colors, same jobs. A fighter can *
 | Adam Back | ⛏️ Hashcash | 🧅 Cypherpunk *(70%)* | 🖼️ Inscription *(15%)* | 🍴 Soft Fork *(10%)* |
 | Vitalik | 📝 Essay Drop | 🫥 Privacy Pool *(55%)* | 🧸 Soulbound *(35%)* | 🌱 Public Goods *(20%)* |
 | Sergey | 📡 CCIP | 👕 The Shirt: *30%, never hides; when it works they lose their next turn* | 🏦 Bank Pilot *(50%)* | 💰 Next $600T *(15%)* |
+| CZ | 🔐 SAFU | 4️⃣ Ignore FUD: *always works; red and pink do nothing, purple half* | 📋 Top 4 List *(45%)* | 🛥️ Da Moon *(25%)* |
+| Adeniyi | 🆓 Zero Fee | 🦭 Walrus *(40%; a dodged hit is stored for his next hit)* | 🎲 YOLO *(45%)* | 🤖 Agents 24/7 *(25%)* |
 
 The rest of this section uses the generic names (the jobs).
 
@@ -323,6 +338,8 @@ Use caricatures and in-game titles. Do not use photographs. Do not use official 
 | `charles` | Charles | @IOHK_Charles | Midnight / Dire Wolf Mode |
 | `saylor` | Saylor | @saylor | Tank / preferred stock |
 | `sergey` | Sergey | @SergeyNazarov | Oracles / the shirt |
+| `cz` | CZ | @cz_binance | Exchange / ignore FUD |
+| `adeniyi` | Adeniyi | @EmanAbio | Agentic finance / hype man |
 
 Anatoly Yakovenko is **Toly** in-game. Not "Antonoly."
 
@@ -344,6 +361,8 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the arena is fu
 | Garlinghouse | 25 | In The Room: `BLOCKED BY THE ANTI-CRYPTO ARMY`. A settlements guy, bad at hiding |
 | Saylor | — | His blue button (STRF) never hides; it always works and halves the damage |
 | Sergey | 30 (stun) | The Shirt never hides. When it works, they lose their next turn: `THE PATTERN MOVES` / `IT'S NOT ABOUT FASHION` |
+| Adeniyi | 40 | Walrus: `STORED ON WALRUS` / `MEMORY WIPED`. A hit he dodges comes back on his next hit |
+| CZ | — | Ignore FUD never hides; it always works: red and pink do nothing, purple half |
 
 ### Mint (JPEG lands)
 
@@ -351,6 +370,8 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the arena is fu
 |---|---|---|
 | Garlinghouse | 55 | RLUSD: `UTILITY TBD` |
 | Sergey | 50 | Bank Pilot: `STILL A PILOT` |
+| CZ | 45 | Top 4 List: `ONLY GOT TO 3` |
+| Adeniyi | 45 | YOLO: `…WAIT` |
 | Toly | 50 | Slop Cannon: `NOT IN PROD` |
 | Mert | 45 | Memecoin: `SNIPED IN BLOCK ZERO` |
 | Charles | 40 | Peer Review: `REVISE AND RESUBMIT` |
@@ -370,6 +391,8 @@ Bosses (Warren, Gensler, TradFi) are **not** v1. They wait until the arena is fu
 | Saylor | 25 | MSTR: `mNAV BELOW 1` (15–45 dmg) |
 | Adam Back | 10 | Soft Fork: `NOT BY POPULAR VOTE` |
 | Sergey | 15 | Next $600T: `NO PRICE CALLS` |
+| CZ | 25 | Da Moon: `STILL DOCKED` |
+| Adeniyi | 25 | Agents 24/7: `THE AGENT HALLUCINATED` |
 
 Adam is *bad* at rugs on purpose. Saylor's MSTR lands more often than his old rug, and its damage swings (15–45).
 
@@ -398,14 +421,16 @@ All Supers can't be dodged. Numbers are locked for v1 (tune in `js/data.js`).
 | Adam Back | **OP_RETURN** ([doc](docs/supers/adam.md)) | Long-barreled gun etched `OP_RETURN` fires a data blob. "FORK AROUND AND FIND OUT". `SALTY TEARS` if it strips a HODL | **Prune** (strips their HODL) **then 25 dmg** | CHECKMATE FORKERS |
 | Vitalik | **Badger Dance** ([doc](docs/supers/vitalik.md)) | The badger dance: a green screen of badgers and a stage of people in lanyards, arms straight out, flapping in sync; Vitalik front and center. "DON'T LOOK AT THE DANCE." Their self-hits read `DEFENSIVE ACCELERATION` | **15 dmg + Hypnotized** (their next Strike / Mint / Rug hits themselves) | THERE IS ONLY LOVE |
 | Sergey | **Link Marines** ([doc](docs/supers/sergey.md)) | The target says `THE TOKEN ISN'T NEEDED`; Marines in helmets and blue flannel charge through them, one with a `$1,000 EOY` sign. "$34 TRILLION" | **4 hits × 6 dmg = 24 + they lose 3 Blocks** | THE TOKEN IS NEEDED |
+| CZ | **4** ([doc](docs/supers/cz.md)) | The white Nissan SUV rolls in (`MY LAMBORGHINI`); FUD, FAKE NEWS and ATTACKS fly at him and shatter; a huge 4. "IGNORE FUD, FAKE NEWS, ATTACKS" | **20 dmg + FUD-proof** (red, pink and purple do nothing to him this turn and next) | 4 MONTHS |
+| Adeniyi | **Agent Swarm** ([doc](docs/supers/adeniyi.md)) | A water wave rolls across with little agents riding the crest. "YOU HAVE NO IDEA HOW FAST" | **8 hits × 4 dmg = 32** | MATERIALISED. |
 
 Non-Super KO finish lines: a button's own KO line if it has one (below), else that button's success line (Peer Review: `PEER REVIEWED`). The generic Strike `HONEST WORK`, Mint `JPEG TO THE FACE`, Rug `EXIT LIQUIDITY` only show for a button with neither (today: Mert's Shitpost reads `HONEST WORK`). Hitting yourself: `SELF-REKT`.
 
 **Rival KO lines** replace the finish line for one specific matchup, by any move: Toly beating Saylor reads `THERE IS A SECOND BEST`, Saylor beating Toly reads `THERE IS NO SECOND BEST`, Charles beating Mert reads `BIGGER THAN ZOLANA`, Sergey beating Garlinghouse reads `THE MARINES OUTRANK THE ARMY`.
 
-**Per-button KO lines**: Toly landing the KO with Comrades reads `CHEAP FAST CHAIN GUD`; Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`; Adam with Hashcash reads `GAME OVER`; Vitalik with Essay Drop reads `READ THE BLOG POST`; Sergey with CCIP reads `THE DATA ARRIVED`.
+**Per-button KO lines**: Toly landing the KO with Comrades reads `CHEAP FAST CHAIN GUD`; Saylor landing the KO with STRC reads `STRETCH`, with MSTR `NUMBER GO UP`; Charles with Glacier Drop reads `BANK THE UNBANKED`; Garlinghouse with Settle reads `PERFECT CAN'T BE THE ENEMY OF GOOD`; Adam with Hashcash reads `GAME OVER`; Vitalik with Essay Drop reads `READ THE BLOG POST`; Sergey with CCIP reads `THE DATA ARRIVED`; CZ with SAFU reads `FUNDS ARE SAFU`; Adeniyi with Zero Fee reads `NO FEE. STILL HITS.`
 
-**Loser lines** pop over the loser and are quoted on the result card: Garlinghouse `THIS ONE STINGS`, Toly `YOU GONNA GET WHAT YOU GONNA GET`, Sergey `SEE YOU AT SIBOS`.
+**Loser lines** pop over the loser and are quoted on the result card: Garlinghouse `THIS ONE STINGS`, Toly `YOU GONNA GET WHAT YOU GONNA GET`, Sergey `SEE YOU AT SIBOS`, CZ `BACK TO GIGGLE ACADEMY`, Adeniyi `SEE YOU IN CYCLE 2`.
 
 **Repeat lines** pop over a fighter who presses the same button two turns running: Toly's Slop Cannon twice reads `NO CHILL`.
 
@@ -424,6 +449,9 @@ Non-Super KO finish lines: a button's own KO line if it has one (below), else th
 | Hypnotized | Your next turn's Strike / Mint / Rug hits yourself (normal odds, full damage). Privacy and Super are safe, so a smart player hides. | After that turn |
 | HODL | Take half damage (rounded up) this turn and next | Timer, or Adam's Prune |
 | Braced (Saylor's STRF) | Half damage from Strike / Mint / Rug this turn (not Supers). Doesn't stack with HODL. | End of turn |
+| Braced (CZ's Ignore FUD) | Strike and Mint do nothing; Rug does half (not Supers) | End of turn |
+| FUD-proof (CZ's Super) | Strike, Mint and Rug do nothing (Supers still hit) | After the next turn |
+| Stored (Adeniyi's Walrus) | A hit he dodged; added to his next Strike / Mint / Rug that lands | When it's used |
 
 Blind, Sleep and Staring do not stack into a two-turn skip. If more than one lands, still one skipped turn.
 
@@ -569,7 +597,7 @@ Do not point DNS at an empty repo.
 3. ~~Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.~~ Done: all seven kits.
 4. ~~Caricature portraits and sprites.~~ Done: all seven ([docs/art/](docs/art/README.md)).
    ~~Sound: music, effects, mute.~~ Done ([docs/audio/](docs/audio/README.md)).
-   New fighters: Sergey done; CZ and Adeniyi drafted, waiting on art. Then story mode.
+   New fighters: Sergey, CZ and Adeniyi done. Next: story mode.
    **← You are here.** Next: step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. ~~Then GitHub Pages or Cloudflare Pages.~~ Staying on GitHub Pages (free; soft limit 100 GB of traffic a month, roughly 40,000 first visits). Move to Cloudflare Pages only if traffic gets near that.
