@@ -224,7 +224,53 @@
         [[N.G4, 0.3, 0.12], [N.C5, 0.43, 0.12], [N.E5, 0.56, 0.12], [N.G5, 0.69, 0.28], [N.E5, 1.0, 0.12], [N.G5, 1.13, 0.5]]),
       Array.apply(null, Array(12)).map(function (_, k) { return { w: 'noise', t: 0.7 + k * 0.2, d: 0.05, v: k % 2 ? 0.18 : 0.3, lp: 700 }; }),
       Array.apply(null, Array(12)).map(function (_, k) { return { w: 'noise', t: 0.8 + k * 0.2, d: 0.03, v: 0.12, bp: 2500 }; }),
-      [{ w: 'noise', t: 0.9, d: 2.3, v: 0.1, bp: [500, 1500], hold: 0.7, a: 0.4 }])
+      [{ w: 'noise', t: 0.9, d: 2.3, v: 0.1, bp: [500, 1500], hold: 0.7, a: 0.4 }]),
+
+    // ---------- CZ ----------
+    'cz.strike': [{ w: 'sine', f: [90, 40], d: 0.25, v: 0.7 }, { w: 'noise', d: 0.08, v: 0.35, lp: 1500 },
+      { w: 'square', f: 900, t: 0.12, d: 0.04, v: 0.15 }, { w: 'square', f: 1200, t: 0.17, d: 0.04, v: 0.12 }], // SAFU: the vault door, latched
+    'cz.privacy': seq({ w: 'square', v: 0.12, lp: 5000 }, [[1500, 0, 0.03], [1500, 0.07, 0.03], [1500, 0.14, 0.03], [1500, 0.21, 0.03]])
+      .concat([{ w: 'sine', f: 220, t: 0.3, d: 0.25, v: 0.2 }]),                                    // Ignore FUD: four taps. "4."
+    'cz.mint.ok': seq({ w: 'square', v: 0.14, lp: 5000 }, [[N.C5, 0, 0.09], [N.E5, 0.1, 0.09], [N.G5, 0.2, 0.09], [N.C6, 0.3, 0.35]]), // 1, 2, 3, 4.
+    'cz.mint.fail': seq({ w: 'square', v: 0.14, lp: 5000 }, [[N.C5, 0, 0.09], [N.E5, 0.1, 0.09], [N.G5, 0.2, 0.09]])
+      .concat([{ w: 'triangle', f: 196, t: 0.34, d: 0.25, v: 0.25 }]),                             // ONLY GOT TO 3
+    'cz.rug.ok': [{ w: 'sawtooth', f: N.A2, d: 0.55, v: 0.16, lp: 900, hold: 0.7 }, { w: 'sawtooth', f: 165, d: 0.55, v: 0.12, lp: 900, hold: 0.7 },
+      { w: 'sine', f: [400, 1800], t: 0.45, d: 0.4, v: 0.18 }],                                     // Da Moon: yacht horn, then up
+    'cz.rug.fail': [{ w: 'sawtooth', f: 110, d: 0.18, v: 0.16, lp: 800 }, { w: 'sawtooth', f: 92, t: 0.22, d: 0.45, v: 0.1, lp: 600, vib: [5, 4] },
+      { w: 'noise', t: 0.2, d: 0.35, v: 0.08, bp: 700, q: 4 }],                                     // STILL DOCKED: horn sputters, rope creaks
+    deflect: [{ w: 'triangle', f: [300, 460], d: 0.09, v: 0.35 }, { w: 'noise', d: 0.05, v: 0.25, lp: 900 }], // a hit bounces off him
+    // 4: the SUV rolls in and brakes (0.8s), FUD, FAKE NEWS and ATTACKS shatter (1.5s, 1.8s, 2.1s), then the stab.
+    'super.four': cat(
+      [{ w: 'sawtooth', f: [70, 90], d: 0.8, v: 0.12, lp: 400 }, { w: 'noise', d: 0.8, v: 0.06, lp: 600 },
+        { w: 'sine', f: [2600, 2200], t: 0.62, d: 0.22, v: 0.06 }, { w: 'sine', f: [90, 50], t: 0.82, d: 0.1, v: 0.4 }],
+      [1.5, 1.8, 2.1].reduce(function (out, t) {
+        return out.concat([{ w: 'noise', t: t, d: 0.18, v: 0.35, hp: 2500 }, { w: 'triangle', f: 3300, t: t, d: 0.12, v: 0.08 },
+          { w: 'triangle', f: 4100, t: t + 0.04, d: 0.1, v: 0.06 }]);
+      }, []),
+      seq({ w: 'square', v: 0.12, lp: 3000 }, [[N.C5, 2.35, 0.5], [N.G5, 2.35, 0.5], [N.C6, 2.35, 0.5]])),
+
+    // ---------- Adeniyi ----------
+    'adeniyi.strike': [{ w: 'sine', f: [800, 2400], d: 0.08, v: 0.2 }, { w: 'square', f: 2400, t: 0.08, d: 0.03, v: 0.1 }], // Zero Fee: zip, sent
+    'adeniyi.privacy': [{ w: 'sine', f: [180, 90], d: 0.2, v: 0.35 }, { w: 'triangle', f: N.E6, t: 0.15, d: 0.12, v: 0.14 },
+      { w: 'triangle', f: 1760, t: 0.25, d: 0.2, v: 0.14 }],                                         // Walrus: a bubble, then "saved"
+    stored: seq({ w: 'triangle', v: 0.13 }, [[N.E6, 0, 0.1], [1760, 0.08, 0.18]]),                  // a dodged hit goes on Walrus
+    'adeniyi.mint.ok': [0, 0.05, 0.1, 0.16].map(function (t) { return { w: 'noise', t: t, d: 0.025, v: 0.3, bp: 3000 }; })
+      .concat([{ w: 'triangle', f: N.C7, t: 0.24, d: 0.3, v: 0.15 }]),                               // YOLO: dice rattle, a win ding
+    'adeniyi.mint.fail': [0, 0.05, 0.1, 0.16].map(function (t) { return { w: 'noise', t: t, d: 0.025, v: 0.3, bp: 3000 }; })
+      .concat([{ w: 'sine', f: [600, 180], t: 0.25, d: 0.35, v: 0.2 }]),                            // ...WAIT
+    'adeniyi.rug.ok': [1800, 2400, 1500, 2700, 2000, 3000, 1700, 2600].map(function (f, k) {
+      return { w: 'square', f: f, t: k * 0.035, d: 0.025, v: 0.08, lp: 7000 };
+    }).concat([{ w: 'square', f: [2000, 300], t: 0.3, d: 0.12, v: 0.15 }]),                         // Agents 24/7: machine speed
+    'adeniyi.rug.fail': [{ w: 'square', f: [900, 120], d: 0.5, v: 0.12, vib: [18, 120], lp: 3000 },
+      { w: 'noise', t: 0.1, d: 0.04, v: 0.15, hp: 3000 }, { w: 'noise', t: 0.28, d: 0.04, v: 0.15, hp: 3000 }], // the agent hallucinated
+    splash: [{ w: 'noise', d: 0.14, v: 0.5, bp: [2200, 600], q: 0.8 }, { w: 'sine', f: [320, 120], d: 0.09, v: 0.3 }], // each hit of the wave
+    // Agent Swarm: the wave rolls in (0.2s to 1.3s) with a swarm of little bots chirping on the crest.
+    'super.agentswarm': cat(
+      [{ w: 'noise', t: 0.15, d: 1.6, v: 0.22, bp: [300, 2500, 700], a: 0.5, hold: 0.4 }],
+      [2100, 2900, 1800, 3300, 2500, 1600, 3100, 2200, 2700, 1900, 3500, 2400].map(function (f, k) {
+        return { w: 'square', f: [f, f * 1.3], t: 0.35 + k * 0.08, d: 0.03, v: 0.06, lp: 7000 };
+      }),
+      [{ w: 'noise', t: 1.25, d: 0.5, v: 0.3, bp: [1800, 500] }])
   };
 
   // ---------- Levels ----------
@@ -318,7 +364,24 @@
     'sergey.rug.ok': 0.153,
     'sergey.rug.fail': 0.360,
     'stare': 0.269,
-    'super.linkmarines': 0.190
+    'super.linkmarines': 0.190,
+    'cz.strike': 0.769,
+    'cz.privacy': 0.195,
+    'cz.mint.ok': 0.166,
+    'cz.mint.fail': 0.244,
+    'cz.rug.ok': 0.295,
+    'cz.rug.fail': 0.128,
+    'deflect': 0.432,
+    'super.four': 0.502,
+    'adeniyi.strike': 0.192,
+    'adeniyi.privacy': 0.329,
+    'stored': 0.123,
+    'adeniyi.mint.ok': 0.191,
+    'adeniyi.mint.fail': 0.199,
+    'adeniyi.rug.ok': 0.148,
+    'adeniyi.rug.fail': 0.748,
+    'splash': 0.527,
+    'super.agentswarm': 0.151
   };
   // PEAK:end
 

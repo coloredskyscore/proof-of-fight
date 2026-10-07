@@ -277,6 +277,59 @@
         koProp: '👕' // the loser ends up in the flannel
       },
       rivalKo: { garlinghouse: 'THE MARINES OUTRANK THE ARMY' }
+    },
+    cz: {
+      id: 'cz', name: 'CZ', lane: 'Exchange / ignore FUD',
+      color: '#f0b90b', emoji: '4️⃣',
+      hide: 0, mint: 0.45, rug: 0.25,
+      // His blue button never hides. Like Saylor's STRF it always works, but stronger: red and pink do
+      // nothing to him that turn (ignoreLine pops over him), purple does half.
+      brace: { blocks: 1, ignore: ['strike', 'mint'], ignoreLine: '4.' },
+      ai: { strike: 3, privacy: 3, mint: 3, rug: 1 },
+      art: { head: 'art/cz-head.webp', body: 'art/cz-body.webp' }, // black hoodie, rimless glasses, four fingers up
+      moves: {
+        strike:  { name: 'SAFU',       icon: '🔐', ko: 'FUNDS ARE SAFU' },
+        privacy: { name: 'Ignore FUD', icon: '4️⃣', ok: 'IGNORE FUD' },
+        mint:    { name: 'Top 4 List', icon: '📋', ok: '1, 2, 3, 4.',  fail: 'ONLY GOT TO 3' },
+        rug:     { name: 'Da Moon',    icon: '🛥️', ok: 'TO DA MOON',  fail: 'STILL DOCKED' } // his yacht's real name
+      },
+      loseLine: 'BACK TO GIGGLE ACADEMY',
+      dailyFrom: '2026-10-12',
+      super: {
+        // His 2023 New Year post, item 4: ignore FUD, fake news, attacks. The white Nissan SUV is from a 2026
+        // New York Times ride-along ("My Lamborghini").
+        id: 'four', name: '4', prop: '4️⃣',
+        line: 'IGNORE FUD, FAKE NEWS, ATTACKS',
+        timing: { card: 0.15, line: 2.2, dur: 3.4 },
+        blurb: 'Hit + FUD-proof (red, pink and purple can\'t hurt him this turn and next)', finish: '4 MONTHS',
+        cpuAfter: 'BRUH… FUD. 4.'
+      }
+    },
+    adeniyi: {
+      id: 'adeniyi', name: 'Adeniyi', lane: 'Agentic finance / hype man',
+      color: '#38bdf8', emoji: '🌊',
+      hide: 0.40, mint: 0.45, rug: 0.25,
+      // Walrus: a hit he dodges is stored, and comes back added to his next hit that lands.
+      walrus: { line: 'MEMWAL REMEMBERS' },
+      ai: { strike: 3, privacy: 2, mint: 4, rug: 3 },
+      art: { head: 'art/adeniyi-head.webp', body: 'art/adeniyi-body.webp' }, // sky-blue track jacket, glasses, a ball of water
+      moves: {
+        strike:  { name: 'Zero Fee',    icon: '🆓', ko: 'NO FEE. STILL HITS.' },
+        privacy: { name: 'Walrus',      icon: '🦭', ok: 'STORED ON WALRUS', fail: 'MEMORY WIPED' },
+        mint:    { name: 'YOLO',        icon: '🎲', ok: 'ALL GOOD THINGS COME TO THOSE WHO… YOLO', fail: '…WAIT' },
+        rug:     { name: 'Agents 24/7', icon: '🤖', ok: 'AGENTS NEVER SLEEP', fail: 'THE AGENT HALLUCINATED',
+                   pierce: 'MACHINE SPEED' }
+      },
+      loseLine: 'SEE YOU IN CYCLE 2',
+      dailyFrom: '2026-10-12',
+      super: {
+        // Sui means water: a wave carrying a swarm of little agents, multi-hit and loud.
+        id: 'agentswarm', name: 'Agent Swarm', prop: '🤖',
+        line: 'YOU HAVE NO IDEA HOW FAST',
+        timing: { card: 0.15, line: 1.0, dur: 3.2 },
+        blurb: '8 hits of 4', finish: 'MATERIALISED.',
+        cpuAfter: 'THE YETI IS ON A TEAR'
+      }
     }
   };
 
@@ -289,10 +342,12 @@
     orangedot:    { dmg: 25, hodl: 2 },
     opreturn:     { dmg: 25, prune: true },
     dance:        { dmg: 15, hypno: true },
-    linkmarines:  { dmg: 6, hits: 4, drain: 3 }
+    linkmarines:  { dmg: 6, hits: 4, drain: 3 },
+    four:         { dmg: 20, shield: 2 },   // shield: red, pink and purple do nothing to him this turn and next
+    agentswarm:   { dmg: 4, hits: 8 }
   };
 
-  var ROSTER = ['toly', 'mert', 'garlinghouse', 'vitalik', 'adam', 'charles', 'saylor', 'sergey'];
+  var ROSTER = ['toly', 'mert', 'garlinghouse', 'vitalik', 'adam', 'charles', 'saylor', 'sergey', 'cz', 'adeniyi'];
 
   return {
     MAX_BLOCKS: MAX_BLOCKS,

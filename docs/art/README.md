@@ -1,6 +1,6 @@
 # Fighter art
 
-Each fighter gets two images, made in Grok Imagine. The first seven got theirs Oct 3, 2026, Sergey Oct 4. A new fighter without art falls back to their emoji head and block body until theirs is made.
+Each fighter gets two images, made in Grok Imagine. The first seven got theirs Oct 3, 2026, Sergey Oct 4, CZ and Adeniyi Oct 7. A new fighter without art falls back to their emoji head and block body until theirs is made.
 
 ## The look (locked Oct 2, 2026)
 
@@ -127,6 +127,30 @@ Late-1990s arcade fighting game character select portrait of Sergey Nazarov, co-
 16-bit pixel art fighting game sprite of Sergey Nazarov, same character as the attached image, Sega Genesis era, full body. Calm deadpan face. Dark navy-and-black plaid flannel shirt, conference lanyard with a blank badge, dark jeans, dress shoes. Fighting stance facing right, both fists raised. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing or the badge.
 ```
 
+### CZ
+
+The four fingers are the whole bit (his "4" means ignore FUD), so they're in both images. Plain black hoodie, rimless glasses.
+
+```
+Late-1990s arcade fighting game character select portrait of Changpeng Zhao (CZ), head and shoulders, centered with empty space around the head. Drawn dead serious like a hardened martial arts hero: calm unbothered stare, dramatic lighting with hard-edged shadows. Plain black hoodie. One hand raised beside his face holding up four fingers, thumb folded. Three-quarter view, facing right. Bold black ink lines, hard cel shading with two or three tones, rich saturated colors, anime-influenced hand-drawn 2D arcade art. Plain flat white background. No text, no logos or symbols on clothing, not photorealistic, not cute.
+```
+
+```
+16-bit pixel art fighting game sprite of Changpeng Zhao (CZ), same character as the attached image, Sega Genesis era, full body. Calm unbothered face. Plain black hoodie, dark pants, sneakers. Fighting stance facing right, one fist raised, the other hand held up showing four fingers with the thumb folded. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos or symbols on clothing.
+```
+
+### Adeniyi
+
+The first draft had a megaphone and a shouting face; it read as an announcer, not him. The hype is in the attitude instead: a knowing half-grin, pointing at you. The ball of water is Sui (water) without the droplet logo. The shirt is black, not white, so the background cut can't eat it, and the track jacket has no stripes so it doesn't read as a brand.
+
+```
+Late-1990s arcade fighting game character select portrait of Adeniyi Abiodun, co-founder of Sui, head and shoulders, centered with empty space around the head. Drawn cool and supremely confident: a knowing half-grin, one eyebrow raised, like he knows something you don't. One hand raised beside his face, pointing straight at the viewer. Dramatic lighting with hard-edged shadows. Plain sky-blue track jacket zipped halfway over a plain black t-shirt. Three-quarter view, facing right. Bold black ink lines, hard cel shading with two or three tones, rich saturated colors, anime-influenced hand-drawn 2D arcade art. Plain flat white background. No text, no logos, stripes or symbols on clothing, not photorealistic, not cute.
+```
+
+```
+16-bit pixel art fighting game sprite of Adeniyi Abiodun, same character as the attached image, Sega Genesis era, full body. Confident half-grin. Plain sky-blue track jacket over a plain black t-shirt, dark gray joggers, white sneakers. Light, bouncy fighting stance facing right, weight on the back foot like he's about to dash forward, one fist raised, the other hand held open at his side with a small swirling ball of water hovering just above the palm. Whole body in frame with a little space around it, feet near the bottom edge. Chunky visible pixels, limited color palette, dark pixel outlines, no anti-aliasing, no blur. Plain flat white background, no floor, no shadow. No text, no logos, stripes or symbols on clothing.
+```
+
 ## What happens to the images
 
 `tools/art.py` (needs Pillow) cuts out the white background and sizes them:
@@ -157,9 +181,13 @@ python3 tools/art.py head saylor-portrait.jpg art/saylor-head.webp --crop=0.0,-0
 python3 tools/art.py body saylor-sprite.jpg art/saylor-body.webp
 python3 tools/art.py head sergey-portrait.jpg art/sergey-head.webp --crop=0.11,0,0.93,0.661
 python3 tools/art.py body sergey-sprite.jpg art/sergey-body.webp --tint 280,260,970,915,486aaf
+python3 tools/art.py head cz-portrait.jpg art/cz-head.webp --crop=0.0,-0.04,1.0,0.96
+python3 tools/art.py body cz-sprite.jpg art/cz-body.webp
+python3 tools/art.py head adeniyi-portrait.jpg art/adeniyi-head.webp --gap 960,372 --crop=0.0,-0.04,1.0,0.96
+python3 tools/art.py body adeniyi-sprite.jpg art/adeniyi-body.webp
 ```
 
-Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased). Adam's portrait pocket was background seen through his glasses past his cheek, and his cap touched the top of the image, so he got Mert's extra headroom too. Charles's hat brim ran wide, so his crop uses the whole image. Sergey's portrait came back taller than wide (1264×1568), so his crop picks a square: the full width minus a little, from the top down to his collar. The white pockets listed on him are the plaid's white squares and his badge, so they stay. A crop can also reach past an edge to zoom out (write `--crop=` with an equals sign when a number starts with a minus), but only past edges the art doesn't touch: his first crop reached past the bottom and right, where his shirt runs off the image, and left a strip of his red showing under it. The tool now warns about that.
+Mert's head filled the top of the frame, so his crop starts above the image (the extra space is transparent) to keep the round frames from clipping his dome. The two white pockets the tool listed on his sprite are his sneakers, so they stay. Garlinghouse's pocket was a thin sliver of background between his sleeve and his jacket, so it was cleared. Portraits never flood in from the bottom edge, since that's always clothing (his white shirt would have been erased). Adam's portrait pocket was background seen through his glasses past his cheek, and his cap touched the top of the image, so he got Mert's extra headroom too. Charles's hat brim ran wide, so his crop uses the whole image. Sergey's portrait came back taller than wide (1264×1568), so his crop picks a square: the full width minus a little, from the top down to his collar. The white pockets listed on him are the plaid's white squares and his badge, so they stay. CZ's and Adeniyi's heads touched the top of the frame, so they got Mert's headroom; Adeniyi's portrait pocket was background seen through his glasses past his cheek (cleared, like Adam's), and the pockets on his sprite are his white sneakers (kept). A crop can also reach past an edge to zoom out (write `--crop=` with an equals sign when a number starts with a minus), but only past edges the art doesn't touch: his first crop reached past the bottom and right, where his shirt runs off the image, and left a strip of his red showing under it. The tool now warns about that.
 
 Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.webp' }` in `js/data.js`. On stage the sprite stands about 18% taller than the block body (a very wide pose shrinks to stay on screen); when KO'd it falls flat on its back at 70% size so it fits on a phone. A fighter with only a portrait shows it as the head on the block body.
 
@@ -175,5 +203,5 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | Charles | ✅ cowboy hat, glasses, beard, blue plaid, the knowing grin | ✅ same outfit, cowboy boots, a stack of papers (Peer Review) |
 | Saylor | ✅ gray hair, charcoal suit, orange tie | ✅ same suit, plain orange shield (STRF) |
 | Sergey | ✅ beard, blue-and-white plaid, red lanyard, blank badge | ✅ same plaid (tinted from gray), blank badge, jeans |
-| CZ | prompts ready (waiting on Grok credits) | |
-| Adeniyi | prompts ready (waiting on Grok credits) | |
+| CZ | ✅ short black hair, rimless glasses, black hoodie, four fingers up | ✅ same hoodie, fist up, four fingers raised |
+| Adeniyi | ✅ bald, beard, square black glasses, half-grin, pointing, sky-blue track jacket | ✅ same outfit, gray joggers, a swirling ball of water over his palm |

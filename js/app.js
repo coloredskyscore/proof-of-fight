@@ -17,7 +17,7 @@
   }
   function pct(p) { return Math.round(p * 100) + '%'; }
   // Share text: "HATER CONVERTED" -> "Hater Converted", but acronyms stay as written ("LFG 2027").
-  var KEEP_CAPS = ['LFG', 'ZK', 'MSTR', 'STRC', 'RPCS', 'JPEG', 'XRP', 'NIGHT', 'OP_RETURN', 'SIBOS', 'CCIP'];
+  var KEEP_CAPS = ['LFG', 'ZK', 'MSTR', 'STRC', 'RPCS', 'JPEG', 'XRP', 'NIGHT', 'OP_RETURN', 'SIBOS', 'CCIP', 'SAFU', 'FUD'];
   function titleCase(s) {
     return s.split(' ').map(function (w) {
       if (KEEP_CAPS.indexOf(w.replace(/[^A-Z_]/g, '')) >= 0) return w;
@@ -42,7 +42,7 @@
   var BUTTONS = ['strike', 'privacy', 'mint', 'rug'];
   var STATUS_TEXT = {
     blind: '🙈 BLINDED', sleep: '💤 ASLEEP', hypno: '🌀 HYPNOTIZED',
-    hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks', stun: '👀 STARING'
+    hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks', stun: '👀 STARING', shield: '4️⃣ FUD-PROOF'
   };
   // Why someone skips a turn: Mert's dome, Charles's midnight, Sergey's shirt.
   var SKIP = {
@@ -155,7 +155,7 @@
         moves +
         '<span class="pick-super">⚡ ' + esc(F.super.name) + '</span>' +
         '<span class="pick-odds">' + (R.hp[id] || R.hp.default) + ' HP · ' +
-        (F.brace ? esc(moveOf(id, 'privacy').name) + ' halves dmg'
+        (F.brace ? esc(moveOf(id, 'privacy').name) + (F.brace.ignore ? ' blocks red/pink' : ' halves dmg')
           : F.stun ? esc(moveOf(id, 'privacy').name) + ' stuns ' + pct(F.hide) : 'Hide ' + pct(F.hide)) +
         ' · ' + esc(moveOf(id, 'mint').name) + ' ' + pct(F.mint) +
         ' · ' + esc(moveOf(id, 'rug').name) + ' ' + pct(F.rug) + '</span>' +
@@ -330,6 +330,8 @@
       $('.blocks', hud).classList.toggle('full', s.blocks >= D.MAX_BLOCKS);
       var chips = [];
       if (s.hodl > 0) chips.push('<span class="chip good">💎 HODL</span>');
+      if (s.shield > 0) chips.push('<span class="chip good">4️⃣ FUD-PROOF</span>');
+      if (s.stored > 0) chips.push('<span class="chip good">🦭 +' + s.stored + '</span>');
       if (SKIP[s.skipNext]) chips.push('<span class="chip bad">' + SKIP[s.skipNext].icon + ' ' + SKIP[s.skipNext].chip + '</span>');
       if (s.hypnoNext) chips.push('<span class="chip bad">🌀 HYPNO</span>');
       $('.chips', hud).innerHTML = chips.join('');
@@ -351,7 +353,7 @@
     var locked = S.busy || f.over;
     var subs = {
       strike: dmgText(me.id, 'strike', R) + ' dmg · always',
-      privacy: F.brace ? '½ dmg · always' : F.stun ? 'Stun · ' + pct(F.hide) : 'Hide ' + pct(F.hide),
+      privacy: F.brace ? (F.brace.ignore ? 'Blocks red/pink' : '½ dmg · always') : F.stun ? 'Stun · ' + pct(F.hide) : 'Hide ' + pct(F.hide),
       mint: dmgText(me.id, 'mint', R) + ' dmg · ' + pct(F.mint),
       rug: dmgText(me.id, 'rug', R) + ' dmg · ' + pct(F.rug)
     };
@@ -469,6 +471,15 @@
       case 'miss':
         lunge(e.attacker);
         await sleep(170);
+        if (e.ignored) {
+          // CZ: red and pink bounce off his Ignore FUD (anything but a Super, after his own Super).
+          AU.play('deflect');
+          var tb = D.FIGHTERS[S.fight.f[e.target].id].brace;
+          popup(e.target, (tb && tb.ignoreLine) || 'IGNORED', 'ignore');
+          log(who(e.target) + (e.target === 0 ? ' ignore' : ' ignores') + ' it.');
+          await sleep(750);
+          break;
+        }
         AU.play('whiff');
         var dodge = D.FIGHTERS[S.fight.f[e.target].id].dodgeLine; // Charles: I AM NOT ACCOUNTABLE
         if (dodge) banner(dodge, (e.target === 0 ? 'You' : nm(e.target)) + ' dodged it');
@@ -482,7 +493,8 @@
         AU.move(S.fight.f[e.who].id, 'privacy', e.ok ? 'ok' : 'fail');
         var pv = moveOf(S.fight.f[e.who].id, 'privacy');
         if (e.brace) {
-          banner(pv.ok, 'Half damage this turn');
+          var fb = D.FIGHTERS[S.fight.f[e.who].id].brace;
+          banner(pv.ok, fb.ignore ? 'Red and pink do nothing this turn, purple does half' : 'Half damage this turn');
           await sleep(1050);
         } else if (e.stun && e.ok) {
           // Sergey's shirt: no hiding, the pattern does the work. They lose their next turn.
@@ -518,14 +530,15 @@
 
       case 'status':
         render(e.snap);
-        AU.play({ pruned: 'prune', drain: 'drain', hodl: 'hodl' }[e.status]);
+        AU.play({ pruned: 'prune', drain: 'drain', hodl: 'hodl', shield: 'hodl', stored: 'stored' }[e.status]);
         var pruneLine = e.status === 'pruned' && D.FIGHTERS[S.fight.f[1 - e.who].id].super.pruneLine;
         if (pruneLine) {
           banner(pruneLine, whose(e.who) + ' HODL pruned'); // Adam: SALTY TEARS
           await sleep(1150);
           break;
         }
-        popup(e.who, e.status === 'drain' ? '-' + e.amount + ' Blocks' : STATUS_TEXT[e.status], e.status === 'hodl' ? 'good' : 'status');
+        popup(e.who, e.status === 'drain' ? '-' + e.amount + ' Blocks' : e.status === 'stored' ? '🦭 +' + e.amount + ' STORED' : STATUS_TEXT[e.status],
+          /^(hodl|shield|stored)$/.test(e.status) ? 'good' : 'status');
         await sleep(800);
         break;
 
@@ -567,11 +580,12 @@
   function hitSound(e) {
     if (e.self) { AU.play('hit'); AU.play('selfhit'); return; }
     var id = S.fight.f[e.attacker].id;
-    if (e.move === 'super') AU.play(CROWDS.indexOf(D.FIGHTERS[id].super.id) >= 0 ? 'stomp' : 'heavy');
+    if (e.move === 'super') AU.play(SUPER_HIT[D.FIGHTERS[id].super.id] || 'heavy');
     else if (!(e.of > 1 && e.n > 1)) AU.move(id, e.move, 'ok');
   }
 
-  var CROWDS = ['xrparmy', 'linkmarines']; // multi-hit Supers that are a crowd running over you
+  // Multi-hit Supers with their own hit sound: crowds stomp, Adeniyi's wave splashes.
+  var SUPER_HIT = { xrparmy: 'stomp', linkmarines: 'stomp', agentswarm: 'splash' };
 
   async function doHit(e) {
     var multi = e.of > 1;
@@ -603,10 +617,14 @@
     var hm = e.move === 'super' ? null : moveOf(S.fight.f[e.attacker].id, e.move);
     // The stock ticker over the attacker: the roll is the day's move.
     if (hm && hm.ticker) popup(e.attacker, hm.ticker + ' ▲ ' + e.base + '%', 'good ticker');
+    // Adeniyi's Walrus paying back a stored hit: a banner on a plain hit, a small tag when the hit has its own banner.
+    var walrusBanner = e.bonus && e.move === 'strike';
+    if (walrusBanner) banner(D.FIGHTERS[S.fight.f[e.attacker].id].walrus.line, '+' + e.bonus + ' damage from Walrus');
+    else if (e.bonus) popup(e.attacker, '🦭 +' + e.bonus, 'good');
     if (e.pierced) banner(hm.pierce, stolen || "Hiding didn't help");
     else if (e.move === 'rug' || e.move === 'mint') banner(hm.ok, stolen);
     if (!multi) log(who(e.attacker) + ' hit ' + (e.target === 0 ? 'you' : nm(e.target)) + ' for ' + e.amount + '.');
-    await sleep(multi ? 240 : (e.move === 'rug' || e.move === 'mint') ? 1050 : 650);
+    await sleep(multi ? 240 : (e.move === 'rug' || e.move === 'mint' || walrusBanner) ? 1050 : 650);
   }
 
   // ---------- Effects ----------
@@ -842,8 +860,31 @@
       marine() + marine() + '</div>';
   }
 
+  // CZ: the white Nissan SUV pulls up ("My Lamborghini"), then FUD, FAKE NEWS and ATTACKS fly at him and shatter.
+  function fourDeco() {
+    var suv = '<svg viewBox="0 0 220 110" aria-hidden="true">' +
+      '<path d="M14 78 L18 52 Q22 44 32 42 L62 40 L84 18 Q88 14 96 14 L172 14 Q182 14 186 22 L200 44 Q208 46 208 56 L208 78 Z" fill="#f4f4f2" stroke="#111" stroke-width="4" stroke-linejoin="round"/>' +
+      '<path d="M90 22 L118 22 L118 42 L72 42 Z M126 22 L166 22 Q172 22 175 28 L182 42 L126 42 Z" fill="#26313f" stroke="#111" stroke-width="3" stroke-linejoin="round"/>' +
+      '<rect x="12" y="60" width="12" height="8" rx="2" fill="#ffd23f" stroke="#111" stroke-width="2"/><rect x="198" y="56" width="10" height="8" rx="2" fill="#e33" stroke="#111" stroke-width="2"/>' +
+      '<circle cx="56" cy="80" r="17" fill="#222" stroke="#111" stroke-width="4"/><circle cx="56" cy="80" r="7" fill="#9aa1ab"/>' +
+      '<circle cx="168" cy="80" r="17" fill="#222" stroke="#111" stroke-width="4"/><circle cx="168" cy="80" r="7" fill="#9aa1ab"/></svg>';
+    return '<div class="nissan">' + suv + '<b class="army-bubble">MY LAMBORGHINI</b></div>' +
+      ['FUD', 'FAKE NEWS', 'ATTACKS'].map(function (w, k) {
+        return '<b class="fud" style="--k:' + k + '">' + w + '</b>';
+      }).join('');
+  }
+
+  // Adeniyi: Sui is water. A wave rolls across carrying a swarm of little agents.
+  function swarmDeco() {
+    var bots = '';
+    for (var k = 0; k < 14; k++) bots += '<span style="--k:' + k + '">🤖</span>';
+    return '<div class="wave"><div class="wave-crest"></div><div class="wave-bots">' + bots + '</div></div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
+      case 'four': return { screen: fourDeco() };
+      case 'agentswarm': return { screen: swarmDeco() };
       case 'linkmarines': return { screen: marinesDeco(ctx) };
       case 'salesman': return salesDeco(ctx);
       case 'dance': return { screen: badgerDanceDeco() };
@@ -1167,6 +1208,7 @@
     if (fx.drain) parts.push('they lose ' + fx.drain + ' Blocks');
     if (fx.hypno) parts.push('Hypnotized (their next red, pink or purple hits themselves)');
     if (fx.hodl) parts.push('HODL (you take half damage this turn and next)');
+    if (fx.shield) parts.push('FUD-proof (red, pink and purple do nothing to you this turn and next)');
     var out = parts.join(' + ');
     return out.charAt(0).toUpperCase() + out.slice(1);
   }
@@ -1187,8 +1229,12 @@
       ? '<p>Your buttons as ' + esc(F.name) + '. Every fighter has the same five, under their own names: same color, same job.</p>'
       : '<p>Every fighter has the same five buttons under their own names (Toly\'s red is Comrades, Saylor\'s purple is MSTR): same color, same job. ' +
         'Your fighter\'s damage and odds are on each button.</p>';
-    var blue = F && F.brace
+    var blue = F && F.brace && F.brace.ignore
+      ? 'never hides. It always works: red and pink do nothing to you this turn, purple does half, and it gives +' + F.brace.blocks + ' Block.'
+      : F && F.brace
       ? 'never hides. It always works, halves damage from red, pink and purple this turn, and gives +' + F.brace.blocks + ' Block.'
+      : F && F.walrus
+      ? 'try to hide' + odds('hide') + '. Hidden, red and pink miss you; purple and Supers still hit. A hit you dodge is stored on Walrus and added to your next hit that lands.'
       : F && F.stun
       ? 'never hides, so their attack this turn still lands. When it works' + odds('hide') + ', they stare at the pattern and lose their next turn.'
       : 'try to hide' + odds('hide') + '. Hidden, red and pink miss you' +
@@ -1199,7 +1245,9 @@
       ['strike', 'mint', 'rug'].forEach(function (b) {
         if (dmgText(id, b, R) !== String(R[b])) bits.push(moveOf(id, b).name + ' does ' + dmgText(id, b, R));
       });
-      if (X.brace) bits.push(moveOf(id, 'privacy').name + ' never hides (it halves the damage instead)');
+      if (X.brace && X.brace.ignore) bits.push(moveOf(id, 'privacy').name + ' never hides (red and pink do nothing to him, purple does half)');
+      else if (X.brace) bits.push(moveOf(id, 'privacy').name + ' never hides (it halves the damage instead)');
+      if (X.walrus) bits.push(moveOf(id, 'privacy').name + ' stores a dodged hit and adds it to his next one');
       if (X.stun) bits.push(moveOf(id, 'privacy').name + ' never hides (when it works, they lose their next turn)');
       if (!bits.length) return '';
       var list = bits.length > 1 ? bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1] : bits[0];
@@ -1228,6 +1276,8 @@
       '<li>🙈 <b>Blind</b> / 💤 <b>Asleep</b> / 👀 <b>Staring</b> (Sergey\'s shirt): skip your next turn.</li>' +
       '<li>🌀 <b>Hypnotized</b>: your next red, pink or purple hits yourself. Blue or Super is safe.</li>' +
       '<li>💎 <b>HODL</b>: take half damage this turn and next.</li>' +
+      '<li>4️⃣ <b>FUD-proof</b> (CZ\'s Super): red, pink and purple do nothing to him this turn and next. Supers still hit.</li>' +
+      '<li>🦭 <b>Stored</b> (Adeniyi\'s Walrus): a hit he dodged, added to his next hit that lands.</li>' +
       '<li>🛡️ <b>Braced</b> (Saylor\'s STRF): half damage from red, pink and purple this turn. Supers aren\'t halved.</li></ul>' +
       '<h3>Order of a turn</h3>' +
       '<p>Skips and hypnosis from last turn, then Supers, then blue, then red / pink / purple. You go first in each step. ' +
