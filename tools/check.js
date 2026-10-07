@@ -27,6 +27,7 @@ function cpuRoll(cpuId, move) {
   return (before + w[move] / 2) / total;
 }
 function has(events, pred) { return events.some(pred); }
+var EVERYONE = D.ROSTER.concat(Object.keys(D.BOSSES)); // every kit: founders and story bosses
 
 test('Supers cannot be dodged (XRP Army vs a successful hide)', function () {
   var f = E.newFight({ player: 'garlinghouse', cpu: 'adam', seed: 1 });
@@ -195,7 +196,7 @@ test('Mert Super KO reads TRILLIONS', function () {
 });
 
 test('Renamed buttons fit on a phone and have their banner lines', function () {
-  D.ROSTER.forEach(function (id) {
+  EVERYONE.forEach(function (id) {
     var F = D.FIGHTERS[id];
     Object.keys(F.moves || {}).forEach(function (m) {
       var mv = F.moves[m];
@@ -216,7 +217,7 @@ test('Renamed buttons fit on a phone and have their banner lines', function () {
 
 test('Fighter art files exist (head = portrait, body = stage sprite)', function () {
   var fs = require('fs'), path = require('path');
-  D.ROSTER.forEach(function (id) {
+  EVERYONE.forEach(function (id) {
     var art = D.FIGHTERS[id].art || {};
     Object.keys(art).forEach(function (k) {
       assert(k === 'head' || k === 'body', id + ': unknown art slot ' + k);
@@ -498,14 +499,15 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
       assert(v.d > 0 && v.d < 6, id + ': length');
     });
   }
-  D.ROSTER.forEach(function (id) {
+  EVERYONE.forEach(function (id) {
     [['strike', 'ok'], ['strike', 'miss'], ['privacy', 'ok'], ['privacy', 'fail'], ['mint', 'ok'], ['mint', 'fail'],
       ['rug', 'ok'], ['rug', 'fail']].forEach(function (p) {
       AU.moveSounds(id, p[0], p[1]).forEach(function (s) { check(s); });
     });
     check('super.' + D.FIGHTERS[id].super.id, { chars: [0.5, 0.6], off: 2.8 });
   });
-  ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'deflect', 'stored', 'splash', 'flop', 'selfhit', 'super.astronaut']
+  ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'deflect', 'stored', 'splash', 'flop', 'selfhit', 'super.astronaut',
+    'assist', 'satoshi', 'coin', 'tick', 'clank']
     .forEach(function (s) { check(s); });
   Object.keys(AU.CLIPS).forEach(function (id) {
     var c = AU.CLIPS[id];
@@ -519,6 +521,53 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
     assert(m.loopStart < m.loopEnd, k + ': loop points');
     assert(require('fs').existsSync(require('path').join(__dirname, '..', m.src)), k + ': missing ' + m.src);
   });
+});
+
+test('Story: bosses are full kits that never show up in Free play or the Daily Fight', function () {
+  Object.keys(D.BOSSES).forEach(function (id) {
+    var B = D.FIGHTERS[id];
+    assert.strictEqual(B, D.BOSSES[id], id + ': registered in FIGHTERS');
+    assert(D.ROSTER.indexOf(id) < 0, id + ': not in the roster');
+    assert(D.STORY.ladder.some(function (r) { return r.id === id; }), id + ': on the ladder');
+    assert(B.boss.hp > 0 && B.boss.stage && B.boss.stage.sky, id + ': HP and a stage');
+    assert(D.SUPERS[B.super.id], id + ': Super effect');
+    var f = E.newFight({ player: 'toly', cpu: id, seed: 1 });
+    assert.strictEqual(f.f[1].hp, B.boss.hp, id + ': fights with boss HP');
+  });
+  D.ROSTER.forEach(function (id) { assert(D.FIGHTERS[id].assistLine, id + ': needs an assistLine'); });
+});
+
+test('Story: the ally jumps in once, at 35% HP or lower, for 20 that nothing stops', function () {
+  var f = E.newFight({ player: 'toly', cpu: 'schiff', seed: 1 });
+  assert(!E.canAssist(f), 'not at full HP');
+  f.f[0].hp = Math.floor(f.f[0].maxHp * D.STORY.assistAt);
+  assert(E.canAssist(f), 'lit at 35%');
+  f.f[1].shield = 2; f.f[1].hodl = 2;
+  var ev = E.assist(f, 'mert');
+  assert.strictEqual(f.f[1].hp, D.BOSSES.schiff.boss.hp - D.STORY.assistDmg, 'no halving, no shield');
+  assert.strictEqual(ev[0].line, D.FIGHTERS.mert.assistLine);
+  assert(!E.canAssist(f), 'once per fight');
+  assert.throws(function () { E.assist(f, 'mert'); });
+  var g = E.newFight({ player: 'toly', cpu: 'schiff', seed: 1 });
+  g.f[0].hp = 10; g.f[1].hp = 15;
+  ev = E.assist(g, 'saylor');
+  assert(g.over && g.winner === 0, 'an assist can land the KO');
+  assert.strictEqual(g.finish, 'THERE IS NO SECOND BEST', 'Saylor has his own line for Schiff');
+  assert(ev.some(function (e) { return e.t === 'ko' && e.cause === 'assist'; }));
+});
+
+test('Story: Satoshi gets a knocked-out fighter back up with half HP, and the fight goes on', function () {
+  var f = E.newFight({ player: 'vitalik', cpu: 'schiff', seed: 7 });
+  while (!f.over) E.playTurn(f, E.playerStatus(f).skipped ? null : 'privacy');
+  assert(f.winner === 1 && f.f[0].hp === 0, 'blue only loses');
+  var turn = f.turn, bossHp = f.f[1].hp;
+  E.revive(f, 0);
+  assert(!f.over && f.winner === null && f.finish === null);
+  assert.strictEqual(f.f[0].hp, Math.ceil(f.f[0].maxHp * D.STORY.reviveHp));
+  assert.strictEqual(f.f[1].hp, bossHp, 'the boss keeps their HP');
+  assert.strictEqual(f.turn, turn + 1);
+  E.playTurn(f, 'strike');
+  assert.throws(function () { var g = E.newFight({ player: 'toly', cpu: 'schiff', seed: 1 }); E.revive(g, 0); }, 'only after a KO');
 });
 
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {

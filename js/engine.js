@@ -68,7 +68,8 @@
 
   function makeFighter(id, rules) {
     if (!D.FIGHTERS[id]) throw new Error('Unknown fighter: ' + id);
-    var hp = rules.hp[id] || rules.hp.default;
+    var boss = D.FIGHTERS[id].boss;
+    var hp = (boss && boss.hp) || rules.hp[id] || rules.hp.default;
     // shield: turns left of CZ's FUD-proof (red, pink and purple do nothing). stored: Adeniyi's Walrus bonus.
     return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0, shield: 0, stored: 0 };
   }
@@ -368,6 +369,51 @@
     return ev;
   }
 
+  // ---------- Story mode ----------
+  // The ally's hit: once per fight, when you're at STORY.assistAt of your HP or lower. It happens between
+  // turns, uses no dice (so the fight's luck is unchanged) and can't be dodged, braced or halved.
+  function canAssist(fight) {
+    var me = fight.f[0];
+    return !fight.over && !fight.assisted && me.hp > 0 && me.hp <= me.maxHp * D.STORY.assistAt;
+  }
+
+  function assist(fight, allyId) {
+    if (!canAssist(fight)) throw new Error('Assist not available');
+    var ally = D.FIGHTERS[allyId], tgt = fight.f[1];
+    if (!ally) throw new Error('Unknown fighter: ' + allyId);
+    var B = D.FIGHTERS[tgt.id], pair = B.boss && B.boss.allyLines && B.boss.allyLines[allyId];
+    var line = pair || ally.assistLine || 'TAG TEAM';
+    fight.assisted = allyId;
+    var n = Math.min(D.STORY.assistDmg, tgt.hp);
+    tgt.hp -= n;
+    var ev = [{ t: 'assist', ally: allyId, line: line, amount: n, snap: snapshot(fight) }];
+    if (tgt.hp <= 0) {
+      fight.over = true;
+      fight.winner = 0;
+      fight.finish = line;
+      fight.finishCause = 'assist';
+      ev.push({ t: 'ko', winner: 0, loser: 1, finish: line, cause: 'assist', snap: snapshot(fight) });
+    }
+    return ev;
+  }
+
+  // Satoshi: a knocked-out fighter gets back up with STORY.reviveHp of their HP and the fight goes on
+  // from the next turn. Statuses aimed at them are cleared; the opponent keeps everything.
+  function revive(fight, who) {
+    var me = fight.f[who];
+    if (!fight.over || fight.winner === who || me.hp > 0) throw new Error('Nothing to revive');
+    me.hp = Math.ceil(me.maxHp * D.STORY.reviveHp);
+    me.skipNext = null;
+    me.hypnoNext = false;
+    fight.over = false;
+    fight.winner = null;
+    fight.finish = null;
+    fight.finishCause = null;
+    fight.revived = (fight.revived || 0) + 1;
+    fight.turn++;
+    return [{ t: 'revive', who: who, hp: me.hp, snap: snapshot(fight) }];
+  }
+
   // Rebuild a finished fight from its seed + player move log (for result links).
   function replay(opts, moveLog) {
     var fight = newFight(opts);
@@ -389,6 +435,9 @@
     snapshot: snapshot,
     moveDamage: moveDamage,
     damageRange: damageRange,
-    replay: replay
+    replay: replay,
+    canAssist: canAssist,
+    assist: assist,
+    revive: revive
   };
 });

@@ -1,6 +1,6 @@
 # Fighter art
 
-Each fighter gets two images, made in Grok Imagine. The first seven got theirs Oct 3, 2026, Sergey Oct 4, CZ and Adeniyi Oct 7. A new fighter without art falls back to their emoji head and block body until theirs is made.
+Each fighter gets two images, made in Grok Imagine. (Story mode's bosses, Satoshi and the boss stages have their prompts in [docs/story/](../story/README.md).) The first seven got theirs Oct 3, 2026, Sergey Oct 4, CZ and Adeniyi Oct 7. A new fighter without art falls back to their emoji head and block body until theirs is made.
 
 ## The look (locked Oct 2, 2026)
 

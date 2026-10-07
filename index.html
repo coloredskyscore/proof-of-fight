@@ -43,6 +43,7 @@
 
         <button id="btn-daily" class="btn btn-big btn-gold" type="button"></button>
         <button id="btn-free" class="btn btn-big" type="button">🥊 Free play</button>
+        <button id="btn-story" class="btn btn-big btn-story" type="button" hidden>📖 Story</button>
         <button id="btn-help" class="btn btn-ghost" type="button">How to play</button>
 
         <p id="title-stats" class="title-stats"></p>
@@ -69,6 +70,19 @@
       </header>
       <button id="pick-suggest" class="btn btn-suggest" type="button">⭐ First fight: <b>Saylor vs Mert</b></button>
       <div id="pick-grid" class="pick-grid"></div>
+    </section>
+
+    <!-- STORY: the boss ladder -->
+    <section id="screen-story" class="screen" hidden>
+      <header class="pick-head">
+        <button id="story-back" class="btn btn-ghost btn-sm" type="button">← Menu</button>
+        <h2>Story</h2>
+      </header>
+      <div class="story-you" id="story-you"></div>
+      <ol class="ladder" id="ladder"></ol>
+      <button id="story-fight" class="btn btn-big btn-gold" type="button"></button>
+      <p class="story-note" id="story-note"></p>
+      <button id="story-quit" class="btn btn-ghost btn-sm" type="button">Abandon this run</button>
     </section>
 
     <!-- FIGHT -->
@@ -101,6 +115,7 @@
         <div class="sky"></div>
         <div class="skyline" id="skyline" aria-hidden="true"></div>
         <div class="ground"></div>
+        <button class="assist-btn" id="btn-assist" type="button" hidden aria-label="Call in your ally"></button>
         <div class="fighter side-p" id="fighter-p"></div>
         <div class="fighter side-c" id="fighter-c"></div>
         <div class="popups" id="popups" aria-hidden="true"></div>
@@ -144,6 +159,48 @@
     <div class="ks-art"></div>
     <div class="ks-small">FIAT AS A STORE OF VALUE</div>
     <div class="ks-big">WE CALL THEM POOR</div>
+  </div>
+
+  <!-- STORY: an ally jumps in -->
+  <div class="assistin" id="assistin" hidden aria-live="assertive">
+    <div class="ai-face"></div>
+    <div class="ai-card"><small>ASSIST</small><div class="ai-name"></div></div>
+    <div class="ai-line"></div>
+  </div>
+
+  <!-- STORY: Satoshi (revive and ending) -->
+  <div class="satoshi" id="satoshi" hidden aria-live="assertive">
+    <div class="sat-glow"></div>
+    <div class="sat-fig"></div>
+    <div class="sat-small"></div>
+    <div class="sat-big"></div>
+    <div class="sat-vanish"></div>
+  </div>
+
+  <!-- STORY: pick an ally before a boss -->
+  <div class="modal" id="modal-assist" hidden>
+    <div class="modal-card assist-card" role="dialog" aria-modal="true" aria-labelledby="assist-title">
+      <div class="res-kicker" id="assist-kicker"></div>
+      <h2 id="assist-title">Pick your ally</h2>
+      <p class="assist-how">Once this fight, when you're at 35% HP or lower, they jump in for 20 damage that can't be dodged. It doesn't use your turn.</p>
+      <div class="ally-grid" id="ally-grid"></div>
+      <button class="btn btn-ghost" id="assist-cancel" type="button">Back</button>
+    </div>
+  </div>
+
+  <!-- STORY: after a boss fight (next boss, CONTINUE?, or the end of the run) -->
+  <div class="modal" id="modal-story" hidden>
+    <div class="modal-card result-card story-card" role="dialog" aria-modal="true" aria-labelledby="st-title">
+      <div class="res-kicker" id="st-kicker"></div>
+      <h2 class="res-title" id="st-title"></h2>
+      <div class="res-faces" id="st-faces"></div>
+      <p class="res-line" id="st-line"></p>
+      <div class="res-finish" id="st-finish"></div>
+      <p class="res-quote" id="st-quote" hidden></p>
+      <div class="st-count" id="st-count" hidden></div>
+      <p class="res-meta" id="st-meta"></p>
+      <div class="res-actions" id="st-actions"></div>
+    </div>
   </div>
 
   <!-- RESULT -->

@@ -4,6 +4,7 @@ A turn-based crypto founder brawl that runs in any browser. It looks like a 2D a
 
 - **Daily Fight:** the same matchup and luck for everyone each day. One try, then share your emoji grid.
 - **Free Play:** any fighter against any CPU.
+- **Story** (in progress, hidden until it's done; `?story` turns it on): beat five bosses in a row with one founder, with an ally's assist and Satoshi's one revive. See [docs/story/](docs/story/README.md).
 - Parody. No wallet, no tokens, no sign-up.
 
 The full design is in **[GAMEPLAN.md](GAMEPLAN.md)**.

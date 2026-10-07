@@ -1,6 +1,6 @@
 # Story mode
 
-**Status:** planned Oct 7, 2026. The run order, Satoshi and the assists are agreed; art and music are being made. Prompts for every image and song are below.
+**Status:** the framework and boss 1 (Schiff) are built (Oct 7, 2026). Story is hidden until the other four bosses are in: open **proofoffight.com/?story** once and the 📖 Story button shows up on that phone or computer from then on. Prompts for every image and song are below.
 
 ## The story
 
@@ -157,6 +157,41 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 | `ending` | After WICK | `instrumental triumphant dubstep anthem, 142 BPM, epic choir, soaring synth lead, emotional build into a massive victory drop` |
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
+
+## What's in the game (Oct 7, 2026)
+
+- **📖 Story** on the title screen (after `?story`), or **Resume story · Boss N** when a run is saved.
+- **Pick your fighter**, then the **ladder**: a tower with the final boss on top. Rungs whose boss isn't built yet say *coming soon*, and the final boss is `???` until you reach it.
+- **Pick your ally** before every boss. A ⭐ marks an ally with their own line against that boss.
+- **The fight:** the boss's stage colors (their background art replaces them once it's made), the boss's HP, and your ally's face in the top-left corner. It lights up gold at 35% HP: tap it (or press A) and they slide in, shout their line, and hit for 20. An assist can land the knockout.
+- **Knocked out with Satoshi unused:** he turns into view, `STAND UP.` / `WE'RE ALL COUNTING ON YOU.`, turns away with `I'VE MOVED ON TO OTHER THINGS.`, and you're back up with half your HP. Until his art is made he's drawn as a sliced-steel hooded figure with a laptop.
+- **Losing after that:** **CONTINUE?** with a 10-second countdown. Continue restarts that boss fight (a coin goes in); Give up or zero ends the run with a **GAME OVER** card you can share.
+- **Winning:** a **BOSS DOWN** card (the boss's loser line, share, Post on X, Next boss). After the final boss, Satoshi's ending lines, then **STORY COMPLETE**.
+- **Saving:** the run is saved between fights. Leaving mid-fight keeps your place on the ladder; that fight starts over.
+- **Music:** each boss plays their own song once it's added; until then, the fight song.
+
+**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi.
+
+**Where it lives:** the bosses and `STORY` settings in `js/data.js`; `assist()` and `revive()` in `js/engine.js`; the ladder, ally pick, Satoshi and the after-fight cards in `js/app.js` (search "Story mode"); styles in `css/style.css` (search "Story mode").
+
+## Boss 1: Peter Schiff (draft, built Oct 7, 2026)
+
+Drafted from his public record, so every line is something he said or is famous for. Edit anything.
+
+| Button | Name | Lands | Flops |
+|---|---|---|---|
+| 🔴 Red (10 dmg) | 🫥 Fake Asset | KO: `BACKED BY NOTHING` (what he told CZ about Bitcoin, Dec 2025) | can't fail |
+| 🔵 Blue (hide 25%) | 🔒 The Vault | `ALLOCATED. VAULTED.` (his TGold pitch) | `MY WALLET WAS CORRUPTED` (Jan 2021, when he lost his own bitcoin) |
+| 🩷 Pink (24 dmg, 40%) | 📉 $10K Call | `BITCOIN TO $10,000` (still his call in Oct 2026) | `NEW ALL-TIME HIGH` |
+| 🟣 Purple (36 dmg, 20%) | 🧈 Gold Bar | `HEAVY METAL` · through a dodge: `PHYSICAL DELIVERY` | `IT WAS TUNGSTEN` (the fake gold bar; CZ brought a mystery "gold" box to their debate) |
+
+**Super: Gold Rush** (4 hits of 7). Gold bars rain down and stack up, a ticker reads `GOLD ▲ / BTC → $10K`, and the line is the catchphrase: `BUY GOLD`. Super KO: `TOLD YOU SO`. After his Super, if you're still standing: `STILL THINK IT'S DIGITAL GOLD?`
+
+**When he loses:** `I COULD HAVE MADE A LOT OF MONEY` (his own words about Bitcoin, 2026).
+
+**Rivals:** Saylor beating him: `THERE IS NO SECOND BEST`. CZ beating him: `TRUST ME BRO` (what CZ called tokenized gold before their debate). Schiff beating Saylor: `NO MORE STRC` (his Oct 2026 take on Strategy). As allies against him, Saylor shouts `THERE IS NO SECOND BEST` and CZ `TRUST ME BRO`; everyone else shouts their own line.
+
+**Until the art:** a gold coin face 🪙 on the block body, on a gold-vault-colored stage.
 
 ## The kits
 

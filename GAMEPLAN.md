@@ -574,7 +574,7 @@ Write these in `later.md` if they nag you. They are not v1.
 - Human vs human
 - Simultaneous move lock-in
 - 3-person party
-- Campaign vs Warren / Gensler
+- ~~Campaign vs Warren / Gensler~~ Now Story mode: Schiff, Dimon, Warren, Sam Bankman-Fried, then WICK ([docs/story/](docs/story/README.md))
 - Full anime video supers
 - Marketplace, tokens, repair sinks
 - Custom per-fight OG image worker + short IDs (`pof.gg/r/x7k2`)
@@ -597,8 +597,9 @@ Do not point DNS at an empty repo.
 3. ~~Play it until a Super cut-in makes you laugh. Tune numbers in `js/data.js`.~~ Done: all seven kits.
 4. ~~Caricature portraits and sprites.~~ Done: all seven ([docs/art/](docs/art/README.md)).
    ~~Sound: music, effects, mute.~~ Done ([docs/audio/](docs/audio/README.md)).
-   New fighters: Sergey, CZ and Adeniyi done. Next: story mode.
-   **← You are here.** Next: step 5.
+   New fighters: Sergey, CZ and Adeniyi done.
+   Story mode: the framework and boss 1 (Schiff) built Oct 7, behind `?story` until the other four bosses are in ([docs/story/](docs/story/README.md)).
+   **← You are here.** Next: the other bosses, then step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. ~~Then GitHub Pages or Cloudflare Pages.~~ Staying on GitHub Pages (free; soft limit 100 GB of traffic a month, roughly 40,000 first visits). Move to Cloudflare Pages only if traffic gets near that.
 7. ~~Then Porkbun DNS: `proofoffight.com` → that host.~~ Done Oct 5: Porkbun DNS points at GitHub Pages; hello@proofoffight.com forwards to the project inbox.
@@ -666,6 +667,8 @@ It's the suggested fight in Free Play and it's **Daily Fight #1**.
 | `css/style.css` | The look. |
 | `tools/sim.js` | `node tools/sim.js` plays thousands of fights and prints win rates per fighter. Run it after changing numbers. |
 | `tools/check.js` | `node tools/check.js` checks the rules still work (Supers can't be dodged, Blind skips one turn, etc.). |
+| `tools/story-sim.js` | `node tools/story-sim.js`: every founder against every story boss, with and without the assist and Satoshi. |
+| `docs/story/` | Story mode: the bosses, the assists, Satoshi, and the Grok and Suno prompts for their art and music. |
 | `docs/supers/` | One doc per fighter (Super concept, button names), plus a README of the slots the game supports. |
 | `art/` | Fighter portraits and sprites (`<id>-head.webp`, `<id>-body.webp`). |
 | `tools/art.py` | Cuts the white background off a Grok image and sizes it for the game (needs Pillow). |
