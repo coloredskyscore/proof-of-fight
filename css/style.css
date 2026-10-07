@@ -1152,9 +1152,11 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .rung.is-next { border-color: var(--gold); box-shadow: 0 4px 0 var(--line), 0 0 18px #ffd23f55; }
 .rung.is-next .rung-tag { background: var(--gold); color: #1a1200; }
 .rung.is-next:not(.is-soon) .rung-tag { animation: pulse 1s ease-in-out infinite; }
-.rung.is-beaten { opacity: .62; }
 .rung.is-beaten .rung-tag { background: var(--good); color: #062b1c; }
-.rung.is-beaten .rung-face { filter: grayscale(1); }
+.rung.is-beaten .rung-face { filter: grayscale(.7); }
+.rung[data-rung] { cursor: pointer; }
+.rung[data-rung]:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.rung[data-rung]:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .rung.is-locked .rung-face { filter: brightness(.45) saturate(.4); }
 .rung.is-soon .rung-txt small::after { content: ' · coming soon'; }
 .story-note { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.45; }
