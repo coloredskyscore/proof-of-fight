@@ -17,6 +17,7 @@ Two songs (made by the user in Suno), seven recorded sounds picked from free CC0
 |---|---|---|---|---|
 | `audio/menu.mp3` | Title_Screen_Drop.mp3 (202s) | 142.5 BPM | starts 2 bars before the first drop (30.19s) | the 24 bars from the first drop (33.56s) to the second (73.97s) |
 | `audio/fight.mp3` | Fight_Track.mp3 (77s) | 150 BPM | starts at the drop hit (12.85s) | the 37 bars of full energy (13.41s to 72.58s) |
+| `audio/schiff.mp3` | Schiff-music.mp3 (193s), story boss 1 | 153 BPM | starts at the last drop's hit (142.97s) | the 20 bars after it (146.20s to 177.53s), the loudest stretch |
 
 The loop points were found by fitting a beat grid and matching the audio on both sides of the seam; the menu loop's best match landed on exactly 24 bars. `tools/music.py` bakes a crossfade into the seam, so it loops without a click even when a browser pads the start of an MP3. To swap a song:
 
@@ -40,6 +41,7 @@ The shared sounds that play most often are recordings, chosen by ear on a listen
 | `lose` | `audio/sfx/lose.mp3` | result screen, you lost | `jingles_NES00` from the same pack |
 | `ready` | `audio/sfx/ready.mp3` | your Super meter fills | `confirmation_002` from Kenney's [Interface Sounds](https://kenney.nl/assets/interface-sounds) |
 | `tap` | `audio/sfx/tap.mp3` | any button | `select_001` from the same pack |
+| `satoshi` | `audio/sfx/satoshi.mp3` | Story: Satoshi's revive and the ending | the first 6.2 seconds of the user's Suno track Soft_Bell_Pads (stereo, 1.4s fade): `python3 tools/clip.py Soft_Bell_Pads.mp3 audio/sfx/satoshi.mp3 --from 0 --to 6.2 --fade 1.4 --stereo` |
 
 The files came from the [open-game-sfx-index](https://github.com/Mcamento8/open-game-sfx-index) mirror (kenney.nl and OpenGameArt aren't reachable from the build machine); each matched the mirror's checksum. `tools/clip.py` trims the silence, makes them mono, levels every file to the same peak and saves a small MP3; `CLIPS` in `js/audio.js` sets how loud each plays. To swap one:
 

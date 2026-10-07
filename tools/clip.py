@@ -7,6 +7,9 @@ Needs: pip install numpy miniaudio lameenc
 Trims the silence before and after, mixes to mono, levels the peak to -1 dB so every clip starts
 equally loud (js/audio.js sets how loud each one plays), adds tiny fades so nothing clicks, and
 saves a small MP3 (every browser plays MP3; iPhones don't all play OGG).
+
+A piece of a longer song (Satoshi's pads) keeps its stereo and gets a slow fade at the end:
+  python3 tools/clip.py Soft_Bell_Pads.mp3 audio/sfx/satoshi.mp3 --from 0 --to 6.2 --fade 1.4 --stereo
 """
 import argparse
 import json
@@ -26,10 +29,33 @@ def main():
     ap.add_argument('source')
     ap.add_argument('out')
     ap.add_argument('--kbps', type=int, default=96)
+    ap.add_argument('--from', dest='start', type=float, help='seconds: cut a piece out of a longer song')
+    ap.add_argument('--to', type=float)
+    ap.add_argument('--fade', type=float, default=0, help='seconds of fade-out at the end of the piece')
+    ap.add_argument('--stereo', action='store_true', help='keep both channels (music)')
     args = ap.parse_args()
 
     d = miniaudio.decode_file(args.source, output_format=miniaudio.SampleFormat.FLOAT32)
     sr = d.sample_rate
+    if args.start is not None:
+        x = np.frombuffer(d.samples, dtype=np.float32).reshape(-1, d.nchannels).astype(np.float64)
+        if not args.stereo:
+            x = x.mean(axis=1, keepdims=True)
+        x = x[int(args.start * sr):int(args.to * sr) if args.to else len(x)]
+        x *= PEAK / np.abs(x).max()
+        fin, fout = int(0.01 * sr), int(max(args.fade, TAIL) * sr)
+        x[:fin] *= np.linspace(0, 1, fin)[:, None]
+        x[-fout:] *= np.linspace(1, 0, fout)[:, None]
+        enc = lameenc.Encoder()
+        enc.set_bit_rate(max(args.kbps, 128) if args.stereo else args.kbps)
+        enc.set_in_sample_rate(sr)
+        enc.set_channels(x.shape[1])
+        enc.set_quality(2)
+        mp3 = enc.encode((np.clip(x, -1, 1) * 32767).astype('<i2').tobytes()) + enc.flush()
+        with open(args.out, 'wb') as f:
+            f.write(mp3)
+        print(json.dumps({'out': args.out, 'seconds': round(len(x) / sr, 3), 'kb': round(len(mp3) / 1024, 1)}))
+        return
     x = np.frombuffer(d.samples, dtype=np.float32).reshape(-1, d.nchannels).mean(axis=1).astype(np.float64)
     loud, tail = np.where(np.abs(x) > START)[0], np.where(np.abs(x) > END)[0]
     assert len(loud), 'the file is silent'

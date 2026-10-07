@@ -1121,10 +1121,201 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   .sup-midnight .vplayer { left: 4%; top: 50%; transform: translateY(-50%); width: min(50%, 440px); }
 }
 
+/* ---------- Story mode ---------- */
+.btn-story { background: linear-gradient(#3a2a12, #22180a); border-color: var(--line); color: #ffe39a; }
+#screen-story { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); gap: 12px; overflow-y: auto; }
+.story-you { display: flex; align-items: center; gap: 12px; }
+.story-you .face, .rung-face, .ally .face {
+  flex: none; display: grid; place-items: center; overflow: hidden;
+  border-radius: 50%; border: 3px solid var(--line); background: var(--c);
+}
+.story-you .face { width: 56px; height: 56px; font-size: 28px; }
+.sy-txt { display: flex; flex-direction: column; min-width: 0; }
+.sy-txt b { font-family: var(--display); font-weight: 400; font-size: 1.2rem; }
+.sy-txt small { color: var(--muted); font-size: .8rem; }
+
+/* The tower: the final boss on top. */
+.ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rung {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border: 3px solid var(--line); border-radius: var(--radius);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--c) 30%, var(--panel)) 0%, var(--panel) 65%);
+  box-shadow: 0 4px 0 var(--line);
+}
+.rung-n { width: 1.6em; text-align: center; font-family: var(--display); color: var(--muted); }
+.rung-face { width: 46px; height: 46px; font-size: 24px; }
+.rung-txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.rung-txt b { font-family: var(--display); font-weight: 400; font-size: 1rem; line-height: 1.15; }
+.rung-txt small { color: var(--muted); font-size: .78rem; }
+.rung-tag { font: 900 .72rem var(--body); letter-spacing: .08em; padding: 3px 8px; border-radius: 6px; background: #0006; color: var(--muted); }
+.rung.is-next { border-color: var(--gold); box-shadow: 0 4px 0 var(--line), 0 0 18px #ffd23f55; }
+.rung.is-next .rung-tag { background: var(--gold); color: #1a1200; }
+.rung.is-next:not(.is-soon) .rung-tag { animation: pulse 1s ease-in-out infinite; }
+.rung.is-beaten { opacity: .62; }
+.rung.is-beaten .rung-tag { background: var(--good); color: #062b1c; }
+.rung.is-beaten .rung-face { filter: grayscale(1); }
+.rung.is-locked .rung-face { filter: brightness(.45) saturate(.4); }
+.rung.is-soon .rung-txt small::after { content: ' · coming soon'; }
+.story-note { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.45; }
+#story-fight:disabled { opacity: .55; cursor: default; }
+#story-quit { align-self: center; }
+
+/* Picking an ally before a boss. */
+.assist-card h2 { font-family: var(--display); font-weight: 400; margin: 4px 0 6px; }
+.assist-how { margin: 0 0 12px; color: var(--muted); font-size: .88rem; line-height: 1.4; }
+.ally-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.ally {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 4px 8px;
+  border: 3px solid var(--line); border-radius: 12px;
+  background: var(--panel-2); color: var(--ink); cursor: pointer;
+  box-shadow: 0 3px 0 var(--line);
+}
+.ally:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.ally .face { width: 48px; height: 48px; font-size: 24px; }
+.ally b { font-size: .78rem; line-height: 1.1; }
+.ally.last { border-color: #6f6690; }
+.ally-star { position: absolute; top: 4px; right: 6px; font-style: normal; font-size: 14px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .ally-grid { grid-template-columns: repeat(5, 1fr); }
+  .assist-how { margin-bottom: 8px; }
+}
+
+/* The ally waiting in the stage's corner; it lights up at low HP. */
+.assist-btn {
+  position: absolute; left: 8px; top: 8px; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer;
+}
+.assist-btn .face {
+  width: 50px; height: 50px; display: grid; place-items: center; overflow: hidden; font-size: 24px;
+  border-radius: 50%; border: 3px solid var(--line); background: var(--c);
+  filter: grayscale(.85) brightness(.6);
+}
+.ab-label { font: 900 .62rem var(--body); letter-spacing: .12em; padding: 1px 6px; border-radius: 4px; background: #000a; }
+.ab-sub { font: 800 .6rem var(--body); color: var(--muted); }
+.assist-btn.ready .face { filter: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--line), 0 0 18px var(--gold); animation: pulse .8s ease-in-out infinite; }
+.assist-btn.ready .ab-label { background: var(--gold); color: #1a1200; }
+.assist-btn.ready .ab-sub { color: var(--gold); }
+.assist-btn:disabled { cursor: default; }
+
+/* The ally's mini cut-in. */
+.assistin {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: 16px; overflow: hidden; cursor: pointer;
+  background: linear-gradient(115deg, #000d 0 30%, color-mix(in srgb, var(--c) 70%, #000) 30% 70%, #000d 70%);
+}
+.ai-face {
+  width: min(46vw, 210px); aspect-ratio: 1; display: grid; place-items: center; overflow: hidden;
+  border-radius: 50%; border: 5px solid var(--line); background: var(--c); font-size: 90px;
+  box-shadow: 0 0 0 4px #fff, 0 10px 0 var(--line);
+}
+.ai-card { text-align: center; }
+.ai-card small { font: 900 .8rem var(--body); letter-spacing: .3em; color: var(--gold); }
+.ai-name { font-family: var(--display); font-size: clamp(26px, 9vw, 44px); line-height: 1; color: #fff; -webkit-text-stroke: 1px var(--line); text-shadow: 0 4px 0 var(--line); }
+.ai-line { font-family: var(--display); font-size: clamp(16px, 5.4vw, 26px); color: var(--gold); text-align: center; max-width: 520px; -webkit-text-stroke: 1px var(--line); text-shadow: 0 3px 0 var(--line); opacity: 0; }
+.assistin.play .ai-face { animation: allyIn 1.7s cubic-bezier(.2, 1, .3, 1) both; }
+.assistin.play .ai-card { animation: slamSmall .35s .2s cubic-bezier(.2, 1.4, .4, 1) both; }
+.assistin.play .ai-line { animation: fadeUp .3s .45s ease-out forwards; }
+@keyframes allyIn {
+  0% { transform: translateX(-120vw) rotate(-15deg); }
+  22% { transform: none; }
+  82% { transform: none; opacity: 1; }
+  100% { transform: translateX(120vw) rotate(12deg); opacity: 1; }
+}
+
+/* Satoshi: sliced steel like the Lugano statue. He turns into view (seen edge-on he's invisible),
+   says his piece and turns away. */
+.satoshi {
+  position: fixed; inset: 0; z-index: 56;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 16px; overflow: hidden; cursor: pointer; text-align: center;
+  background: #07060b;
+}
+.sat-glow {
+  position: absolute; left: 50%; top: 42%; width: 120vmax; height: 120vmax; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #ffd23f55 0%, #ffd23f18 22%, transparent 45%);
+  opacity: 0;
+}
+.sat-fig { position: relative; display: flex; justify-content: center; perspective: 600px; }
+.sat-fig svg { display: block; width: min(58vw, 260px); height: auto; filter: drop-shadow(0 0 22px #ffd23f88); }
+.sat-fig img { display: block; height: min(46vh, 380px); width: auto; max-width: 80vw; }
+.satoshi.ending .sat-fig img { height: min(42vh, 340px); }
+.sat-small { position: relative; font: 900 clamp(15px, 4.6vw, 22px) var(--body); letter-spacing: .1em; color: #fff; opacity: 0; }
+.sat-big {
+  position: relative; font-family: var(--display); font-size: clamp(24px, 8vw, 44px); line-height: 1.05; max-width: 560px;
+  color: var(--gold); -webkit-text-stroke: 1.5px var(--line); text-shadow: 0 4px 0 #7a5a00, 0 8px 0 var(--line); opacity: 0;
+}
+.sat-vanish { position: relative; font: italic 700 clamp(12px, 3.6vw, 16px) var(--body); color: #c9c3d9; opacity: 0; }
+.satoshi.play .sat-glow { animation: satGlow 5.4s ease-in-out forwards; }
+.satoshi.play .sat-fig > * { animation: satTurn 5.4s ease-in-out forwards; }
+/* The revive: he floats down from above, hovers, then turns edge-on and is gone. */
+.satoshi.revive.play .sat-fig > * { animation: satDescend 5.4s ease-in-out forwards; }
+.satoshi.play .sat-small { animation: satText 5.4s ease-in-out forwards; animation-delay: .9s; }
+.satoshi.play .sat-big { animation: satBig 5.4s cubic-bezier(.2, 1.4, .4, 1) forwards; animation-delay: 1.5s; }
+.satoshi.play .sat-vanish { animation: fadeUp .5s 4.1s ease-out forwards; }
+@keyframes satGlow { 0% { opacity: 0; } 20% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes satTurn {
+  0% { transform: translateY(-24px) rotateY(88deg); opacity: 0; }
+  18% { transform: translateY(0) rotateY(0); opacity: 1; }
+  68% { transform: translateY(0) rotateY(0); opacity: 1; }
+  82% { transform: rotateY(88deg); opacity: 0; }
+  100% { transform: rotateY(88deg); opacity: 0; }
+}
+@keyframes satDescend {
+  0% { transform: translateY(-60vh) rotateY(0); opacity: 0; }
+  6% { opacity: 1; }
+  20% { transform: translateY(0) rotateY(0); }
+  32% { transform: translateY(-8px) rotateY(0); }
+  44% { transform: translateY(0) rotateY(0); }
+  56% { transform: translateY(-8px) rotateY(0); }
+  68% { transform: translateY(0) rotateY(0); opacity: 1; }
+  82% { transform: rotateY(88deg); opacity: 0; }
+  100% { transform: rotateY(88deg); opacity: 0; }
+}
+@keyframes satText { 0% { opacity: 0; transform: translateY(10px); } 10% { opacity: 1; transform: none; } 55% { opacity: 1; } 70% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes satBig { 0% { opacity: 0; transform: scale(1.8); } 8% { opacity: 1; transform: scale(1); } 52% { opacity: 1; } 66% { opacity: 0; } 100% { opacity: 0; } }
+
+/* After a story fight. */
+.story-card .res-faces { margin: 4px 0; }
+.st-count {
+  font-family: var(--display); font-size: 4.2rem; line-height: 1; color: #fff;
+  -webkit-text-stroke: 2px var(--line); text-shadow: 0 5px 0 var(--line); margin: 6px 0 2px;
+}
+.story-card .res-actions a.btn { display: grid; place-items: center; text-decoration: none; }
+
+/* A boss's stage: their own sky and floor until the background art is made, then the art. */
+.stage.has-stage .skyline { display: none; }
+.stage.has-stage-art .ground { display: none; }
+
+/* Schiff: Gold Rush. Bars rain down and stack up; the ticker is his whole worldview. */
+.gold-rain { position: absolute; inset: 0; }
+.gold-rain .bar {
+  position: absolute; top: -12%;
+  left: calc(8% + var(--k) * 12%);
+  width: 15%; max-width: 90px; aspect-ratio: 2.2;
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+  background: linear-gradient(#fff2b0, #f0c23a 35%, #b8860b 80%, #7a5a00);
+  animation: barDrop .5s calc(.7s + var(--k) * .25s) cubic-bezier(.5, 0, .9, .6) forwards;
+}
+.gold-rain .bar:nth-child(even) { --land: 82%; }
+@keyframes barDrop { to { top: var(--land, 76%); } }
+.gold-ticker {
+  position: absolute; right: 4%; top: 6%;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  font: 900 clamp(13px, 3.8vw, 18px) var(--body); padding: 6px 10px; border-radius: 6px; background: #000c; border: 2px solid var(--line);
+}
+.gold-ticker b { color: var(--gold); }
+.gold-ticker s { color: #ff6b6b; text-decoration: none; }
+.from-c .gold-ticker { right: auto; left: 4%; align-items: flex-start; }
+
 @media (prefers-reduced-motion: reduce) {
   .f-bob, .title-roster span, .move-super.ready, .blocks.full i.on, .deco-sun, .deco-run, .deco-bytes, .marine, .wave-bots span,
   .flap-l, .flap-r, .bob, .f-held, .fighter.dance .f-bob, .f-bubble.spin, .fighter.hurt .f-sprite, .cutin-stripes,
-  .astro, .astro-arm, .spk, .press-btn, #app.quake {
+  .astro, .astro-arm, .spk, .press-btn, #app.quake, .rung-tag, .assist-btn .face {
     animation: none !important;
   }
   .fighter { transition: none; }

@@ -75,6 +75,7 @@
     toly: {
       id: 'toly', name: 'Toly', lane: 'Throughput / phone sales',
       color: '#19c6a0', emoji: '⚡',
+      assistLine: 'CHEAP FAST CHAIN GUD', // story mode: what they shout when they jump in to help
       hide: 0.35, mint: 0.50, rug: 0.30,
       ai: { strike: 4, privacy: 2, mint: 3, rug: 3 },
       art: { head: 'art/toly-head.webp', body: 'art/toly-body.webp' }, // blazer, black cap, phone held up to sell
@@ -100,6 +101,7 @@
     mert: {
       id: 'mert', name: 'Mert', lane: 'Infra / every bald guy ever',
       color: '#ffc53d', emoji: '👨‍🦲',
+      assistLine: 'THE RPCS DID THIS',
       hide: 0.45, mint: 0.45, rug: 0.40,
       ai: { strike: 3, privacy: 3, mint: 3, rug: 3 },
       art: { head: 'art/mert-head.webp', body: 'art/mert-body.webp' }, // black tee, khakis, tattoo sleeve, shades on the collar
@@ -123,6 +125,7 @@
     garlinghouse: {
       id: 'garlinghouse', name: 'Garlinghouse', lane: 'Settlements / straight man',
       color: '#3b82f6', emoji: '⚖️',
+      assistLine: 'WE WILL PREVAIL',
       hide: 0.25, mint: 0.55, rug: 0.20, // a settlements guy: bad at hiding, bad at rugs
       ai: { strike: 3, privacy: 2, mint: 4, rug: 4 },
       art: { head: 'art/garlinghouse-head.webp', body: 'art/garlinghouse-body.webp' }, // navy suit, beat-up briefcase
@@ -146,6 +149,7 @@
     vitalik: {
       id: 'vitalik', name: 'Vitalik', lane: 'Research / the badger dance',
       color: '#9b7bff', emoji: '🦄',
+      assistLine: 'THERE IS ONLY LOVE',
       hide: 0.55, mint: 0.35, rug: 0.20,
       ai: { strike: 3, privacy: 3, mint: 2, rug: 2 },
       // Art: head = round portrait (title, picker, cut-in, result card), body = stage sprite facing
@@ -173,6 +177,7 @@
     adam: {
       id: 'adam', name: 'Adam Back', lane: 'Cypherpunk / hashcash',
       color: '#94a3b8', emoji: '🔐',
+      assistLine: 'FORK AROUND AND FIND OUT',
       hide: 0.70, mint: 0.15, rug: 0.10,
       ai: { strike: 3, privacy: 6, mint: 0.5, rug: 0.5 },
       art: { head: 'art/adam-head.webp', body: 'art/adam-body.webp' }, // orange cap backwards, wire glasses, pickaxe
@@ -196,6 +201,7 @@
     charles: {
       id: 'charles', name: 'Charles', lane: 'Midnight / Dire Wolf Mode',
       color: '#ef4444', emoji: '🤠',
+      assistLine: 'BIGGER THAN ZCASH',
       hide: 0.55, mint: 0.40, rug: 0.25,
       ai: { strike: 2, privacy: 3, mint: 3, rug: 2 },
       art: { head: 'art/charles-head.webp', body: 'art/charles-body.webp' }, // cowboy hat, blue plaid, the grin, a stack of papers
@@ -222,6 +228,7 @@
     saylor: {
       id: 'saylor', name: 'Saylor', lane: 'Tank / preferred stock',
       color: '#f7931a', emoji: '🧡',
+      assistLine: 'WE CALL THEM POOR',
       hide: 0, mint: 0.45, rug: 0.25,
       // His blue button never hides: it always works and halves incoming Strike/Mint/Rug damage.
       brace: { blocks: 1 },
@@ -245,11 +252,12 @@
         koProp: '💵',          // the loser is left holding fiat
         koScene: 'astronaut'   // Super KO plays the astronaut DJ: FIAT AS A STORE OF VALUE / WE CALL THEM POOR
       },
-      rivalKo: { toly: 'THERE IS NO SECOND BEST' }
+      rivalKo: { toly: 'THERE IS NO SECOND BEST', schiff: 'THERE IS NO SECOND BEST' }
     },
     sergey: {
       id: 'sergey', name: 'Sergey', lane: 'Oracles / the shirt',
       color: '#375bd2', emoji: '🔗',
+      assistLine: '$34 TRILLION',
       hide: 0.30, mint: 0.50, rug: 0.15, // bad at rugs and price calls; half his bank pilots go live
       // His blue button never hides. When it works (the hide odds), the shirt's pattern holds them:
       // they lose their next turn.
@@ -281,6 +289,7 @@
     cz: {
       id: 'cz', name: 'CZ', lane: 'Exchange / ignore FUD',
       color: '#f0b90b', emoji: '4️⃣',
+      assistLine: 'FUNDS ARE SAFU',
       hide: 0, mint: 0.45, rug: 0.25,
       // His blue button never hides. Like Saylor's STRF it always works, but stronger: red and pink do
       // nothing to him that turn (ignoreLine pops over him), purple does half.
@@ -294,6 +303,7 @@
         rug:     { name: 'Da Moon',    icon: '🛥️', ok: 'TO DA MOON',  fail: 'STILL DOCKED' } // his yacht's real name
       },
       loseLine: 'BACK TO GIGGLE ACADEMY',
+      rivalKo: { schiff: 'TRUST ME BRO' }, // what he called tokenized gold before their Dec 2025 debate
       dailyFrom: '2026-10-12',
       super: {
         // His 2023 New Year post, item 4: ignore FUD, fake news, attacks. The white Nissan SUV is from a 2026
@@ -308,6 +318,7 @@
     adeniyi: {
       id: 'adeniyi', name: 'Adeniyi', lane: 'Agentic finance / hype man',
       color: '#38bdf8', emoji: '🌊',
+      assistLine: 'YOU HAVE NO IDEA HOW FAST',
       hide: 0.40, mint: 0.45, rug: 0.25,
       // Walrus: a hit he dodges is stored, and comes back added to his next hit that lands.
       walrus: { line: 'MEMWAL REMEMBERS' },
@@ -333,6 +344,46 @@
     }
   };
 
+  // ---------- Story mode bosses ----------
+  // Same shape as a fighter, plus `boss`. They only fight in Story (never in Free play or the Daily Fight).
+  //   boss.hp         their HP (fighters have 100)
+  //   boss.stage      the background: bg (an image, once it's made) or sky/floor colors until then
+  //   boss.music      their song in js/audio.js MUSIC (the fight song plays until it exists)
+  //   boss.allyLines  what a particular ally shouts when they jump in against this boss
+  var BOSSES = {
+    schiff: {
+      id: 'schiff', name: 'Peter Schiff', lane: 'Gold bug / boss 1',
+      color: '#c9a227', emoji: '🪙',
+      hide: 0.25, mint: 0.40, rug: 0.20,
+      art: { head: 'art/schiff-head.webp', body: 'art/schiff-body.webp' }, // charcoal suit, gold tie, a gold bar
+      ai: { strike: 4, privacy: 2, mint: 3, rug: 2 },
+      moves: {
+        strike:  { name: 'Fake Asset', icon: '🫥', ko: 'BACKED BY NOTHING' },
+        privacy: { name: 'The Vault',  icon: '🔒', ok: 'ALLOCATED. VAULTED.', fail: 'MY WALLET WAS CORRUPTED' }, // Jan 2021
+        mint:    { name: '$10K Call',  icon: '📉', ok: 'BITCOIN TO $10,000',  fail: 'NEW ALL-TIME HIGH' },
+        rug:     { name: 'Gold Bar',   icon: '🧈', ok: 'HEAVY METAL',         fail: 'IT WAS TUNGSTEN',
+                   pierce: 'PHYSICAL DELIVERY' }
+      },
+      loseLine: 'I COULD HAVE MADE A LOT OF MONEY', // his own words about Bitcoin, 2026
+      rivalKo: { saylor: 'NO MORE STRC' },
+      super: {
+        // Gold bars rain down. The line is the catchphrase.
+        id: 'goldrush', name: 'Gold Rush', prop: '', // his portrait already holds the gold bar
+        line: 'BUY GOLD',
+        blurb: '4 hits of 7', finish: 'TOLD YOU SO',
+        cpuAfter: "STILL THINK IT'S DIGITAL GOLD?"
+      },
+      boss: {
+        hp: 110,
+        music: 'schiff',
+        stage: { name: 'The Gold Vault', bg: 'art/stages/schiff.webp', sky: 'linear-gradient(#1b1408 0%, #4a3510 50%, #8a6420 78%, #c9a227 82%)', floor: 'linear-gradient(#3b2c12, #140e05)' },
+        allyLines: { saylor: 'THERE IS NO SECOND BEST', cz: 'TRUST ME BRO' }
+      }
+    }
+  };
+  // The engine and the screens look everyone up in FIGHTERS; ROSTER (below) keeps bosses out of Free play.
+  Object.keys(BOSSES).forEach(function (id) { FIGHTERS[id] = BOSSES[id]; });
+
   // Super effects. dmg is per hit; hits > 1 means a multi-hit.
   var SUPERS = {
     salesman:     { dmg: 35 },
@@ -344,7 +395,32 @@
     dance:        { dmg: 15, hypno: true },
     linkmarines:  { dmg: 6, hits: 4, drain: 3 },
     four:         { dmg: 20, shield: 2 },   // shield: red, pink and purple do nothing to him this turn and next
-    agentswarm:   { dmg: 4, hits: 8 }
+    agentswarm:   { dmg: 4, hits: 8 },
+    goldrush:     { dmg: 7, hits: 4 }     // Schiff (story boss)
+  };
+
+  // Story mode: pick a founder, beat the bosses in order. The other founders are your assists, and
+  // Satoshi picks you up once per run. A rung whose boss isn't in BOSSES yet shows as coming soon.
+  var STORY = {
+    assistDmg: 20,      // the ally's hit: can't be dodged, braced or halved
+    assistAt: 0.35,     // the ASSIST button lights up at this share of your HP or lower, once per fight
+    reviveHp: 0.5,      // Satoshi brings you back with this share of your HP, once per run
+    continueSecs: 10,
+    ladder: [
+      { id: 'schiff', name: 'Peter Schiff', emoji: '🪙', stage: 'The Gold Vault' },
+      { id: 'dimon', name: 'Jamie Dimon', emoji: '🪨', stage: 'The Bank' },
+      { id: 'warren', name: 'Elizabeth Warren', emoji: '📋', stage: 'The Hearing' },
+      { id: 'sbf', name: 'Sam Bankman-Fried', emoji: '🚗', stage: 'The Yard' },
+      { id: 'wick', name: 'WICK', emoji: '🕯️', stage: 'The Chart' }
+    ],
+    satoshi: {
+      // Sliced steel and a gold glow (tools/art.py glow). The sprite floats down for the revive; the portrait
+      // is the ending. Without art he's drawn in SVG.
+      art: { sprite: 'art/satoshi-sprite.webp', portrait: 'art/satoshi.webp' },
+      revive: ['STAND UP.', "WE'RE ALL COUNTING ON YOU."],
+      vanish: "I'VE MOVED ON TO OTHER THINGS.",   // his last known message, 2011
+      ending: ['IT WAS NEVER THE BANKERS.', 'IT WAS THE 100X.']
+    }
   };
 
   var ROSTER = ['toly', 'mert', 'garlinghouse', 'vitalik', 'adam', 'charles', 'saylor', 'sergey', 'cz', 'adeniyi'];
@@ -360,6 +436,8 @@
     FIGHTERS: FIGHTERS,
     SUPERS: SUPERS,
     ROSTER: ROSTER,
+    BOSSES: BOSSES,
+    STORY: STORY,
     DAILY_EPOCH: '2026-09-28',
     FIRST_FIGHT: { player: 'saylor', cpu: 'mert' }
   };

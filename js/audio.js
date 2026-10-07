@@ -270,7 +270,37 @@
       [2100, 2900, 1800, 3300, 2500, 1600, 3100, 2200, 2700, 1900, 3500, 2400].map(function (f, k) {
         return { w: 'square', f: [f, f * 1.3], t: 0.35 + k * 0.08, d: 0.03, v: 0.06, lp: 7000 };
       }),
-      [{ w: 'noise', t: 1.25, d: 0.5, v: 0.3, bp: [1800, 500] }])
+      [{ w: 'noise', t: 1.25, d: 0.5, v: 0.3, bp: [1800, 500] }]),
+
+    // ---------- Story mode ----------
+    // An ally jumps in: a rising whoosh and a stab (the hit itself is the shared heavy punch).
+    assist: [{ w: 'noise', d: 0.35, v: 0.3, bp: [400, 3000], a: 0.25 }, { w: 'sawtooth', f: [220, 880], d: 0.3, v: 0.1, lp: 3000 },
+      { w: 'square', f: N.G5, t: 0.3, d: 0.12, v: 0.12, lp: 5000 }, { w: 'square', f: N.D6, t: 0.3, d: 0.18, v: 0.1, lp: 5000 }],
+    // Satoshi: a slow shimmer of bells over a soft major chord, about four seconds.
+    satoshi: cat(
+      [N.C4, N.E4, N.G4, N.C5].map(function (f) { return { w: 'sine', f: f, d: 3.8, v: 0.09, a: 0.9, hold: 0.5 }; }),
+      [N.G6, N.E6, N.C7, N.G6, N.E7, N.C7, N.G6, N.E6].map(function (f, k) {
+        return { w: 'triangle', f: f, t: 0.3 + k * 0.38, d: 0.7, v: 0.05 };
+      })),
+    coin: seq({ w: 'square', v: 0.13, lp: 6000 }, [[N.B5, 0, 0.07], [N.E6, 0.07, 0.35]]),   // CONTINUE: a coin goes in
+    tick: [{ w: 'square', f: 1200, d: 0.03, v: 0.1, lp: 4000 }],                          // the CONTINUE countdown
+
+    // ---------- Schiff (story boss) ----------
+    'schiff.strike': [{ w: 'sine', f: [140, 60], d: 0.12, v: 0.4 }, { w: 'noise', d: 0.05, v: 0.2, lp: 1200 }], // Fake Asset: a dull thud
+    'schiff.privacy': [{ w: 'sine', f: [70, 45], d: 0.35, v: 0.5 }, { w: 'noise', d: 0.3, v: 0.15, lp: 500 },
+      { w: 'square', f: 600, t: 0.3, d: 0.03, v: 0.1 }, { w: 'square', f: 800, t: 0.36, d: 0.03, v: 0.1 }],   // The Vault: the door swings shut, bolts
+    'schiff.mint.ok': [{ w: 'square', f: [1600, 200], d: 0.6, v: 0.1, lp: 4000 }],                         // $10K Call: a falling whistle
+    'schiff.mint.fail': seq({ w: 'square', v: 0.12, lp: 5000 }, [[N.C5, 0, 0.08], [N.E5, 0.08, 0.08], [N.G5, 0.16, 0.08], [N.C6, 0.24, 0.3]]), // NEW ALL-TIME HIGH
+    clank: [{ w: 'triangle', f: 1900, d: 0.25, v: 0.25 }, { w: 'triangle', f: 2650, d: 0.18, v: 0.16 }, { w: 'noise', d: 0.04, v: 0.3, hp: 2500 },
+      { w: 'sine', f: [160, 70], d: 0.12, v: 0.35 }],                                                   // a gold bar lands
+    'schiff.rug.ok': [{ w: 'triangle', f: 1500, d: 0.4, v: 0.25 }, { w: 'triangle', f: 2210, d: 0.3, v: 0.16 }, { w: 'noise', d: 0.05, v: 0.3, hp: 2000 }], // HEAVY METAL
+    'schiff.rug.fail': [{ w: 'triangle', f: 3100, d: 0.12, v: 0.2 }, { w: 'triangle', f: 2900, t: 0.14, d: 0.4, v: 0.08, vib: [9, 60] }],   // IT WAS TUNGSTEN: a tinny ting
+    // Gold Rush: bars rain down and land one after another (0.7s to 2.2s), then a till rings.
+    'super.goldrush': cat(
+      [0.7, 0.95, 1.2, 1.45, 1.7, 1.95, 2.2].reduce(function (out, t, k) {
+        return out.concat([{ w: 'triangle', f: 1700 + (k % 3) * 300, t: t, d: 0.22, v: 0.16 }, { w: 'noise', t: t, d: 0.04, v: 0.2, hp: 2500 }]);
+      }, []),
+      seq({ w: 'square', v: 0.11, lp: 5000 }, [[N.E6, 2.5, 0.08], [N.G6, 2.58, 0.3]]))
   };
 
   // ---------- Levels ----------
@@ -278,7 +308,7 @@
   // quiet. PEAK is each recipe's measured raw peak (tools/sfx-levels.js prints it after a recipe changes);
   // the sound plays at target / peak.
   function target(id) {
-    if (id === 'tap') return 0.22;
+    if (id === 'tap' || id === 'tick') return 0.22;
     if (/^super\./.test(id)) return 0.8;
     if (/^(ko|slam|heavy)$/.test(id)) return 0.9;
     if (/^(hit|stomp)$/.test(id)) return 0.7;
@@ -381,7 +411,19 @@
     'adeniyi.rug.ok': 0.148,
     'adeniyi.rug.fail': 0.748,
     'splash': 0.527,
-    'super.agentswarm': 0.151
+    'super.agentswarm': 0.151,
+    'assist': 0.224,
+    'satoshi': 0.375,
+    'coin': 0.154,
+    'tick': 0.115,
+    'schiff.strike': 0.372,
+    'schiff.privacy': 0.515,
+    'schiff.mint.ok': 0.117,
+    'schiff.mint.fail': 0.144,
+    'clank': 0.811,
+    'schiff.rug.ok': 0.653,
+    'schiff.rug.fail': 0.185,
+    'super.goldrush': 0.406
   };
   // PEAK:end
 
@@ -409,7 +451,8 @@
     win:       { src: 'audio/sfx/win.mp3', level: 0.62 },
     lose:      { src: 'audio/sfx/lose.mp3', level: 0.62 },
     ready:     { src: 'audio/sfx/ready.mp3', level: 0.5 },            // your Super is ready
-    tap:       { src: 'audio/sfx/tap.mp3', level: 0.25 }              // any button
+    tap:       { src: 'audio/sfx/tap.mp3', level: 0.25 },             // any button
+    satoshi:   { src: 'audio/sfx/satoshi.mp3', level: 0.6 }           // the first 6s of the user's Suno pads (story)
   };
 
   // ---------- Music ----------
@@ -417,7 +460,9 @@
   // before its drop: the title slams on the drop. vol keeps the music under the sound effects.
   var MUSIC = {
     menu: { src: 'audio/menu.mp3', loopStart: 3.3674, loopEnd: 43.7774, drop: 3.3674, beat: 60 / 142.54, vol: 0.55 },
-    fight: { src: 'audio/fight.mp3', loopStart: 0.56, loopEnd: 59.728, vol: 0.42 }
+    fight: { src: 'audio/fight.mp3', loopStart: 0.56, loopEnd: 59.728, vol: 0.42 },
+    // Story bosses. Each opens on its drop hit, like the fight song. vol matches the fight song's loudness.
+    schiff: { src: 'audio/schiff.mp3', loopStart: 3.233, loopEnd: 34.557, vol: 0.37 }
   };
 
   // ---------- Engine (browser only) ----------

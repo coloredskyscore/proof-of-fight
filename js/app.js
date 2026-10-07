@@ -56,7 +56,7 @@
   var S = {
     fight: null, opts: null, busy: false, result: null, today: null,
     pickPlayer: null, pickStep: 'player', countdown: null,
-    lastMoves: null, koProp: null,
+    lastMoves: null, koProp: null, run: null, stCount: null,
     rules: D.RULESETS[store.get('rules')] ? store.get('rules') : 'balanced'
   };
 
@@ -131,6 +131,9 @@
       ? 'Daily played ' + st.played + ' · won ' + st.won + ' · streak ' + st.streak + (st.best > st.streak ? ' (best ' + st.best + ')' : '')
       : 'Same fight for everyone, every day. Fewest turns wins.';
     $('#rules-select').value = S.rules;
+    $('#btn-story').hidden = !STORY_ON;
+    var run = runGet();
+    $('#btn-story').textContent = run ? '📖 Resume story · Boss ' + (Math.min(run.rung, D.STORY.ladder.length - 1) + 1) : '📖 Story';
     show('screen-title');
     AU.music('menu', { from: 'loop', fade: 0.8 });
   }
@@ -138,7 +141,7 @@
   function renderPick(step) {
     S.pickStep = step;
     AU.music('menu', { from: 'loop', fade: 0.8 });
-    $('#pick-title').textContent = step === 'player' ? 'Pick your fighter' : 'Pick your opponent';
+    $('#pick-title').textContent = step === 'cpu' ? 'Pick your opponent' : step === 'story' ? 'Story: pick your fighter' : 'Pick your fighter';
     $('#pick-suggest').hidden = step !== 'player';
     var R = D.RULESETS[S.rules];
     var html = D.ROSTER.map(function (id) {
@@ -198,18 +201,19 @@
     S.fight = resumeMoves ? E.replay(opts, resumeMoves) : E.newFight(opts);
     S.lastMoves = null;
     S.koProp = null;
+    S.assistRang = false;
     buildArena();
     render(E.snapshot(S.fight));
     $('#turn-num').textContent = S.fight.turn;
     show('screen-fight');
     fitNames(); // measured once the screen is showing
     if (S.fight.over) { finishFight(); return; }
-    AU.music('fight', { fade: 0.12, restart: true }); // opens on the song's drop hit
+    AU.music(fightSong(), { fade: 0.12, restart: true }); // opens on the song's drop hit
 
     S.busy = true;
     updateControls();
     log(resumeMoves ? 'Picking up where you left off.' : 'Tap a move. The CPU picks at the same time.');
-    banner(resumeMoves ? 'RESUME' : 'ROUND 1', 'FIGHT!');
+    banner(resumeMoves ? 'RESUME' : opts.mode === 'story' ? 'BOSS ' + (opts.rung + 1) : 'ROUND 1', 'FIGHT!');
     later(function () {
       S.busy = false;
       updateControls();
@@ -269,7 +273,19 @@
       $('.blocks', hud).innerHTML = new Array(D.MAX_BLOCKS + 1).join('<i></i>');
     });
     $('#hud-mode').textContent = S.opts.mode === 'daily' ? 'DAILY #' + S.opts.n
+      : S.opts.mode === 'story' ? 'STORY · BOSS ' + (S.opts.rung + 1)
       : f.rules.id === 'original' ? 'ORIGINAL RULES' : 'FREE PLAY';
+    // A boss fight has its own stage: their background art once it's made, their colors until then.
+    var boss = S.opts.mode === 'story' && D.FIGHTERS[f.f[1].id].boss, st = boss && boss.stage;
+    $('#stage').classList.toggle('has-stage', !!st);
+    $('#stage').classList.toggle('has-stage-art', !!(st && st.bg));
+    $('#stage .sky').style.background = st ? (st.bg ? 'url(' + st.bg + ') center bottom / cover no-repeat, ' + st.sky : st.sky) : '';
+    $('#stage .ground').style.background = st && st.floor ? st.floor : '';
+    // Story: the ally waits in the corner until you're low enough to call them in.
+    var ab = $('#btn-assist'), A = S.opts.mode === 'story' && D.FIGHTERS[S.opts.ally];
+    ab.hidden = !A;
+    ab.innerHTML = A ? '<span class="face" style="--c:' + A.color + '">' + faceHTML(A) + '</span>' +
+      '<span class="ab-label">ASSIST</span><span class="ab-sub"></span>' : '';
     $('#popups').innerHTML = '';
     $('#banner').className = 'banner';
     if (!$('#skyline').childElementCount) buildSkyline();
@@ -373,6 +389,15 @@
         b.disabled = locked;
       }
     });
+    var ab = $('#btn-assist');
+    if (S.opts.mode === 'story' && S.opts.ally) {
+      var ready = E.canAssist(f);
+      ab.hidden = !!f.assisted || f.over;
+      ab.classList.toggle('ready', ready);
+      ab.disabled = locked || !ready;
+      $('.ab-sub', ab).textContent = ready ? 'TAP!' : '≤' + pct(D.STORY.assistAt) + ' HP';
+      if (ready && !S.assistRang) { S.assistRang = true; AU.play('ready'); }
+    }
     var skipping = !!st.skipped && !f.over;
     $('#controls').classList.toggle('skipping', skipping);
     $('#btn-continue').hidden = !skipping;
@@ -565,6 +590,17 @@
         if (scene === 'astronaut') await astronautScene();
         break;
 
+      case 'assist':
+        await assistIn(e.ally, e.line);
+        render(e.snap);
+        hurtFx(1);
+        AU.play('heavy');
+        popup(1, '-' + e.amount, 'dmg');
+        buzz(60);
+        log(D.FIGHTERS[e.ally].name + ' jumped in for ' + e.amount + '.');
+        await sleep(650);
+        break;
+
       case 'end':
         render(e.snap);
         chip(0, null);
@@ -585,7 +621,7 @@
   }
 
   // Multi-hit Supers with their own hit sound: crowds stomp, Adeniyi's wave splashes.
-  var SUPER_HIT = { xrparmy: 'stomp', linkmarines: 'stomp', agentswarm: 'splash' };
+  var SUPER_HIT = { xrparmy: 'stomp', linkmarines: 'stomp', agentswarm: 'splash', goldrush: 'clank' };
 
   async function doHit(e) {
     var multi = e.of > 1;
@@ -881,9 +917,17 @@
     return '<div class="wave"><div class="wave-crest"></div><div class="wave-bots">' + bots + '</div></div>';
   }
 
+  // Schiff: gold bars rain down and pile up. The ticker in the corner is his whole worldview.
+  function goldDeco() {
+    var bars = '';
+    for (var k = 0; k < 7; k++) bars += '<i class="bar" style="--k:' + k + '"></i>';
+    return '<div class="gold-rain">' + bars + '</div><div class="gold-ticker"><b>GOLD ▲</b><s>BTC → $10K</s></div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
       case 'four': return { screen: fourDeco() };
+      case 'goldrush': return { screen: goldDeco() };
       case 'agentswarm': return { screen: swarmDeco() };
       case 'linkmarines': return { screen: marinesDeco(ctx) };
       case 'salesman': return salesDeco(ctx);
@@ -1044,9 +1088,340 @@
     });
   }
 
+  // ---------- Story mode ----------
+  // Hidden until all the bosses are in: proofoffight.com/?story turns it on for that browser.
+  var STORY_ON = (function () {
+    if (/[?&]story(=|&|$)/.test(location.search)) store.set('storyBeta', true);
+    return !!store.get('storyBeta', false);
+  })();
+
+  // A run: player, rung (index in STORY.ladder of the next boss), satoshi (true until he's used),
+  // continues, turns (all fights added up), ally (the last one picked), beaten (boss ids).
+  function runGet() {
+    var r = store.get('story', null);
+    return r && r.v === 1 && D.FIGHTERS[r.player] && r.rung < D.STORY.ladder.length ? r : null;
+  }
+  function runSave(r) { store.set('story', r); }
+  function ladderBoss(k) {
+    var L = D.STORY.ladder[k];
+    return L && D.BOSSES[L.id] ? D.BOSSES[L.id] : null;
+  }
+  function isFinal(k) { return k === D.STORY.ladder.length - 1; }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+  // The boss's own song once it exists, else the fight song.
+  function fightSong() {
+    var b = S.opts && S.opts.mode === 'story' && D.FIGHTERS[S.opts.cpu].boss;
+    return b && b.music && AU.MUSIC[b.music] ? b.music : 'fight';
+  }
+
+  function openStory() {
+    var run = runGet();
+    if (run) renderLadder(run);
+    else { S.pickPlayer = null; renderPick('story'); }
+  }
+
+  function newRun(player) {
+    var run = { v: 1, player: player, rung: 0, satoshi: true, continues: 0, turns: 0, ally: null, beaten: [] };
+    runSave(run);
+    renderLadder(run);
+  }
+
+  // The tower: the final boss on top, the next fight lit up. The last boss stays a mystery until you reach it.
+  function renderLadder(run) {
+    S.run = run;
+    var P = D.FIGHTERS[run.player], L = D.STORY.ladder;
+    $('#story-you').innerHTML = '<span class="face" style="--c:' + P.color + '">' + faceHTML(P) + '</span>' +
+      '<span class="sy-txt"><b>' + esc(P.name) + '</b><small>' +
+      (run.satoshi ? '✨ Satoshi has your back once' : 'Satoshi already picked you up') +
+      (run.continues ? ' · ' + plural(run.continues, 'continue') : '') + '</small></span>';
+    $('#ladder').innerHTML = L.map(function (r, k) {
+      var B = D.BOSSES[r.id], state = k < run.rung ? 'beaten' : k === run.rung ? 'next' : 'locked';
+      var hidden = isFinal(k) && k > run.rung;
+      var face = hidden ? '?' : B ? faceHTML(B) : r.emoji;
+      var tag = state === 'beaten' ? '✓' : state === 'next' ? (B ? 'NEXT' : 'SOON') : hidden ? '' : B ? '' : 'SOON';
+      return '<li class="rung is-' + state + (B ? '' : ' is-soon') + '" style="--c:' + (B && !hidden ? B.color : '#4a4460') + '">' +
+        '<span class="rung-n">' + (k + 1) + '</span>' +
+        '<span class="face rung-face">' + face + '</span>' +
+        '<span class="rung-txt"><b>' + esc(hidden ? '???' : r.name) + '</b><small>' + esc(hidden ? 'Final boss' : r.stage) + '</small></span>' +
+        (tag ? '<span class="rung-tag">' + tag + '</span>' : '') + '</li>';
+    }).reverse().join('');
+    var next = L[run.rung], B = next && D.BOSSES[next.id], btn = $('#story-fight');
+    btn.disabled = !B;
+    btn.textContent = B ? 'Fight ' + B.name + ' ▶' : next.name + ': coming soon';
+    $('#story-note').textContent = run.rung === 0 && !run.beaten.length
+      ? 'The naysayers are coming. Beat ' + L.length + ' bosses in a row. Before each fight you pick an ally from the other founders; at ' +
+        pct(D.STORY.assistAt) + ' HP they jump in once. And once per run, Satoshi picks you up off the floor.'
+      : B ? '' : next.name + ' is still being built. Your run is saved right here.';
+    show('screen-story');
+    AU.music('menu', { from: 'loop', fade: 0.8 });
+  }
+
+  function openAllyPick() {
+    var run = S.run, B = ladderBoss(run.rung), pairs = B.boss.allyLines || {};
+    $('#assist-kicker').textContent = 'BOSS ' + (run.rung + 1) + ' · ' + B.name.toUpperCase();
+    $('#ally-grid').innerHTML = D.ROSTER.filter(function (id) { return id !== run.player; }).map(function (id) {
+      var F = D.FIGHTERS[id];
+      return '<button class="ally' + (run.ally === id ? ' last' : '') + '" data-id="' + id + '" type="button">' +
+        '<span class="face" style="--c:' + F.color + '">' + faceHTML(F) + '</span><b>' + esc(F.name) + '</b>' +
+        (pairs[id] ? '<i class="ally-star" title="Has a line for ' + esc(B.name) + '">⭐</i>' : '') + '</button>';
+    }).join('');
+    $('#modal-assist').hidden = false;
+  }
+
+  function startStoryFight(run) {
+    var B = ladderBoss(run.rung);
+    startFight({ mode: 'story', rung: run.rung, player: run.player, cpu: B.id, ally: run.ally, seed: randomSeed(), rules: 'balanced' });
+  }
+
+  function onAssist() {
+    if (S.busy || !S.fight || !E.canAssist(S.fight)) return;
+    S.busy = true;
+    updateControls();
+    playEvents(E.assist(S.fight, S.opts.ally)).then(function () {
+      S.busy = false;
+      if (S.fight.over) finishFight();
+      else updateControls();
+    });
+  }
+
+  // The ally's mini cut-in: they slide in, shout their line, and the hit lands as they leave.
+  function assistIn(id, line) {
+    return new Promise(function (resolve) {
+      var F = D.FIGHTERS[id], el = $('#assistin');
+      el.style.setProperty('--c', F.color);
+      $('.ai-face', el).innerHTML = faceHTML(F);
+      $('.ai-face', el).classList.toggle('has-art', !!(F.art && F.art.head));
+      $('.ai-name', el).textContent = F.name.toUpperCase();
+      $('.ai-line', el).textContent = '“' + line + '”';
+      el.hidden = false;
+      void el.offsetWidth;
+      el.classList.add('play');
+      AU.play('assist');
+      var done = false, timer = later(finish, 1700);
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        el.onclick = null;
+        el.classList.remove('play');
+        el.hidden = true;
+        resolve();
+      }
+      later(function () { if (!done) el.onclick = finish; }, 500);
+    });
+  }
+
+  // Satoshi, sliced steel like the Lugano statue: he turns into view, says his piece and turns away.
+  function satoshiSVG() {
+    return '<svg viewBox="0 0 200 210" aria-hidden="true"><defs>' +
+      '<linearGradient id="satMetal" x1="0" x2="1"><stop offset="0" stop-color="#7d8794"/><stop offset=".45" stop-color="#f1f4f8"/>' +
+      '<stop offset=".62" stop-color="#b7c0ca"/><stop offset="1" stop-color="#5d6672"/></linearGradient>' +
+      '<pattern id="satSlices" width="7" height="10" patternUnits="userSpaceOnUse"><rect width="4.4" height="10" fill="#fff"/></pattern>' +
+      '<mask id="satMask"><rect width="200" height="210" fill="url(#satSlices)"/></mask></defs>' +
+      '<g mask="url(#satMask)" fill="url(#satMetal)">' +
+      '<path d="M100 14 C70 14 60 40 62 64 C63 80 70 90 77 97 L123 97 C130 90 137 80 138 64 C140 40 130 14 100 14Z"/>' +
+      '<path d="M60 100 Q100 84 140 100 L152 158 L48 158Z"/>' +
+      '<path d="M26 166 Q100 136 174 166 Q176 190 152 192 L48 192 Q24 190 26 166Z"/></g>' +
+      '<ellipse cx="100" cy="60" rx="21" ry="25" fill="#07060b"/>' +
+      '<path d="M70 124 L130 124 L136 156 L64 156Z" fill="#2a2f3a" stroke="#07060b" stroke-width="2"/>' +
+      '<path d="M58 156 L142 156 L148 168 L52 168Z" fill="#3a4150" stroke="#07060b" stroke-width="2"/></svg>';
+  }
+
+  function satoshiScene(kind) {
+    return new Promise(function (resolve) {
+      var el = $('#satoshi'), T = D.STORY.satoshi, lines = kind === 'ending' ? T.ending : T.revive;
+      var art = T.art && (kind === 'ending' ? T.art.portrait : T.art.sprite);
+      $('.sat-fig', el).innerHTML = art ? '<img src="' + art + '" alt="">' : satoshiSVG();
+      $('.sat-small', el).textContent = lines[0];
+      $('.sat-big', el).textContent = lines[1];
+      $('.sat-vanish', el).textContent = T.vanish;
+      el.className = 'satoshi ' + kind;
+      el.hidden = false;
+      void el.offsetWidth;
+      el.classList.add('play');
+      var snd = AU.play('satoshi');
+      var done = false, timer = later(finish, 5400);
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        snd.stop(0.4);
+        el.onclick = null;
+        el.classList.remove('play');
+        el.hidden = true;
+        resolve();
+      }
+      later(function () { if (!done) el.onclick = finish; }, 900);
+    });
+  }
+
+  async function finishStoryFight() {
+    var f = S.fight, o = S.opts, run = runGet();
+    if (!run) { renderTitle(); return; }
+    // Knocked out with Satoshi still unused: he picks you up and the fight goes on.
+    if (f.winner === 1 && f.f[0].hp === 0 && run.satoshi) {
+      run.satoshi = false;
+      runSave(run);
+      S.busy = true;
+      updateControls();
+      await sleep(300);
+      await satoshiScene('revive');
+      var ev = E.revive(f, 0)[0];
+      fighterEl(0).classList.remove('is-ko');
+      S.koProp = null;
+      render(ev.snap);
+      $('#turn-num').textContent = f.turn;
+      AU.music(fightSong(), { from: 'loop', fade: 0.6, restart: true });
+      AU.play('hodl');
+      banner('BACK UP', 'Satoshi gave you ' + ev.hp + ' HP');
+      log('Satoshi picked you up. ' + ev.hp + ' HP.');
+      await sleep(1200);
+      S.busy = false;
+      updateControls();
+      return;
+    }
+    run.turns += f.turn;
+    var B = D.FIGHTERS[o.cpu], P = D.FIGHTERS[o.player];
+    var res = { mode: 'story', rung: o.rung, player: o.player, cpu: o.cpu, won: f.winner === 0, turns: f.turn,
+      hp: f.f[0].hp, finish: f.finish, grid: f.grid.slice(), timeout: f.finishCause === 'timeout' };
+    S.result = res;
+    if (res.won) {
+      run.beaten.push(o.cpu);
+      run.rung++;
+      runSave(run);
+      if (isFinal(o.rung)) {
+        await sleep(400);
+        await satoshiScene('ending');
+        storySummary(run, true);
+        return;
+      }
+      var next = D.STORY.ladder[run.rung], nextB = D.BOSSES[next.id];
+      storyCard({
+        kicker: 'STORY · BOSS ' + (o.rung + 1) + ' OF ' + D.STORY.ladder.length, title: 'BOSS DOWN',
+        faces: face(P, false) + '<span>VS</span>' + face(B, true),
+        line: P.name + ' beat ' + B.name + ' in ' + plural(res.turns, 'turn'),
+        finish: res.finish, quote: B.loseLine ? B.name + ': “' + B.loseLine + '”' : '',
+        meta: 'Next: ' + (isFinal(run.rung) ? 'the final boss' : next.name) + (nextB ? '' : ' (coming soon)'),
+        actions: [['Next boss ▶', 'btn-gold', function () { closeStory(); renderLadder(run); }],
+          [navigator.share ? 'Share' : 'Copy result', '', function () { shareStory(storyText(res, run)); }],
+          ['Post on X', 'btn-x', storyText(res, run)],
+          ['Menu', 'btn-ghost', function () { closeStory(); renderTitle(); }]]
+      });
+      AU.play('win');
+      later(function () { if (!$('#modal-story').hidden) AU.music('menu', { from: 'loop', fade: 1.5 }); }, 1800);
+      return;
+    }
+    runSave(run);
+    continueCard(run, res);
+  }
+
+  // CONTINUE? Ten seconds to put another coin in; then it's game over.
+  function continueCard(run, res) {
+    var P = D.FIGHTERS[res.player], B = D.FIGHTERS[res.cpu], left = D.STORY.continueSecs;
+    storyCard({
+      kicker: 'STORY · BOSS ' + (res.rung + 1) + ' OF ' + D.STORY.ladder.length, title: 'CONTINUE?', lose: true,
+      faces: face(P, true) + '<span>VS</span>' + face(B, false),
+      line: B.name + ' beat your ' + P.name + (res.timeout ? ' on time' : ''),
+      finish: res.finish, count: left,
+      meta: run.satoshi ? '' : 'Satoshi already used his one save this run.',
+      actions: [['Continue ▶', 'btn-gold', function () {
+        clearInterval(S.stCount);
+        AU.play('coin');
+        run.continues++;
+        runSave(run);
+        closeStory();
+        startStoryFight(run);
+      }], ['Give up', 'btn-ghost', function () { clearInterval(S.stCount); storySummary(run, false); }]]
+    });
+    AU.play('lose');
+    clearInterval(S.stCount);
+    S.stCount = setInterval(function () {
+      left--;
+      $('#st-count').textContent = left;
+      if (left > 0) { AU.play('tick'); return; }
+      clearInterval(S.stCount);
+      storySummary(run, false);
+    }, 1000);
+  }
+
+  // The end of a run, won or lost. The run is cleared; the card can still be shared.
+  function storySummary(run, won) {
+    var P = D.FIGHTERS[run.player], n = run.beaten.length, total = D.STORY.ladder.length;
+    store.set('story', null);
+    var stats = n + (n === 1 ? ' boss' : ' bosses') + ' beaten · ' + plural(run.continues, 'continue') +
+      ' · ' + (run.satoshi ? 'never needed Satoshi' : 'Satoshi saved you once');
+    var text = 'Proof of Fight · Story 📖\n' + (won
+      ? 'Beat story mode with ' + P.name + '. ' + plural(run.continues, 'continue') + '.'
+      : P.name + ' made it to boss ' + Math.min(n + 1, total) + ' of ' + total + '.') + '\n' + siteUrl();
+    storyCard({
+      kicker: 'STORY', title: won ? 'STORY COMPLETE' : 'GAME OVER', lose: !won,
+      faces: face(P, !won), line: won ? P.name + ' beat all ' + total + ' bosses' : P.name + ' made it to boss ' + Math.min(n + 1, total) + ' of ' + total,
+      finish: '', meta: stats,
+      actions: [[navigator.share ? 'Share' : 'Copy result', 'btn-gold', function () { shareStory(text); }],
+        ['Post on X', 'btn-x', text],
+        ['New run', '', function () { closeStory(); openStory(); }],
+        ['Menu', 'btn-ghost', function () { closeStory(); renderTitle(); }]]
+    });
+    if (!won) AU.stopMusic(0.5);
+    else AU.play('win');
+  }
+
+  function storyText(res, run) {
+    var P = D.FIGHTERS[res.player], B = D.FIGHTERS[res.cpu];
+    return 'Proof of Fight · Story 📖\n' + P.name + ' beat ' + B.name + ' in ' + plural(res.turns, 'turn') +
+      ' (boss ' + (res.rung + 1) + ' of ' + D.STORY.ladder.length + ')\n' + gridText(res) + '\n' + siteUrl();
+  }
+
+  function shareStory(text) {
+    if (navigator.share) { navigator.share({ text: text }).catch(function () {}); return; }
+    copyText(text).then(function () { toast('Copied! Paste it anywhere.'); }, function () { toast("Couldn't copy. Try Post on X."); });
+  }
+
+  // One card for every after-fight moment in Story. An action is [label, class, onClick or share text for X].
+  function storyCard(c) {
+    $('#st-kicker').textContent = c.kicker;
+    var t = $('#st-title');
+    t.textContent = c.title;
+    t.classList.toggle('lose', !!c.lose);
+    $('#st-faces').innerHTML = c.faces;
+    $('#st-line').textContent = c.line;
+    $('#st-finish').textContent = c.finish || '';
+    $('#st-quote').hidden = !c.quote;
+    $('#st-quote').textContent = c.quote || '';
+    $('#st-count').hidden = c.count == null;
+    $('#st-count').textContent = c.count == null ? '' : c.count;
+    $('#st-meta').textContent = c.meta || '';
+    var box = $('#st-actions');
+    box.innerHTML = '';
+    c.actions.forEach(function (a) {
+      var el;
+      if (typeof a[2] === 'string') {
+        el = document.createElement('a');
+        el.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(a[2]);
+        el.target = '_blank';
+        el.rel = 'noopener';
+      } else {
+        el = document.createElement('button');
+        el.type = 'button';
+        el.addEventListener('click', a[2]);
+      }
+      el.className = 'btn ' + a[1];
+      el.textContent = a[0];
+      box.appendChild(el);
+    });
+    $('#modal-story').hidden = false;
+  }
+
+  function closeStory() {
+    clearInterval(S.stCount);
+    $('#modal-story').hidden = true;
+  }
+
   // ---------- Results & sharing ----------
   function finishFight() {
     var f = S.fight, o = S.opts;
+    if (o.mode === 'story') { finishStoryFight(); return; }
     var res = {
       mode: o.mode, n: o.n, player: f.f[0].id, cpu: f.f[1].id,
       won: f.winner === 0, turns: f.turn, hp: f.f[f.winner].hp, finish: f.finish,
@@ -1282,6 +1657,11 @@
       '<h3>Order of a turn</h3>' +
       '<p>Skips and hypnosis from last turn, then Supers, then blue, then red / pink / purple. You go first in each step. ' +
       'The fight ends the instant someone hits 0. After ' + D.TURN_CAP + ' turns the chain halts: whoever has more HP left wins (ties go to you).</p>' +
+      (STORY_ON ? '<h3>Story</h3>' +
+        '<p>Beat ' + D.STORY.ladder.length + ' bosses in a row with one founder. Before each boss you pick an ally from the other founders: when you\'re at ' +
+        pct(D.STORY.assistAt) + ' HP or lower, tap their face in the corner and they hit for ' + D.STORY.assistDmg +
+        ' that can\'t be dodged, without using your turn. Once per run, Satoshi gets you back up with half your HP when you\'re knocked out. ' +
+        'After that, a loss is CONTINUE? (that boss fight starts over) or game over.</p>' : '') +
       '<h3>Daily Fight</h3>' +
       '<p>Everyone gets the same matchup and the same luck each day. One try. Share your grid; fewer turns is better.</p>' +
       '<h3>Sound and keys</h3>' +
@@ -1366,14 +1746,17 @@
       ['Menu: intro + drop', function () { AU.music('menu', { restart: true }); }],
       ['Menu: loop', function () { AU.music('menu', { from: 'loop', restart: true }); }],
       ['Fight', function () { AU.music('fight', { restart: true }); }],
+      ['Boss: Schiff', function () { AU.music('schiff', { restart: true }); }],
       ['Stop music', function () { AU.stopMusic(0.3); }]
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
       ['MUTUAL REKT', 'flop'], ['Hit yourself (hypnotized)', 'selfhit'], ['Super ready', 'ready'], ['K.O.', 'ko'], ['K.O. bell (with the boom)', 'ko.bell'],
       ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
       ['Blinded, skips a turn', 'huh'], ['Staring at the shirt, skips a turn', 'stare'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
+    ]], ['Story', [
+      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
     ]]];
-    D.ROSTER.forEach(function (id) {
+    D.ROSTER.concat(Object.keys(D.BOSSES)).forEach(function (id) {
       var F = D.FIGHTERS[id], m = function (b) { return moveOf(id, b); }, items = [];
       items.push([m('strike').icon + ' ' + m('strike').name + ' hits', function () { AU.move(id, 'strike', 'ok'); }]);
       items.push([m('privacy').icon + ' ' + m('privacy').name + (F.brace ? ' (brace)' : ' works'), function () { AU.move(id, 'privacy', 'ok'); }]);
@@ -1448,6 +1831,22 @@
     $('#pick-back').addEventListener('click', function () {
       if (S.pickStep === 'cpu') renderPick('player'); else renderTitle();
     });
+    $('#btn-story').addEventListener('click', openStory);
+    $('#story-back').addEventListener('click', renderTitle);
+    $('#story-fight').addEventListener('click', openAllyPick);
+    $('#story-quit').addEventListener('click', function () {
+      if (window.confirm('Abandon this run? You start over from the first boss.')) { store.set('story', null); renderTitle(); }
+    });
+    $('#assist-cancel').addEventListener('click', function () { $('#modal-assist').hidden = true; });
+    $('#ally-grid').addEventListener('click', function (ev) {
+      var b = ev.target.closest('.ally');
+      if (!b) return;
+      S.run.ally = b.dataset.id;
+      runSave(S.run);
+      $('#modal-assist').hidden = true;
+      startStoryFight(S.run);
+    });
+    $('#btn-assist').addEventListener('click', onAssist);
     $('#pick-suggest').addEventListener('click', function () {
       startFree(D.FIRST_FIGHT.player, D.FIRST_FIGHT.cpu);
     });
@@ -1455,7 +1854,9 @@
       var card = ev.target.closest('.pick-card');
       if (!card) return;
       var id = card.dataset.id;
-      if (S.pickStep === 'player') {
+      if (S.pickStep === 'story') {
+        newRun(id);
+      } else if (S.pickStep === 'player') {
         S.pickPlayer = id;
         renderPick('cpu');
       } else {
@@ -1472,6 +1873,7 @@
       if (S.busy) return;
       var msg = S.opts.mode === 'daily' && !S.fight.over
         ? 'Leave? Your daily fight is saved. Come back to finish it.'
+        : S.opts.mode === 'story' ? 'Leave? Your story run is saved at this boss (this fight starts over).'
         : 'Leave this fight?';
       if (window.confirm(msg)) renderTitle();
     });
@@ -1489,13 +1891,14 @@
         $('#modal-help').hidden = true;
         return;
       }
-      if ($('#screen-fight').hidden || !$('#modal-result').hidden || !$('#modal-help').hidden || !S.fight) return;
+      if ($('#screen-fight').hidden || !$('#modal-result').hidden || !$('#modal-help').hidden || !$('#modal-story').hidden || !S.fight) return;
       if (ev.target.tagName === 'SELECT' || ev.metaKey || ev.ctrlKey || ev.altKey) return;
       if (E.playerStatus(S.fight).skipped && (ev.key === 'Enter' || ev.key === ' ')) {
         ev.preventDefault();
         onMove(null);
         return;
       }
+      if (ev.key === 'a' || ev.key === '6') { onAssist(); return; }
       var map = { '1': 'strike', '2': 'privacy', '3': 'mint', '4': 'rug', '5': 'super', ' ': 'super' };
       if (map[ev.key]) {
         ev.preventDefault();

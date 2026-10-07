@@ -1,6 +1,6 @@
 # Fighter art
 
-Each fighter gets two images, made in Grok Imagine. The first seven got theirs Oct 3, 2026, Sergey Oct 4, CZ and Adeniyi Oct 7. A new fighter without art falls back to their emoji head and block body until theirs is made.
+Each fighter gets two images, made in Grok Imagine. (Story mode's bosses, Satoshi and the boss stages have their prompts in [docs/story/](../story/README.md).) The first seven got theirs Oct 3, 2026, Sergey Oct 4, CZ and Adeniyi Oct 7. A new fighter without art falls back to their emoji head and block body until theirs is made.
 
 ## The look (locked Oct 2, 2026)
 
@@ -205,3 +205,5 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | Sergey | ✅ beard, blue-and-white plaid, red lanyard, blank badge | ✅ same plaid (tinted from gray), blank badge, jeans |
 | CZ | ✅ short black hair, rimless glasses, black hoodie, four fingers up | ✅ same hoodie, fist up, four fingers raised |
 | Adeniyi | ✅ bald, beard, square black glasses, half-grin, pointing, sky-blue track jacket | ✅ same outfit, gray joggers, a swirling ball of water over his palm |
+| *Story:* Schiff | ✅ silver hair, gray beard, charcoal suit, gold tie, a gold bar | ✅ same suit, gold bar in hand (stage: the gold vault) |
+| *Story:* Satoshi | ✅ sliced steel hood, gold glow (`art.py glow`) | ✅ seated cross-legged with a laptop, gold glow (the revive) |
