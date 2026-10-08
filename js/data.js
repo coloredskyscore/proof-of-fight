@@ -379,6 +379,37 @@
         stage: { name: 'The Gold Vault', bg: 'art/stages/schiff.webp', sky: 'linear-gradient(#1b1408 0%, #4a3510 50%, #8a6420 78%, #c9a227 82%)', floor: 'linear-gradient(#3b2c12, #140e05)' },
         allyLines: { saylor: 'THERE IS NO SECOND BEST', cz: 'TRUST ME BRO' }
       }
+    },
+    dimon: {
+      id: 'dimon', name: 'Jamie Dimon', lane: 'Banker / boss 2',
+      color: '#2b4c8c', emoji: '🪨',
+      hide: 0.30, mint: 0.40, rug: 0.20,
+      ai: { strike: 3, privacy: 2, mint: 3, rug: 3 },
+      art: { head: 'art/dimon-head.webp', body: 'art/dimon-body.webp' }, // navy suit, light blue shirt, the pet rock
+      // Too big to fail: the first time he's knocked out he's bailed out with this much HP. The sub is the
+      // headline Satoshi put in Bitcoin's first block.
+      bailout: { hp: 20, line: 'TOO BIG TO FAIL', sub: 'Chancellor on brink of second bailout for banks' },
+      moves: {
+        strike:  { name: 'Fraud',        icon: '🚨', ko: 'HYPED-UP FRAUD' },                       // Davos, Jan 2024
+        privacy: { name: 'Fortress',     icon: '🏰', ok: 'FORTRESS BALANCE SHEET', fail: 'LONDON WHALE' },
+        mint:    { name: 'JPM Coin',     icon: '🏦', ok: "IT'S DIFFERENT WHEN WE DO IT", fail: 'COMPLIANCE SAYS NO' },
+        rug:     { name: 'Shut It Down', icon: '🚫', ok: "IF I WAS THE GOVERNMENT, I'D CLOSE IT DOWN", // Senate, Dec 2023
+                   fail: 'I DEFEND YOUR RIGHT TO BUY BITCOIN', pierce: 'YOUR ACCOUNT IS CLOSED' }
+      },
+      loseLine: 'WE ACCEPT IT AS COLLATERAL NOW', // JPMorgan, Oct 2025
+      super: {
+        // A giant pet rock with googly eyes rolls in. His words, Davos 2024.
+        id: 'petrock', name: 'Pet Rock', prop: '',
+        line: 'I CALL IT THE PET ROCK',
+        blurb: 'One huge hit', finish: 'PET ROCKED',
+        cpuAfter: 'DECENTRALIZED PONZI SCHEME' // to Congress, 2022
+      },
+      boss: {
+        hp: 100,             // plus the 20 of his bailout
+        music: 'dimon',
+        stage: { name: 'The Bank', bg: 'art/stages/dimon.webp', sky: 'linear-gradient(#0c1222 0%, #1d2a44 55%, #3b4660 78%, #6b7280 82%)', floor: 'linear-gradient(#3a3f4b, #15171d)' },
+        allyLines: { adam: 'CHANCELLOR ON BRINK OF SECOND BAILOUT', garlinghouse: 'HOW ARE PEOPLE STILL FIGHTING THIS?!' }
+      }
     }
   };
   // The engine and the screens look everyone up in FIGHTERS; ROSTER (below) keeps bosses out of Free play.
@@ -396,7 +427,8 @@
     linkmarines:  { dmg: 6, hits: 4, drain: 3 },
     four:         { dmg: 20, shield: 2 },   // shield: red, pink and purple do nothing to him this turn and next
     agentswarm:   { dmg: 4, hits: 8 },
-    goldrush:     { dmg: 7, hits: 4 }     // Schiff (story boss)
+    goldrush:     { dmg: 7, hits: 4 },    // Schiff (story boss)
+    petrock:      { dmg: 25 }             // Dimon (story boss)
   };
 
   // Story mode: pick a founder, beat the bosses in order. The other founders are your assists, and

@@ -348,6 +348,7 @@
       if (s.hodl > 0) chips.push('<span class="chip good">💎 HODL</span>');
       if (s.shield > 0) chips.push('<span class="chip good">4️⃣ FUD-PROOF</span>');
       if (s.stored > 0) chips.push('<span class="chip good">🦭 +' + s.stored + '</span>');
+      if (s.bailout) chips.push('<span class="chip good">🏦 BAILOUT</span>');
       if (SKIP[s.skipNext]) chips.push('<span class="chip bad">' + SKIP[s.skipNext].icon + ' ' + SKIP[s.skipNext].chip + '</span>');
       if (s.hypnoNext) chips.push('<span class="chip bad">🌀 HYPNO</span>');
       $('.chips', hud).innerHTML = chips.join('');
@@ -588,6 +589,17 @@
         var scene = koSceneFor(e.winner, e.cause);
         await sleep(scene ? 1400 : 2100);
         if (scene === 'astronaut') await astronautScene();
+        break;
+
+      case 'bailout':
+        // Dimon: knocked out, then bailed out.
+        var bo = D.FIGHTERS[S.fight.f[e.who].id].bailout;
+        render(e.snap);
+        AU.play('bailout');
+        popup(e.who, '+' + e.hp, 'good');
+        banner(bo.line, bo.sub);
+        log(nm(e.who) + ' got bailed out: ' + e.hp + ' HP.');
+        await sleep(1700);
         break;
 
       case 'assist':
@@ -924,10 +936,22 @@
     return '<div class="gold-rain">' + bars + '</div><div class="gold-ticker"><b>GOLD ▲</b><s>BTC → $10K</s></div>';
   }
 
+  // Dimon: a giant pet rock with googly eyes rolls in, under its museum placard.
+  function petRockDeco() {
+    return '<div class="petrock"><svg viewBox="0 0 200 170" aria-hidden="true">' +
+      '<defs><radialGradient id="rockG" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#9a9a9f"/><stop offset=".6" stop-color="#5d5e63"/><stop offset="1" stop-color="#34353a"/></radialGradient></defs>' +
+      '<path d="M22 132 Q8 96 30 62 Q48 28 92 20 Q140 12 168 44 Q194 74 186 112 Q178 150 128 158 Q62 166 22 132Z" fill="url(#rockG)" stroke="#111" stroke-width="5"/>' +
+      '<path d="M58 118 L76 104 L70 90 M138 126 L150 108 M120 44 L132 58 L126 72" fill="none" stroke="#2a2b2f" stroke-width="3" stroke-linecap="round"/>' +
+      '<g class="eye"><circle cx="78" cy="74" r="20" fill="#fff" stroke="#111" stroke-width="4"/><circle class="pupil" cx="82" cy="78" r="9" fill="#111"/></g>' +
+      '<g class="eye"><circle cx="128" cy="72" r="20" fill="#fff" stroke="#111" stroke-width="4"/><circle class="pupil" cx="132" cy="76" r="9" fill="#111"/></g>' +
+      '</svg></div><div class="placard"><b>PET ROCK</b><small>c. 2009 · does nothing</small></div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
       case 'four': return { screen: fourDeco() };
       case 'goldrush': return { screen: goldDeco() };
+      case 'petrock': return { screen: petRockDeco() };
       case 'agentswarm': return { screen: swarmDeco() };
       case 'linkmarines': return { screen: marinesDeco(ctx) };
       case 'salesman': return salesDeco(ctx);
@@ -1786,6 +1810,7 @@
       ['Menu: loop', function () { AU.music('menu', { from: 'loop', restart: true }); }],
       ['Fight', function () { AU.music('fight', { restart: true }); }],
       ['Boss: Schiff', function () { AU.music('schiff', { restart: true }); }],
+      ['Boss: Dimon', function () { AU.music('dimon', { restart: true }); }],
       ['Stop music', function () { AU.stopMusic(0.3); }]
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
@@ -1793,7 +1818,7 @@
       ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
       ['Blinded, skips a turn', 'huh'], ['Staring at the shirt, skips a turn', 'stare'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
     ]], ['Story', [
-      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
+      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['Dimon gets bailed out', 'bailout'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
     ]]];
     D.ROSTER.concat(Object.keys(D.BOSSES)).forEach(function (id) {
       var F = D.FIGHTERS[id], m = function (b) { return moveOf(id, b); }, items = [];

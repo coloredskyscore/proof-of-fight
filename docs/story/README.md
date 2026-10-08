@@ -158,7 +158,7 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
 
-**Made so far:** Schiff (portrait, sprite, stage, song) and Satoshi (portrait, sprite, music).
+**Made so far:** Schiff and Dimon (portrait, sprite, stage, song each) and Satoshi (portrait, sprite, music).
 
 **How they go in:**
 ```
@@ -167,6 +167,9 @@ python3 tools/art.py body schiff-sprite.jpg art/schiff-body.webp
 python3 tools/art.py glow satoshi-portrait.jpg art/satoshi.webp
 python3 tools/art.py glow satoshi-sprite.jpg art/satoshi-sprite.webp
 python3 tools/music.py Schiff-music.mp3 audio/schiff.mp3 --start 142.97 --loop 146.203 177.527
+python3 tools/art.py head dimon-portrait.jpg art/dimon-head.webp --gap 1000,824 --crop=0.0,-0.04,1.0,0.96
+python3 tools/art.py body dimon-sprite.jpg art/dimon-body.webp
+python3 tools/music.py Final_Boss_Theme.mp3 audio/dimon.mp3 --start 52.92 --loop 56.283 106.239
 ```
 A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>.webp` (WebP, quality 82). Then the boss gets `art`, `boss.stage.bg` and `boss.music` in `js/data.js`, and the song an entry in `MUSIC` in `js/audio.js`.
 
@@ -183,7 +186,7 @@ A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>
 - **Rematches:** tap any boss you've beaten on the ladder to fight them again (pick an ally, full stage and song, and a Satoshi of its own). Rematches never change the run. While the next boss is still being built, the big button is **Rematch** the last boss, and **Start a new run** lets you begin again with another fighter.
 - **Music:** each boss plays their own song once it's added; until then, the fight song.
 
-**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi.
+**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%.
 
 **Where it lives:** the bosses and `STORY` settings in `js/data.js`; `assist()` and `revive()` in `js/engine.js`; the ladder, ally pick, Satoshi and the after-fight cards in `js/app.js` (search "Story mode"); styles in `css/style.css` (search "Story mode").
 
@@ -207,6 +210,29 @@ Drafted from his public record, so every line is something he said or is famous 
 **Art (Oct 7, 2026):** silver hair swept back, a short gray beard, charcoal suit, gold tie, a gold bar in his hand, and a pixel-art gold vault for his stage (a round vault door open in the middle, gold bars on shelves, his radio mic on a desk). Grok gave him a beard and a full head of hair; the prompt asked for clean-shaven and mostly bald, like the real Schiff. Kept as is: the gold bar and the name do the work.
 
 **Song (Oct 7, 2026):** `audio/schiff.mp3` from the user's Suno track (193s, about 153 BPM). It starts on the hit of the last drop (142.97s) and loops the 20 bars after it (146.20s to 177.53s), the song's loudest stretch. Played a little quieter than the fight song so the two match.
+
+## Boss 2: Jamie Dimon (draft, built Oct 8, 2026)
+
+Drafted from his public record; edit anything.
+
+| Button | Name | Lands | Flops |
+|---|---|---|---|
+| 🔴 Red (10 dmg) | 🚨 Fraud | KO: `HYPED-UP FRAUD` (Davos, Jan 2024) | can't fail |
+| 🔵 Blue (hide 30%) | 🏰 Fortress | `FORTRESS BALANCE SHEET` (his phrase) | `LONDON WHALE` (the 2012 trading loss) |
+| 🩷 Pink (24 dmg, 40%) | 🏦 JPM Coin | `IT'S DIFFERENT WHEN WE DO IT` (the bank's own token) | `COMPLIANCE SAYS NO` |
+| 🟣 Purple (36 dmg, 20%) | 🚫 Shut It Down | `IF I WAS THE GOVERNMENT, I'D CLOSE IT DOWN` (to the Senate, Dec 2023) · through a dodge: `YOUR ACCOUNT IS CLOSED` | `I DEFEND YOUR RIGHT TO BUY BITCOIN` (JPMorgan investor day, 2025) |
+
+**Too big to fail (his twist):** the first time you knock him out, he's bailed out: back up with 20 HP under the banner `TOO BIG TO FAIL`, subtitled with the headline Satoshi put in Bitcoin's first block, *Chancellor on brink of second bailout for banks*. A 🏦 BAILOUT badge on his HUD shows it's still coming. Once per fight; an ally's assist can trigger it too. Satoshi saves you, the government saves him.
+
+**Super: Pet Rock** (25 damage). A giant pet rock with googly eyes rolls in and lands under a museum placard (`PET ROCK · c. 2009 · does nothing`); his line is his own: `I CALL IT THE PET ROCK`. Super KO: `PET ROCKED`. After his Super, if you're still standing: `DECENTRALIZED PONZI SCHEME` (to Congress, 2022).
+
+**When he loses:** `WE ACCEPT IT AS COLLATERAL NOW` (JPMorgan said in Oct 2025 it would take bitcoin and ether as loan collateral).
+
+**Allies against him:** Adam Back shouts `CHANCELLOR ON BRINK OF SECOND BAILOUT`; Garlinghouse shouts `HOW ARE PEOPLE STILL FIGHTING THIS?!` (his line about banks).
+
+**Art (Oct 8, 2026):** silver hair, navy suit, light blue shirt, dark tie, the pet rock in his palm; his stage is a marble bank lobby at night with the pet rock in a museum case under a spotlight and the city through tall windows.
+
+**Song (Oct 8, 2026):** `audio/dimon.mp3` from the user's Suno track (150s, about 144 BPM; Suno titled it "Final Boss Theme"). It starts on the first big drop (52.92s) and loops the 30 bars after it (56.28s to 106.24s), which include a short breakdown. Played a little louder than it came, to match the fight song.
 
 ## The kits
 

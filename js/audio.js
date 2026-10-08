@@ -300,7 +300,26 @@
       [0.7, 0.95, 1.2, 1.45, 1.7, 1.95, 2.2].reduce(function (out, t, k) {
         return out.concat([{ w: 'triangle', f: 1700 + (k % 3) * 300, t: t, d: 0.22, v: 0.16 }, { w: 'noise', t: t, d: 0.04, v: 0.2, hp: 2500 }]);
       }, []),
-      seq({ w: 'square', v: 0.11, lp: 5000 }, [[N.E6, 2.5, 0.08], [N.G6, 2.58, 0.3]]))
+      seq({ w: 'square', v: 0.11, lp: 5000 }, [[N.E6, 2.5, 0.08], [N.G6, 2.58, 0.3]])),
+
+    // ---------- Dimon (story boss) ----------
+    'dimon.strike': seq({ w: 'square', v: 0.1, lp: 4000 }, [[960, 0, 0.09], [720, 0.1, 0.09]]),            // Fraud: an alarm blip
+    'dimon.privacy': [{ w: 'sine', f: [90, 50], d: 0.3, v: 0.5 }, { w: 'noise', d: 0.25, v: 0.15, lp: 400 },
+      { w: 'square', f: 300, t: 0.22, d: 0.05, v: 0.12 }],                                                  // Fortress: the gate drops
+    'dimon.mint.ok': seq({ w: 'triangle', v: 0.16 }, [[N.C6, 0, 0.12], [N.E6, 0.07, 0.12], [N.G6, 0.14, 0.25]]), // JPM Coin: minted
+    'dimon.mint.fail': [{ w: 'square', f: 140, d: 0.35, v: 0.14, lp: 1500 }, { w: 'square', f: 147, d: 0.35, v: 0.12, lp: 1500 }], // COMPLIANCE SAYS NO
+    'dimon.rug.ok': [{ w: 'sine', f: [120, 45], d: 0.25, v: 0.6 }, { w: 'noise', d: 0.12, v: 0.3, lp: 1200 },
+      { w: 'square', f: 1400, t: 0.22, d: 0.03, v: 0.12 }, { w: 'square', f: 1100, t: 0.27, d: 0.04, v: 0.1 }], // Shut It Down: slam, lock
+    'dimon.rug.fail': [{ w: 'sine', f: [900, 250], d: 0.6, v: 0.18, vib: [6, 20] }],                       // ...I defend your right
+    // Pet Rock: a heavy roll (0.2s to 1.2s), the thud, and the googly eyes wobbling.
+    'super.petrock': cat(
+      [{ w: 'noise', t: 0.2, d: 1.0, v: 0.25, lp: [300, 600], a: 0.2 }, { w: 'sine', f: [60, 45], t: 0.2, d: 1.0, v: 0.25, a: 0.2 }],
+      [{ w: 'sine', f: [110, 40], t: 1.22, d: 0.3, v: 0.8 }, { w: 'noise', t: 1.22, d: 0.15, v: 0.35, lp: 1500 }],
+      [{ w: 'sine', f: [500, 900, 500, 900, 500], t: 1.45, d: 0.7, v: 0.12 }]),
+    // Bailed out: a till rings and the money comes back.
+    bailout: cat(
+      [{ w: 'square', f: 2600, d: 0.05, v: 0.12, lp: 6000 }, { w: 'noise', t: 0.05, d: 0.12, v: 0.2, hp: 3000 }, { w: 'triangle', f: 3500, t: 0.1, d: 0.35, v: 0.14 }],
+      seq({ w: 'square', v: 0.1, lp: 5000 }, [[N.C5, 0.35, 0.1], [N.E5, 0.45, 0.1], [N.G5, 0.55, 0.1], [N.C6, 0.65, 0.35]]))
   };
 
   // ---------- Levels ----------
@@ -423,7 +442,15 @@
     'clank': 0.811,
     'schiff.rug.ok': 0.653,
     'schiff.rug.fail': 0.185,
-    'super.goldrush': 0.406
+    'super.goldrush': 0.406,
+    'dimon.strike': 0.116,
+    'dimon.privacy': 0.509,
+    'dimon.mint.ok': 0.153,
+    'dimon.mint.fail': 0.274,
+    'dimon.rug.ok': 0.664,
+    'dimon.rug.fail': 0.180,
+    'super.petrock': 0.876,
+    'bailout': 0.280
   };
   // PEAK:end
 
@@ -462,7 +489,8 @@
     menu: { src: 'audio/menu.mp3', loopStart: 3.3674, loopEnd: 43.7774, drop: 3.3674, beat: 60 / 142.54, vol: 0.55 },
     fight: { src: 'audio/fight.mp3', loopStart: 0.56, loopEnd: 59.728, vol: 0.42 },
     // Story bosses. Each opens on its drop hit, like the fight song. vol matches the fight song's loudness.
-    schiff: { src: 'audio/schiff.mp3', loopStart: 3.233, loopEnd: 34.557, vol: 0.37 }
+    schiff: { src: 'audio/schiff.mp3', loopStart: 3.233, loopEnd: 34.557, vol: 0.37 },
+    dimon: { src: 'audio/dimon.mp3', loopStart: 3.363, loopEnd: 53.319, vol: 0.49 }
   };
 
   // ---------- Engine (browser only) ----------

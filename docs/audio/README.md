@@ -18,6 +18,7 @@ Two songs (made by the user in Suno), seven recorded sounds picked from free CC0
 | `audio/menu.mp3` | Title_Screen_Drop.mp3 (202s) | 142.5 BPM | starts 2 bars before the first drop (30.19s) | the 24 bars from the first drop (33.56s) to the second (73.97s) |
 | `audio/fight.mp3` | Fight_Track.mp3 (77s) | 150 BPM | starts at the drop hit (12.85s) | the 37 bars of full energy (13.41s to 72.58s) |
 | `audio/schiff.mp3` | Schiff-music.mp3 (193s), story boss 1 | 153 BPM | starts at the last drop's hit (142.97s) | the 20 bars after it (146.20s to 177.53s), the loudest stretch |
+| `audio/dimon.mp3` | Final_Boss_Theme.mp3 (150s), story boss 2 | 144 BPM | starts at the first big drop (52.92s) | the 30 bars after it (56.28s to 106.24s) |
 
 The loop points were found by fitting a beat grid and matching the audio on both sides of the seam; the menu loop's best match landed on exactly 24 bars. `tools/music.py` bakes a crossfade into the seam, so it loops without a click even when a browser pads the start of an MP3. To swap a song:
 

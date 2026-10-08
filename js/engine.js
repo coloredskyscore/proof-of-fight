@@ -71,7 +71,8 @@
     var boss = D.FIGHTERS[id].boss;
     var hp = (boss && boss.hp) || rules.hp[id] || rules.hp.default;
     // shield: turns left of CZ's FUD-proof (red, pink and purple do nothing). stored: Adeniyi's Walrus bonus.
-    return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0, shield: 0, stored: 0 };
+    // bailedOut: Dimon's one bailout is spent.
+    return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0, shield: 0, stored: 0, bailedOut: false };
   }
 
   function canSuper(fight, who) {
@@ -94,6 +95,7 @@
     return fight.f.map(function (f, i) {
       return {
         hp: f.hp, maxHp: f.maxHp, blocks: f.blocks, hodl: f.hodl, shield: f.shield, stored: f.stored,
+        bailout: !!(D.FIGHTERS[f.id].bailout && !f.bailedOut),
         skipNext: f.skipNext, hypnoNext: f.hypnoNext,
         hidden: !!(hidden && hidden[i]), braced: !!(braced && braced[i])
       };
@@ -118,6 +120,16 @@
     f.blocks = Math.max(0, Math.min(D.MAX_BLOCKS, f.blocks));
   }
 
+  // Too big to fail (Dimon): the first knockout is cancelled and he's back with bailout.hp. No dice, so
+  // replays still match. Returns the event (without its snapshot), or null when there's no bailout left.
+  function tryBailout(fight, i) {
+    var f = fight.f[i], B = D.FIGHTERS[f.id].bailout;
+    if (!B || f.bailedOut || f.hp > 0) return null;
+    f.bailedOut = true;
+    f.hp = Math.min(B.hp, f.maxHp);
+    return { t: 'bailout', who: i, hp: f.hp };
+  }
+
   // Plays one full turn. playerMove is ignored if the player is Blind/Asleep.
   // Returns a list of events for the UI to animate, each with a state snapshot.
   function playTurn(fight, playerMove) {
@@ -137,6 +149,8 @@
 
     function ko(loser, cause, attacker) {
       if (fight.f[loser].hp > 0 || fight.over) return;
+      var saved = tryBailout(fight, loser);
+      if (saved) { push(saved); return; }
       fight.over = true;
       fight.winner = 1 - loser;
       var W = D.FIGHTERS[fight.f[attacker].id];
@@ -387,6 +401,8 @@
     var n = Math.min(D.STORY.assistDmg, tgt.hp);
     tgt.hp -= n;
     var ev = [{ t: 'assist', ally: allyId, line: line, amount: n, snap: snapshot(fight) }];
+    var saved = tryBailout(fight, 1);
+    if (saved) { saved.snap = snapshot(fight); ev.push(saved); }
     if (tgt.hp <= 0) {
       fight.over = true;
       fight.winner = 0;
