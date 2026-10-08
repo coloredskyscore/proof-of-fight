@@ -517,7 +517,7 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
     check('super.' + D.FIGHTERS[id].super.id, { chars: [0.5, 0.6], off: 2.8 });
   });
   ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'deflect', 'stored', 'splash', 'flop', 'selfhit', 'super.astronaut',
-    'assist', 'satoshi', 'coin', 'tick', 'clank', 'bailout']
+    'assist', 'satoshi', 'coin', 'tick', 'clank', 'bailout', 'paper', 'banned']
     .forEach(function (s) { check(s); });
   Object.keys(AU.CLIPS).forEach(function (id) {
     var c = AU.CLIPS[id];
@@ -607,6 +607,68 @@ test('Story: Dimon is bailed out once (too big to fail); the second knockout sti
   rig(k, [cpuRoll('dimon', 'strike'), 0.99 /* Zolana hide fails */, 0 /* its fail line */]);
   E.playTurn(k, 'privacy');
   assert.strictEqual(k.finish, 'HYPED-UP FRAUD');
+});
+
+test('Story: Warren\'s Letter makes you skip a turn (hiding doesn\'t help, CZ ignores it); Vote No halves', function () {
+  var f = E.newFight({ player: 'mert', cpu: 'warren', seed: 1 });
+  rig(f, [cpuRoll('warren', 'mint'), 0 /* Zolana hides */, 0 /* the Letter lands */]);
+  var ev = E.playTurn(f, 'privacy');
+  assert(ev.some(function (e) { return e.t === 'letter' && e.target === 0; }), 'the letter lands on a hidden Mert');
+  assert.strictEqual(f.f[0].hp, 100, 'no damage');
+  assert.strictEqual(E.playerStatus(f).skipped, 'letter');
+  var g = E.newFight({ player: 'cz', cpu: 'warren', seed: 1 });
+  rig(g, [cpuRoll('warren', 'mint'), 0]);
+  ev = E.playTurn(g, 'privacy');
+  assert(ev.some(function (e) { return e.t === 'miss' && e.ignored; }) && !E.playerStatus(g).skipped, 'Ignore FUD ignores the letter');
+  var h = E.newFight({ player: 'toly', cpu: 'warren', seed: 1 });
+  rig(h, [cpuRoll('warren', 'privacy')]);
+  E.playTurn(h, 'strike');
+  assert.strictEqual(h.f[1].hp, D.BOSSES.warren.boss.hp - 5, 'Vote No halves a strike');
+  assert.strictEqual(h.f[1].blocks, 3 + 1, 'Vote No gives 3 Blocks (+1 for being hit)');
+  var k = E.newFight({ player: 'toly', cpu: 'warren', seed: 1 });
+  rig(k, [cpuRoll('warren', 'strike')]);
+  E.playTurn(k, 'strike');
+  assert.strictEqual(k.f[0].hp, 100 - 12, 'Bad Actors does 12');
+});
+
+test('Story: Warren\'s BANNED: once, at half HP, your purple is banned for 2 turns', function () {
+  var f = E.newFight({ player: 'toly', cpu: 'warren', seed: 1 });
+  f.f[1].hp = Math.floor(f.f[1].maxHp / 2) + 5;
+  rig(f, [cpuRoll('warren', 'strike')]);
+  var ev = E.playTurn(f, 'strike');
+  assert(ev.some(function (e) { return e.t === 'ban' && e.who === 0 && e.move === 'rug'; }), 'banned at half HP');
+  assert.strictEqual(E.playerStatus(f).banned, 'rug');
+  assert.throws(function () { E.playTurn(f, 'rug'); }, /Banned/);
+  rig(f, [cpuRoll('warren', 'strike')]);
+  E.playTurn(f, 'strike');
+  assert.strictEqual(E.playerStatus(f).bannedTurns, 1);
+  rig(f, [cpuRoll('warren', 'strike')]);
+  ev = E.playTurn(f, 'strike');
+  assert(ev.some(function (e) { return e.t === 'unban'; }) && !E.playerStatus(f).banned, 'legal again after 2 turns');
+  f.f[1].hp = 10;
+  rig(f, [cpuRoll('warren', 'privacy')]);
+  ev = E.playTurn(f, 'strike');
+  assert(!ev.some(function (e) { return e.t === 'ban'; }), 'only once');
+});
+
+test('Story: Warren\'s Plan hits 4 times for 5 and you skip your next turn; her KO lines; every boss has an opening line', function () {
+  var f = E.newFight({ player: 'toly', cpu: 'warren', seed: 1 });
+  f.f[1].blocks = 10;
+  rig(f, []);
+  E.playTurn(f, 'strike');
+  assert.strictEqual(f.f[0].hp, 100 - 20);
+  assert.strictEqual(E.playerStatus(f).skipped, 'letter');
+  var g = E.newFight({ player: 'toly', cpu: 'warren', seed: 1 });
+  g.f[0].hp = 5; g.f[1].blocks = 10;
+  rig(g, []);
+  E.playTurn(g, 'strike');
+  assert.strictEqual(g.finish, 'NATIONAL SECURITY');
+  var h = E.newFight({ player: 'garlinghouse', cpu: 'warren', seed: 1 });
+  h.f[1].hp = 5; h.f[1].banUsed = true;
+  rig(h, [cpuRoll('warren', 'strike')]);
+  E.playTurn(h, 'strike');
+  assert.strictEqual(h.finish, 'CHARTER APPROVED');
+  Object.keys(D.BOSSES).forEach(function (id) { assert(D.BOSSES[id].boss.intro, id + ': needs an opening line'); });
 });
 
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {

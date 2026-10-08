@@ -207,4 +207,5 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | Adeniyi | ✅ bald, beard, square black glasses, half-grin, pointing, sky-blue track jacket | ✅ same outfit, gray joggers, a swirling ball of water over his palm |
 | *Story:* Schiff | ✅ silver hair, gray beard, charcoal suit, gold tie, a gold bar | ✅ same suit, gold bar in hand (stage: the gold vault) |
 | *Story:* Dimon | ✅ silver hair, navy suit, light blue shirt, the pet rock in his palm | ✅ same suit, rock in one hand, fist up (stage: the bank lobby, pet rock in a case) |
+| *Story:* Warren | ✅ blonde-gray bob, rimless glasses, red cardigan, pointing at you | ✅ same, a clipboard of letters under her arm (stage: the hearing room) |
 | *Story:* Satoshi | ✅ sliced steel hood, gold glow (`art.py glow`) | ✅ seated cross-legged with a laptop, gold glow (the revive) |

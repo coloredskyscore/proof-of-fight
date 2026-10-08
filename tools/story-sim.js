@@ -21,7 +21,7 @@ function sensible(fight, rng) {
   var best = 'strike', bestV = dm('strike');
   if (F.mint * dm('mint') > bestV) { best = 'mint'; bestV = F.mint * dm('mint'); }
   if (F.rug * dm('rug') > bestV) best = 'rug';
-  return best;
+  return fight.f[0].banned && fight.f[0].banned.move === best ? 'strike' : best; // Warren's BANNED
 }
 
 function run(player, boss, help, rng) {

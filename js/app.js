@@ -42,13 +42,14 @@
   var BUTTONS = ['strike', 'privacy', 'mint', 'rug'];
   var STATUS_TEXT = {
     blind: '🙈 BLINDED', sleep: '💤 ASLEEP', hypno: '🌀 HYPNOTIZED',
-    hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks', stun: '👀 STARING', shield: '4️⃣ FUD-PROOF'
+    hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks', stun: '👀 STARING', shield: '4️⃣ FUD-PROOF', letter: '📜 READING'
   };
   // Why someone skips a turn: Mert's dome, Charles's midnight, Sergey's shirt.
   var SKIP = {
     blind: { icon: '🙈', chip: 'BLIND', word: 'BLINDED', sound: 'huh' },
     sleep: { icon: '💤', chip: 'ASLEEP', word: 'ASLEEP', sound: 'snore' },
-    stun:  { icon: '👀', chip: 'STARING', word: 'STARING', sound: 'stare' }
+    stun:  { icon: '👀', chip: 'STARING', word: 'STARING', sound: 'stare' },
+    letter: { icon: '📜', chip: 'READING', word: 'READING', sound: 'paper' }   // Warren's Letter and her Plan
   };
   var GRID_EMOJI = { hit: '🟩', hid: '🟦', super: '🟨', fail: '🟥', miss: '🟥', skip: '⬛', self: '🌀', none: '⬛' };
   var SIDE = ['p', 'c'];
@@ -213,12 +214,20 @@
     S.busy = true;
     updateControls();
     log(resumeMoves ? 'Picking up where you left off.' : 'Tap a move. The CPU picks at the same time.');
-    banner(resumeMoves ? 'RESUME' : opts.mode === 'story' ? 'BOSS ' + (opts.rung + 1) : 'ROUND 1', 'FIGHT!');
+    // A boss opens with their line first (Warren: WE NEED REGULATION. YES WE DO.), then BOSS 3 / FIGHT!
+    var boss = opts.mode === 'story' && D.FIGHTERS[opts.cpu].boss, wait = 0;
+    if (boss && boss.intro && !resumeMoves) {
+      banner(boss.intro, D.FIGHTERS[opts.cpu].name);
+      wait = 1900;
+    }
+    later(function () {
+      banner(resumeMoves ? 'RESUME' : opts.mode === 'story' ? 'BOSS ' + (opts.rung + 1) : 'ROUND 1', 'FIGHT!');
+    }, wait);
     later(function () {
       S.busy = false;
       updateControls();
       if (!store.get('seenHelp')) { store.set('seenHelp', true); openHelp(); }
-    }, 1100);
+    }, wait + 1100);
   }
 
   // A fighter's face: their portrait if they have art, else their emoji.
@@ -269,7 +278,7 @@
       el.style.setProperty('--c', F.color);
       el.innerHTML = fighterHTML(F);
       var hud = $('#hud-' + side);
-      $('.hud-fname', hud).textContent = F.name;
+      $('.hud-fname', hud).textContent = F.short || F.name; // a long name gets a short one on the health bar
       $('.blocks', hud).innerHTML = new Array(D.MAX_BLOCKS + 1).join('<i></i>');
     });
     $('#hud-mode').textContent = S.opts.mode === 'daily' ? 'DAILY #' + S.opts.n
@@ -349,6 +358,7 @@
       if (s.shield > 0) chips.push('<span class="chip good">4️⃣ FUD-PROOF</span>');
       if (s.stored > 0) chips.push('<span class="chip good">🦭 +' + s.stored + '</span>');
       if (s.bailout) chips.push('<span class="chip good">🏦 BAILOUT</span>');
+      if (s.banned) chips.push('<span class="chip bad">🚫 BANNED</span>');
       if (SKIP[s.skipNext]) chips.push('<span class="chip bad">' + SKIP[s.skipNext].icon + ' ' + SKIP[s.skipNext].chip + '</span>');
       if (s.hypnoNext) chips.push('<span class="chip bad">🌀 HYPNO</span>');
       $('.chips', hud).innerHTML = chips.join('');
@@ -383,11 +393,12 @@
         $('.move-sub', b).textContent = st.canSuper ? 'READY!' : me.blocks + '/' + D.MAX_BLOCKS + ' Blocks';
         b.disabled = locked || !st.canSuper;
       } else {
-        var mo = moveOf(me.id, m);
+        var mo = moveOf(me.id, m), banned = st.banned === m;
         $('.move-icon', b).textContent = mo.icon;
         $('.move-label', b).innerHTML = esc(mo.name) + (mo.nick ? ' <small class="move-nick">' + esc(mo.nick) + '</small>' : '');
-        $('.move-sub', b).textContent = subs[m];
-        b.disabled = locked;
+        $('.move-sub', b).textContent = banned ? 'Banned · ' + st.bannedTurns + (st.bannedTurns === 1 ? ' turn' : ' turns') : subs[m];
+        b.classList.toggle('banned', banned);
+        b.disabled = locked || banned;
       }
     });
     var ab = $('#btn-assist');
@@ -428,7 +439,7 @@
     if (S.busy || !S.fight || S.fight.over) return;
     var st = E.playerStatus(S.fight);
     if (st.skipped) move = null;
-    else if (!move || (move === 'super' && !st.canSuper)) return;
+    else if (!move || (move === 'super' && !st.canSuper) || move === st.banned) return;
 
     S.busy = true;
     var turnNo = S.fight.turn;
@@ -473,7 +484,9 @@
         bubble(e.who, why.icon);
         AU.play(why.sound);
         // The line belongs to whoever caused it: their Super's (WHO WAS THAT), or Sergey's shirt.
-        var skipLine = e.reason === 'stun' ? moveOf(by, 'privacy').skipLine : D.FIGHTERS[by].super.skipLine;
+        var skipLine = e.reason === 'stun' ? moveOf(by, 'privacy').skipLine
+          : e.reason === 'letter' ? moveOf(by, 'mint').skipLine || D.FIGHTERS[by].super.skipLine
+          : D.FIGHTERS[by].super.skipLine;
         if (skipLine) {
           banner(skipLine, (e.who === 0 ? 'You skip' : nm(e.who) + ' skips') + ' this turn');
           await sleep(1200);
@@ -591,6 +604,37 @@
         if (scene === 'astronaut') await astronautScene();
         break;
 
+      case 'letter':
+        // Warren's Letter landed: a stack of pages, and they lose their next turn reading it.
+        lunge(e.who);
+        await sleep(170);
+        render(e.snap);
+        AU.play(S.fight.f[e.who].id + '.mint.ok');
+        bubble(e.target, SKIP.letter.icon);
+        banner(moveOf(S.fight.f[e.who].id, 'mint').ok, (e.target === 0 ? 'You lose' : nm(e.target) + ' loses') + ' the next turn reading it');
+        log((e.target === 0 ? 'You' : nm(e.target)) + ' got the letter.');
+        await sleep(1300);
+        break;
+
+      case 'ban':
+        // Warren's BANNED: a stamp on the button, which can't be pressed for a couple of turns.
+        render(e.snap);
+        AU.play('banned');
+        var bm = moveOf(S.fight.f[e.who].id, e.move);
+        if (e.who === 0) restartClass($('#controls .move[data-move="' + e.move + '"]'), 'stamped', 900);
+        banner('BANNED', (e.who === 0 ? 'Your ' : nm(e.who) + "'s ") + bm.icon + ' ' + bm.name + ' is banned for ' + e.turns + ' turns');
+        log((e.who === 0 ? 'Your ' : nm(e.who) + "'s ") + bm.name + ' is banned.');
+        updateControls();
+        await sleep(1700);
+        break;
+
+      case 'unban':
+        render(e.snap);
+        popup(e.who, moveOf(S.fight.f[e.who].id, e.move).name.toUpperCase() + ' IS LEGAL AGAIN', 'good');
+        AU.play('hodl');
+        await sleep(700);
+        break;
+
       case 'bailout':
         // Dimon: he goes down like any knockout, the screen cuts to him (too big to fail), and he's back up.
         fighterEl(e.who).classList.add('is-ko');
@@ -639,7 +683,7 @@
   }
 
   // Multi-hit Supers with their own hit sound: crowds stomp, Adeniyi's wave splashes.
-  var SUPER_HIT = { xrparmy: 'stomp', linkmarines: 'stomp', agentswarm: 'splash', goldrush: 'clank' };
+  var SUPER_HIT = { xrparmy: 'stomp', linkmarines: 'stomp', agentswarm: 'splash', goldrush: 'clank', plan: 'stomp' };
 
   async function doHit(e) {
     var multi = e.of > 1;
@@ -953,11 +997,20 @@
       '</svg></div><div class="placard"><b>PET ROCK</b><small>c. 2009 · does nothing</small></div>';
   }
 
+  // Warren: the Anti-Crypto Army marches across with clipboards while her letter unrolls off the bottom of the screen.
+  function planDeco() {
+    var staff = '', lines = ['Dear Sir or Madam,', 'I write to express my serious concerns', 'about bad actors using crypto,', 'including but not limited to', 'ransomware, sanctions evasion', 'and money laundering.', 'Please answer the following', 'forty questions by Friday.', '1.', '2.', '3.', '4.', '5.', '6.'];
+    for (var k = 0; k < 7; k++) staff += '<span class="staffer">🧑‍💼<i>📋</i></span>';
+    return '<div class="letter-scroll"><div class="letter-paper">' + lines.map(function (l) { return '<p>' + esc(l) + '</p>'; }).join('') +
+      '</div></div><div class="deco-march staff-march">' + staff + '</div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
       case 'four': return { screen: fourDeco() };
       case 'goldrush': return { screen: goldDeco() };
       case 'petrock': return { screen: petRockDeco() };
+      case 'plan': return { screen: planDeco() };
       case 'agentswarm': return { screen: swarmDeco() };
       case 'linkmarines': return { screen: marinesDeco(ctx) };
       case 'salesman': return salesDeco(ctx);
@@ -1762,7 +1815,7 @@
         '<p>Beat ' + D.STORY.ladder.length + ' bosses in a row with one founder. Before each boss you pick an ally from the other founders: when you\'re at ' +
         pct(D.STORY.assistAt) + ' HP or lower, tap their face in the corner and they hit for ' + D.STORY.assistDmg +
         ' that can\'t be dodged, without using your turn. Once per run, Satoshi gets you back up with half your HP when you\'re knocked out. ' +
-        'After that, a loss is CONTINUE? (that boss fight starts over) or game over.</p>' : '') +
+        'After that, a loss is CONTINUE? (that boss fight starts over) or game over. Every boss has a trick of their own; the banner says what it is when it happens.</p>' : '') +
       '<h3>Daily Fight</h3>' +
       '<p>Everyone gets the same matchup and the same luck each day. One try. Share your grid; fewer turns is better.</p>' +
       '<h3>Sound and keys</h3>' +
@@ -1849,6 +1902,7 @@
       ['Fight', function () { AU.music('fight', { restart: true }); }],
       ['Boss: Schiff', function () { AU.music('schiff', { restart: true }); }],
       ['Boss: Dimon', function () { AU.music('dimon', { restart: true }); }],
+      ['Boss: Warren', function () { AU.music('warren', { restart: true }); }],
       ['Stop music', function () { AU.stopMusic(0.3); }]
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
@@ -1856,7 +1910,7 @@
       ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
       ['Blinded, skips a turn', 'huh'], ['Staring at the shirt, skips a turn', 'stare'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
     ]], ['Story', [
-      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['Dimon gets bailed out', 'bailout'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
+      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['Dimon gets bailed out', 'bailout'], ['Reading the letter (skips a turn)', 'paper'], ['BANNED', 'banned'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
     ]]];
     D.ROSTER.concat(Object.keys(D.BOSSES)).forEach(function (id) {
       var F = D.FIGHTERS[id], m = function (b) { return moveOf(id, b); }, items = [];
