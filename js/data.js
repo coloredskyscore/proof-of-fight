@@ -304,7 +304,8 @@
         rug:     { name: 'Da Moon',    icon: '🛥️', ok: 'TO DA MOON',  fail: 'STILL DOCKED' } // his yacht's real name
       },
       loseLine: 'BACK TO GIGGLE ACADEMY',
-      rivalKo: { schiff: 'TRUST ME BRO' }, // what he called tokenized gold before their Dec 2025 debate
+      // Schiff: what he called tokenized gold before their Dec 2025 debate. SBF: Binance walked away from buying FTX.
+      rivalKo: { schiff: 'TRUST ME BRO', sbf: "DEAL'S OFF" },
       dailyFrom: '2026-10-12',
       super: {
         // His 2023 New Year post, item 4: ignore FUD, fake news, attacks. The white Nissan SUV is from a 2026
@@ -453,8 +454,47 @@
         stage: { name: 'The Hearing', bg: 'art/stages/warren.webp', sky: 'linear-gradient(#0d0b10 0%, #2a1c1c 55%, #4a2a26 78%, #6b3a32 82%)', floor: 'linear-gradient(#3a3236, #141114)' },
         allyLines: { garlinghouse: 'FOR THE XRP ARMY' }
       }
+    },
+    sbf: {
+      // Every button is a numbered list item, like his tweets (Nov 2022: "What", then one letter at a time).
+      id: 'sbf', name: 'Sam Bankman-Fried', short: 'SBF', lane: 'FTX / boss 4',
+      color: '#6b7d3a', emoji: '🫘',
+      hide: 0.35, mint: 0.40, rug: 0.20,
+      strikeSteal: 2,                 // 1) Fine: when it lands it takes 2 of your Blocks (customer funds)
+      // Caroline tags in for him once, at 35% HP: beanbags, 3 hits of 5 that can't be dodged.
+      tagIn: { ally: 'caroline', at: 0.35, dmg: 5, hits: 3, line: 'HE DIRECTED ME TO DO THIS' }, // her testimony, 2023
+      ai: { strike: 4, privacy: 2, mint: 3, rug: 2 },
+      art: { head: 'art/sbf-head.webp', body: 'art/sbf-body.webp' }, // orange jumpsuit, white socks, dragging a beanbag
+      moves: {
+        strike:  { name: '1) Fine',    icon: '🔀', ko: 'ASSETS ARE FINE', steal: 'CUSTOMER FUNDS' },
+        privacy: { name: '2) Beanbag', icon: '🫘', ok: 'I NEED A MINUTE', fail: 'COURT IS IN SESSION' },
+        mint:    { name: '3) League',  icon: '🎮', ok: 'GG EZ', fail: 'MISSED THE CALL' },     // gaming through the Sequoia pitch
+        rug:     { name: '4) The Box', icon: '📦', ok: 'PUT MONEY IN THE BOX', fail: 'THE BOX IS EMPTY' } // Odd Lots, 2022
+      },
+      loseLine: "I DON'T RECALL",      // over 100 times on the stand
+      super: {
+        // A flashback to the penthouse: the laptop, a game on screen, he looks up. The question mark is the hit.
+        // The line is the list item that never comes.
+        id: 'what', name: '1) What', prop: '',
+        line: '2)',
+        timing: { card: 0.15, line: 1.7, dur: 3.2 },
+        blurb: 'One huge hit', finish: '1) WHAT',
+        cpuAfter: 'NOT LEGAL ADVICE. NOT FINANCIAL ADVICE.' // how his thread ended
+      },
+      boss: {
+        hp: 100,
+        music: 'sbf',
+        intro: 'FTX IS FINE. ASSETS ARE FINE.',  // his tweet, Nov 7 2022
+        stage: { name: 'The Yard', bg: 'art/stages/sbf.webp', sky: 'linear-gradient(#1a1424 0%, #3b2236 50%, #7a3b3b 78%, #4a4a4a 82%)', floor: 'linear-gradient(#3d3d40, #141416)' },
+        allyLines: { cz: 'LIQUIDATING OUR FTT' }  // the tweet that started the run on FTX
+      }
     }
   };
+  // Story guests: not fighters. They only tag in for a boss (their portrait shows in the tag-in).
+  var GUESTS = {
+    caroline: { id: 'caroline', name: 'Caroline Ellison', short: 'Caroline', color: '#7a5aa6', emoji: '👩‍💼', art: { head: 'art/caroline-head.webp' } }
+  };
+  Object.keys(GUESTS).forEach(function (id) { FIGHTERS[id] = GUESTS[id]; });
   // The engine and the screens look everyone up in FIGHTERS; ROSTER (below) keeps bosses out of Free play.
   Object.keys(BOSSES).forEach(function (id) { FIGHTERS[id] = BOSSES[id]; });
 
@@ -472,7 +512,8 @@
     agentswarm:   { dmg: 4, hits: 8 },
     goldrush:     { dmg: 7, hits: 4 },    // Schiff (story boss)
     petrock:      { dmg: 25 },            // Dimon (story boss)
-    plan:         { dmg: 5, hits: 4, skip: 'letter' }  // Warren (story boss): they skip their next turn reading it
+    plan:         { dmg: 5, hits: 4, skip: 'letter' }, // Warren (story boss): they skip their next turn reading it
+    what:         { dmg: 22 }             // SBF (story boss)
   };
 
   // Story mode: pick a founder, beat the bosses in order. The other founders are your assists, and
@@ -513,6 +554,7 @@
     SUPERS: SUPERS,
     ROSTER: ROSTER,
     BOSSES: BOSSES,
+    GUESTS: GUESTS,
     STORY: STORY,
     DAILY_EPOCH: '2026-09-28',
     FIRST_FIGHT: { player: 'saylor', cpu: 'mert' }

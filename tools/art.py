@@ -21,6 +21,10 @@ white and dark outlines stay dark:
 A head crop can reach past the image to zoom out (a wide hat brim); write it with = so a leading
 minus isn't read as an option:  --crop=-0.06,-0.08,1.06,1.04
 
+Curly hair (SBF) traps specks of background between the curls, too small to list as pockets. Clear
+every near-white pixel inside a box around the hair (keep the box off the eyes and teeth):
+  --clear 100,0,1350,370
+
 A glowing figure (Satoshi's golden aura) keeps its glow: the whole picture is kept and the white is
 taken out of the light around the figure, so the glow fades softly over a dark screen:
   python3 tools/art.py glow SOURCE art/satoshi.webp      # longest side 720
@@ -106,6 +110,20 @@ def tint(im, box, color):
     return n
 
 
+def clear_white(im, box):
+    """Make every near-white pixel inside box transparent (background caught between curls)."""
+    x0, y0, x1, y1 = box
+    src = im.load()
+    n = 0
+    for y in range(max(0, y0), min(im.size[1], y1)):
+        for x in range(max(0, x0), min(im.size[0], x1)):
+            r, g, b, a = src[x, y]
+            if a and min(r, g, b) > 200:
+                src[x, y] = (r, g, b, 0)
+                n += 1
+    return n
+
+
 def unblend_glow(im):
     """Light pixels reachable from the edges (white, or a warm glow) become see-through: each keeps
     only what it adds over white, so a pale gold glow turns into transparent gold. The figure, and
@@ -177,6 +195,7 @@ def main():
     ap.add_argument('--crop', help='head framing as left,top,right,bottom fractions of the source')
     ap.add_argument('--delogo', action='append', default=[], help='x0,y0,x1,y1 box around a logo to paint out')
     ap.add_argument('--tint', action='append', default=[], help='x0,y0,x1,y1,RRGGBB: recolor the grays in a box')
+    ap.add_argument('--clear', action='append', default=[], help='x0,y0,x1,y1: clear near-white pixels in a box (hair)')
     args = ap.parse_args()
 
     im = Image.open(args.source).convert('RGBA')
@@ -190,6 +209,8 @@ def main():
         print('logo painted out: %d px' % delogo(im, tuple(int(v) for v in d.split(','))))
     gaps = [tuple(int(v) for v in g.split(',')) for g in args.gap]
     cut_background(im, gaps, bottom=args.kind == 'body')
+    for c in args.clear:
+        print('cleared: %d px' % clear_white(im, tuple(int(v) for v in c.split(','))))
     for t in args.tint:
         *box, color = t.split(',')
         print('tinted: %d px' % tint(im, tuple(int(v) for v in box), color.lstrip('#')))

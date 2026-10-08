@@ -232,6 +232,14 @@ test('Story art files exist (boss stages, Satoshi)', function () {
     var bg = D.BOSSES[id].boss.stage.bg;
     if (bg) assert(fs.existsSync(path.join(__dirname, '..', bg)), id + ': missing ' + bg);
   });
+  Object.keys(D.GUESTS).forEach(function (id) {
+    var head = D.GUESTS[id].art.head;
+    assert(fs.existsSync(path.join(__dirname, '..', head)), id + ': missing ' + head);
+  });
+  Object.keys(D.BOSSES).forEach(function (id) {
+    var tg = D.BOSSES[id].tagIn;
+    if (tg) assert(D.GUESTS[tg.ally], id + ': tags in ' + tg.ally + ', who is not in GUESTS');
+  });
   var sat = D.STORY.satoshi.art || {};
   Object.keys(sat).forEach(function (k) { assert(fs.existsSync(path.join(__dirname, '..', sat[k])), 'missing ' + sat[k]); });
 });
@@ -517,7 +525,7 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
     check('super.' + D.FIGHTERS[id].super.id, { chars: [0.5, 0.6], off: 2.8 });
   });
   ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'deflect', 'stored', 'splash', 'flop', 'selfhit', 'super.astronaut',
-    'assist', 'satoshi', 'coin', 'tick', 'clank', 'bailout', 'paper', 'banned']
+    'assist', 'satoshi', 'coin', 'tick', 'clank', 'bailout', 'paper', 'banned', 'beanbag']
     .forEach(function (s) { check(s); });
   Object.keys(AU.CLIPS).forEach(function (id) {
     var c = AU.CLIPS[id];
@@ -669,6 +677,80 @@ test('Story: Warren\'s Plan hits 4 times for 5 and you skip your next turn; her 
   E.playTurn(h, 'strike');
   assert.strictEqual(h.finish, 'CHARTER APPROVED');
   Object.keys(D.BOSSES).forEach(function (id) { assert(D.BOSSES[id].boss.intro, id + ': needs an opening line'); });
+});
+
+test('Story: SBF\'s 1) Fine takes 2 of your Blocks; his Super is one big hit; his KO lines', function () {
+  var f = E.newFight({ player: 'toly', cpu: 'sbf', seed: 1 });
+  f.f[0].blocks = 5;
+  rig(f, [cpuRoll('sbf', 'strike')]);
+  var ev = E.playTurn(f, 'strike');
+  assert(ev.some(function (e) { return e.t === 'hit' && e.attacker === 1 && e.move === 'strike' && e.stolen === 2; }), 'he took 2 Blocks');
+  var g = E.newFight({ player: 'toly', cpu: 'sbf', seed: 1 });
+  rig(g, [cpuRoll('sbf', 'strike'), 0.99 /* the hide fails: +1 Block */, 0, 0]);
+  ev = E.playTurn(g, 'privacy');
+  assert(ev.some(function (e) { return e.t === 'hit' && e.attacker === 1 && e.stolen === 1; }), 'only what you have');
+  assert.strictEqual(g.f[0].blocks, 0 + D.BLOCKS.gotHit, 'left with the Block for being hit');
+  var h = E.newFight({ player: 'toly', cpu: 'sbf', seed: 1 });
+  h.f[1].blocks = 10;
+  rig(h, []);
+  E.playTurn(h, 'strike');
+  assert.strictEqual(h.f[0].hp, 100 - D.SUPERS.what.dmg, '1) What is one big hit');
+  var k = E.newFight({ player: 'toly', cpu: 'sbf', seed: 1 });
+  k.f[0].hp = 5; k.f[1].blocks = 10;
+  rig(k, []);
+  E.playTurn(k, 'strike');
+  assert.strictEqual(k.finish, '1) WHAT');
+  var m = E.newFight({ player: 'cz', cpu: 'sbf', seed: 1 });
+  m.f[1].hp = 5; m.f[1].taggedIn = true;
+  rig(m, [cpuRoll('sbf', 'strike')]);
+  E.playTurn(m, 'strike');
+  assert.strictEqual(m.finish, "DEAL'S OFF", 'CZ has his own line for SBF');
+});
+
+test('Story: Caroline tags in for SBF once, at 35% HP: 3 beanbags that can\'t be dodged', function () {
+  var TG = D.BOSSES.sbf.tagIn, f = E.newFight({ player: 'mert', cpu: 'sbf', seed: 1 });
+  f.f[1].hp = Math.floor(f.f[1].maxHp * TG.at) + 1;
+  f.f[0].shield = 0;
+  rig(f, [cpuRoll('sbf', 'mint'), 0.99 /* his League flops */, 0, 0, 0]);
+  var ev = E.playTurn(f, 'strike');
+  var tag = ev.filter(function (e) { return e.t === 'tagin'; });
+  assert.strictEqual(tag.length, 1, 'tagged in');
+  assert.strictEqual(tag[0].ally, 'caroline');
+  var bags = ev.filter(function (e) { return e.t === 'hit' && e.move === 'tagin'; });
+  assert.strictEqual(bags.length, TG.hits);
+  assert(bags.every(function (e) { return e.amount === TG.dmg && e.target === 0; }));
+  var hp = f.f[0].hp;
+  rig(f, [cpuRoll('sbf', 'mint'), 0.99, 0, 0, 0]);
+  ev = E.playTurn(f, 'strike');
+  assert(!ev.some(function (e) { return e.t === 'tagin'; }), 'only once');
+  assert.strictEqual(f.f[0].hp, hp, 'no more beanbags');
+  // A beanbag knockout ends on her line.
+  var g = E.newFight({ player: 'toly', cpu: 'sbf', seed: 1 });
+  g.f[1].hp = Math.floor(g.f[1].maxHp * TG.at) + 1;
+  g.f[0].hp = 10;
+  rig(g, [cpuRoll('sbf', 'mint'), 0.99, 0, 0, 0]);
+  ev = E.playTurn(g, 'strike');
+  assert(g.over && g.winner === 1 && g.finish === TG.line, 'KO by beanbag: ' + g.finish);
+  assert.strictEqual(ev.filter(function (e) { return e.t === 'hit' && e.move === 'tagin'; }).length, 2, 'stops at the knockout');
+  // Random fights against every boss: always end, stay in range, replay the same.
+  var rng = E.makeRng(7);
+  Object.keys(D.BOSSES).forEach(function (b) {
+    for (var n = 0; n < 1500; n++) {
+      var opts = { player: D.ROSTER[Math.floor(rng() * D.ROSTER.length)], cpu: b, seed: Math.floor(rng() * 4294967296) };
+      var x = E.newFight(opts);
+      while (!x.over) {
+        var st = E.playerStatus(x), mv = null;
+        if (!st.skipped) {
+          do mv = st.canSuper && rng() < 0.7 ? 'super' : E.MOVES[Math.floor(rng() * 4)]; while (mv === st.banned);
+        }
+        E.playTurn(x, mv);
+        x.f.forEach(function (y) { assert(y.hp >= 0 && y.hp <= y.maxHp, b + ': hp out of range'); });
+      }
+      var r = E.replay(opts, x.moves.join(''));
+      assert.strictEqual(r.winner, x.winner, b + ': replay winner mismatch');
+      assert.strictEqual(r.f[0].hp, x.f[0].hp, b + ': replay hp mismatch');
+    }
+  });
 });
 
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {

@@ -1406,6 +1406,69 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   .staffer i { font-size: 17px; margin-left: -10px; }
 }
 
+/* SBF: 1) What. A laptop rises with the balance sheet; one line is a red "?", and at 0.9s it flies out
+   of the screen and slams down huge (1.25s). The line ("2)") is the list item that never comes. */
+.cutin.sup-what { justify-content: flex-start; padding-top: 6vh; }
+.what-laptop {
+  position: absolute; left: 50%; bottom: 4%; width: min(64vw, 320px, 40vh);
+  transform: translate(-50%, 40%); opacity: 0;
+}
+.cutin.play .what-laptop { animation: laptopUp .35s .1s ease-out forwards; }
+@keyframes laptopUp { to { opacity: 1; transform: translate(-50%, 0); } }
+.wl-screen {
+  aspect-ratio: 16 / 10; padding: 7% 8%; display: flex; flex-direction: column; justify-content: center; gap: 1px;
+  border: 6px solid #2b2b30; border-bottom-width: 9px; border-radius: 9px 9px 0 0;
+  background: #0b1712; color: #7dffb0; box-shadow: 0 0 26px #7dffb044;
+  font: 700 clamp(9px, min(3vw, 1.9vh), 14px)/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.wl-screen b { font-size: .9em; letter-spacing: .08em; color: #fff; border-bottom: 1px dashed #7dffb077; padding-bottom: 3px; margin-bottom: 3px; }
+.wl-screen p { margin: 0; display: flex; justify-content: space-between; gap: 8px; }
+.wl-q { color: #ff5470; }
+.cutin.play .wl-q { animation: blink .3s steps(2) 3; }
+.wl-base { height: 11px; margin: 0 -7%; border-radius: 0 0 14px 14px; background: linear-gradient(#c7cbd2, #7d828b); box-shadow: 0 6px 0 #0007; }
+.what-q {
+  position: absolute; left: 50%; bottom: 10%; transform: translateX(-50%) scale(.05); opacity: 0;
+  font-family: var(--display); font-size: clamp(150px, min(50vw, 34vh), 300px); line-height: 1;
+  color: var(--gold); -webkit-text-stroke: 4px var(--line); text-shadow: 0 10px 0 var(--line);
+}
+.cutin.play .what-q { animation: qOut .35s .9s cubic-bezier(.3, .2, .4, 1.5) forwards; }
+.cutin.play.from-c .what-q { animation-name: qOutL; }
+@keyframes qOut { to { opacity: 1; left: 78%; bottom: 30%; transform: translateX(-50%) rotate(14deg); } }
+@keyframes qOutL { to { opacity: 1; left: 22%; bottom: 30%; transform: translateX(-50%) rotate(-14deg); } }
+@media (orientation: landscape) and (max-height: 520px) {
+  .cutin.sup-what { justify-content: center; padding-top: 16px; }
+  .what-laptop { left: 18%; bottom: 8%; width: min(30vw, 46vh, 250px); }
+  .from-c .what-laptop { left: 82%; }
+  @keyframes qOut { to { opacity: 1; left: 82%; bottom: 22%; transform: translateX(-50%) rotate(14deg); } }
+  @keyframes qOutL { to { opacity: 1; left: 18%; bottom: 40%; transform: translateX(-50%) rotate(-14deg); } }
+}
+
+/* SBF's partner tags in from his side (Caroline): the ally cut-in, mirrored. */
+.assistin.tagin { background: linear-gradient(245deg, #000d 0 30%, color-mix(in srgb, var(--c) 70%, #000) 30% 70%, #000d 70%); }
+.assistin.tagin .ai-card small { color: #ff8fa3; }
+.assistin.tagin.play .ai-face { animation-name: allyInR; }
+@keyframes allyInR {
+  0% { transform: translateX(120vw) rotate(15deg); }
+  22% { transform: none; }
+  82% { transform: none; opacity: 1; }
+  100% { transform: translateX(-120vw) rotate(-12deg); opacity: 1; }
+}
+/* Her beanbags: a soft lob in from the boss's side, squashing on landing. */
+.beanbag {
+  position: absolute; width: 36px; height: 27px; margin: -14px 0 0 -18px;
+  border-radius: 48% 52% 44% 56% / 58% 54% 46% 42%;
+  background: radial-gradient(circle at 34% 30%, #fff7 0 16%, transparent 17%), var(--bb, #d9473a);
+  border: 3px solid var(--line); box-shadow: 0 3px 0 #0006;
+  animation: bagLob 360ms cubic-bezier(.35, .1, .6, 1) forwards;
+}
+.beanbag.bag-1 { --bb: #3b78d6; }
+.beanbag.bag-2 { --bb: #2fa86b; }
+@keyframes bagLob {
+  0% { transform: translate(var(--dx), -70px) rotate(0deg); }
+  55% { transform: translate(calc(var(--dx) * .4), -120px) rotate(220deg); }
+  100% { transform: translate(0, 0) rotate(400deg) scale(1.15, .8); }
+}
+
 /* BANNED: a red stamp on the button you can't press. */
 .move.banned { position: relative; background: #2b2734; color: #8f88a3; }
 .move.banned > * { filter: grayscale(.9) brightness(.75); }
