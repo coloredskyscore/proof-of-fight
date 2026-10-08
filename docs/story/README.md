@@ -158,7 +158,7 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
 
-**Made so far:** Schiff and Dimon (portrait, sprite, stage, song each) and Satoshi (portrait, sprite, music).
+**Made so far:** Schiff, Dimon and Warren (portrait, sprite, stage, song each) and Satoshi (portrait, sprite, music).
 
 **How they go in:**
 ```
@@ -170,6 +170,9 @@ python3 tools/music.py Schiff-music.mp3 audio/schiff.mp3 --start 142.97 --loop 1
 python3 tools/art.py head dimon-portrait.jpg art/dimon-head.webp --gap 1000,824 --crop=0.0,-0.04,1.0,0.96
 python3 tools/art.py body dimon-sprite.jpg art/dimon-body.webp
 python3 tools/music.py Final_Boss_Theme.mp3 audio/dimon.mp3 --start 52.92 --loop 56.283 106.239
+python3 tools/art.py head warren-portrait.jpg art/warren-head.webp --crop=0.0,-0.04,1.0,0.96
+python3 tools/art.py body warren-sprite.jpg art/warren-body.webp
+python3 tools/music.py warren-music.mp3 audio/warren.mp3 --start 22.36 --loop 28.792 79.992
 ```
 A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>.webp` (WebP, quality 82). Then the boss gets `art`, `boss.stage.bg` and `boss.music` in `js/data.js`, and the song an entry in `MUSIC` in `js/audio.js`.
 
@@ -186,7 +189,7 @@ A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>
 - **Rematches:** tap any boss you've beaten on the ladder to fight them again (pick an ally, full stage and song, and a Satoshi of its own). Rematches never change the run. While the next boss is still being built, the big button is **Rematch** the last boss, and **Start a new run** lets you begin again with another fighter.
 - **Music:** each boss plays their own song once it's added; until then, the fight song.
 
-**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%.
+**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%. Warren, 110 HP: 54%, 73% and 97%.
 
 **Where it lives:** the bosses and `STORY` settings in `js/data.js`; `assist()` and `revive()` in `js/engine.js`; the ladder, ally pick, Satoshi and the after-fight cards in `js/app.js` (search "Story mode"); styles in `css/style.css` (search "Story mode").
 
@@ -233,6 +236,33 @@ Drafted from his public record; edit anything.
 **Art (Oct 8, 2026):** silver hair, navy suit, light blue shirt, dark tie, the pet rock in his palm; his stage is a marble bank lobby at night with the pet rock in a museum case under a spotlight and the city through tall windows.
 
 **Song (Oct 8, 2026):** `audio/dimon.mp3` from the user's Suno track (150s, about 144 BPM; Suno titled it "Final Boss Theme"). It starts on the first big drop (52.92s) and loops the 30 bars after it (56.28s to 106.24s), which include a short breakdown. Played a little louder than it came, to match the fight song.
+
+## Boss 3: Elizabeth Warren (built Oct 8, 2026)
+
+Grok's kit merged with the first draft; the user approved it and picked the BANNED twist.
+
+| Button | Name | Does | Lands | Flops |
+|---|---|---|---|---|
+| 🔴 Red | ☠️ Bad Actors | 12 dmg, always | KO: `BAD ACTORS USE CRYPTO` | — |
+| 🔵 Blue | 🗳️ Vote No | Never hides. Always works: half damage from red, pink and purple this turn, +3 Blocks | `VOTE NO` | — |
+| 🩷 Pink | ✉️ The Letter | 40%: no damage, but the target skips their next turn reading it (📜 READING). Hiding doesn't help; CZ's Ignore FUD does | `READ THE LETTER` · on the skipped turn: `STILL ON PAGE ONE` | `STILL READING` |
+| 🟣 Purple | 🏛️ Charter | 36 dmg, 25%, steals 2 Blocks, hits through a dodge | `CHARTER DENIED` | `NOT A BANK` (her May 2026 letter attacked crypto "bank" charters) |
+
+**Super: The Plan** (4 hits of 5, then you skip your next turn reading it). The Anti-Crypto Army, staffers with clipboards, marches across while her letter unrolls off the bottom of the screen; line `I'VE GOT A PLAN FOR THAT`. Super KO: `NATIONAL SECURITY`. After her Super, if you're still standing: `PAGE ONE OF FORTY`.
+
+**BANNED (her twist):** once per fight, when she drops to half her HP or lower, your purple button is banned for 2 turns: a red BANNED stamp on it, it can't be pressed, a 🚫 BANNED chip on your HUD, and `… IS LEGAL AGAIN` when it lifts. It sets up the last two bosses, who punish the riskiest button.
+
+**Opening line:** `WE NEED REGULATION. YES WE DO.` Every boss now opens with one before BOSS N / FIGHT! (Schiff `BUY GOLD.`, Dimon `IT'S A PET ROCK.`).
+
+**When she loses:** `THE PLAN WAS NO`.
+
+**Garlinghouse:** as your ally against her he shouts `FOR THE XRP ARMY` (army against army); beating her as Garlinghouse reads `CHARTER APPROVED` (Ripple's trust charter was conditionally approved in Dec 2025, one of those her letter went after). His blue button already flops with `BLOCKED BY THE ANTI-CRYPTO ARMY`.
+
+**What changed from Grok's version:** her Super's Sleep became "reading" (Sleep is Charles's), and the Letter moved to pink (a stun on blue would copy Sergey's Shirt).
+
+**Art (Oct 8, 2026):** a stern portrait pointing at you in the red cardigan; a sprite pointing, clipboard of letters under her arm; a dim hearing room (wood dais, empty chairs and mics, paper stacks, two flags) for her stage. Her color in the game is slate blue-gray so the red cardigan stands out on it.
+
+**Song (Oct 8, 2026):** `audio/warren.mp3` from the user's Suno track (187s, 150 BPM). It starts on the first drop (22.36s) and loops the 32 bars after it (28.79s to 79.99s).
 
 ## The kits
 

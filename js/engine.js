@@ -72,7 +72,9 @@
     var hp = (boss && boss.hp) || rules.hp[id] || rules.hp.default;
     // shield: turns left of CZ's FUD-proof (red, pink and purple do nothing). stored: Adeniyi's Walrus bonus.
     // bailedOut: Dimon's one bailout is spent.
-    return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0, shield: 0, stored: 0, bailedOut: false };
+    // banned: { move, turns } while a button is banned (Warren's BANNED); banUsed: her one ban is spent.
+    return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0, shield: 0, stored: 0, bailedOut: false,
+      banned: null, banUsed: false };
   }
 
   function canSuper(fight, who) {
@@ -82,7 +84,8 @@
   // What the player is dealing with at the start of this turn.
   function playerStatus(fight) {
     var me = fight.f[0];
-    return { skipped: me.skipNext, hypnotized: me.hypnoNext, canSuper: canSuper(fight, 0) };
+    return { skipped: me.skipNext, hypnotized: me.hypnoNext, canSuper: canSuper(fight, 0),
+      banned: me.banned ? me.banned.move : null, bannedTurns: me.banned ? me.banned.turns : 0 };
   }
 
   // CPU: Super the moment the meter is full, otherwise a weighted random pick.
@@ -96,6 +99,7 @@
       return {
         hp: f.hp, maxHp: f.maxHp, blocks: f.blocks, hodl: f.hodl, shield: f.shield, stored: f.stored,
         bailout: !!(D.FIGHTERS[f.id].bailout && !f.bailedOut),
+        banned: f.banned ? f.banned.move : null,
         skipNext: f.skipNext, hypnoNext: f.hypnoNext,
         hidden: !!(hidden && hidden[i]), braced: !!(braced && braced[i])
       };
@@ -128,6 +132,20 @@
     f.bailedOut = true;
     f.hp = Math.min(B.hp, f.maxHp);
     return { t: 'bailout', who: i, hp: f.hp };
+  }
+
+  // BANNED (Warren): once, when she's at ban.at of her HP or lower, the other side's ban.move is banned for
+  // ban.turns turns. Checked at the end of a turn and after an assist. Returns the event, or null.
+  function tryBan(fight) {
+    if (fight.over) return null;
+    for (var i = 0; i < 2; i++) {
+      var me = fight.f[i], B = D.FIGHTERS[me.id].ban;
+      if (!B || me.banUsed || me.hp > me.maxHp * B.at) continue;
+      me.banUsed = true;
+      fight.f[1 - i].banned = { move: B.move, turns: B.turns };
+      return { t: 'ban', who: 1 - i, move: B.move, turns: B.turns };
+    }
+    return null;
   }
 
   // Plays one full turn. playerMove is ignored if the player is Blind/Asleep.
@@ -189,6 +207,7 @@
     if (!act[0]) {
       if (playerMove === 'super' && !canSuper(fight, 0)) throw new Error('Super not ready');
       if (playerMove !== 'super' && MOVES.indexOf(playerMove) < 0) throw new Error('Bad move: ' + playerMove);
+      if (fight.f[0].banned && fight.f[0].banned.move === playerMove) throw new Error('Banned: ' + playerMove);
       act[0] = playerMove;
     }
     if (!act[1]) act[1] = cpuMove(fight);
@@ -319,6 +338,19 @@
       if (move === 'mint') me.blocks += D.BLOCKS.mintOk;
       clampBlocks(me);
 
+      // Warren's Letter: no damage; they skip their next turn reading it. Hiding doesn't help, but CZ's
+      // Ignore FUD (and his FUD-proof Super) does: a letter is FUD.
+      if (move === 'mint' && F.letter) {
+        var LT = D.FIGHTERS[tgt.id];
+        if (!self && (tgt.shield > 0 || (braced[ti] && LT.brace && LT.brace.ignore && LT.brace.ignore.indexOf('mint') >= 0))) {
+          push({ t: 'miss', attacker: who, target: ti, move: move, ignored: true });
+          return { code: 'miss' };
+        }
+        tgt.skipNext = F.letter.skip;
+        push({ t: 'letter', who: who, target: ti });
+        return { code: self ? 'self' : 'hit' };
+      }
+
       var pierced = false, T = D.FIGHTERS[tgt.id];
       if (!self && hidden[ti]) {
         if (move === 'rug' && R.rugPiercesHidden) {
@@ -364,7 +396,13 @@
       for (i = 0; i < 2; i++) {
         if (fight.f[i].hodl > 0) fight.f[i].hodl--;
         if (fight.f[i].shield > 0) fight.f[i].shield--;
+        if (fight.f[i].banned && --fight.f[i].banned.turns <= 0) {
+          push({ t: 'unban', who: i, move: fight.f[i].banned.move });
+          fight.f[i].banned = null;
+        }
       }
+      var ban = tryBan(fight);
+      if (ban) push(ban);
       if (fight.turn >= D.TURN_CAP) {
         var p = fight.f[0].hp / fight.f[0].maxHp, c = fight.f[1].hp / fight.f[1].maxHp;
         fight.over = true;
@@ -403,6 +441,8 @@
     var ev = [{ t: 'assist', ally: allyId, line: line, amount: n, snap: snapshot(fight) }];
     var saved = tryBailout(fight, 1);
     if (saved) { saved.snap = snapshot(fight); ev.push(saved); }
+    var ban = tryBan(fight);
+    if (ban) { ban.snap = snapshot(fight); ev.push(ban); }
     if (tgt.hp <= 0) {
       fight.over = true;
       fight.winner = 0;

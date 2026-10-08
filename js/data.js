@@ -137,6 +137,7 @@
                    pierce: "CAN'T HIDE FROM A SUBPOENA" }
       },
       loseLine: 'THIS ONE STINGS', // his quote on the result card (and over him on stage) when he loses
+      rivalKo: { warren: 'CHARTER APPROVED' }, // Ripple's trust charter, conditionally approved Dec 2025
       super: {
         // The crowd is the meme: price calls come from the army, never from him.
         id: 'xrparmy', name: 'XRP Army', prop: '😅',
@@ -376,6 +377,7 @@
       boss: {
         hp: 110,
         music: 'schiff',
+        intro: 'BUY GOLD.',
         stage: { name: 'The Gold Vault', bg: 'art/stages/schiff.webp', sky: 'linear-gradient(#1b1408 0%, #4a3510 50%, #8a6420 78%, #c9a227 82%)', floor: 'linear-gradient(#3b2c12, #140e05)' },
         allyLines: { saylor: 'THERE IS NO SECOND BEST', cz: 'TRUST ME BRO' }
       }
@@ -411,8 +413,45 @@
       boss: {
         hp: 100,             // plus the 20 of his bailout
         music: 'dimon',
+        intro: "IT'S A PET ROCK.",
         stage: { name: 'The Bank', bg: 'art/stages/dimon.webp', sky: 'linear-gradient(#0c1222 0%, #1d2a44 55%, #3b4660 78%, #6b7280 82%)', floor: 'linear-gradient(#3a3f4b, #15171d)' },
         allyLines: { adam: 'CHANCELLOR ON BRINK OF SECOND BAILOUT', garlinghouse: 'HOW ARE PEOPLE STILL FIGHTING THIS?!' }
+      }
+    },
+    warren: {
+      id: 'warren', name: 'Elizabeth Warren', short: 'Sen. Warren', lane: 'Senator / boss 3',
+      color: '#4b6584', emoji: '📋',
+      hide: 0, mint: 0.40, rug: 0.25,
+      dmg: { strike: 12 },
+      brace: { blocks: 3 },          // Vote No: never hides; always halves red, pink and purple this turn
+      // The Letter (her pink): no damage. When it lands the target skips their next turn reading it, and
+      // hiding doesn't help (you can't dodge mail).
+      letter: { skip: 'letter' },
+      // BANNED: once, when she's at half her HP or lower, the opponent's purple is banned for 2 turns.
+      ban: { at: 0.5, move: 'rug', turns: 2 },
+      ai: { strike: 4, privacy: 2, mint: 3, rug: 2 },
+      art: { head: 'art/warren-head.webp', body: 'art/warren-body.webp' }, // red cardigan, glasses, a clipboard of letters
+      moves: {
+        strike:  { name: 'Bad Actors', icon: '☠️', ko: 'BAD ACTORS USE CRYPTO' },
+        privacy: { name: 'Vote No',    icon: '🗳️', ok: 'VOTE NO' },
+        mint:    { name: 'The Letter', icon: '✉️', ok: 'READ THE LETTER', fail: 'STILL READING', skipLine: 'STILL ON PAGE ONE' },
+        rug:     { name: 'Charter',    icon: '🏛️', ok: 'CHARTER DENIED', fail: 'NOT A BANK' } // her May 2026 letter on crypto charters
+      },
+      loseLine: 'THE PLAN WAS NO',
+      super: {
+        // The Anti-Crypto Army marches in with clipboards while her letter unrolls off the screen.
+        id: 'plan', name: 'The Plan', prop: '',
+        line: "I'VE GOT A PLAN FOR THAT",
+        blurb: '4 hits of 5 + they skip their next turn reading it', finish: 'NATIONAL SECURITY',
+        cpuAfter: 'PAGE ONE OF FORTY',
+        skipLine: 'STILL ON PAGE ONE'
+      },
+      boss: {
+        hp: 110,
+        music: 'warren',
+        intro: 'WE NEED REGULATION. YES WE DO.',
+        stage: { name: 'The Hearing', bg: 'art/stages/warren.webp', sky: 'linear-gradient(#0d0b10 0%, #2a1c1c 55%, #4a2a26 78%, #6b3a32 82%)', floor: 'linear-gradient(#3a3236, #141114)' },
+        allyLines: { garlinghouse: 'FOR THE XRP ARMY' }
       }
     }
   };
@@ -432,7 +471,8 @@
     four:         { dmg: 20, shield: 2 },   // shield: red, pink and purple do nothing to him this turn and next
     agentswarm:   { dmg: 4, hits: 8 },
     goldrush:     { dmg: 7, hits: 4 },    // Schiff (story boss)
-    petrock:      { dmg: 25 }             // Dimon (story boss)
+    petrock:      { dmg: 25 },            // Dimon (story boss)
+    plan:         { dmg: 5, hits: 4, skip: 'letter' }  // Warren (story boss): they skip their next turn reading it
   };
 
   // Story mode: pick a founder, beat the bosses in order. The other founders are your assists, and

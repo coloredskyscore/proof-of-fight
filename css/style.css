@@ -1378,6 +1378,45 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   font-family: var(--display); font-size: clamp(16px, 5vw, 28px); color: #2fd18a;
   border: 4px solid #2fd18a; border-radius: 8px; background: #000a; transform: rotate(12deg);
 }
+/* Warren: The Plan. Staffers with clipboards march across while her letter unrolls off the bottom. */
+.staff-march { top: auto; bottom: 6%; }
+.staffer {
+  position: relative; display: inline-flex; align-items: flex-end; font-size: 44px; line-height: 1;
+  animation: rise .22s ease-in-out infinite alternate;
+}
+.staffer:nth-child(odd) { animation-delay: -.11s; }
+.staffer i { font-style: normal; font-size: 24px; margin-left: -14px; }
+.letter-scroll {
+  position: absolute; left: -6%; top: 0; width: min(48vw, 300px); height: 0; overflow: hidden;
+  transform: rotate(-4deg); transform-origin: top center;
+}
+.from-c .letter-scroll { left: auto; right: -6%; transform: rotate(4deg); }
+.cutin.sup-plan .cutin-who { justify-self: center; width: fit-content; margin: 2px auto 0; padding: 2px 10px; border-radius: 4px; background: #000c; }
+.cutin.play .letter-scroll { animation: unroll 2.4s .3s cubic-bezier(.4, .1, .6, 1) forwards; }
+@keyframes unroll { to { height: 115vh; } }
+.letter-paper {
+  min-height: 115vh; padding: 14px 18px; background: repeating-linear-gradient(#fbf8f0 0 26px, #e9e3d3 26px 27px);
+  border: 2px solid #1d1a14; color: #1d1a14; font: 15px/27px Georgia, 'Times New Roman', serif; opacity: .92;
+  box-shadow: 0 6px 0 #0006;
+}
+.letter-paper p { margin: 0; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .staff-march { bottom: -1%; }
+  .staffer { font-size: 30px; }
+  .staffer i { font-size: 17px; margin-left: -10px; }
+}
+
+/* BANNED: a red stamp on the button you can't press. */
+.move.banned { position: relative; background: #2b2734; color: #8f88a3; }
+.move.banned > * { filter: grayscale(.9) brightness(.75); }
+.move.banned::after {
+  content: 'BANNED'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-10deg);
+  padding: 2px 8px; border: 3px solid #ff3b3b; border-radius: 6px; color: #ff3b3b; background: #000b;
+  font-family: var(--display); font-size: 1.05rem; letter-spacing: .04em; pointer-events: none;
+}
+.move.stamped::after { animation: bannedIn .3s cubic-bezier(.3, 1.8, .5, 1); }
+@keyframes bannedIn { from { opacity: 0; transform: translate(-50%, -50%) rotate(-10deg) scale(2.4); } to { opacity: 1; transform: translate(-50%, -50%) rotate(-10deg) scale(1); } }
+
 .bossline.play .bl-face { animation: slideIn .4s cubic-bezier(.2, 1.3, .4, 1) both; }
 .bossline.play .bl-small { animation: fadeUp .35s .5s ease-out forwards; }
 .bossline.play .bl-big { animation: slamBig .45s 1.3s cubic-bezier(.2, 1.4, .4, 1) forwards; }

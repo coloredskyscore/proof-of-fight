@@ -316,6 +316,26 @@
       [{ w: 'noise', t: 0.2, d: 1.0, v: 0.25, lp: [300, 600], a: 0.2 }, { w: 'sine', f: [60, 45], t: 0.2, d: 1.0, v: 0.25, a: 0.2 }],
       [{ w: 'sine', f: [110, 40], t: 1.22, d: 0.3, v: 0.8 }, { w: 'noise', t: 1.22, d: 0.15, v: 0.35, lp: 1500 }],
       [{ w: 'sine', f: [500, 900, 500, 900, 500], t: 1.45, d: 0.7, v: 0.12 }]),
+    // ---------- Warren (story boss) ----------
+    'warren.strike': [{ w: 'sine', f: [180, 70], d: 0.12, v: 0.45 }, { w: 'noise', d: 0.05, v: 0.25, bp: 1800 }],   // Bad Actors: a gavel
+    'warren.privacy': [{ w: 'noise', d: 0.06, v: 0.35, lp: 900 }, { w: 'sine', f: [130, 60], d: 0.15, v: 0.5 },
+      { w: 'square', f: 220, t: 0.12, d: 0.18, v: 0.08, lp: 1500 }],                                          // Vote No: a ballot stamped
+    'warren.mint.ok': [0, 0.04, 0.09, 0.15, 0.22].map(function (t) { return { w: 'noise', t: t, d: 0.06, v: 0.22, bp: 2500 }; })
+      .concat([{ w: 'sine', f: [120, 60], t: 0.3, d: 0.15, v: 0.5 }]),                                       // The Letter: pages, then the thud of the stack
+    'warren.mint.fail': [0, 0.06, 0.13].map(function (t) { return { w: 'noise', t: t, d: 0.05, v: 0.18, bp: 3000 }; })
+      .concat([{ w: 'triangle', f: [330, 250], t: 0.25, d: 0.35, v: 0.15 }]),                                // STILL READING
+    'warren.rug.ok': [{ w: 'sine', f: [140, 50], d: 0.2, v: 0.6 }, { w: 'noise', d: 0.08, v: 0.35, lp: 1200 },
+      { w: 'square', f: 196, t: 0.2, d: 0.3, v: 0.1, lp: 1200 }],                                             // CHARTER DENIED: the stamp
+    'warren.rug.fail': [{ w: 'triangle', f: [440, 330], d: 0.2, v: 0.15 }, { w: 'triangle', f: [330, 247], t: 0.2, d: 0.35, v: 0.15 }], // NOT A BANK
+    paper: [0, 0.08, 0.17, 0.27, 0.36].map(function (t) { return { w: 'noise', t: t, d: 0.07, v: 0.2, bp: 3500 }; }),  // still reading: pages turn
+    banned: [{ w: 'sine', f: [110, 45], d: 0.25, v: 0.7 }, { w: 'noise', d: 0.1, v: 0.35, lp: 1500 },
+      { w: 'square', f: 140, t: 0.18, d: 0.45, v: 0.12, lp: 1200 }, { w: 'square', f: 148, t: 0.18, d: 0.45, v: 0.1, lp: 1200 }], // BANNED: stamp + buzzer
+    // The Plan: boots march (0.45s on), pages flutter as the letter unrolls, a final stamp.
+    'super.plan': cat(
+      [0.45, 0.75, 1.05, 1.35, 1.65, 1.95, 2.25].map(function (t) { return { w: 'sine', f: [120, 50], t: t, d: 0.1, v: 0.4 }; }),
+      [0.3, 0.5, 0.7, 0.9, 1.1, 1.3].map(function (t) { return { w: 'noise', t: t, d: 0.08, v: 0.12, bp: 3500 }; }),
+      [{ w: 'sine', f: [150, 45], t: 2.5, d: 0.25, v: 0.7 }, { w: 'noise', t: 2.5, d: 0.1, v: 0.3, lp: 1500 }]),
+
     // Bailed out: a till rings and the money comes back.
     bailout: cat(
       [{ w: 'square', f: 2600, d: 0.05, v: 0.12, lp: 6000 }, { w: 'noise', t: 0.05, d: 0.12, v: 0.2, hp: 3000 }, { w: 'triangle', f: 3500, t: 0.1, d: 0.35, v: 0.14 }],
@@ -450,6 +470,15 @@
     'dimon.rug.ok': 0.664,
     'dimon.rug.fail': 0.180,
     'super.petrock': 0.876,
+    'warren.strike': 0.487,
+    'warren.privacy': 0.491,
+    'warren.mint.ok': 0.498,
+    'warren.mint.fail': 0.146,
+    'warren.rug.ok': 0.638,
+    'warren.rug.fail': 0.148,
+    'paper': 0.133,
+    'banned': 0.831,
+    'super.plan': 0.710,
     'bailout': 0.280
   };
   // PEAK:end
@@ -490,7 +519,8 @@
     fight: { src: 'audio/fight.mp3', loopStart: 0.56, loopEnd: 59.728, vol: 0.42 },
     // Story bosses. Each opens on its drop hit, like the fight song. vol matches the fight song's loudness.
     schiff: { src: 'audio/schiff.mp3', loopStart: 3.233, loopEnd: 34.557, vol: 0.37 },
-    dimon: { src: 'audio/dimon.mp3', loopStart: 3.363, loopEnd: 53.319, vol: 0.49 }
+    dimon: { src: 'audio/dimon.mp3', loopStart: 3.363, loopEnd: 53.319, vol: 0.49 },
+    warren: { src: 'audio/warren.mp3', loopStart: 6.432, loopEnd: 57.632, vol: 0.46 }
   };
 
   // ---------- Engine (browser only) ----------
