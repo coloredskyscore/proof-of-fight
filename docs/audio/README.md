@@ -21,6 +21,7 @@ Two songs (made by the user in Suno), seven recorded sounds picked from free CC0
 | `audio/dimon.mp3` | Final_Boss_Theme.mp3 (150s), story boss 2 | 144 BPM | starts at the first big drop (52.92s) | the 30 bars after it (56.28s to 106.24s) |
 | `audio/warren.mp3` | warren-music.mp3 (187s), story boss 3 | 150 BPM | starts at the first drop (22.36s) | the 32 bars after it (28.79s to 79.99s) |
 | `audio/sbf.mp3` | SBF-music.mp3 (181s), story boss 4 | 145 BPM | starts at the first drop (28.32s) | the 28 bars after it (31.09s to 77.40s) |
+| `audio/wick.mp3` | Wick-music.mp3 (177s), story final boss | 150 BPM | starts at the first drop (41.55s) | the 24 bars after it (43.18s to 81.57s) |
 
 The loop points were found by fitting a beat grid and matching the audio on both sides of the seam; the menu loop's best match landed on exactly 24 bars. `tools/music.py` bakes a crossfade into the seam, so it loops without a click even when a browser pads the start of an MP3. To swap a song:
 

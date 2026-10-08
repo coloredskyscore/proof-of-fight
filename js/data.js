@@ -488,6 +488,53 @@
         stage: { name: 'The Yard', bg: 'art/stages/sbf.webp', sky: 'linear-gradient(#1a1424 0%, #3b2236 50%, #7a3b3b 78%, #4a4a4a 82%)', floor: 'linear-gradient(#3d3d40, #141416)' },
         allyLines: { cz: 'LIQUIDATING OUR FTT' }  // the tweet that started the run on FTX
       }
+    },
+    wick: {
+      // The final boss isn't a person: he's the market, and what 100x leverage does to people. His head is
+      // the red candle.
+      id: 'wick', name: 'WICK', short: 'WICK', lane: 'The Market / final boss',
+      color: '#1e6b45', emoji: '🕯️',   // chart green, so the red candle stands out on it
+      hide: 0.30, mint: 0.40, rug: 0.20,
+      dmg: { strike: 12 },
+      pierce: ['strike'],             // Stop Hunt: hiding doesn't help
+      // The leverage meter (his twist). Every pink or purple you press against him steps your leverage up the
+      // ladder: your pink and purple hit harder for it (+10% a step), and he gets 2 Blocks (his Super comes
+      // sooner). Blue closes the position: back to 1x. His Super hits once per step, harder the higher you are,
+      // and at the top step it takes everything.
+      leverage: { steps: [1, 2, 5, 10, 25, 50, 100], boost: 0.1, feed: 2 },
+      ai: { strike: 4, privacy: 1, mint: 3, rug: 2 },
+      art: { head: 'art/wick-head.webp', body: 'art/wick-body.webp' }, // black suit, red candle head, a red blade
+      moves: {
+        strike:  { name: 'Stop Hunt',   icon: '🎯', ko: 'STOPPED OUT', pierce: 'YOUR STOP LOSS WAS A SUGGESTION' },
+        privacy: { name: 'Crab Market', icon: '🦀', ok: 'SIDEWAYS FOR SIX MONTHS', fail: 'VOLATILITY IS BACK' },
+        mint:    { name: 'Bull Trap',   icon: '🐂', ok: 'BULL TRAP', fail: 'UP ONLY' },
+        rug:     { name: 'Scam Wick',   icon: '🕯️', ok: 'SCAM WICK', fail: 'BOUGHT THE DIP' }
+      },
+      loseLine: 'SEE YOU SUNDAY, 3 A.M.',  // thin weekend books, when the wicks happen
+      super: {
+        // Liquidation alerts pour down the screen, one per step of your leverage. The line reads your leverage.
+        id: 'cascade', name: 'Liquidation Cascade', prop: '',
+        line: '{x}X? CUTE.', line1: 'ONLY 1X? RESPECT.',
+        blurb: 'One hit per step of your leverage', finish: 'LIQUIDATED'
+      },
+      boss: {
+        hp: 135,
+        music: 'wick',
+        // Before the fight: his portrait and two lines. If you lose to him, CONTINUE? asks the other one.
+        prelude: ["YOU'VE MADE IT THIS FAR.", 'BUT DO YOU REALLY KNOW WHY?'],
+        intro: 'PLACE YOUR BETS.',
+        continueLine: "You've made it this far. Are you sure you want to continue?",
+        stage: { name: 'The Chart', bg: 'art/stages/wick.webp', sky: 'linear-gradient(#030605 0%, #08120d 60%, #1c0a0a 82%)', floor: 'linear-gradient(#141416, #050505)' },
+        // After you beat him: why you made it this far. Sources in docs/story/README.md.
+        reveal: [
+          ['WHY YOU MADE IT THIS FAR', 'Every rally needs buyers. The higher it climbs, the bigger the bets get.'],
+          ['EVERY 100X BET HAS A TRIPWIRE', 'At 100x, a move of about 1% against you wipes out your whole stake. That price is your liquidation price.'],
+          ['THE TRIPWIRES ARE PUBLIC', 'Liquidation maps show where they cluster. Big players can push the price into them: forced sellers are the easiest people to buy from.'],
+          ['ONE WICK SETS OFF THE REST', 'Every liquidation is a forced sale. The price drops, the next tripwire goes off, then the next. That is a cascade.'],
+          ['THE HOUSE GETS PAID EITHER WAY', 'Market makers earn the spread on every trade. Exchanges earn the fees, and many keep what is left of a liquidated account in their insurance fund.'],
+          ['OCT 10, 2025', '$19 billion of leveraged bets liquidated in one day. 1.6 million traders. Most of them were betting on up.']
+        ]
+      }
     }
   };
   // Story guests: not fighters. They only tag in for a boss (their portrait shows in the tag-in).
@@ -513,7 +560,10 @@
     goldrush:     { dmg: 7, hits: 4 },    // Schiff (story boss)
     petrock:      { dmg: 25 },            // Dimon (story boss)
     plan:         { dmg: 5, hits: 4, skip: 'letter' }, // Warren (story boss): they skip their next turn reading it
-    what:         { dmg: 22 }             // SBF (story boss)
+    what:         { dmg: 22 },            // SBF (story boss)
+    // WICK (final boss): the total at each step of your leverage (1x, 2x, 5x, 10x, 25x, 50x), one hit per
+    // step; at 100x it takes everything.
+    cascade:      { cascade: [6, 14, 24, 36, 52, 72] }
   };
 
   // Story mode: pick a founder, beat the bosses in order. The other founders are your assists, and

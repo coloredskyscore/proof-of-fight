@@ -210,4 +210,5 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | *Story:* Warren | ✅ blonde-gray bob, rimless glasses, red cardigan, pointing at you | ✅ same, a clipboard of letters under her arm (stage: the hearing room) |
 | *Story:* SBF | ✅ curly mop, orange jumpsuit, blank stare | ✅ same jumpsuit, white socks, dragging a beanbag (stage: the prison yard, his Corolla outside the fence) |
 | *Story:* Caroline | ✅ glasses, long wavy hair, small smile (her tag-in for SBF; no sprite) | — |
+| *Story:* WICK | ✅ red candle head, black suit, red light on the shoulders | ✅ same suit, one hand raised, a red blade (stage: the chart, green candles then one red wick) |
 | *Story:* Satoshi | ✅ sliced steel hood, gold glow (`art.py glow`) | ✅ seated cross-legged with a laptop, gold glow (the revive) |
