@@ -525,7 +525,8 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
     check('super.' + D.FIGHTERS[id].super.id, { chars: [0.5, 0.6], off: 2.8 });
   });
   ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'deflect', 'stored', 'splash', 'flop', 'selfhit', 'super.astronaut',
-    'assist', 'satoshi', 'coin', 'tick', 'clank', 'bailout', 'paper', 'banned', 'beanbag']
+    'assist', 'satoshi', 'coin', 'tick', 'clank', 'bailout', 'paper', 'banned', 'beanbag',
+    'lev.up', 'lev.close', 'liquidated', 'wick.prelude']
     .forEach(function (s) { check(s); });
   Object.keys(AU.CLIPS).forEach(function (id) {
     var c = AU.CLIPS[id];
@@ -751,6 +752,70 @@ test('Story: Caroline tags in for SBF once, at 35% HP: 3 beanbags that can\'t be
       assert.strictEqual(r.f[0].hp, x.f[0].hp, b + ': replay hp mismatch');
     }
   });
+});
+
+test('Story: WICK\'s leverage: pink and purple step it up (and hit harder), blue closes it, red leaves it', function () {
+  var LV = D.BOSSES.wick.leverage, R = D.RULESETS.balanced;
+  var f = E.newFight({ player: 'toly', cpu: 'wick', seed: 1 });
+  rig(f, [cpuRoll('wick', 'strike'), 0 /* the purple lands */]);
+  var ev = E.playTurn(f, 'rug');
+  assert(ev.some(function (e) { return e.t === 'lev' && e.who === 0 && e.from === 1 && e.x === 2 && e.why === 'open'; }));
+  assert.strictEqual(E.snapshot(f)[0].lev, 2);
+  // He's fed 2 Blocks, the purple steals 2 back, +1 for being hit, +2 for his strike.
+  assert.strictEqual(f.f[1].blocks, LV.feed - D.BLOCKS.rugSteal + D.BLOCKS.gotHit + D.BLOCKS.strike, 'degen play feeds him Blocks');
+  var hit = ev.filter(function (e) { return e.t === 'hit' && e.attacker === 0; })[0];
+  assert.strictEqual(hit.amount, Math.round(E.moveDamage('toly', 'rug', R) * (1 + LV.boost)), 'purple hits harder at 2x');
+  rig(f, [cpuRoll('wick', 'strike')]);
+  ev = E.playTurn(f, 'strike');
+  assert(!ev.some(function (e) { return e.t === 'lev'; }) && f.f[0].lev === 1, 'red leaves it');
+  f.f[0].lev = LV.steps.length - 1;
+  rig(f, [cpuRoll('wick', 'strike'), 0.99 /* the pink flops */]);
+  E.playTurn(f, 'mint');
+  assert.strictEqual(f.f[0].lev, LV.steps.length - 1, 'capped at 100x');
+  assert.strictEqual(f.f[0].peakLev, 1, 'the peak counts what you pressed your way to');
+  rig(f, [cpuRoll('wick', 'strike'), 0 /* hides */]);
+  ev = E.playTurn(f, 'privacy');
+  assert(ev.some(function (e) { return e.t === 'lev' && e.why === 'close' && e.x === 1; }) && f.f[0].lev === 0, 'blue closes it');
+  assert.strictEqual(E.snapshot(E.newFight({ player: 'toly', cpu: 'mert', seed: 1 }))[0].lev, null, 'no meter outside WICK');
+});
+
+test('Story: WICK\'s Liquidation Cascade hits once per step of your leverage; at 100x it takes everything', function () {
+  var LV = D.BOSSES.wick.leverage, top = LV.steps.length - 1, T = D.SUPERS.cascade.cascade;
+  var f = E.newFight({ player: 'toly', cpu: 'wick', seed: 1 });
+  f.f[0].lev = 4; f.f[1].blocks = 10;
+  rig(f, []);
+  var ev = E.playTurn(f, 'strike');
+  assert(ev.some(function (e) { return e.t === 'super' && e.lev === LV.steps[4]; }), 'the cut-in knows the leverage');
+  assert.strictEqual(ev.filter(function (e) { return e.t === 'hit' && e.move === 'super'; }).length, 5);
+  assert.strictEqual(f.f[0].hp, 100 - T[4], 'the 25x total, over 5 hits');
+  assert(ev.some(function (e) { return e.t === 'lev' && e.why === 'liquidated' && e.from === LV.steps[4]; }) && f.f[0].lev === 0, 'back to 1x');
+  // Blue on the turn it fires closes the position first: one hit.
+  var g = E.newFight({ player: 'toly', cpu: 'wick', seed: 1 });
+  g.f[0].lev = 3; g.f[1].blocks = 10;
+  rig(g, [0.99 /* the hide fails */, 0, 0]);
+  E.playTurn(g, 'privacy');
+  assert.strictEqual(g.f[0].hp, 100 - T[0], 'closed in time');
+  // 100x: liquidated, HODL or not; Satoshi's revive starts you back at 1x.
+  var h = E.newFight({ player: 'toly', cpu: 'wick', seed: 1 });
+  h.f[0].lev = top; h.f[1].blocks = 10; h.f[0].hodl = 2;
+  rig(h, []);
+  ev = E.playTurn(h, 'strike');
+  assert(h.over && h.winner === 1 && h.f[0].hp === 0 && h.finish === 'LIQUIDATED', 'liquidated: ' + h.finish);
+  assert(ev.some(function (e) { return e.t === 'hit' && e.liquidated; }));
+  E.revive(h, 0);
+  assert.strictEqual(h.f[0].lev, 0);
+});
+
+test('Story: WICK\'s Stop Hunt hits through a hide; his lines; the prelude, CONTINUE question and the reveal', function () {
+  var f = E.newFight({ player: 'toly', cpu: 'wick', seed: 1 });
+  rig(f, [cpuRoll('wick', 'strike'), 0 /* hides */]);
+  var ev = E.playTurn(f, 'privacy');
+  assert(ev.some(function (e) { return e.t === 'hit' && e.attacker === 1 && e.move === 'strike' && e.pierced; }), 'stop hunt');
+  assert.strictEqual(f.f[0].hp, 100 - 12);
+  var B = D.BOSSES.wick.boss;
+  assert(B.prelude.length === 2 && B.continueLine && B.reveal.length >= 3);
+  B.reveal.forEach(function (c) { assert(c.length === 2 && c[0] && c[1].length < 200, 'a reveal card is a title and a short line'); });
+  assert.strictEqual(D.STORY.ladder[D.STORY.ladder.length - 1].id, 'wick', 'WICK is the final boss');
 });
 
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {

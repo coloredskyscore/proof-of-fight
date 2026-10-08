@@ -204,16 +204,28 @@
     S.koProp = null;
     S.assistRang = false;
     S.stealShown = false;
+    S.levShown = false;
+    S.closeShown = false;
     buildArena();
     render(E.snapshot(S.fight));
     $('#turn-num').textContent = S.fight.turn;
     show('screen-fight');
     fitNames(); // measured once the screen is showing
     if (S.fight.over) { finishFight(); return; }
-    AU.music(fightSong(), { fade: 0.12, restart: true }); // opens on the song's drop hit
-
     S.busy = true;
     updateControls();
+    var boss = opts.mode === 'story' && D.FIGHTERS[opts.cpu].boss;
+    // WICK talks first, over silence: his portrait and two lines. Then the song drops with the fight.
+    if (boss && boss.prelude && !resumeMoves) {
+      AU.stopMusic(0.4);
+      preludeScene(D.FIGHTERS[opts.cpu]).then(function () { if (S.opts === opts) beginFight(opts, resumeMoves); });
+      return;
+    }
+    beginFight(opts, resumeMoves);
+  }
+
+  function beginFight(opts, resumeMoves) {
+    AU.music(fightSong(), { fade: 0.12, restart: true }); // opens on the song's drop hit
     log(resumeMoves ? 'Picking up where you left off.' : 'Tap a move. The CPU picks at the same time.');
     // A boss opens with their line first (Warren: WE NEED REGULATION. YES WE DO.), then BOSS 3 / FIGHT!
     var boss = opts.mode === 'story' && D.FIGHTERS[opts.cpu].boss, wait = 0;
@@ -222,7 +234,7 @@
       wait = 1900;
     }
     later(function () {
-      banner(resumeMoves ? 'RESUME' : opts.mode === 'story' ? 'BOSS ' + (opts.rung + 1) : 'ROUND 1', 'FIGHT!');
+      banner(resumeMoves ? 'RESUME' : opts.mode === 'story' ? (isFinal(opts.rung) ? 'FINAL BOSS' : 'BOSS ' + (opts.rung + 1)) : 'ROUND 1', 'FIGHT!');
     }, wait);
     later(function () {
       S.busy = false;
@@ -276,6 +288,7 @@
       var F = D.FIGHTERS[f.f[i].id], side = SIDE[i];
       var el = $('#fighter-' + side);
       el.className = 'fighter side-' + side + (F.art && F.art.body ? ' has-art' : '');
+      el.dataset.id = F.id;
       el.style.setProperty('--c', F.color);
       el.innerHTML = fighterHTML(F);
       var hud = $('#hud-' + side);
@@ -283,7 +296,7 @@
       $('.blocks', hud).innerHTML = new Array(D.MAX_BLOCKS + 1).join('<i></i>');
     });
     $('#hud-mode').textContent = S.opts.mode === 'daily' ? 'DAILY #' + S.opts.n
-      : S.opts.mode === 'story' ? (S.opts.practice ? 'REMATCH · BOSS ' : 'STORY · BOSS ') + (S.opts.rung + 1)
+      : S.opts.mode === 'story' ? (S.opts.practice ? 'REMATCH · ' : 'STORY · ') + (isFinal(S.opts.rung) ? 'FINAL BOSS' : 'BOSS ' + (S.opts.rung + 1))
       : f.rules.id === 'original' ? 'ORIGINAL RULES' : 'FREE PLAY';
     // A boss fight has its own stage: their background art once it's made, their colors until then.
     var boss = S.opts.mode === 'story' && D.FIGHTERS[f.f[1].id].boss, st = boss && boss.stage;
@@ -361,6 +374,7 @@
       if (s.stored > 0) chips.push('<span class="chip good">🦭 +' + s.stored + '</span>');
       if (s.bailout) chips.push('<span class="chip good">🏦 BAILOUT</span>');
       if (s.banned) chips.push('<span class="chip bad">🚫 BANNED</span>');
+      if (s.lev) chips.push('<span class="chip lev' + (s.lev >= 25 ? ' bad hot' : s.lev > 1 ? ' bad' : '') + '">📈 ' + s.lev + 'X</span>');
       if (SKIP[s.skipNext]) chips.push('<span class="chip bad">' + SKIP[s.skipNext].icon + ' ' + SKIP[s.skipNext].chip + '</span>');
       if (s.hypnoNext) chips.push('<span class="chip bad">🌀 HYPNO</span>');
       $('.chips', hud).innerHTML = chips.join('');
@@ -380,11 +394,19 @@
   function updateControls() {
     var f = S.fight, st = E.playerStatus(f), me = f.f[0], F = D.FIGHTERS[me.id], R = f.rules;
     var locked = S.busy || f.over;
+    // Against WICK, pink and purple show their leveraged damage and a 📈 (they raise it); blue closes it.
+    var LV = D.FIGHTERS[f.f[1].id].leverage, lm = E.levMult(f, 0);
+    var levDmg = function (m) {
+      if (!LV) return dmgText(me.id, m, R);
+      var r = E.damageRange(me.id, m, R).map(function (n) { return Math.round(n * lm); });
+      return (r[0] === r[1] ? r[0] : r[0] + '–' + r[1]) + '';
+    };
     var subs = {
       strike: dmgText(me.id, 'strike', R) + ' dmg · always',
-      privacy: F.brace ? (F.brace.ignore ? 'Blocks red/pink' : '½ dmg · always') : F.stun ? 'Stun · ' + pct(F.hide) : 'Hide ' + pct(F.hide),
-      mint: dmgText(me.id, 'mint', R) + ' dmg · ' + pct(F.mint),
-      rug: dmgText(me.id, 'rug', R) + ' dmg · ' + pct(F.rug)
+      privacy: (F.brace ? (F.brace.ignore ? 'Blocks red/pink' : '½ dmg · always') : F.stun ? 'Stun · ' + pct(F.hide) : 'Hide ' + pct(F.hide)) +
+        (LV && me.lev > 0 ? ' · to 1x' : ''),
+      mint: levDmg('mint') + ' dmg · ' + pct(F.mint) + (LV ? ' · 📈' : ''),
+      rug: levDmg('rug') + ' dmg · ' + pct(F.rug) + (LV ? ' · 📈' : '')
     };
     $all('#controls .move').forEach(function (b) {
       var m = b.dataset.move;
@@ -426,10 +448,21 @@
         note = '🌀 HYPNOTIZED: ' + moveOf(me.id, 'strike').name + ', ' + moveOf(me.id, 'mint').name + ' and ' +
           moveOf(me.id, 'rug').name + ' hit YOU this turn. ' + moveOf(me.id, 'privacy').name + ' or Super is safe.';
       }
+      else if (cpu.blocks >= D.MAX_BLOCKS && !cpu.skipNext && LV) note = '⚠️ ' + cascadeNote(f, true);
       else if (cpu.blocks >= D.MAX_BLOCKS && !cpu.skipNext) note = '⚠️ ' + nm(1) + "'s Super fires this turn. It can't be dodged.";
       else if (st.canSuper) note = "⚡ Your Super is ready. It can't be dodged.";
+      else if (LV && me.lev > 0) note = '📈 ' + cascadeNote(f, false);
     }
     $('#turn-note').textContent = note;
+  }
+
+  // What WICK's Liquidation Cascade will do at your leverage: one hit per step, everything at the top.
+  function cascadeNote(f, now) {
+    var LV = D.FIGHTERS[f.f[1].id].leverage, k = f.f[0].lev, x = LV.steps[k], top = k === LV.steps.length - 1;
+    var what = top ? 'takes everything' : 'hits ' + (k + 1 === 1 ? 'once' : k + 1 + ' times');
+    return now
+      ? nm(1) + "'s Liquidation Cascade fires this turn: at " + x + 'x it ' + what + '.' + (k > 0 ? ' Blue closes your position first.' : '')
+      : x + 'x leverage: his next Super ' + what + '. Blue takes you back to 1x.';
   }
 
   function saveProgress() {
@@ -501,12 +534,45 @@
       case 'super':
         render(e.snap);
         if (S.fight.f[e.who].id === 'vitalik') fighterEl(e.who).classList.add('dance');
-        await cutIn(e.who, { target: S.fight.f[1 - e.who].id, targetTriedToHide: !!S.lastMoves && S.lastMoves[1 - e.who] === 'privacy' });
+        await cutIn(e.who, { target: S.fight.f[1 - e.who].id, targetTriedToHide: !!S.lastMoves && S.lastMoves[1 - e.who] === 'privacy', lev: e.lev });
         log(who(e.who) + ' used ' + D.FIGHTERS[S.fight.f[e.who].id].super.name + '!');
         break;
 
       case 'hit':
         await doHit(e);
+        break;
+
+      case 'lev':
+        // WICK's leverage: up a step for every pink or purple, back to 1x on blue or after his Super.
+        render(e.snap);
+        var top = D.FIGHTERS[S.fight.f[1 - e.who].id].leverage.steps.slice(-1)[0];
+        if (e.why === 'open') {
+          AU.play('lev.up');
+          if (e.x === top) {
+            banner(e.x + 'X LEVERAGE', 'His next Super takes everything. Blue closes it.');
+            await sleep(1600);
+          } else if (!S.levShown) {
+            S.levShown = true;
+            banner(e.x + 'X LEVERAGE', 'You hit harder. His Super hits harder, and sooner.');
+            await sleep(1600);
+          } else {
+            popup(e.who, '📈 ' + e.x + 'X', e.x >= 25 ? 'status' : 'good');
+            await sleep(450);
+          }
+        } else if (e.why === 'close') {
+          AU.play('lev.close');
+          if (!S.closeShown) {
+            S.closeShown = true;
+            banner('POSITION CLOSED', 'Back to 1x. His Super hits softer.');
+            await sleep(1300);
+          } else {
+            popup(e.who, 'CLOSED · 1X', 'good');
+            await sleep(450);
+          }
+        } else {
+          banner('LIQUIDATED AT ' + e.from + 'X', (e.who === 0 ? 'Your' : whose(e.who)) + ' leverage is back to 1x');
+          await sleep(1300);
+        }
         break;
 
       case 'miss':
@@ -696,6 +762,17 @@
   async function doHit(e) {
     var multi = e.of > 1;
     if (e.move === 'tagin') { await beanbagHit(e); return; }
+    if (e.liquidated) {
+      // WICK at 100x: no hits to count, the whole stake goes at once.
+      render(e.snap);
+      hurtFx(e.target);
+      AU.play('liquidated');
+      popup(e.target, '-' + e.amount, 'dmg');
+      buzz(300);
+      banner('LIQUIDATED', '100x: the whole stake, gone');
+      await sleep(1500);
+      return;
+    }
     if (e.move !== 'super') {
       lunge(e.attacker);
       await sleep(170);
@@ -1050,8 +1127,20 @@
       '<p><span>Alameda</span><span>…</span></p></div><div class="wl-base"></div></div><div class="what-q">?</div>';
   }
 
+  // WICK: a red candle drops through the screen while liquidation alerts pour down, one per hit.
+  function cascadeDeco(ctx) {
+    var L = D.FIGHTERS.wick.leverage, x = (ctx && ctx.lev) || 1, k = L.steps.indexOf(x), top = k === L.steps.length - 1;
+    var coins = ['BTC', 'ETH', 'SOL', 'DOGE', 'XRP', 'PEPE', 'LINK'], rows = '';
+    for (var i = 0; i < k + 1; i++) {
+      rows += '<p style="--k:' + i + '"><b>LIQUIDATED</b><span>' + coins[i % coins.length] + ' LONG ' + x + 'X</span></p>';
+    }
+    return '<div class="cascade-candle"></div><div class="cascade-feed">' + rows + '</div>' +
+      (top ? '<div class="cascade-stamp">100X</div>' : '');
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
+      case 'cascade': return { screen: cascadeDeco(ctx) };
       case 'what': return { screen: whatDeco() };
       case 'four': return { screen: fourDeco() };
       case 'goldrush': return { screen: goldDeco() };
@@ -1188,7 +1277,9 @@
       }
       el.style.setProperty('--dur', (duration / 1000) + 's');
       $('.cutin-who', el).textContent = F.name.toUpperCase();
-      $('.cutin-line', el).textContent = '“' + sup.line + '”';
+      var line = sup.line;
+      if (ctx && ctx.lev != null) line = ctx.lev === 1 && sup.line1 ? sup.line1 : line.replace('{x}', ctx.lev); // WICK: 25X? CUTE.
+      $('.cutin-line', el).textContent = '“' + line + '”';
       var deco = decoFor(sup.id, ctx);
       $('.cutin-deco', el).innerHTML = deco.screen || '';
       $('.cutin-pdeco', el).innerHTML = deco.portrait || '';
@@ -1389,6 +1480,74 @@
     });
   }
 
+  // WICK before the fight: the chart behind him, his portrait, his two lines, a clock ticking. Tap to skip.
+  function preludeScene(B) {
+    return new Promise(function (resolve) {
+      var el = $('#bossline'), P = B.boss.prelude;
+      el.classList.add('prelude');
+      el.style.setProperty('--c', B.color);
+      el.style.backgroundImage = 'url(' + B.boss.stage.bg + ')'; // inline: a url() in a CSS variable resolves from css/
+      $('.bl-face', el).innerHTML = faceHTML(B);
+      $('.bl-small', el).textContent = P[0];
+      $('.bl-big', el).textContent = P[1];
+      el.hidden = false;
+      void el.offsetWidth;
+      el.classList.add('play');
+      var snd = AU.play(B.id + '.prelude');
+      var done = false, timer = later(finish, 4600);
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        snd.stop(0.3);
+        el.onclick = null;
+        el.classList.remove('play', 'prelude');
+        el.style.backgroundImage = '';
+        el.hidden = true;
+        resolve();
+      }
+      later(function () { if (!done) el.onclick = finish; }, 900);
+    });
+  }
+
+  // After WICK: why you made it this far, one card at a time. Each holds long enough to read; tap for the
+  // next, or skip the rest.
+  function revealScene(B) {
+    return new Promise(function (resolve) {
+      var el = $('#reveal'), cards = B.boss.reveal, n = -1, timer = null, done = false;
+      el.style.backgroundImage = 'url(' + B.boss.stage.bg + ')';
+      $('.rv-dots', el).innerHTML = cards.map(function () { return '<i></i>'; }).join('');
+      el.hidden = false;
+      function next() {
+        if (done) return;
+        clearTimeout(timer);
+        n++;
+        if (n >= cards.length) { finish(); return; }
+        var card = $('.rv-card', el);
+        $('.rv-big', el).textContent = cards[n][0];
+        $('.rv-small', el).textContent = cards[n][1];
+        $all('.rv-dots i', el).forEach(function (d, k) { d.classList.toggle('on', k <= n); });
+        card.classList.remove('show');
+        void card.offsetWidth;
+        card.classList.add('show');
+        AU.play('tick');
+        timer = later(next, 1600 + cards[n][1].length * 45); // about reading speed
+      }
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        el.onclick = null;
+        $('.rv-skip', el).onclick = null;
+        el.hidden = true;
+        resolve();
+      }
+      $('.rv-skip', el).onclick = function (ev) { ev.stopPropagation(); finish(); };
+      later(function () { if (!done) el.onclick = next; }, 600);
+      next();
+    });
+  }
+
   // Satoshi, sliced steel like the Lugano statue: he turns into view, says his piece and turns away.
   function satoshiSVG() {
     return '<svg viewBox="0 0 200 210" aria-hidden="true"><defs>' +
@@ -1473,6 +1632,7 @@
     }
     run.turns += f.turn;
     var B = D.FIGHTERS[o.cpu], P = D.FIGHTERS[o.player];
+    if (B.leverage) run.peakLev = Math.max(run.peakLev || 1, B.leverage.steps[f.f[0].peakLev]); // goes on the share card
     var res = { mode: 'story', rung: o.rung, player: o.player, cpu: o.cpu, won: f.winner === 0, turns: f.turn,
       hp: f.f[0].hp, finish: f.finish, grid: f.grid.slice(), timeout: f.finishCause === 'timeout' };
     S.result = res;
@@ -1482,6 +1642,7 @@
       runSave(run);
       if (isFinal(o.rung)) {
         await sleep(400);
+        if (B.boss.reveal) await revealScene(B);
         await satoshiScene('ending');
         storySummary(run, true);
         return;
@@ -1529,6 +1690,7 @@
       faces: face(P, true) + '<span>VS</span>' + face(B, false),
       line: B.name + ' beat your ' + P.name + (res.timeout ? ' on time' : ''),
       finish: res.finish, count: left,
+      quote: B.boss.continueLine ? B.name + ': “' + B.boss.continueLine + '”' : '',
       meta: run.satoshi ? '' : 'Satoshi already used his one save this run.',
       actions: [['Continue ▶', 'btn-gold', function () {
         clearInterval(S.stCount);
@@ -1554,11 +1716,13 @@
   function storySummary(run, won) {
     var P = D.FIGHTERS[run.player], n = run.beaten.length, total = D.STORY.ladder.length;
     store.set('story', null);
+    var lev = run.peakLev ? ' · peak leverage ' + run.peakLev + 'x' : '';
     var stats = n + (n === 1 ? ' boss' : ' bosses') + ' beaten · ' + plural(run.continues, 'continue') +
-      ' · ' + (run.satoshi ? 'never needed Satoshi' : 'Satoshi saved you once');
+      ' · ' + (run.satoshi ? 'never needed Satoshi' : 'Satoshi saved you once') + lev;
     var text = 'Proof of Fight · Story 📖\n' + (won
       ? 'Beat story mode with ' + P.name + '. ' + plural(run.continues, 'continue') + '.'
-      : P.name + ' made it to boss ' + Math.min(n + 1, total) + ' of ' + total + '.') + '\n' + siteUrl();
+      : P.name + ' made it to boss ' + Math.min(n + 1, total) + ' of ' + total + '.') +
+      (run.peakLev ? ' Peak leverage: ' + run.peakLev + 'x.' : '') + '\n' + siteUrl();
     storyCard({
       kicker: 'STORY', title: won ? 'STORY COMPLETE' : 'GAME OVER', lose: !won,
       faces: face(P, !won), line: won ? P.name + ' beat all ' + total + ' bosses' : P.name + ' made it to boss ' + Math.min(n + 1, total) + ' of ' + total,
@@ -1955,6 +2119,7 @@
       ['Boss: Dimon', function () { AU.music('dimon', { restart: true }); }],
       ['Boss: Warren', function () { AU.music('warren', { restart: true }); }],
       ['Boss: SBF', function () { AU.music('sbf', { restart: true }); }],
+      ['Boss: WICK', function () { AU.music('wick', { restart: true }); }],
       ['Stop music', function () { AU.stopMusic(0.3); }]
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
@@ -1962,7 +2127,8 @@
       ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
       ['Blinded, skips a turn', 'huh'], ['Staring at the shirt, skips a turn', 'stare'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
     ]], ['Story', [
-      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['Dimon gets bailed out', 'bailout'], ['Reading the letter (skips a turn)', 'paper'], ['BANNED', 'banned'], ["Caroline's beanbags", 'beanbag'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
+      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['Dimon gets bailed out', 'bailout'], ['Reading the letter (skips a turn)', 'paper'], ['BANNED', 'banned'], ["Caroline's beanbags", 'beanbag'], ['WICK: before the fight', 'wick.prelude'],
+      ['Leverage up', 'lev.up'], ['Position closed', 'lev.close'], ['LIQUIDATED (100x)', 'liquidated'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
     ]]];
     D.ROSTER.concat(Object.keys(D.BOSSES)).forEach(function (id) {
       var F = D.FIGHTERS[id], m = function (b) { return moveOf(id, b); }, items = [];

@@ -355,6 +355,34 @@
       [{ w: 'sine', f: [120, 40], t: 1.25, d: 0.35, v: 0.8 }, { w: 'noise', t: 1.25, d: 0.15, v: 0.4, lp: 1800 }],
       [{ w: 'sine', f: [600, 900, 500], t: 1.6, d: 0.6, v: 0.12 }]),
 
+    // ---------- WICK (final boss) ----------
+    'wick.strike': [{ w: 'square', f: [2400, 1800], d: 0.05, v: 0.1, lp: 6000 }, { w: 'noise', t: 0.02, d: 0.08, v: 0.3, hp: 2500 },
+      { w: 'sine', f: [160, 60], t: 0.03, d: 0.15, v: 0.5 }],                                                  // Stop Hunt: a sniper's ping
+    'wick.privacy': [0, 0.07, 0.14, 0.21, 0.28, 0.35].map(function (t, k) {
+      return { w: 'square', f: k % 2 ? 900 : 700, t: t, d: 0.03, v: 0.1, lp: 3000 };
+    }),                                                                                                          // Crab Market: a sideways scuttle
+    'wick.mint.ok': [{ w: 'noise', d: 0.04, v: 0.5, hp: 1500 }, { w: 'square', f: [600, 120], d: 0.12, v: 0.15, lp: 2500 },
+      { w: 'sine', f: [110, 50], t: 0.02, d: 0.2, v: 0.5 }],                                                    // Bull Trap: the trap snaps
+    'wick.mint.fail': seq({ w: 'triangle', v: 0.16 }, [[N.C5, 0, 0.08], [N.E5, 0.07, 0.08], [N.G5, 0.14, 0.08], [N.C6, 0.21, 0.08], [N.E6, 0.28, 0.25]]), // UP ONLY
+    'wick.rug.ok': [{ w: 'sawtooth', f: [1800, 60], d: 0.5, v: 0.14, lp: [6000, 400] }, { w: 'sine', f: [120, 35], t: 0.35, d: 0.3, v: 0.6 }], // Scam Wick: straight down
+    'wick.rug.fail': seq({ w: 'square', v: 0.12, lp: 5000 }, [[N.B5, 0, 0.07], [N.E6, 0.07, 0.12], [N.G6, 0.2, 0.25]]),   // BOUGHT THE DIP
+    // Leverage: a ratchet clicks up; closing the position rings out.
+    'lev.up': [0, 0.05, 0.1].map(function (t) { return { w: 'square', f: 1500, t: t, d: 0.02, v: 0.12, lp: 5000 }; })
+      .concat([{ w: 'square', f: [400, 900], t: 0.13, d: 0.12, v: 0.1, lp: 4000 }]),
+    'lev.close': seq({ w: 'triangle', v: 0.16 }, [[N.G5, 0, 0.08], [N.C6, 0.06, 0.08], [N.G5, 0.12, 0.2]]),
+    // Liquidation Cascade: an alarm (0.2s to 1s), then alerts falling one after another, then the crash.
+    'super.cascade': cat(
+      [0.2, 0.6].map(function (t) { return { w: 'square', f: [700, 1100, 700], t: t, d: 0.4, v: 0.1, lp: 4000 }; }),
+      [1.1, 1.3, 1.5, 1.7, 1.9, 2.1].map(function (t, k) { return { w: 'sawtooth', f: [1600 - k * 150, 300], t: t, d: 0.18, v: 0.09, lp: 5000 }; }),
+      [{ w: 'sine', f: [110, 30], t: 2.35, d: 0.5, v: 0.8 }, { w: 'noise', t: 2.35, d: 0.3, v: 0.4, lp: 2000 }]),
+    // 100x: the whole stake, gone.
+    liquidated: [{ w: 'square', f: 110, d: 0.9, v: 0.2, lp: 1500, hold: 0.8 }, { w: 'square', f: 117, d: 0.9, v: 0.16, lp: 1500, hold: 0.8 },
+      { w: 'sine', f: [90, 25], d: 1.0, v: 0.9 }, { w: 'noise', d: 0.5, v: 0.4, lp: [3000, 200] }],
+    // Before the fight: a clock ticks over a low drone while he talks.
+    'wick.prelude': cat(
+      [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map(function (t) { return { w: 'square', f: 1800, t: 0.3 + t, d: 0.02, v: 0.07, lp: 4000 }; }),
+      [{ w: 'sawtooth', f: 55, d: 4.2, v: 0.12, lp: 300, a: 1.2, hold: 0.7 }, { w: 'sine', f: 82.5, d: 4.2, v: 0.15, a: 1.2, hold: 0.7 }]),
+
     // Bailed out: a till rings and the money comes back.
     bailout: cat(
       [{ w: 'square', f: 2600, d: 0.05, v: 0.12, lp: 6000 }, { w: 'noise', t: 0.05, d: 0.12, v: 0.2, hp: 3000 }, { w: 'triangle', f: 3500, t: 0.1, d: 0.35, v: 0.14 }],
@@ -506,6 +534,17 @@
     'sbf.rug.fail': 0.395,
     'beanbag': 0.613,
     'super.what': 0.923,
+    'wick.strike': 0.553,
+    'wick.privacy': 0.117,
+    'wick.mint.ok': 0.680,
+    'wick.mint.fail': 0.155,
+    'wick.rug.ok': 0.568,
+    'wick.rug.fail': 0.143,
+    'lev.up': 0.142,
+    'lev.close': 0.156,
+    'super.cascade': 0.929,
+    'liquidated': 1.428,
+    'wick.prelude': 0.341,
     'bailout': 0.280
   };
   // PEAK:end
@@ -548,7 +587,8 @@
     schiff: { src: 'audio/schiff.mp3', loopStart: 3.233, loopEnd: 34.557, vol: 0.37 },
     dimon: { src: 'audio/dimon.mp3', loopStart: 3.363, loopEnd: 53.319, vol: 0.49 },
     warren: { src: 'audio/warren.mp3', loopStart: 6.432, loopEnd: 57.632, vol: 0.46 },
-    sbf: { src: 'audio/sbf.mp3', loopStart: 2.771, loopEnd: 49.083, vol: 0.49 }
+    sbf: { src: 'audio/sbf.mp3', loopStart: 2.771, loopEnd: 49.083, vol: 0.49 },
+    wick: { src: 'audio/wick.mp3', loopStart: 1.625, loopEnd: 40.02, vol: 0.34 }
   };
 
   // ---------- Engine (browser only) ----------

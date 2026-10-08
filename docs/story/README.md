@@ -1,6 +1,6 @@
 # Story mode
 
-**Status:** the framework and bosses 1 to 4 (Schiff, Dimon, Warren, Sam Bankman-Fried) are built (Oct 7 and 8, 2026). Story is hidden until WICK is in: open **proofoffight.com/?story** once and the 📖 Story button shows up on that phone or computer from then on. Prompts for every image and song are below.
+**Status:** all five bosses are built (Schiff, Dimon, Warren, Sam Bankman-Fried and WICK, Oct 7 and 8, 2026), with WICK's intro and the ending. Story is still hidden until the user opens it to everyone: open **proofoffight.com/?story** once and the 📖 Story button shows up on that phone or computer from then on. Prompts for every image and song are below.
 
 ## The story
 
@@ -28,17 +28,11 @@ Every boss fight gets its own **portrait, sprite, stage background and song**, p
 
 **Saving.** Close the tab mid-run and pick up where you left off, like the Daily Fight.
 
-**The ending.** After WICK falls, Satoshi appears one last time, then a shareable result: `Beat story mode with Toly · 5 bosses · peak leverage 3x · 1 continue`.
+**The ending.** After WICK falls, six cards explain why you made it this far (leverage, liquidations, who gets paid), Satoshi appears one last time, then a shareable result with your peak leverage: `Beat story mode with Toly. 1 continue. Peak leverage: 5x.`
 
 ### WICK: the lesson is in the rules
 
-- **Leverage meter.** Every pink or purple button you press against him adds leverage: 1x, 2x, 5x, 10x, 25x, 50x, 100x. It shows on your HUD.
-- **Liquidation Cascade** (his Super) hits harder the more leverage you've stacked. At 1x it's a nudge; at 100x it's the end.
-- **Stop Hunt** goes straight through Privacy: `YOUR STOP LOSS WAS A SUGGESTION`.
-- Red and blue never add leverage. Steady play beats him; degen play feeds him.
-- Lines: `100X? CUTE.` When he loses: `SEE YOU SUNDAY, 3 A.M.`
-- Satoshi's last word, after WICK: `IT WAS NEVER THE BANKERS. IT WAS THE 100X.` (draft)
-- Your **peak leverage** goes on the share card, so people can brag about a 1x run.
+The design, as built (details in **Boss 5: WICK** below): a leverage meter that pink and purple push up and blue closes, a Super that scales with it, a red that goes through hiding, and your peak leverage on the share card, so people can brag about a 1x run. Steady play beats him; degen play feeds him.
 
 ### Sam Bankman-Fried: background
 
@@ -158,7 +152,7 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
 
-**Made so far:** Schiff, Dimon, Warren and Sam Bankman-Fried (portrait, sprite, stage, song each), Caroline Ellison (portrait, for SBF's tag-in) and Satoshi (portrait, sprite, music).
+**Made so far:** all five bosses (portrait, sprite, stage, song each), Caroline Ellison (portrait, for SBF's tag-in) and Satoshi (portrait, sprite, music). Not made: the `ending` song (the ending uses Satoshi's music).
 
 **How they go in:**
 ```
@@ -177,6 +171,9 @@ python3 tools/art.py head sbf-portrait.jpg art/sbf-head.webp --gap 1016,136 --ga
 python3 tools/art.py body sbf-sprite.jpg art/sbf-body.webp --gap 500,872 --clear 590,30,1050,275 --clear 600,270,705,345 --clear 925,255,1015,345
 python3 tools/art.py head caroline-portrait.jpg art/caroline-head.webp --crop=0.0,-0.04,1.0,0.96
 python3 tools/music.py SBF-music.mp3 audio/sbf.mp3 --start 28.32 --loop 31.091 77.403
+python3 tools/art.py head wick-portrait.jpg art/wick-head.webp
+python3 tools/art.py body wick-sprite.jpg art/wick-body.webp --gap 352,612
+python3 tools/music.py Wick-music.mp3 audio/wick.mp3 --start 41.55 --loop 43.175 81.570
 ```
 `--clear x0,y0,x1,y1` wipes stray background specks inside a box (SBF's curls left white flecks between them); `--gap x,y` clears a pocket of background the outside flood can't reach.
 A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>.webp` (WebP, quality 82). Then the boss gets `art`, `boss.stage.bg` and `boss.music` in `js/data.js`, and the song an entry in `MUSIC` in `js/audio.js`.
@@ -194,7 +191,7 @@ A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>
 - **Rematches:** tap any boss you've beaten on the ladder to fight them again (pick an ally, full stage and song, and a Satoshi of its own). Rematches never change the run. While the next boss is still being built, the big button is **Rematch** the last boss, and **Start a new run** lets you begin again with another fighter.
 - **Music:** each boss plays their own song once it's added; until then, the fight song.
 
-**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%. Warren, 110 HP: 54%, 73% and 97%. Sam Bankman-Fried, 100 HP plus Caroline's tag-in: 48%, 67% and 96%.
+**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%. Warren, 110 HP: 54%, 73% and 97%. Sam Bankman-Fried, 100 HP plus Caroline's tag-in: 48%, 67% and 96%. WICK, 135 HP, against a player who watches the leverage meter: 50%, 65% and 95%; against a degen who ignores it: 37%, 51% and 87%.
 
 **Where it lives:** the bosses and `STORY` settings in `js/data.js`; `assist()` and `revive()` in `js/engine.js`; the ladder, ally pick, Satoshi and the after-fight cards in `js/app.js` (search "Story mode"); styles in `css/style.css` (search "Story mode").
 
@@ -295,6 +292,46 @@ Grok's numbered kit merged with the first draft; the user approved it. Every but
 **Art (Oct 8, 2026):** a deadpan portrait in an orange jumpsuit; a sprite in the jumpsuit and white socks, slouched, dragging a beanbag; his stage is a prison yard at dusk (chain-link and razor wire, a guard tower, beanbags on the ground, an old Corolla parked outside the fence). Caroline's portrait: glasses, long wavy hair, a small smile, on purple. Grok's curls left white flecks between them, cleared with the new `--clear` option.
 
 **Song (Oct 8, 2026):** `audio/sbf.mp3` from the user's Suno track (181s, 145 BPM). It starts on the first drop (28.32s) and loops the 28 bars after it (31.09s to 77.40s).
+
+## Boss 5: WICK (built Oct 8, 2026)
+
+The final boss isn't a person: he's the market, and what 100x leverage does to people. Black suit, a red candle for a head, a red blade. His stage is the chart itself: green candles climbing, then one red wick straight down.
+
+**Before the fight:** the screen cuts to his portrait over the chart, a clock ticking: `YOU'VE MADE IT THIS FAR.` / `BUT DO YOU REALLY KNOW WHY?` (the user's line). Then `PLACE YOUR BETS.`, **FINAL BOSS / FIGHT!**, and his song drops. If he beats you, CONTINUE? asks the user's other line: *"You've made it this far. Are you sure you want to continue?"*
+
+**The leverage meter (his twist):**
+- Every pink or purple you press against him steps your leverage up: 1x, 2x, 5x, 10x, 25x, 50x, 100x. A 📈 chip on your HUD shows it, red from 2x and pulsing from 25x, and the pink and purple buttons wear a 📈.
+- Leverage cuts both ways: your pink and purple hit 10% harder per step (purple at 25x: 50 instead of 36), and every press feeds him 2 Blocks, so his Super comes sooner.
+- **Blue closes the position:** back to 1x, before any Super that turn, so closing in time works.
+- **Liquidation Cascade** (his Super) hits once per step, harder the higher you are: 6 at 1x, 14 at 2x, 24 at 5x, 36 at 10x, 52 at 25x, 72 at 50x. At **100x it takes everything** (`LIQUIDATED`, HODL or not). Afterwards your leverage is back to 1x.
+- The turn note spells it out: *"5x leverage: his next Super hits 3 times. Blue takes you back to 1x."* and, when it fires, *"…at 25x it hits 5 times. Blue closes your position first."* The first step up shows `2X LEVERAGE / You hit harder. His Super hits harder, and sooner.`
+- The cut-in: a red candle plunges while `LIQUIDATED · BTC LONG 25X` alerts drop in, one per hit, and his line reads your leverage: `25X? CUTE.` (at 1x: `ONLY 1X? RESPECT.`).
+- Your **peak leverage** goes on the STORY COMPLETE card and the share text.
+
+| Button | Name | Does | Lands | Flops |
+|---|---|---|---|---|
+| 🔴 Red | 🎯 Stop Hunt | 12 dmg, always, **through a hide** | KO: `STOPPED OUT` · through a hide: `YOUR STOP LOSS WAS A SUGGESTION` | — |
+| 🔵 Blue | 🦀 Crab Market | hide 30% | `SIDEWAYS FOR SIX MONTHS` | `VOLATILITY IS BACK` |
+| 🩷 Pink | 🐂 Bull Trap | 24 dmg, 40% | `BULL TRAP` | `UP ONLY` |
+| 🟣 Purple | 🕯️ Scam Wick | 36 dmg, 20%, steals 2 Blocks, through a dodge | `SCAM WICK` | `BOUGHT THE DIP` |
+
+**When he loses:** `SEE YOU SUNDAY, 3 A.M.` (thin weekend order books, when the wicks happen).
+
+**The ending: why you made it this far.** After he falls, six cards over his chart (tap for the next, or skip), each held long enough to read:
+1. **WHY YOU MADE IT THIS FAR:** every rally needs buyers; the higher it climbs, the bigger the bets get.
+2. **EVERY 100X BET HAS A TRIPWIRE:** at 100x, a move of about 1% against you wipes out your stake. That's your liquidation price.
+3. **THE TRIPWIRES ARE PUBLIC:** liquidation maps show where they cluster. Big players can push the price into them: forced sellers are the easiest people to buy from.
+4. **ONE WICK SETS OFF THE REST:** every liquidation is a forced sale, which sets off the next. A cascade.
+5. **THE HOUSE GETS PAID EITHER WAY:** market makers earn the spread on every trade; exchanges earn the fees, and many keep what's left of a liquidated account in their insurance fund.
+6. **OCT 10, 2025:** $19 billion of leveraged bets liquidated in one day, 1.6 million traders, most of them betting on up.
+
+Then Satoshi: `IT WAS NEVER THE BANKERS.` / `IT WAS THE 100X.`, and STORY COMPLETE.
+
+The cards are worded so they hold up: "can", "many", no firm named. **Sources:** CoinGlass's count for Oct 10–11, 2025: 1,618,240 traders liquidated, $19.13 billion, and it said the real total was probably higher; long positions were most of it (around 90% per CoinGlass, as reported by [ForkLog](https://forklog.com/en/forced-liquidations-in-2025-surpass-150-billion/) and [BitPinas](https://bitpinas.com/learn-how-to-guides/largest-liquidation/)). Liquidation heatmaps are public (CoinGlass and others). Insurance funds taking the rest of a liquidated position's margin is how the big futures exchanges document them.
+
+**Art (Oct 8, 2026):** the portrait (red candle head, black suit, red light on the shoulders), the sprite (same, one hand raised, a red blade), and the chart stage. His color in the game is chart green, so the red candle stands out in his circle; on the stage his black suit gets a thin red rim so it doesn't vanish into the dark.
+
+**Song (Oct 8, 2026):** `audio/wick.mp3` from the user's Suno track (177s, 150 BPM). It starts on the first drop (41.55s, right after a one-beat drop-out) and loops the 24 bars after it (43.18s to 81.57s). Played quieter than it came, to match the fight song.
 
 ## The kits
 

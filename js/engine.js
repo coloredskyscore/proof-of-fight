@@ -74,8 +74,9 @@
     // bailedOut: Dimon's one bailout is spent.
     // banned: { move, turns } while a button is banned (Warren's BANNED); banUsed: her one ban is spent.
     // taggedIn: SBF's one tag-in (Caroline) is spent.
+    // lev / peakLev: against WICK, the step on his leverage ladder (0 = 1x) and the highest it got.
     return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0, shield: 0, stored: 0, bailedOut: false,
-      banned: null, banUsed: false, taggedIn: false };
+      banned: null, banUsed: false, taggedIn: false, lev: 0, peakLev: 0 };
   }
 
   function canSuper(fight, who) {
@@ -95,12 +96,25 @@
     return weightedPick(fight.rng, D.FIGHTERS[fight.f[1].id].ai);
   }
 
+  // WICK's leverage ladder, if fighter `who` is up against him (else null).
+  function leverageFor(fight, who) {
+    return D.FIGHTERS[fight.f[1 - who].id].leverage || null;
+  }
+
+  // Leverage multiplies your pink and purple: boost per step (25x is +40% at 0.1 a step).
+  function levMult(fight, who) {
+    var LV = leverageFor(fight, who);
+    return LV ? 1 + LV.boost * fight.f[who].lev : 1;
+  }
+
   function snapshot(fight, hidden, braced) {
     return fight.f.map(function (f, i) {
+      var LV = leverageFor(fight, i);
       return {
         hp: f.hp, maxHp: f.maxHp, blocks: f.blocks, hodl: f.hodl, shield: f.shield, stored: f.stored,
         bailout: !!(D.FIGHTERS[f.id].bailout && !f.bailedOut),
         banned: f.banned ? f.banned.move : null,
+        lev: LV ? LV.steps[f.lev] : null,
         skipNext: f.skipNext, hypnoNext: f.hypnoNext,
         hidden: !!(hidden && hidden[i]), braced: !!(braced && braced[i])
       };
@@ -220,6 +234,22 @@
       if (act[i] === 'skip') push({ t: 'skip', who: i, reason: result[i].reason });
     }
 
+    // WICK's leverage: a pink or purple against him opens a bigger position, blue closes it. This happens
+    // before the Supers, so closing in time softens his Liquidation Cascade (and opening more makes it worse).
+    for (i = 0; i < 2; i++) {
+      var LV = leverageFor(fight, i), lf = fight.f[i], was = lf.lev;
+      if (!LV) continue;
+      if (act[i] === 'mint' || act[i] === 'rug') {
+        lf.lev = Math.min(lf.lev + 1, LV.steps.length - 1);
+        fight.f[1 - i].blocks += LV.feed || 0; // degen play feeds him: his Super comes sooner
+        clampBlocks(fight.f[1 - i]);
+      }
+      else if (act[i] === 'privacy') lf.lev = 0;
+      if (lf.lev === was) continue;
+      lf.peakLev = Math.max(lf.peakLev, lf.lev);
+      push({ t: 'lev', who: i, x: LV.steps[lf.lev], from: LV.steps[was], why: lf.lev > was ? 'open' : 'close' });
+    }
+
     // Step 1: Supers. Player first. Supers can't be dodged.
     for (i = 0; i < 2 && !fight.over; i++) {
       if (act[i] !== 'super') continue;
@@ -229,9 +259,18 @@
 
     function doSuper(who) {
       var me = fight.f[who], ti = 1 - who, tgt = fight.f[ti];
-      var S = D.FIGHTERS[me.id].super, fx = D.SUPERS[S.id];
+      var S = D.FIGHTERS[me.id].super, fx = D.SUPERS[S.id], LV = D.FIGHTERS[me.id].leverage;
       me.blocks = 0;
-      push({ t: 'super', who: who, superId: S.id });
+      // WICK's Liquidation Cascade: one hit per step of the target's leverage; at the top step, all of it.
+      var lx = fx.cascade ? LV.steps[tgt.lev] : null, top = fx.cascade && tgt.lev >= LV.steps.length - 1;
+      push({ t: 'super', who: who, superId: S.id, lev: lx });
+      if (top) {
+        var all = tgt.hp;
+        tgt.hp = 0;
+        push({ t: 'hit', attacker: who, target: ti, move: 'super', amount: all, n: 1, of: 1, liquidated: true });
+        ko(ti, 'super', who);
+        return;
+      }
       if (fx.prune && tgt.hodl > 0) {
         tgt.hodl = 0;
         push({ t: 'status', who: ti, status: 'pruned' });
@@ -244,13 +283,18 @@
         me.shield = fx.shield;
         push({ t: 'status', who: who, status: 'shield' });
       }
-      var hits = fx.hits || 1;
+      // The cascade's total for the step is split over its hits (45 in 5 is 9 each).
+      var hits = fx.cascade ? tgt.lev + 1 : fx.hits || 1, total = fx.cascade ? fx.cascade[tgt.lev] : 0;
       for (var h = 0; h < hits && !fight.over; h++) {
-        var dealt = hurt(ti, fx.dmg);
+        var dealt = hurt(ti, fx.cascade ? Math.floor(total / hits) + (h < total % hits ? 1 : 0) : fx.dmg);
         push({ t: 'hit', attacker: who, target: ti, move: 'super', amount: dealt, n: h + 1, of: hits });
         ko(ti, 'super', who);
       }
       if (fight.over) return;
+      if (fx.cascade && tgt.lev > 0) {
+        tgt.lev = 0; // the position is closed for you
+        push({ t: 'lev', who: ti, x: LV.steps[0], from: lx, why: 'liquidated' });
+      }
       if (fx.skip) {
         tgt.skipNext = fx.skip;
         push({ t: 'status', who: ti, status: fx.skip });
@@ -355,7 +399,7 @@
 
       var pierced = false, T = D.FIGHTERS[tgt.id];
       if (!self && hidden[ti]) {
-        if (move === 'rug' && R.rugPiercesHidden) {
+        if ((move === 'rug' && R.rugPiercesHidden) || (F.pierce && F.pierce.indexOf(move) >= 0)) {
           pierced = true;
         } else {
           push({ t: 'miss', attacker: who, target: ti, move: move });
@@ -390,6 +434,7 @@
       // Ranged damage rolls only when it lands, so fixed-damage fighters use exactly the same dice as before.
       var range = damageRange(me.id, move, R);
       var base = range[0] === range[1] ? range[0] : range[0] + Math.floor(rng() * (range[1] - range[0] + 1));
+      if ((move === 'mint' || move === 'rug') && !self) base = Math.round(base * levMult(fight, who)); // leverage
       var bonus = !self && me.stored ? me.stored : 0; // Walrus remembers
       me.stored -= bonus;
       dealt = hurt(ti, base + bonus, true);
@@ -483,6 +528,7 @@
     me.hp = Math.ceil(me.maxHp * D.STORY.reviveHp);
     me.skipNext = null;
     me.hypnoNext = false;
+    me.lev = 0; // knocked out against WICK: that position is gone
     fight.over = false;
     fight.winner = null;
     fight.finish = null;
@@ -514,6 +560,7 @@
     moveDamage: moveDamage,
     damageRange: damageRange,
     replay: replay,
+    levMult: levMult,
     canAssist: canAssist,
     assist: assist,
     revive: revive
