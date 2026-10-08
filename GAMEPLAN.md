@@ -598,7 +598,7 @@ Do not point DNS at an empty repo.
 4. ~~Caricature portraits and sprites.~~ Done: all seven ([docs/art/](docs/art/README.md)).
    ~~Sound: music, effects, mute.~~ Done ([docs/audio/](docs/audio/README.md)).
    New fighters: Sergey, CZ and Adeniyi done.
-   Story mode: the framework and boss 1 (Schiff) built Oct 7, boss 2 (Dimon) and boss 3 (Warren) Oct 8, behind `?story` until the other bosses are in ([docs/story/](docs/story/README.md)).
+   Story mode: the framework and boss 1 (Schiff) built Oct 7, boss 2 (Dimon), boss 3 (Warren) and boss 4 (Sam Bankman-Fried, with Caroline's tag-in) Oct 8, behind `?story` until WICK is in ([docs/story/](docs/story/README.md)).
    **← You are here.** Next: the other bosses, then step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. ~~Then GitHub Pages or Cloudflare Pages.~~ Staying on GitHub Pages (free; soft limit 100 GB of traffic a month, roughly 40,000 first visits). Move to Cloudflare Pages only if traffic gets near that.

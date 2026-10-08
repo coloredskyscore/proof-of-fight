@@ -73,8 +73,9 @@
     // shield: turns left of CZ's FUD-proof (red, pink and purple do nothing). stored: Adeniyi's Walrus bonus.
     // bailedOut: Dimon's one bailout is spent.
     // banned: { move, turns } while a button is banned (Warren's BANNED); banUsed: her one ban is spent.
+    // taggedIn: SBF's one tag-in (Caroline) is spent.
     return { id: id, hp: hp, maxHp: hp, blocks: 0, skipNext: null, hypnoNext: false, hodl: 0, shield: 0, stored: 0, bailedOut: false,
-      banned: null, banUsed: false };
+      banned: null, banUsed: false, taggedIn: false };
   }
 
   function canSuper(fight, who) {
@@ -175,6 +176,7 @@
       var rival = W.rivalKo && W.rivalKo[fight.f[loser].id];
       if (attacker === loser) { cause = 'self'; fight.finish = D.FINISH.self; }
       else if (rival) fight.finish = rival;
+      else if (cause === 'tagin') fight.finish = W.tagIn.line;
       else if (cause === 'super') fight.finish = W.super.finish;
       // A renamed button's own KO line, else its success line (Charles's Peer Review: PEER REVIEWED),
       // so a pink-button KO never falls back to the generic JPEG TO THE FACE.
@@ -372,6 +374,13 @@
       }
 
       var stolen = 0;
+      if (move === 'strike' && F.strikeSteal && !self) {
+        // SBF's 1) Fine: your Blocks become his (customer funds).
+        stolen = Math.min(F.strikeSteal, tgt.blocks);
+        tgt.blocks -= stolen;
+        me.blocks += stolen;
+        clampBlocks(me);
+      }
       if (move === 'rug' && !self) {
         stolen = Math.min(D.BLOCKS.rugSteal, tgt.blocks);
         tgt.blocks -= stolen;
@@ -403,7 +412,20 @@
       }
       var ban = tryBan(fight);
       if (ban) push(ban);
-      if (fight.turn >= D.TURN_CAP) {
+      // A boss's tag-in (SBF: Caroline), once, at tagIn.at of their HP: hits that can't be dodged or halved.
+      for (i = 0; i < 2 && !fight.over; i++) {
+        var tf = fight.f[i], TG = D.FIGHTERS[tf.id].tagIn;
+        if (!TG || tf.taggedIn || tf.hp <= 0 || tf.hp > tf.maxHp * TG.at) continue;
+        tf.taggedIn = true;
+        push({ t: 'tagin', who: i, ally: TG.ally, line: TG.line });
+        for (var th = 0; th < TG.hits && !fight.over; th++) {
+          var tt = fight.f[1 - i], amt = Math.min(TG.dmg, tt.hp);
+          tt.hp -= amt;
+          push({ t: 'hit', attacker: i, target: 1 - i, move: 'tagin', amount: amt, n: th + 1, of: TG.hits });
+          ko(1 - i, 'tagin', i);
+        }
+      }
+      if (!fight.over && fight.turn >= D.TURN_CAP) {
         var p = fight.f[0].hp / fight.f[0].maxHp, c = fight.f[1].hp / fight.f[1].maxHp;
         fight.over = true;
         fight.winner = p >= c ? 0 : 1;

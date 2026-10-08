@@ -1,6 +1,6 @@
 # Story mode
 
-**Status:** the framework and boss 1 (Schiff) are built (Oct 7, 2026). Story is hidden until the other four bosses are in: open **proofoffight.com/?story** once and the 📖 Story button shows up on that phone or computer from then on. Prompts for every image and song are below.
+**Status:** the framework and bosses 1 to 4 (Schiff, Dimon, Warren, Sam Bankman-Fried) are built (Oct 7 and 8, 2026). Story is hidden until WICK is in: open **proofoffight.com/?story** once and the 📖 Story button shows up on that phone or computer from then on. Prompts for every image and song are below.
 
 ## The story
 
@@ -158,7 +158,7 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
 
-**Made so far:** Schiff, Dimon and Warren (portrait, sprite, stage, song each) and Satoshi (portrait, sprite, music).
+**Made so far:** Schiff, Dimon, Warren and Sam Bankman-Fried (portrait, sprite, stage, song each), Caroline Ellison (portrait, for SBF's tag-in) and Satoshi (portrait, sprite, music).
 
 **How they go in:**
 ```
@@ -173,7 +173,12 @@ python3 tools/music.py Final_Boss_Theme.mp3 audio/dimon.mp3 --start 52.92 --loop
 python3 tools/art.py head warren-portrait.jpg art/warren-head.webp --crop=0.0,-0.04,1.0,0.96
 python3 tools/art.py body warren-sprite.jpg art/warren-body.webp
 python3 tools/music.py warren-music.mp3 audio/warren.mp3 --start 22.36 --loop 28.792 79.992
+python3 tools/art.py head sbf-portrait.jpg art/sbf-head.webp --gap 1016,136 --gap 816,40 --gap 880,84 --clear 100,0,1350,370 --clear 100,370,520,830 --clear 990,370,1350,830 --crop=0.0,-0.04,1.0,0.96
+python3 tools/art.py body sbf-sprite.jpg art/sbf-body.webp --gap 500,872 --clear 590,30,1050,275 --clear 600,270,705,345 --clear 925,255,1015,345
+python3 tools/art.py head caroline-portrait.jpg art/caroline-head.webp --crop=0.0,-0.04,1.0,0.96
+python3 tools/music.py SBF-music.mp3 audio/sbf.mp3 --start 28.32 --loop 31.091 77.403
 ```
+`--clear x0,y0,x1,y1` wipes stray background specks inside a box (SBF's curls left white flecks between them); `--gap x,y` clears a pocket of background the outside flood can't reach.
 A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>.webp` (WebP, quality 82). Then the boss gets `art`, `boss.stage.bg` and `boss.music` in `js/data.js`, and the song an entry in `MUSIC` in `js/audio.js`.
 
 ## What's in the game (Oct 7, 2026)
@@ -189,7 +194,7 @@ A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>
 - **Rematches:** tap any boss you've beaten on the ladder to fight them again (pick an ally, full stage and song, and a Satoshi of its own). Rematches never change the run. While the next boss is still being built, the big button is **Rematch** the last boss, and **Start a new run** lets you begin again with another fighter.
 - **Music:** each boss plays their own song once it's added; until then, the fight song.
 
-**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%. Warren, 110 HP: 54%, 73% and 97%.
+**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%. Warren, 110 HP: 54%, 73% and 97%. Sam Bankman-Fried, 100 HP plus Caroline's tag-in: 48%, 67% and 96%.
 
 **Where it lives:** the bosses and `STORY` settings in `js/data.js`; `assist()` and `revive()` in `js/engine.js`; the ladder, ally pick, Satoshi and the after-fight cards in `js/app.js` (search "Story mode"); styles in `css/style.css` (search "Story mode").
 
@@ -263,6 +268,33 @@ Grok's kit merged with the first draft; the user approved it and picked the BANN
 **Art (Oct 8, 2026):** a stern portrait pointing at you in the red cardigan; a sprite pointing, clipboard of letters under her arm; a dim hearing room (wood dais, empty chairs and mics, paper stacks, two flags) for her stage. Her color in the game is slate blue-gray so the red cardigan stands out on it.
 
 **Song (Oct 8, 2026):** `audio/warren.mp3` from the user's Suno track (187s, 150 BPM). It starts on the first drop (22.36s) and loops the 32 bars after it (28.79s to 79.99s).
+
+## Boss 4: Sam Bankman-Fried (built Oct 8, 2026)
+
+Grok's numbered kit merged with the first draft; the user approved it. Every button is a numbered list item, like his Nov 2022 posts (one of them was just `1) What`).
+
+| Button | Name | Does | Lands | Flops |
+|---|---|---|---|---|
+| 🔴 Red | 🔀 1) Fine | 10 dmg, always, and **takes 2 of your Blocks** for himself (customer funds) | KO: `ASSETS ARE FINE` · the first time: a `CUSTOMER FUNDS` banner, then a `+2 BLOCKS` tag over him | — |
+| 🔵 Blue | 🫘 2) Beanbag | hide 35% (he slept on one at the office) | `I NEED A MINUTE` | `COURT IS IN SESSION` |
+| 🩷 Pink | 🎮 3) League | 24 dmg, 40% (he played League of Legends through a VC pitch) | `GG EZ` | `MISSED THE CALL` |
+| 🟣 Purple | 📦 4) The Box | 36 dmg, 20%, steals 2 Blocks, hits through a dodge | `PUT MONEY IN THE BOX` (his yield-farming explanation on Odd Lots, 2022) | `THE BOX IS EMPTY` |
+
+**Super: 1) What** (one hit of 22). A laptop rises with the FTX balance sheet (`Assets: FINE`, `Customer funds: ?`); the red question mark flies out of the screen and slams down huge. The line is the list item that never comes: `2)`. Super KO: `1) WHAT`. After his Super, if you're still standing: `NOT LEGAL ADVICE. NOT FINANCIAL ADVICE.` (how his thread ended).
+
+**Caroline tags in (his twist):** once per fight, when he drops to 35% HP or lower, Caroline Ellison slides in from his side (`TAG IN`, her line `HE DIRECTED ME TO DO THIS`, from her testimony) and throws 3 beanbags at you, 5 each, that can't be dodged or halved. It mirrors your own assist. A beanbag knockout ends on her line. She isn't a fighter: she lives in `GUESTS` in `js/data.js` and only shows up in the tag-in.
+
+**Opening line:** `FTX IS FINE. ASSETS ARE FINE.` (his post, Nov 7 2022).
+
+**When he loses:** `I DON'T RECALL` (more than 100 times on the stand).
+
+**CZ:** as your ally against him he shouts `LIQUIDATING OUR FTT` (the post that started the run on FTX); beating him as CZ reads `DEAL'S OFF` (Binance walked away from buying FTX).
+
+**What changed from Grok's version:** `2) What` as a stun became the Super (one big hit), the Laptop's Sleep went (Sleep is Charles's), Alameda became The Box, and the Beanbag is a hide, not a brace (Warren has the brace).
+
+**Art (Oct 8, 2026):** a deadpan portrait in an orange jumpsuit; a sprite in the jumpsuit and white socks, slouched, dragging a beanbag; his stage is a prison yard at dusk (chain-link and razor wire, a guard tower, beanbags on the ground, an old Corolla parked outside the fence). Caroline's portrait: glasses, long wavy hair, a small smile, on purple. Grok's curls left white flecks between them, cleared with the new `--clear` option.
+
+**Song (Oct 8, 2026):** `audio/sbf.mp3` from the user's Suno track (181s, 145 BPM). It starts on the first drop (28.32s) and loops the 28 bars after it (31.09s to 77.40s).
 
 ## The kits
 

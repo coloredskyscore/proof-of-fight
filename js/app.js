@@ -203,6 +203,7 @@
     S.lastMoves = null;
     S.koProp = null;
     S.assistRang = false;
+    S.stealShown = false;
     buildArena();
     render(E.snapshot(S.fight));
     $('#turn-num').textContent = S.fight.turn;
@@ -333,6 +334,7 @@
       pierce: own.pierce || own.ok || base.pierce,
       ticker: own.ticker || null, // Saylor's MSTR: shows MSTR ▲ 37% / MSTR ▼
       skipLine: own.skipLine || null, // Sergey's shirt: over them on the turn they lose
+      steal: own.steal || null,       // SBF's 1) Fine: the banner when it takes your Blocks
       // Default Mint/Rug banners put the fighter's joke line underneath.
       failSub: own.fail ? null : move === 'mint' ? F.mintFail : move === 'rug' ? F.rugFail : null
     };
@@ -652,6 +654,12 @@
         await sleep(1500);
         break;
 
+      case 'tagin':
+        // SBF: Caroline tags in from his side of the screen, then her beanbags land (the hit events after this).
+        await assistIn(e.ally, e.line, 'tagin');
+        log(D.FIGHTERS[e.ally].name + ' tagged in for ' + nm(e.who) + '.');
+        break;
+
       case 'assist':
         await assistIn(e.ally, e.line);
         render(e.snap);
@@ -687,6 +695,7 @@
 
   async function doHit(e) {
     var multi = e.of > 1;
+    if (e.move === 'tagin') { await beanbagHit(e); return; }
     if (e.move !== 'super') {
       lunge(e.attacker);
       await sleep(170);
@@ -721,8 +730,37 @@
     else if (e.bonus) popup(e.attacker, '🦭 +' + e.bonus, 'good');
     if (e.pierced) banner(hm.pierce, stolen || "Hiding didn't help");
     else if (e.move === 'rug' || e.move === 'mint') banner(hm.ok, stolen);
+    // SBF's 1) Fine takes Blocks: a banner the first time, so it's clear where they went, then a tag.
+    var stealBanner = e.move === 'strike' && e.stolen && !S.stealShown;
+    if (stealBanner) {
+      S.stealShown = true;
+      banner(hm.steal || 'CUSTOMER FUNDS', (e.target === 0 ? 'He took ' : nm(e.attacker) + ' took ') + e.stolen + ' of ' + (e.target === 0 ? 'your' : 'their') + ' Blocks');
+    } else if (e.move === 'strike' && e.stolen) popup(e.attacker, '+' + e.stolen + ' BLOCKS', 'good');
     if (!multi) log(who(e.attacker) + ' hit ' + (e.target === 0 ? 'you' : nm(e.target)) + ' for ' + e.amount + '.');
-    await sleep(multi ? 240 : (e.move === 'rug' || e.move === 'mint' || walrusBanner) ? 1050 : 650);
+    await sleep(multi ? 240 : (e.move === 'rug' || e.move === 'mint' || walrusBanner || stealBanner) ? 1050 : 650);
+  }
+
+  // Caroline's beanbags: each one flies in from the boss's side of the stage and lands on the target.
+  async function beanbagHit(e) {
+    var layer = $('#popups'), t = fighterEl(e.target), bag = document.createElement('i');
+    bag.className = 'beanbag bag-' + (e.n % 3);
+    var x1 = t.offsetLeft + t.offsetWidth / 2, y1 = t.offsetTop + t.offsetHeight * 0.35;
+    var x0 = e.target === 0 ? layer.clientWidth + 30 : -30;
+    bag.style.setProperty('--dx', (x0 - x1) + 'px');
+    bag.style.left = x1 + 'px';
+    bag.style.top = y1 + 'px';
+    bag.style.animationDuration = (360 * SPEED) + 'ms';
+    layer.appendChild(bag);
+    await sleep(340);
+    render(e.snap);
+    hurtFx(e.target);
+    AU.play('beanbag');
+    if (e.n === 1) AU.play('hit');
+    popup(e.target, '-' + e.amount, 'dmg', e.n);
+    if (e.target === 0) buzz(40);
+    later(function () { bag.remove(); }, 500);
+    if (e.n === e.of) log(D.FIGHTERS[D.FIGHTERS[S.fight.f[e.attacker].id].tagIn.ally].name + ' hit ' + (e.target === 0 ? 'you' : nm(e.target)) + ' with ' + e.of + ' beanbags.');
+    await sleep(e.n === e.of ? 600 : 120);
   }
 
   // ---------- Effects ----------
@@ -1005,8 +1043,16 @@
       '</div></div><div class="deco-march staff-march">' + staff + '</div>';
   }
 
+  // SBF: the laptop's balance sheet has one blank line, and the question mark flies out of it.
+  function whatDeco() {
+    return '<div class="what-laptop"><div class="wl-screen"><b>FTX BALANCE SHEET</b>' +
+      '<p><span>Assets</span><span>FINE</span></p><p><span>Customer funds</span><span class="wl-q">?</span></p>' +
+      '<p><span>Alameda</span><span>…</span></p></div><div class="wl-base"></div></div><div class="what-q">?</div>';
+  }
+
   function decoFor(id, ctx) {
     switch (id) {
+      case 'what': return { screen: whatDeco() };
       case 'four': return { screen: fourDeco() };
       case 'goldrush': return { screen: goldDeco() };
       case 'petrock': return { screen: petRockDeco() };
@@ -1264,6 +1310,8 @@
   function startStoryFight(run, rung, practice) {
     if (rung == null) rung = run.rung;
     var B = ladderBoss(rung);
+    // A tag-in partner (SBF's Caroline) only shows up mid-fight: fetch the portrait now so the cut-in isn't blank.
+    if (B.tagIn) new Image().src = D.FIGHTERS[B.tagIn.ally].art.head;
     startFight({ mode: 'story', rung: rung, practice: !!practice, player: run.player, cpu: B.id, ally: run.ally,
       seed: randomSeed(), rules: 'balanced' });
   }
@@ -1280,9 +1328,12 @@
   }
 
   // The ally's mini cut-in: they slide in, shout their line, and the hit lands as they leave.
-  function assistIn(id, line) {
+  // kind 'tagin': a boss's partner (SBF's Caroline) comes in from the other side.
+  function assistIn(id, line, kind) {
     return new Promise(function (resolve) {
       var F = D.FIGHTERS[id], el = $('#assistin');
+      el.classList.toggle('tagin', kind === 'tagin');
+      $('.ai-card small', el).textContent = kind === 'tagin' ? 'TAG IN' : 'ASSIST';
       el.style.setProperty('--c', F.color);
       $('.ai-face', el).innerHTML = faceHTML(F);
       $('.ai-face', el).classList.toggle('has-art', !!(F.art && F.art.head));
@@ -1903,6 +1954,7 @@
       ['Boss: Schiff', function () { AU.music('schiff', { restart: true }); }],
       ['Boss: Dimon', function () { AU.music('dimon', { restart: true }); }],
       ['Boss: Warren', function () { AU.music('warren', { restart: true }); }],
+      ['Boss: SBF', function () { AU.music('sbf', { restart: true }); }],
       ['Stop music', function () { AU.stopMusic(0.3); }]
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],
@@ -1910,7 +1962,7 @@
       ['You win', 'win'], ['You lose', 'lose'], ['Title slam (music off)', 'slam'], ['Asleep, skips a turn', 'snore'],
       ['Blinded, skips a turn', 'huh'], ['Staring at the shirt, skips a turn', 'stare'], ['Blocks drained', 'drain'], ['HODL', 'hodl']
     ]], ['Story', [
-      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['Dimon gets bailed out', 'bailout'], ['Reading the letter (skips a turn)', 'paper'], ['BANNED', 'banned'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
+      ['An ally jumps in', 'assist'], ['Satoshi', 'satoshi'], ['Dimon gets bailed out', 'bailout'], ['Reading the letter (skips a turn)', 'paper'], ['BANNED', 'banned'], ["Caroline's beanbags", 'beanbag'], ['CONTINUE: coin in', 'coin'], ['CONTINUE countdown', 'tick']
     ]]];
     D.ROSTER.concat(Object.keys(D.BOSSES)).forEach(function (id) {
       var F = D.FIGHTERS[id], m = function (b) { return moveOf(id, b); }, items = [];

@@ -208,4 +208,6 @@ Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.w
 | *Story:* Schiff | ✅ silver hair, gray beard, charcoal suit, gold tie, a gold bar | ✅ same suit, gold bar in hand (stage: the gold vault) |
 | *Story:* Dimon | ✅ silver hair, navy suit, light blue shirt, the pet rock in his palm | ✅ same suit, rock in one hand, fist up (stage: the bank lobby, pet rock in a case) |
 | *Story:* Warren | ✅ blonde-gray bob, rimless glasses, red cardigan, pointing at you | ✅ same, a clipboard of letters under her arm (stage: the hearing room) |
+| *Story:* SBF | ✅ curly mop, orange jumpsuit, blank stare | ✅ same jumpsuit, white socks, dragging a beanbag (stage: the prison yard, his Corolla outside the fence) |
+| *Story:* Caroline | ✅ glasses, long wavy hair, small smile (her tag-in for SBF; no sprite) | — |
 | *Story:* Satoshi | ✅ sliced steel hood, gold glow (`art.py glow`) | ✅ seated cross-legged with a laptop, gold glow (the revive) |

@@ -335,6 +335,25 @@
       [0.45, 0.75, 1.05, 1.35, 1.65, 1.95, 2.25].map(function (t) { return { w: 'sine', f: [120, 50], t: t, d: 0.1, v: 0.4 }; }),
       [0.3, 0.5, 0.7, 0.9, 1.1, 1.3].map(function (t) { return { w: 'noise', t: t, d: 0.08, v: 0.12, bp: 3500 }; }),
       [{ w: 'sine', f: [150, 45], t: 2.5, d: 0.25, v: 0.7 }, { w: 'noise', t: 2.5, d: 0.1, v: 0.3, lp: 1500 }]),
+    // ---------- SBF (story boss) ----------
+    'sbf.strike': [{ w: 'noise', d: 0.12, v: 0.25, bp: [1200, 3500] }, { w: 'square', f: 1900, t: 0.1, d: 0.04, v: 0.08, lp: 5000 },
+      { w: 'square', f: 2400, t: 0.15, d: 0.05, v: 0.07, lp: 5000 }],                                           // 1) Fine: funds swished over, two clicks
+    'sbf.privacy': [{ w: 'noise', d: 0.35, v: 0.35, lp: [900, 250] }, { w: 'sine', f: [90, 50], d: 0.3, v: 0.4 }], // 2) Beanbag: he flops into it
+    'sbf.mint.ok': seq({ w: 'square', v: 0.11, lp: 4500 }, [[N.G5, 0, 0.07], [N.C6, 0.07, 0.07], [N.E6, 0.14, 0.07], [N.G6, 0.21, 0.07], [N.C7, 0.28, 0.3]]), // 3) League: GG EZ
+    'sbf.mint.fail': [0, 0.5].map(function (t) { return { w: 'sine', f: 480, t: t, d: 0.3, v: 0.12 }; })
+      .concat([0, 0.5].map(function (t) { return { w: 'sine', f: 620, t: t, d: 0.3, v: 0.1 }; })),              // MISSED THE CALL: busy tone
+    'sbf.rug.ok': cat(
+      [{ w: 'sine', f: [160, 70], d: 0.15, v: 0.55 }, { w: 'noise', d: 0.1, v: 0.3, lp: 900 }],
+      [0.12, 0.17, 0.21, 0.26, 0.3, 0.36, 0.41].map(function (t, k) { return { w: 'triangle', f: 2600 + (k % 3) * 450, t: t, d: 0.09, v: 0.1 }; })), // 4) The Box: a thump, money pours in
+    'sbf.rug.fail': [{ w: 'sine', f: [220, 160], d: 0.12, v: 0.4 }, { w: 'sine', f: [220, 160], t: 0.16, d: 0.12, v: 0.35 },
+      { w: 'noise', d: 0.3, v: 0.12, bp: 400 }],                                                                // THE BOX IS EMPTY: a hollow knock-knock
+    beanbag: [{ w: 'noise', d: 0.18, v: 0.45, lp: [1400, 300] }, { w: 'sine', f: [120, 55], d: 0.16, v: 0.5 }],  // one of Caroline's beanbags lands
+    // 1) What: keys clack (0.2s to 0.9s), a rising whistle as the question mark flies out, the slam at 1.25s.
+    'super.what': cat(
+      [0.2, 0.31, 0.39, 0.52, 0.6, 0.71, 0.84].map(function (t) { return { w: 'noise', t: t, d: 0.03, v: 0.18, hp: 2500 }; }),
+      [{ w: 'sine', f: [300, 1400], t: 0.9, d: 0.35, v: 0.15 }],
+      [{ w: 'sine', f: [120, 40], t: 1.25, d: 0.35, v: 0.8 }, { w: 'noise', t: 1.25, d: 0.15, v: 0.4, lp: 1800 }],
+      [{ w: 'sine', f: [600, 900, 500], t: 1.6, d: 0.6, v: 0.12 }]),
 
     // Bailed out: a till rings and the money comes back.
     bailout: cat(
@@ -479,6 +498,14 @@
     'paper': 0.133,
     'banned': 0.831,
     'super.plan': 0.710,
+    'sbf.strike': 0.113,
+    'sbf.privacy': 0.474,
+    'sbf.mint.ok': 0.130,
+    'sbf.mint.fail': 0.199,
+    'sbf.rug.ok': 0.514,
+    'sbf.rug.fail': 0.395,
+    'beanbag': 0.613,
+    'super.what': 0.923,
     'bailout': 0.280
   };
   // PEAK:end
@@ -520,7 +547,8 @@
     // Story bosses. Each opens on its drop hit, like the fight song. vol matches the fight song's loudness.
     schiff: { src: 'audio/schiff.mp3', loopStart: 3.233, loopEnd: 34.557, vol: 0.37 },
     dimon: { src: 'audio/dimon.mp3', loopStart: 3.363, loopEnd: 53.319, vol: 0.49 },
-    warren: { src: 'audio/warren.mp3', loopStart: 6.432, loopEnd: 57.632, vol: 0.46 }
+    warren: { src: 'audio/warren.mp3', loopStart: 6.432, loopEnd: 57.632, vol: 0.46 },
+    sbf: { src: 'audio/sbf.mp3', loopStart: 2.771, loopEnd: 49.083, vol: 0.49 }
   };
 
   // ---------- Engine (browser only) ----------
