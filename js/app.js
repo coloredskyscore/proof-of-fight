@@ -592,14 +592,20 @@
         break;
 
       case 'bailout':
-        // Dimon: knocked out, then bailed out.
-        var bo = D.FIGHTERS[S.fight.f[e.who].id].bailout;
+        // Dimon: he goes down like any knockout, the screen cuts to him (too big to fail), and he's back up.
+        fighterEl(e.who).classList.add('is-ko');
+        AU.play('ko');
+        buzz(80);
+        log(nm(e.who) + ' is down…');
+        await sleep(1100);
+        await bailoutScene(e.who, e.hp);
+        fighterEl(e.who).classList.remove('is-ko');
         render(e.snap);
-        AU.play('bailout');
-        popup(e.who, '+' + e.hp, 'good');
-        banner(bo.line, bo.sub);
+        AU.play('hodl');
+        popup(e.who, '+' + e.hp + ' HP', 'good');
+        banner('BAILED OUT', nm(e.who) + ' is back with ' + e.hp + ' HP. Only once.');
         log(nm(e.who) + ' got bailed out: ' + e.hp + ' HP.');
-        await sleep(1700);
+        await sleep(1500);
         break;
 
       case 'assist':
@@ -1244,6 +1250,38 @@
         resolve();
       }
       later(function () { if (!done) el.onclick = finish; }, 500);
+    });
+  }
+
+  // A boss refuses to go down (Dimon's bailout): his portrait, his two lines, the headline, the stamp.
+  function bailoutScene(who, hp) {
+    return new Promise(function (resolve) {
+      var B = D.FIGHTERS[S.fight.f[who].id], bo = B.bailout, el = $('#bossline');
+      el.style.setProperty('--c', B.color);
+      $('.bl-face', el).innerHTML = faceHTML(B);
+      $('.bl-small', el).textContent = bo.lines[0];
+      $('.bl-big', el).textContent = bo.lines[1];
+      $('.bl-paper small', el).textContent = bo.paper.date;
+      $('.bl-paper b', el).textContent = bo.paper.headline;
+      $('.bl-stamp', el).textContent = 'BAILED OUT +' + hp + ' HP';
+      el.hidden = false;
+      void el.offsetWidth;
+      el.classList.add('play');
+      AU.duck(true);
+      var snd = AU.play('bailout', 2.6);
+      var done = false, timer = later(finish, 5000);
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        snd.stop(0.2);
+        AU.duck(false);
+        el.onclick = null;
+        el.classList.remove('play');
+        el.hidden = true;
+        resolve();
+      }
+      later(function () { if (!done) el.onclick = finish; }, 900);
     });
   }
 

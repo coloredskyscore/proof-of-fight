@@ -386,9 +386,13 @@
       hide: 0.30, mint: 0.40, rug: 0.20,
       ai: { strike: 3, privacy: 2, mint: 3, rug: 3 },
       art: { head: 'art/dimon-head.webp', body: 'art/dimon-body.webp' }, // navy suit, light blue shirt, the pet rock
-      // Too big to fail: the first time he's knocked out he's bailed out with this much HP. The sub is the
-      // headline Satoshi put in Bitcoin's first block.
-      bailout: { hp: 20, line: 'TOO BIG TO FAIL', sub: 'Chancellor on brink of second bailout for banks' },
+      // Too big to fail: the first time he's knocked out he goes down, the screen cuts to him saying `lines`,
+      // and he's back with this much HP. The paper is the headline Satoshi put in Bitcoin's first block.
+      bailout: {
+        hp: 20,
+        lines: ["YOU CAN'T KILL ME THAT EASILY.", "I'M TOO BIG TO FAIL!"],
+        paper: { date: 'THE TIMES · 03/JAN/2009', headline: 'Chancellor on brink of second bailout for banks' }
+      },
       moves: {
         strike:  { name: 'Fraud',        icon: '🚨', ko: 'HYPED-UP FRAUD' },                       // Davos, Jan 2024
         privacy: { name: 'Fortress',     icon: '🏰', ok: 'FORTRESS BALANCE SHEET', fail: 'LONDON WHALE' },
