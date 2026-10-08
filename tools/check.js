@@ -517,7 +517,7 @@ test('Sound: every fighter has a sound for every button outcome and their Super;
     check('super.' + D.FIGHTERS[id].super.id, { chars: [0.5, 0.6], off: 2.8 });
   });
   ['tap', 'ko', 'ready', 'win', 'lose', 'slam', 'stomp', 'prune', 'drain', 'hodl', 'snore', 'huh', 'stare', 'deflect', 'stored', 'splash', 'flop', 'selfhit', 'super.astronaut',
-    'assist', 'satoshi', 'coin', 'tick', 'clank']
+    'assist', 'satoshi', 'coin', 'tick', 'clank', 'bailout']
     .forEach(function (s) { check(s); });
   Object.keys(AU.CLIPS).forEach(function (id) {
     var c = AU.CLIPS[id];
@@ -578,6 +578,35 @@ test('Story: Satoshi gets a knocked-out fighter back up with half HP, and the fi
   assert.strictEqual(f.turn, turn + 1);
   E.playTurn(f, 'strike');
   assert.throws(function () { var g = E.newFight({ player: 'toly', cpu: 'schiff', seed: 1 }); E.revive(g, 0); }, 'only after a KO');
+});
+
+test('Story: Dimon is bailed out once (too big to fail); the second knockout sticks', function () {
+  var f = E.newFight({ player: 'toly', cpu: 'dimon', seed: 1 });
+  f.f[0].blocks = 10;
+  f.f[1].hp = 5;
+  var ev = E.playTurn(f, 'super');
+  assert(!f.over, 'first knockout cancelled');
+  assert.strictEqual(f.f[1].hp, D.BOSSES.dimon.bailout.hp);
+  assert(ev.some(function (e) { return e.t === 'bailout'; }) && !ev.some(function (e) { return e.t === 'ko'; }));
+  assert(!ev[ev.length - 1].snap[1].bailout, 'the HUD stops showing BAILOUT');
+  f.f[0].blocks = 10;
+  f.f[1].hp = 5;
+  E.playTurn(f, 'super');
+  assert(f.over && f.winner === 0 && f.finish === 'HATER CONVERTED', 'no second bailout');
+  var g = E.newFight({ player: 'adam', cpu: 'dimon', seed: 1 });
+  g.f[0].hp = 20; g.f[1].hp = 10;
+  ev = E.assist(g, 'adam');
+  assert(!g.over && g.f[1].hp === D.BOSSES.dimon.bailout.hp, 'an assist knockout is bailed out too');
+  var h = E.newFight({ player: 'toly', cpu: 'dimon', seed: 1 });
+  h.f[1].hp = 5; h.f[1].bailedOut = true;
+  rig(h, [cpuRoll('dimon', 'strike')]);
+  E.playTurn(h, 'strike');
+  assert.strictEqual(h.finish, 'CHEAP FAST CHAIN GUD');
+  var k = E.newFight({ player: 'mert', cpu: 'dimon', seed: 1 });
+  k.f[0].hp = 5; k.f[1].bailedOut = true;
+  rig(k, [cpuRoll('dimon', 'strike'), 0.99 /* Zolana hide fails */, 0 /* its fail line */]);
+  E.playTurn(k, 'privacy');
+  assert.strictEqual(k.finish, 'HYPED-UP FRAUD');
 });
 
 test('10,000 random fights: always end, HP and Blocks stay in range, replays match', function () {

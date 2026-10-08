@@ -1314,6 +1314,39 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .gold-ticker s { color: #ff6b6b; text-decoration: none; }
 .from-c .gold-ticker { right: auto; left: 4%; align-items: flex-start; }
 
+/* Dimon: Pet Rock. A giant googly-eyed rock rolls in under its museum placard and lands with a thud (1.2s). */
+.petrock {
+  position: absolute; left: 50%; bottom: 4%; width: min(62vw, 360px);
+  transform: translateX(-160vw) rotate(-540deg);
+}
+.from-c .petrock { transform: translateX(110vw) rotate(540deg); }
+.petrock svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 0 #0008); }
+.cutin.play .petrock { animation: rockIn 1.25s .2s cubic-bezier(.3, .6, .4, 1) forwards; }
+.cutin.play .petrock .pupil { animation: googly .18s 1.45s ease-in-out 5 alternate; }
+@keyframes rockIn {
+  85% { transform: translateX(-50%) rotate(0deg) translateY(0); }
+  92% { transform: translateX(-50%) translateY(-6%) scale(1.04, .96); }
+  100% { transform: translateX(-50%) rotate(0deg); }
+}
+@keyframes googly { from { transform: translate(-5px, -3px); } to { transform: translate(6px, 4px); } }
+.placard {
+  position: absolute; left: 50%; top: 5%; transform: translateX(-50%); white-space: nowrap;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 6px 14px; border: 3px solid #b08d3c; border-radius: 4px;
+  background: linear-gradient(#f4ead2, #d9c9a1); color: #2a2216; font-family: Georgia, 'Times New Roman', serif;
+  box-shadow: 0 4px 0 #0007; opacity: 0;
+}
+.placard b { font-size: clamp(14px, 4.2vw, 20px); letter-spacing: .12em; }
+.placard small { font-size: clamp(10px, 3vw, 13px); font-style: italic; }
+.cutin.play .placard { animation: fadeUp .4s 1.4s ease-out forwards; }
+/* Sideways phones: the rock and its placard sit to one side of the portrait and name card. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .petrock { left: 17%; width: min(46vh, 220px); }
+  .from-c .petrock { left: 83%; }
+  .placard { left: 4%; transform: none; white-space: nowrap; }
+  .from-c .placard { left: auto; right: 4%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .f-bob, .title-roster span, .move-super.ready, .blocks.full i.on, .deco-sun, .deco-run, .deco-bytes, .marine, .wave-bots span,
   .flap-l, .flap-r, .bob, .f-held, .fighter.dance .f-bob, .f-bubble.spin, .fighter.hurt .f-sprite, .cutin-stripes,
