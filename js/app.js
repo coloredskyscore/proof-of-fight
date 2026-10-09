@@ -134,7 +134,6 @@
       ? 'Daily played ' + st.played + ' · won ' + st.won + ' · streak ' + st.streak + (st.best > st.streak ? ' (best ' + st.best + ')' : '')
       : 'Same fight for everyone, every day. Fewest turns wins.';
     $('#rules-select').value = S.rules;
-    $('#btn-story').hidden = !STORY_ON;
     var run = runGet();
     $('#btn-story').textContent = run ? '📖 Resume story · Boss ' + (Math.min(run.rung, D.STORY.ladder.length - 1) + 1) : '📖 Story';
     show('screen-title');
@@ -1333,11 +1332,7 @@
   }
 
   // ---------- Story mode ----------
-  // Hidden until all the bosses are in: proofoffight.com/?story turns it on for that browser.
-  var STORY_ON = (function () {
-    if (/[?&]story(=|&|$)/.test(location.search)) store.set('storyBeta', true);
-    return !!store.get('storyBeta', false);
-  })();
+  // Public since Oct 9, 2026 (it was behind ?story while the bosses were built; old ?story links still work).
 
   // A run: player, rung (index in STORY.ladder of the next boss), satoshi (true until he's used),
   // continues, turns (all fights added up), ally (the last one picked), beaten (boss ids).
@@ -2115,11 +2110,11 @@
       '<h3>Order of a turn</h3>' +
       '<p>Skips and hypnosis from last turn, then Supers, then blue, then red / pink / purple. You go first in each step. ' +
       'The fight ends the instant someone hits 0. After ' + D.TURN_CAP + ' turns the chain halts: whoever has more HP left wins (ties go to you).</p>' +
-      (STORY_ON ? '<h3>Story</h3>' +
+      '<h3>Story</h3>' +
         '<p>Beat ' + D.STORY.ladder.length + ' bosses in a row with one founder. Before each boss you pick an ally from the other founders: when you\'re at ' +
-        pct(D.STORY.assistAt) + ' HP or lower, tap their face in the corner and they hit for ' + D.STORY.assistDmg +
+        pct(D.STORY.assistAt) + ' HP or lower, tap their button next to Super and they hit for ' + D.STORY.assistDmg +
         ' that can\'t be dodged, without using your turn. Once per run, Satoshi gets you back up with half your HP when you\'re knocked out. ' +
-        'After that, a loss is CONTINUE? (that boss fight starts over) or game over. Every boss has a trick of their own; the banner says what it is when it happens.</p>' : '') +
+        'After that, a loss is CONTINUE? (that boss fight starts over) or game over. Every boss has a trick of their own; the banner says what it is when it happens.</p>' +
       '<h3>Daily Fight</h3>' +
       '<p>Everyone gets the same matchup and the same luck each day. One try. Share your grid; fewer turns is better.</p>' +
       '<h3>Sound and keys</h3>' +
