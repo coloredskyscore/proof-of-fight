@@ -98,20 +98,24 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 }
 
 /* ---------- Title ---------- */
-#screen-title { overflow-y: auto; }
+/* The title should fit the window without scrolling. Spacing, the logo, the portraits and the big buttons
+   shrink with the window's height (vh), down to a floor, so a laptop-height browser window (about 600 to
+   840px tall inside the browser) still shows the whole screen. Tall windows get the full sizes. If it
+   still doesn't fit (a very short window), the screen scrolls, with a slim scrollbar in the game's colors. */
+#screen-title { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3a3150 transparent; }
 .title-wrap {
   margin: auto 0;
-  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  padding: calc(clamp(6px, 5vh - 24px, 24px) + env(safe-area-inset-top)) 16px calc(clamp(6px, 5vh - 24px, 24px) + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: clamp(6px, 1.5vh - 2px, 12px);
   align-items: stretch;
   text-align: center;
 }
 /* The founders scroll by in a marquee: the line-up twice, so it loops without a seam. During the intro it
    holds still while they pop in on the beat; on the drop it starts to move. */
 .title-roster {
-  margin: 0 -16px 6px; padding: 8px 0; overflow: hidden;
+  margin: 0 -16px clamp(0px, 1vh - 2px, 6px); padding: clamp(4px, 1vh, 8px) 0; overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
 }
@@ -132,7 +136,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .title-roster span:nth-child(even) { animation-delay: -.8s; }
 /* One line-up to the left: the second copy lands exactly where the first began. */
 @keyframes marquee { to { transform: translateX(-50%); } }
-@media (min-width: 600px) { .title-roster span { width: 76px; height: 76px; } }
+@media (min-width: 600px) { .title-roster span { width: clamp(52px, 12vh - 16px, 76px); height: clamp(52px, 12vh - 16px, 76px); } }
 /* Reduced motion: no scroll, the line-up once, wrapped and centered. */
 @media (prefers-reduced-motion: reduce) {
   .title-roster { -webkit-mask-image: none; mask-image: none; }
@@ -146,7 +150,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   font-family: var(--display);
   font-weight: 400;
   line-height: .95;
-  font-size: clamp(44px, 14vw, 72px);
+  font-size: clamp(40px, min(14vw, 9vh - 12px), 72px);
   display: flex;
   flex-direction: column;
   color: var(--gold);
@@ -155,7 +159,10 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   transform: rotate(-3deg);
 }
 .logo-of { font-size: .45em; color: #fff; -webkit-text-stroke: 0; text-shadow: 0 3px 0 var(--line); }
-.tagline { color: var(--muted); margin: 6px 0 10px; }
+.tagline { color: var(--muted); margin: clamp(2px, 1vh - 2px, 6px) 0 clamp(2px, 1.5vh - 2px, 10px); }
+#screen-title .btn-big { min-height: clamp(44px, 9vh - 12px, 58px); padding-block: clamp(.4em, 1.2vh, .7em); }
+#screen-title .btn-ghost { min-height: clamp(34px, 6vh, 48px); padding-block: clamp(.3em, 1.2vh, .7em); }
+#screen-title .btn-sm { min-height: clamp(34px, 5vh, 40px); }
 #btn-daily { flex-direction: column; gap: 2px; line-height: 1.2; }
 #btn-daily small { font-weight: 600; font-size: .85rem; opacity: .8; }
 .title-stats { color: var(--muted); font-size: .9rem; margin: 2px 0; min-height: 1.2em; }
