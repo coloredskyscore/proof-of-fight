@@ -42,14 +42,16 @@
   var BUTTONS = ['strike', 'privacy', 'mint', 'rug'];
   var STATUS_TEXT = {
     blind: '🙈 BLINDED', sleep: '💤 ASLEEP', hypno: '🌀 HYPNOTIZED',
-    hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks', stun: '👀 STARING', shield: '4️⃣ FUD-PROOF', letter: '📜 READING'
+    hodl: '💎 HODL', pruned: '✂️ PRUNED', drain: '-3 Blocks', stun: '👀 STARING', shield: '4️⃣ FUD-PROOF', letter: '📜 READING',
+    plan: '📜 READING'
   };
   // Why someone skips a turn: Mert's dome, Charles's midnight, Sergey's shirt.
   var SKIP = {
     blind: { icon: '🙈', chip: 'BLIND', word: 'BLINDED', sound: 'huh' },
     sleep: { icon: '💤', chip: 'ASLEEP', word: 'ASLEEP', sound: 'snore' },
     stun:  { icon: '👀', chip: 'STARING', word: 'STARING', sound: 'stare' },
-    letter: { icon: '📜', chip: 'READING', word: 'READING', sound: 'paper' }   // Warren's Letter and her Plan
+    letter: { icon: '📜', chip: 'READING', word: 'READING', sound: 'paper' },  // Warren's Letter
+    plan: { icon: '📜', chip: 'READING', word: 'READING', sound: 'paper' }     // her Super, The Plan
   };
   var GRID_EMOJI = { hit: '🟩', hid: '🟦', super: '🟨', fail: '🟥', miss: '🟥', skip: '⬛', self: '🌀', none: '⬛' };
   var SIDE = ['p', 'c'];
@@ -346,6 +348,7 @@
       ticker: own.ticker || null, // Saylor's MSTR: shows MSTR ▲ 37% / MSTR ▼
       skipLine: own.skipLine || null, // Sergey's shirt: over them on the turn they lose
       steal: own.steal || null,       // SBF's 1) Fine: the banner when it takes your Blocks
+      dodged: own.dodged || null,     // Warren's Letter, dodged: RETURN TO SENDER
       // Default Mint/Rug banners put the fighter's joke line underneath.
       failSub: own.fail ? null : move === 'mint' ? F.mintFail : move === 'rug' ? F.rugFail : null
     };
@@ -442,6 +445,8 @@
       if (st.skipped === 'blind') note = "🙈 BLINDED by the dome. You skip this turn.";
       else if (st.skipped === 'sleep') note = '💤 Lights out at midnight. You fell ASLEEP and skip this turn.';
       else if (st.skipped === 'stun') note = "👀 You can't stop STARING at the shirt. You skip this turn.";
+      else if (st.skipped === 'letter') note = '📜 Her LETTER landed. You skip this turn reading it. Hiding dodges the next one.';
+      else if (st.skipped === 'plan') note = "📜 You're reading THE PLAN, her Super (Supers can't be dodged). You skip this turn.";
       else if (st.hypnotized) {
         note = '🌀 HYPNOTIZED: ' + moveOf(me.id, 'strike').name + ', ' + moveOf(me.id, 'mint').name + ' and ' +
           moveOf(me.id, 'rug').name + ' hit YOU this turn. ' + moveOf(me.id, 'privacy').name + ' or Super is safe.';
@@ -520,11 +525,12 @@
         bubble(e.who, why.icon);
         AU.play(why.sound);
         // The line belongs to whoever caused it: their Super's (WHO WAS THAT), or Sergey's shirt.
-        var skipLine = e.reason === 'stun' ? moveOf(by, 'privacy').skipLine
-          : e.reason === 'letter' ? moveOf(by, 'mint').skipLine || D.FIGHTERS[by].super.skipLine
-          : D.FIGHTERS[by].super.skipLine;
+        // Warren: the sub says which one it was (her Letter, or her Super, which can't be dodged).
+        var bm = D.FIGHTERS[by].moves || {};
+        var src = e.reason === 'stun' ? bm.privacy : e.reason === 'letter' ? bm.mint : D.FIGHTERS[by].super;
+        var skipLine = src && src.skipLine;
         if (skipLine) {
-          banner(skipLine, (e.who === 0 ? 'You skip' : nm(e.who) + ' skips') + ' this turn');
+          banner(skipLine, (e.who === 0 ? 'You skip' : nm(e.who) + ' skips') + ' this turn' + (src.skipSub ? ' ' + src.skipSub : ''));
           await sleep(1200);
         } else {
           popup(e.who, why.word, 'status');
@@ -589,8 +595,10 @@
           break;
         }
         AU.play('whiff');
-        var dodge = D.FIGHTERS[S.fight.f[e.target].id].dodgeLine; // Charles: I AM NOT ACCOUNTABLE
-        if (dodge) banner(dodge, (e.target === 0 ? 'You' : nm(e.target)) + ' dodged it');
+        // Warren's letter, dodged: RETURN TO SENDER. Else the target's own line (Charles: I AM NOT ACCOUNTABLE).
+        var letterDodge = e.move === 'mint' && moveOf(S.fight.f[e.attacker].id, 'mint').dodged;
+        var dodge = letterDodge || D.FIGHTERS[S.fight.f[e.target].id].dodgeLine;
+        if (dodge) banner(dodge, (e.target === 0 ? 'You' : nm(e.target)) + ' dodged ' + (letterDodge ? 'the letter' : 'it'));
         else popup(e.target, 'MISS', 'miss');
         log(who(e.attacker) + ' whiffed. ' + (e.target === 0 ? "You're" : nm(e.target) + ' is') + ' hidden.');
         await sleep(dodge ? 1150 : 700);
