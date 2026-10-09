@@ -379,6 +379,8 @@
         hp: 110,
         music: 'schiff',
         intro: 'BUY GOLD.',
+        // Before the fight (the face-off): your line, then theirs, then FIGHT.
+        scene: { you: 'I need to convince Schiff gold is a relic of the past!', boss: 'Crypto is a speculative bubble! A Ponzi scheme!' },
         stage: { name: 'The Gold Vault', bg: 'art/stages/schiff.webp', sky: 'linear-gradient(#1b1408 0%, #4a3510 50%, #8a6420 78%, #c9a227 82%)', floor: 'linear-gradient(#3b2c12, #140e05)' },
         allyLines: { saylor: 'THERE IS NO SECOND BEST', cz: 'TRUST ME BRO' }
       }
@@ -415,6 +417,8 @@
         hp: 100,             // plus the 20 of his bailout
         music: 'dimon',
         intro: "IT'S A PET ROCK.",
+        scene: { you: "You called it a pet rock, Jamie. Let's see whose rock is harder.",
+          boss: "If I was the government, I'd close it down." },  // to the Senate Banking Committee, Dec 2023
         stage: { name: 'The Bank', bg: 'art/stages/dimon.webp', sky: 'linear-gradient(#0c1222 0%, #1d2a44 55%, #3b4660 78%, #6b7280 82%)', floor: 'linear-gradient(#3a3f4b, #15171d)' },
         allyLines: { adam: 'CHANCELLOR ON BRINK OF SECOND BAILOUT', garlinghouse: 'HOW ARE PEOPLE STILL FIGHTING THIS?!' }
       }
@@ -453,6 +457,8 @@
         hp: 110,
         music: 'warren',
         intro: 'WE NEED REGULATION. YES WE DO.',
+        scene: { you: "Senator, we're building the future of finance.",
+          boss: "Crypto isn't modern finance; it's a vehicle for illicit finance and scams!" },
         stage: { name: 'The Hearing', bg: 'art/stages/warren.webp', sky: 'linear-gradient(#0d0b10 0%, #2a1c1c 55%, #4a2a26 78%, #6b3a32 82%)', floor: 'linear-gradient(#3a3236, #141114)' },
         allyLines: { garlinghouse: 'FOR THE XRP ARMY' }
       }
@@ -487,6 +493,9 @@
         hp: 100,
         music: 'sbf',
         intro: 'FTX IS FINE. ASSETS ARE FINE.',  // his tweet, Nov 7 2022
+        // FTX froze withdrawals in Nov 2022; customers waited years for the bankruptcy payouts.
+        scene: { you: "You froze everyone's money at FTX, Sam. This one's for them.",
+          boss: "I didn't knowingly commingle funds." },  // NYT DealBook Summit, Nov 30 2022
         stage: { name: 'The Yard', bg: 'art/stages/sbf.webp', sky: 'linear-gradient(#1a1424 0%, #3b2236 50%, #7a3b3b 78%, #4a4a4a 82%)', floor: 'linear-gradient(#3d3d40, #141416)' },
         allyLines: { cz: 'LIQUIDATING OUR FTT' }  // the tweet that started the run on FTX
       }
@@ -522,8 +531,9 @@
       boss: {
         hp: 135,
         music: 'wick',
-        // Before the fight: his portrait and two lines. If you lose to him, CONTINUE? asks the other one.
-        prelude: ["YOU'VE MADE IT THIS FAR.", 'BUT DO YOU REALLY KNOW WHY?'],
+        // The face-off is quiet but for a clock ticking. If you lose to him, CONTINUE? asks the user's other line.
+        scene: { you: 'Four bosses down. Who is really behind all this?',
+          boss: "You've made it this far. But do you really know why?", sound: 'wick.prelude' },
         intro: 'PLACE YOUR BETS.',
         continueLine: "You've made it this far. Are you sure you want to continue?",
         stage: { name: 'The Chart', bg: 'art/stages/wick.webp', sky: 'linear-gradient(#030605 0%, #08120d 60%, #1c0a0a 82%)', floor: 'linear-gradient(#141416, #050505)' },
