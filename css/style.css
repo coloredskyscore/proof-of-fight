@@ -108,17 +108,36 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   align-items: stretch;
   text-align: center;
 }
-.title-roster { display: flex; justify-content: center; gap: 6px; margin-bottom: 4px; }
+/* The founders scroll by in a marquee: the line-up twice, so it loops without a seam. During the intro it
+   holds still while they pop in on the beat; on the drop it starts to move. */
+.title-roster {
+  margin: 0 -16px 6px; padding: 8px 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+}
+.tr-track { display: flex; gap: 12px; width: max-content; padding: 0 12px; animation: marquee 30s linear infinite; }
+#screen-title.intro .tr-track { animation-play-state: paused; }
 .title-roster span {
-  width: 40px; height: 40px;
+  flex: none; width: 66px; height: 66px;
   display: grid; place-items: center;
   border-radius: 50%;
   border: 3px solid var(--line);
   background: var(--c);
-  font-size: 20px;
+  font-size: 30px;
+  box-shadow: 0 4px 0 #0007;
   animation: bob 1.6s ease-in-out infinite;
 }
 .title-roster span:nth-child(even) { animation-delay: -.8s; }
+/* One line-up (and one gap) to the left: the second copy lands exactly where the first began. */
+@keyframes marquee { to { transform: translateX(calc(-50% - 6px)); } }
+@media (min-width: 600px) { .title-roster span { width: 76px; height: 76px; } }
+/* Reduced motion: no scroll, the line-up once, wrapped and centered. */
+@media (prefers-reduced-motion: reduce) {
+  .title-roster { -webkit-mask-image: none; mask-image: none; }
+  .tr-track { width: auto; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .tr-track .dup { display: none; }
+  .title-roster span { width: 52px; height: 52px; }
+}
 .logo {
   margin: 0;
   font-family: var(--display);
@@ -137,14 +156,6 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 #btn-daily { flex-direction: column; gap: 2px; line-height: 1.2; }
 #btn-daily small { font-weight: 600; font-size: .85rem; opacity: .8; }
 .title-stats { color: var(--muted); font-size: .9rem; margin: 2px 0; min-height: 1.2em; }
-.rules-pick {
-  display: flex; justify-content: center; align-items: center; gap: 8px;
-  color: var(--muted); font-size: .85rem;
-}
-.rules-pick select {
-  background: var(--panel-2); color: var(--ink);
-  border: 2px solid #3a3350; border-radius: 8px; padding: 6px 8px;
-}
 .disclaimer { color: #7d7791; font-size: .75rem; line-height: 1.4; margin-top: 8px; }
 .made-by { color: #7d7791; font-size: .78rem; margin: 2px 0 0; }
 .made-by a { color: var(--gold); font-weight: 800; text-decoration: none; }
@@ -1632,14 +1643,14 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) { .credits > * { opacity: 1; animation: none !important; } }
 
 /* After WICK: why you made it this far. One card at a time over his chart. */
-.reveal {
+.endcards {
   position: fixed; inset: 0; z-index: 54; cursor: pointer; overflow: hidden;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
   padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
   background: #000 center / cover no-repeat; text-align: center;
 }
-.reveal:not([hidden]) { display: flex; }
-.reveal::before { content: ''; position: absolute; inset: 0; background: linear-gradient(#000d, #000b 50%, #000e); }
+.endcards:not([hidden]) { display: flex; }
+.endcards::before { content: ''; position: absolute; inset: 0; background: linear-gradient(#000d, #000b 50%, #000e); }
 .rv-card { position: relative; max-width: 560px; display: grid; gap: 14px; }
 .rv-big {
   margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(26px, 8vw, 48px); line-height: 1.05;
@@ -1657,7 +1668,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   font: 800 .85rem var(--body); color: #fff; background: #0009; border: 1px solid #ffffff44; border-radius: 99px; padding: 6px 12px; cursor: pointer;
 }
 @media (orientation: landscape) and (max-height: 520px) {
-  .reveal { gap: 10px; }
+  .endcards { gap: 10px; }
   .rv-big { font-size: min(9vh, 40px); }
   .rv-small { font-size: min(4.6vh, 19px); }
 }
@@ -1694,7 +1705,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .f-bob, .title-roster span, .move-super.ready, .blocks.full i.on, .deco-sun, .deco-run, .deco-bytes, .marine, .wave-bots span,
+  .f-bob, .title-roster span, .tr-track, .move-super.ready, .blocks.full i.on, .deco-sun, .deco-run, .deco-bytes, .marine, .wave-bots span,
   .flap-l, .flap-r, .bob, .f-held, .fighter.dance .f-bob, .f-bubble.spin, .fighter.hurt .f-sprite, .cutin-stripes,
   .astro, .astro-arm, .spk, .press-btn, #app.quake, .rung-tag, .assist-btn .face, .chip.lev.hot {
     animation: none !important;

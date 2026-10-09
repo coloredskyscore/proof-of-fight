@@ -60,7 +60,7 @@
     fight: null, opts: null, busy: false, result: null, today: null,
     pickPlayer: null, pickStep: 'player', countdown: null,
     lastMoves: null, koProp: null, run: null, stCount: null,
-    rules: D.RULESETS[store.get('rules')] ? store.get('rules') : 'balanced'
+    rules: 'balanced' // Free play's rules (the title's rules picker is gone; old result links keep their own)
   };
 
   // ---------- Daily fight ----------
@@ -133,7 +133,6 @@
     $('#title-stats').textContent = st && st.played
       ? 'Daily played ' + st.played + ' · won ' + st.won + ' · streak ' + st.streak + (st.best > st.streak ? ' (best ' + st.best + ')' : '')
       : 'Same fight for everyone, every day. Fewest turns wins.';
-    $('#rules-select').value = S.rules;
     var run = runGet();
     $('#btn-story').textContent = run ? '📖 Resume story · Boss ' + (Math.min(run.rung, D.STORY.ladder.length - 1) + 1) : '📖 Story';
     show('screen-title');
@@ -2166,9 +2165,17 @@
     title.classList.add('intro');
     var r = AU.music('menu', { from: 'start', fade: 2.4, restart: true });
     var drop = r ? r.dropIn : 0.85, beat = drop / 8, slammed = false, timers = [];
-    // A portrait per beat, the last one on the beat before the drop (half-beats past 8 fighters).
-    var step = faces.length > 8 ? 0.5 : 1, first = 8 - faces.length * step;
-    faces.forEach(function (f, k) { timers.push(setTimeout(function () { f.classList.add('in'); }, (first + k * step) * beat * 1000)); });
+    // The marquee holds still until the drop. The portraits you can see pop in one per beat (half-beats past
+    // 8), the last on the beat before the drop; the ones off screen are simply there when they scroll in.
+    var track = $('.tr-track');
+    track.style.animation = 'none'; // start the scroll from the top of the line-up, not wherever it drifted
+    void track.offsetWidth;
+    track.style.animation = '';
+    var box = $('.title-roster').getBoundingClientRect();
+    var seen = faces.filter(function (f) { var b = f.getBoundingClientRect(); return b.right > box.left && b.left < box.right; });
+    faces.forEach(function (f) { if (seen.indexOf(f) < 0) f.classList.add('in'); });
+    var step = seen.length > 8 ? 0.5 : 1, first = Math.max(0, 8 - seen.length * step);
+    seen.forEach(function (f, k) { timers.push(setTimeout(function () { f.classList.add('in'); }, (first + k * step) * beat * 1000)); });
     timers.push(setTimeout(slam, drop * 1000));
     // An impatient second tap slams now (attached late, so the PRESS START tap itself can't count).
     timers.push(setTimeout(function () { if (!slammed) title.addEventListener('click', slam); }, 500));
@@ -2269,17 +2276,14 @@
       if (ev.target.closest('button, a.btn, select') && !ev.target.closest('#press-start')) AU.play('tap');
     }, true);
 
-    $('.title-roster').innerHTML = D.ROSTER.map(function (id) {
-      var F = D.FIGHTERS[id];
-      return '<span style="--c:' + F.color + '">' + faceHTML(F) + '</span>';
-    }).join('');
-    $('#rules-select').innerHTML = Object.keys(D.RULESETS).map(function (k) {
-      return '<option value="' + k + '">' + esc(D.RULESETS[k].label) + '</option>';
-    }).join('');
-    $('#rules-select').addEventListener('change', function (ev) {
-      S.rules = ev.target.value;
-      store.set('rules', S.rules);
-    });
+    // The title marquee: the founders twice over, so the scroll loops without a seam.
+    var lineup = function (dup) {
+      return D.ROSTER.map(function (id) {
+        var F = D.FIGHTERS[id];
+        return '<span' + (dup ? ' class="dup"' : '') + ' style="--c:' + F.color + '">' + faceHTML(F) + '</span>';
+      }).join('');
+    };
+    $('.title-roster').innerHTML = '<div class="tr-track">' + lineup(false) + lineup(true) + '</div>';
 
     $('#btn-daily').addEventListener('click', startDaily);
     $('#btn-free').addEventListener('click', function () { S.pickPlayer = null; renderPick('player'); });
