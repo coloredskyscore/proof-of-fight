@@ -229,10 +229,7 @@
     log(resumeMoves ? 'Picking up where you left off.' : 'Tap a move. The CPU picks at the same time.');
     // A boss opens with their line first (Warren: WE NEED REGULATION. YES WE DO.), then BOSS 3 / FIGHT!
     var boss = opts.mode === 'story' && D.FIGHTERS[opts.cpu].boss, wait = 0;
-    if (boss && boss.intro && !resumeMoves) {
-      banner(boss.intro, D.FIGHTERS[opts.cpu].name);
-      wait = 1900;
-    }
+    if (boss && boss.intro && !resumeMoves) wait = banner(boss.intro, D.FIGHTERS[opts.cpu].name) - 250;
     later(function () {
       banner(resumeMoves ? 'RESUME' : opts.mode === 'story' ? (isFinal(opts.rung) ? 'FINAL BOSS' : 'BOSS ' + (opts.rung + 1)) : 'ROUND 1', 'FIGHT!');
     }, wait);
@@ -308,9 +305,10 @@
     var ab = $('#btn-assist'), A = S.opts.mode === 'story' && D.FIGHTERS[S.opts.ally];
     ab.hidden = !A;
     ab.innerHTML = A ? '<span class="face" style="--c:' + A.color + '">' + faceHTML(A) + '</span>' +
-      '<span class="ab-label">ASSIST</span><span class="ab-sub"></span>' : '';
+      '<span class="ab-txt"><span class="ab-label">ASSIST</span><span class="ab-sub"></span></span>' : '';
     $('#popups').innerHTML = '';
     $('#banner').className = 'banner';
+    S.readUntil = 0;
     if (!$('#skyline').childElementCount) buildSkyline();
   }
 
@@ -491,7 +489,10 @@
   }
 
   async function playEvents(events) {
-    for (var i = 0; i < events.length; i++) await handle(events[i]);
+    for (var i = 0; i < events.length; i++) {
+      await handle(events[i]);
+      await readWait(); // a banner from that event gets its reading time before anything replaces it
+    }
   }
 
   function moveText(i, move) {
@@ -873,8 +874,11 @@
 
   function popup(i, text, kind, n) {
     var el = fighterEl(i), layer = $('#popups');
-    var p = document.createElement('div');
-    p.className = 'popup ' + (kind || '');
+    var p = document.createElement('div'), words = String(text).split(/\s+/).filter(Boolean).length;
+    // A number floats off fast; a line (IS LEGAL AGAIN, I DON'T RECALL) holds long enough to read.
+    var dur = words > 1 ? Math.min(2600, 700 + words * 320) : 1100;
+    p.className = 'popup ' + (kind || '') + (words > 1 ? ' read' : '');
+    p.style.animationDuration = dur + 'ms';
     p.textContent = text;
     var x = el.offsetLeft + el.offsetWidth / 2 + (n ? ((n % 3) - 1) * 26 : 0);
     var y = el.offsetTop + el.offsetHeight * 0.1 - (n ? (n % 2) * 18 : 0);
@@ -883,16 +887,32 @@
     // Keep wide popups (MSTR ▲ 45%) inside the stage.
     var half = p.offsetWidth / 2;
     p.style.left = Math.max(half + 4, Math.min(layer.clientWidth - half - 4, x)) + 'px';
-    setTimeout(function () { p.remove(); }, 1200);
+    setTimeout(function () { p.remove(); }, dur + 100);
   }
 
+  // How long a line needs on screen to be read: a beat to notice it, then about four words a second.
+  function readMs(text, sub) {
+    var words = ((text || '') + ' ' + (sub || '')).split(/\s+/).filter(Boolean).length;
+    return Math.min(4500, Math.max(1250, 600 + words * 230));
+  }
+
+  // A banner stays up for its reading time, then fades. Events wait for it (readWait), so the next
+  // banner never replaces one that hasn't been read.
   function banner(text, sub, ko) {
-    var b = $('#banner');
+    var b = $('#banner'), ms = ko ? Math.max(2000, readMs(text, sub)) : readMs(text, sub);
     $('.banner-text', b).textContent = text;
     $('.banner-sub', b).textContent = sub || '';
+    b.style.setProperty('--bout', ((ms - 250) / 1000) + 's');
     b.className = 'banner';
     void b.offsetWidth;
     b.className = 'banner show' + (ko ? ' ko' : text.length > 18 ? ' long' : '');
+    S.readUntil = Date.now() + (ms - 250) * SPEED;
+    return ms;
+  }
+
+  function readWait() {
+    var left = (S.readUntil || 0) - Date.now();
+    return left > 0 ? new Promise(function (r) { setTimeout(r, left); }) : Promise.resolve();
   }
 
   function buzz(ms) {
@@ -1275,11 +1295,14 @@
         el.style.setProperty('--line-delay', sup.timing.line + 's');
         duration = sup.timing.dur * 1000;
       }
-      el.style.setProperty('--dur', (duration / 1000) + 's');
       $('.cutin-who', el).textContent = F.name.toUpperCase();
       var line = sup.line;
       if (ctx && ctx.lev != null) line = ctx.lev === 1 && sup.line1 ? sup.line1 : line.replace('{x}', ctx.lev); // WICK: 25X? CUTE.
       $('.cutin-line', el).textContent = '“' + line + '”';
+      // However the Super is paced, its line stays up long enough to read.
+      var lineAt = parseFloat(el.style.getPropertyValue('--line-delay')) * 1000 || 600;
+      duration = Math.max(duration, lineAt + readMs(line));
+      el.style.setProperty('--dur', (duration / 1000) + 's');
       var deco = decoFor(sup.id, ctx);
       $('.cutin-deco', el).innerHTML = deco.screen || '';
       $('.cutin-pdeco', el).innerHTML = deco.portrait || '';
@@ -1430,11 +1453,13 @@
       $('.ai-face', el).classList.toggle('has-art', !!(F.art && F.art.head));
       $('.ai-name', el).textContent = F.name.toUpperCase();
       $('.ai-line', el).textContent = '“' + line + '”';
+      var dur = Math.max(1700, 450 + readMs(line) + 300); // the line shows at 0.45s; then time to read it
+      el.style.setProperty('--ai-dur', dur + 'ms');
       el.hidden = false;
       void el.offsetWidth;
       el.classList.add('play');
       AU.play('assist');
-      var done = false, timer = later(finish, 1700);
+      var done = false, timer = later(finish, dur);
       function finish() {
         if (done) return;
         done = true;
@@ -1494,7 +1519,7 @@
       void el.offsetWidth;
       el.classList.add('play');
       var snd = AU.play(B.id + '.prelude');
-      var done = false, timer = later(finish, 4600);
+      var done = false, timer = later(finish, 5400);
       function finish() {
         if (done) return;
         done = true;
@@ -1510,17 +1535,16 @@
     });
   }
 
-  // After WICK: why you made it this far, one card at a time. Each holds long enough to read; tap for the
-  // next, or skip the rest.
+  // After WICK: why you made it this far, one card at a time. A card stays until you tap (a tap in its
+  // first moment is ignored, so a double tap doesn't skip one unread); Skip ends it.
   function revealScene(B) {
     return new Promise(function (resolve) {
-      var el = $('#reveal'), cards = B.boss.reveal, n = -1, timer = null, done = false;
+      var el = $('#reveal'), cards = B.boss.reveal, n = -1, done = false, shownAt = 0;
       el.style.backgroundImage = 'url(' + B.boss.stage.bg + ')';
       $('.rv-dots', el).innerHTML = cards.map(function () { return '<i></i>'; }).join('');
       el.hidden = false;
       function next() {
-        if (done) return;
-        clearTimeout(timer);
+        if (done || Date.now() - shownAt < 700) return;
         n++;
         if (n >= cards.length) { finish(); return; }
         var card = $('.rv-card', el);
@@ -1531,19 +1555,18 @@
         void card.offsetWidth;
         card.classList.add('show');
         AU.play('tick');
-        timer = later(next, 1600 + cards[n][1].length * 45); // about reading speed
+        shownAt = Date.now();
       }
       function finish() {
         if (done) return;
         done = true;
-        clearTimeout(timer);
         el.onclick = null;
         $('.rv-skip', el).onclick = null;
         el.hidden = true;
         resolve();
       }
       $('.rv-skip', el).onclick = function (ev) { ev.stopPropagation(); finish(); };
-      later(function () { if (!done) el.onclick = next; }, 600);
+      el.onclick = next;
       next();
     });
   }
@@ -1609,6 +1632,7 @@
     banner('BACK UP', 'Satoshi gave you ' + ev.hp + ' HP');
     log('Satoshi picked you up. ' + ev.hp + ' HP.');
     await sleep(1200);
+    await readWait();
     S.busy = false;
     updateControls();
   }

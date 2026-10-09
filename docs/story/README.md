@@ -183,7 +183,7 @@ A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>
 - **📖 Story** on the title screen (after `?story`), or **Resume story · Boss N** when a run is saved.
 - **Pick your fighter**, then the **ladder**: a tower with the final boss on top. Rungs whose boss isn't built yet say *coming soon*, and the final boss is `???` until you reach it.
 - **Pick your ally** before every boss. A ⭐ marks an ally with their own line against that boss.
-- **The fight:** the boss's stage colors (their background art replaces them once it's made), the boss's HP, and your ally's face in the top-left corner. It lights up gold at 35% HP: tap it (or press A) and they slide in, shout their line, and hit for 20. An assist can land the knockout.
+- **The fight:** the boss's stage colors (their background art replaces them once it's made), the boss's HP, and your ally's button next to Super (just their face on a phone turned sideways; it used to sit in the stage's top-left corner and covered your move chip). It lights up gold at 35% HP: tap it (or press A) and they slide in, shout their line, and hit for 20. An assist can land the knockout.
 - **Knocked out with Satoshi unused:** he turns into view, `STAND UP.` / `WE'RE ALL COUNTING ON YOU.`, turns away with `I'VE MOVED ON TO OTHER THINGS.`, and you're back up with half your HP. Until his art is made he's drawn as a sliced-steel hooded figure with a laptop.
 - **Losing after that:** **CONTINUE?** with a 10-second countdown. Continue restarts that boss fight (a coin goes in); Give up or zero ends the run with a **GAME OVER** card you can share.
 - **Winning:** a **BOSS DOWN** card (the boss's loser line, share, Post on X, Next boss). After the final boss, Satoshi's ending lines, then **STORY COMPLETE**.
@@ -192,6 +192,8 @@ A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>
 - **Music:** each boss plays their own song once it's added; until then, the fight song.
 
 **Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%. Warren, 110 HP: 54%, 73% and 97%. Sam Bankman-Fried, 100 HP plus Caroline's tag-in: 48%, 67% and 96%. WICK, 135 HP, against a player who watches the leverage meter: 50%, 65% and 95%; against a degen who ignores it: 37%, 51% and 87%.
+
+**Reading time (Oct 9, 2026):** every banner stays up as long as its words take to read (a beat, then about four words a second, up to 4.5 seconds), and the next event waits for it, so one banner never replaces another unread. Popups with words (`IS LEGAL AGAIN`) hold the same way; a Super's line and an ally's line stay up long enough to read; WICK's ending cards move on only when you tap.
 
 **Where it lives:** the bosses and `STORY` settings in `js/data.js`; `assist()` and `revive()` in `js/engine.js`; the ladder, ally pick, Satoshi and the after-fight cards in `js/app.js` (search "Story mode"); styles in `css/style.css` (search "Story mode").
 

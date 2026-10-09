@@ -413,8 +413,10 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   text-align: center; pointer-events: none; z-index: 7;
   opacity: 0;
 }
-.banner.show { animation: slam 1.25s cubic-bezier(.2, 1.4, .4, 1) forwards; }
-.banner.ko.show { animation: slam 2s cubic-bezier(.2, 1.4, .4, 1) forwards; }
+.banner.show { animation: bannerIn .25s cubic-bezier(.2, 1.4, .4, 1) both, bannerOut .25s var(--bout, 1s) ease-in forwards; }
+/* --bout: when it starts to fade, set from the banner's reading time (app.js readMs). */
+@keyframes bannerIn { from { opacity: 0; transform: scale(2.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes bannerOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.96); } }
 .banner-text {
   font-family: var(--display);
   font-size: clamp(26px, 9vw, 46px);
@@ -1018,6 +1020,21 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   }
   .move { min-height: 48px; }
   .fighter { height: 70%; width: auto; aspect-ratio: .6; }
+  /* The move chip sits just above the fighter: higher, and a short stage cuts it off. */
+  .fighter .f-chip, .fighter.has-art .f-chip { top: -32px; }
+  /* The narrow controls column: the ally's button is just the face, so Super keeps its room. */
+  .assist-btn { padding: 4px 6px; }
+  .assist-btn .ab-txt { display: none; }
+}
+/* Small sideways phones (667px): the four buttons fit their column (no icon, smaller words) instead of
+   pushing the page wider than the screen. */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  .move-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .move-grid .move { min-width: 0; grid-template-columns: 1fr; padding-left: 8px; padding-right: 6px; }
+  .move-grid .move-icon { display: none; }
+  .move-grid .move-label { font-size: .86rem; }
+  .move-grid .move-sub { font-size: .64rem; }
+  .fighter .f-bubble, .fighter.has-art .f-bubble { top: -6px; }
   /* Cut-ins: a smaller portrait so portrait, name card and line fit a short screen. */
   .cutin { gap: 10px; }
   .cutin-portrait { width: min(36vh, 200px); }
@@ -1049,6 +1066,14 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 @keyframes awkward {
   from { transform: rotate(-10deg) translateY(0); }
   to { transform: rotate(10deg) translateY(-4%); }
+}
+/* A popup with words (IS LEGAL AGAIN) rises a little and holds before it fades; its length is set inline. */
+.popup.read { animation-name: floatRead; }
+@keyframes floatRead {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(.6); }
+  10% { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
+  78% { opacity: 1; transform: translate(-50%, -28px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -44px) scale(1); }
 }
 @keyframes floatUp {
   0% { opacity: 0; transform: translate(-50%, 10px) scale(.6); }
@@ -1186,18 +1211,24 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 }
 
 /* The ally waiting in the stage's corner; it lights up at low HP. */
+/* The ally's button sits next to Super (off the stage, so it never covers a fighter's move chip). */
+.super-row { display: flex; gap: 8px; }
+.super-row .move-super { flex: 1; min-width: 0; }
 .assist-btn {
-  position: absolute; left: 8px; top: 8px; z-index: 3;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer;
+  flex: none; display: flex; align-items: center; gap: 7px;
+  padding: 4px 10px 4px 5px; min-height: 52px; border-radius: 14px;
+  border: 3px solid var(--line); background: #2b2440; color: var(--ink); cursor: pointer;
 }
+.assist-btn[hidden] { display: none; }
 .assist-btn .face {
-  width: 50px; height: 50px; display: grid; place-items: center; overflow: hidden; font-size: 24px;
-  border-radius: 50%; border: 3px solid var(--line); background: var(--c);
+  width: 38px; height: 38px; display: grid; place-items: center; overflow: hidden; font-size: 20px;
+  border-radius: 50%; border: 2px solid var(--line); background: var(--c);
   filter: grayscale(.85) brightness(.6);
 }
+.ab-txt { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .ab-label { font: 900 .62rem var(--body); letter-spacing: .12em; padding: 1px 6px; border-radius: 4px; background: #000a; }
 .ab-sub { font: 800 .6rem var(--body); color: var(--muted); }
+.assist-btn.ready { border-color: var(--gold); background: linear-gradient(#4d3f10, #2b2440); }
 .assist-btn.ready .face { filter: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--line), 0 0 18px var(--gold); animation: pulse .8s ease-in-out infinite; }
 .assist-btn.ready .ab-label { background: var(--gold); color: #1a1200; }
 .assist-btn.ready .ab-sub { color: var(--gold); }
@@ -1219,7 +1250,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .ai-card small { font: 900 .8rem var(--body); letter-spacing: .3em; color: var(--gold); }
 .ai-name { font-family: var(--display); font-size: clamp(26px, 9vw, 44px); line-height: 1; color: #fff; -webkit-text-stroke: 1px var(--line); text-shadow: 0 4px 0 var(--line); }
 .ai-line { font-family: var(--display); font-size: clamp(16px, 5.4vw, 26px); color: var(--gold); text-align: center; max-width: 520px; -webkit-text-stroke: 1px var(--line); text-shadow: 0 3px 0 var(--line); opacity: 0; }
-.assistin.play .ai-face { animation: allyIn 1.7s cubic-bezier(.2, 1, .3, 1) both; }
+.assistin.play .ai-face { animation: allyIn var(--ai-dur, 1.7s) cubic-bezier(.2, 1, .3, 1) both; }
 .assistin.play .ai-card { animation: slamSmall .35s .2s cubic-bezier(.2, 1.4, .4, 1) both; }
 .assistin.play .ai-line { animation: fadeUp .3s .45s ease-out forwards; }
 @keyframes allyIn {
