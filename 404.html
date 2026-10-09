@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Page not found · Proof of Fight</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b0a12">
+  <!-- GitHub Pages serves this file at whatever bad URL was typed, so every path here starts with "/". -->
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0a12;
+      --panel: #16131f;
+      --ink: #f6f3ff;
+      --muted: #a8a2bb;
+      --line: #07060b;
+      --gold: #ffd23f;
+      --bad: #ff4d4d;
+      --display: 'Bungee', Impact, 'Arial Black', system-ui, sans-serif;
+      --body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: radial-gradient(ellipse at top, #1d1530 0%, var(--bg) 60%) fixed, var(--bg);
+      color: var(--ink);
+      font-family: var(--body);
+      text-align: center;
+    }
+    main {
+      width: 100%;
+      max-width: 440px;
+      padding: 28px 22px 26px;
+      background: var(--panel);
+      border: 3px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 6px 0 var(--line);
+    }
+    .ko {
+      margin: 0;
+      font-family: var(--display);
+      font-size: clamp(3.5rem, 18vw, 5.5rem);
+      line-height: 1;
+      color: var(--bad);
+      text-shadow: 4px 4px 0 var(--line);
+      transform: rotate(-4deg);
+    }
+    .code {
+      margin: 10px 0 0;
+      font-family: var(--display);
+      font-size: .95rem;
+      letter-spacing: .08em;
+      color: var(--gold);
+    }
+    h1 {
+      margin: 18px 0 8px;
+      font-family: var(--display);
+      font-size: 1.3rem;
+      font-weight: 400;
+      line-height: 1.25;
+    }
+    p { margin: 0 0 22px; color: var(--muted); line-height: 1.5; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 58px;
+      padding: .7em 1.1em;
+      border: 3px solid var(--line);
+      border-radius: 12px;
+      background: var(--gold);
+      color: #1a1200;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 0 var(--line);
+      transition: transform .06s, box-shadow .06s;
+    }
+    .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+    .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="ko" aria-hidden="true">K.O.</p>
+    <p class="code">404 · PAGE NOT FOUND</p>
+    <h1>Thanks for visiting Proof of Fight!</h1>
+    <p>This page doesn't exist. It got rugged, or it never launched.</p>
+    <a class="btn" href="/">Go back to home</a>
+  </main>
+  <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "18725511f80d4503841c5fb7c4b7895b"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

@@ -40,6 +40,7 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | Path | What |
 |---|---|
 | `index.html` | The page |
+| `404.html` | Shown for any URL that doesn't exist (GitHub Pages serves it automatically) |
 | `css/style.css` | The look |
 | `js/data.js` | Fighters, odds, damage, Supers, banners |
 | `js/engine.js` | Game rules (no graphics; runs in Node too) |
