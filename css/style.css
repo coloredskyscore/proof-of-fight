@@ -115,10 +115,12 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
 }
-.tr-track { display: flex; gap: 12px; width: max-content; padding: 0 12px; animation: marquee 30s linear infinite; }
+/* No gap or padding on the track: each face carries its own space after it, so the track is exactly two
+   identical line-ups and half its width is exactly one. That's what makes the wrap seamless. */
+.tr-track { display: flex; width: max-content; animation: marquee 30s linear infinite; }
 #screen-title.intro .tr-track { animation-play-state: paused; }
 .title-roster span {
-  flex: none; width: 66px; height: 66px;
+  flex: none; width: 66px; height: 66px; margin-right: 12px;
   display: grid; place-items: center;
   border-radius: 50%;
   border: 3px solid var(--line);
@@ -128,13 +130,14 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   animation: bob 1.6s ease-in-out infinite;
 }
 .title-roster span:nth-child(even) { animation-delay: -.8s; }
-/* One line-up (and one gap) to the left: the second copy lands exactly where the first began. */
-@keyframes marquee { to { transform: translateX(calc(-50% - 6px)); } }
+/* One line-up to the left: the second copy lands exactly where the first began. */
+@keyframes marquee { to { transform: translateX(-50%); } }
 @media (min-width: 600px) { .title-roster span { width: 76px; height: 76px; } }
 /* Reduced motion: no scroll, the line-up once, wrapped and centered. */
 @media (prefers-reduced-motion: reduce) {
   .title-roster { -webkit-mask-image: none; mask-image: none; }
   .tr-track { width: auto; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .title-roster span { margin-right: 0; }
   .tr-track .dup { display: none; }
   .title-roster span { width: 52px; height: 52px; }
 }
