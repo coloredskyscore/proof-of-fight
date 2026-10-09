@@ -1595,6 +1595,42 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
   .vs-fight { margin-top: 0; min-height: 44px; }
 }
 
+/* The credits: title, thanks, the whole cast, then who made it (the X link) last, then Continue. */
+.credits {
+  position: fixed; inset: 0; z-index: 55; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+  background: radial-gradient(ellipse at 50% 35%, #2a1f45 0%, #07050c 70%); text-align: center;
+}
+.credits:not([hidden]) { display: flex; }
+.cr-title {
+  margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(38px, 12vw, 64px); line-height: 1;
+  color: var(--gold); -webkit-text-stroke: 2px var(--line); text-shadow: 0 5px 0 #b3261e, 0 9px 0 var(--line);
+}
+.cr-sub { margin: 0; font: 800 clamp(16px, 4.6vw, 20px) var(--body); color: #e9e3ff; letter-spacing: .04em; }
+.cr-cast { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 420px; }
+.cr-cast .face {
+  width: 46px; height: 46px; display: grid; place-items: center; overflow: hidden; font-size: 22px;
+  border-radius: 50%; border: 3px solid var(--line); background: var(--c);
+}
+.cr-made { margin: 6px 0 0; font: 700 clamp(15px, 4.2vw, 18px) var(--body); color: #cfc8e6; }
+.cr-made a { color: var(--gold); font-weight: 900; text-decoration: none; }
+.cr-made a:hover, .cr-made a:focus-visible { text-decoration: underline; }
+.cr-next { width: min(100%, 320px); }
+.credits > * { opacity: 0; }
+.credits.play .cr-title { animation: slamSmall .5s .2s cubic-bezier(.2, 1.4, .4, 1) both; }
+.credits.play .cr-sub { animation: fadeUp .5s .9s ease-out both; }
+.credits.play .cr-cast { animation: fadeUp .6s 1.5s ease-out both; }
+.credits.play .cr-made { animation: fadeUp .5s 2.4s ease-out both; }
+.credits.play .cr-next { animation: fadeUp .4s 3s ease-out both; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .credits { gap: 8px; }
+  .cr-title { font-size: min(14vh, 48px); }
+  .cr-cast { max-width: 640px; }
+  .cr-cast .face { width: 36px; height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) { .credits > * { opacity: 1; animation: none !important; } }
+
 /* After WICK: why you made it this far. One card at a time over his chart. */
 .reveal {
   position: fixed; inset: 0; z-index: 54; cursor: pointer; overflow: hidden;
