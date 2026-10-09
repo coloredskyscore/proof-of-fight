@@ -157,7 +157,7 @@ Full concept and build notes: [docs/supers/toly.md](docs/supers/toly.md). Same 3
 
 Everything below this section already reflects these changes. The exact numbers live in `js/data.js`.
 
-- **Balance fix.** In the draft numbers, Strike beat Mint and Rug on average for every character, so spamming Strike won 76–91% of fights and the jokes lived on the losing buttons. New numbers: Strike 10, Mint 24, Rug 36, and **Rug hits Hidden targets** ("you can't hide from a rug"). Saylor starts at 105 HP. The draft numbers are still selectable on the title screen as "Original draft numbers" so you can feel the difference.
+- **Balance fix.** In the draft numbers, Strike beat Mint and Rug on average for every character, so spamming Strike won 76–91% of fights and the jokes lived on the losing buttons. New numbers: Strike 10, Mint 24, Rug 36, and **Rug hits Hidden targets** ("you can't hide from a rug"). Saylor starts at 105 HP. The draft numbers were selectable on the title screen as "Original draft numbers" until Oct 9, 2026, when the picker was removed (nobody knew what it meant); Free play always uses the balanced numbers, and old result links keep the rules they were played with.
 - **Contradiction 1 fixed (XRP Army vs Hidden).** Supers can't be dodged, full stop. XRP Army always lands.
 - **Contradiction 2 fixed (CPU Super timing).** The CPU always fires its Super the turn its meter reaches 10. The per-character timing rules are gone. The player gets an on-screen warning that turn.
 - **Contradiction 3 fixed (missing numbers).** Every Super, the Rug recoil, status durations and the exact turn order now have numbers (sections 6, 7, 10, 11).
@@ -599,6 +599,7 @@ Do not point DNS at an empty repo.
    ~~Sound: music, effects, mute.~~ Done ([docs/audio/](docs/audio/README.md)).
    New fighters: Sergey, CZ and Adeniyi done.
    Story mode: the framework and boss 1 (Schiff) built Oct 7, boss 2 (Dimon), boss 3 (Warren), boss 4 (Sam Bankman-Fried, with Caroline's tag-in) and the final boss (WICK, with the leverage meter and the ending) Oct 8. Public on the title screen since Oct 9 ([docs/story/](docs/story/README.md)).
+   Title screen (Oct 9): the founders scroll by in a marquee at a bigger size instead of a row of small faces. During the intro the strip holds still while the faces you can see pop in on the beat; it starts moving on the drop.
    **← You are here.** Next: the other bosses, then step 5.
 5. Then result URLs + the 49 matchup preview images.
 6. ~~Then GitHub Pages or Cloudflare Pages.~~ Staying on GitHub Pages (free; soft limit 100 GB of traffic a month, roughly 40,000 first visits). Move to Cloudflare Pages only if traffic gets near that.
