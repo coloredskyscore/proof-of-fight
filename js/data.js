@@ -424,9 +424,9 @@
       color: '#4b6584', emoji: '📋',
       hide: 0, mint: 0.40, rug: 0.25,
       dmg: { strike: 12 },
-      brace: { blocks: 3 },          // Vote No: never hides; always halves red, pink and purple this turn
-      // The Letter (her pink): no damage. When it lands the target skips their next turn reading it, and
-      // hiding doesn't help (you can't dodge mail).
+      brace: { blocks: 2 },          // Vote No: never hides; always halves red, pink and purple this turn
+      // The Letter (her pink): no damage. When it lands the target skips their next turn reading it.
+      // A successful hide dodges it (RETURN TO SENDER); so does CZ's Ignore FUD.
       letter: { skip: 'letter' },
       // BANNED: once, when she's at half her HP or lower, the opponent's purple is banned for 2 turns.
       ban: { at: 0.5, move: 'rug', turns: 2 },
@@ -435,7 +435,8 @@
       moves: {
         strike:  { name: 'Bad Actors', icon: '☠️', ko: 'BAD ACTORS USE CRYPTO' },
         privacy: { name: 'Vote No',    icon: '🗳️', ok: 'VOTE NO' },
-        mint:    { name: 'The Letter', icon: '✉️', ok: 'READ THE LETTER', fail: 'STILL READING', skipLine: 'STILL ON PAGE ONE' },
+        mint:    { name: 'The Letter', icon: '✉️', ok: 'READ THE LETTER', fail: 'STILL READING', dodged: 'RETURN TO SENDER',
+                   skipLine: 'STILL ON PAGE ONE', skipSub: 'reading her letter' },
         rug:     { name: 'Charter',    icon: '🏛️', ok: 'CHARTER DENIED', fail: 'NOT A BANK' } // her May 2026 letter on crypto charters
       },
       loseLine: 'THE PLAN WAS NO',
@@ -445,7 +446,8 @@
         line: "I'VE GOT A PLAN FOR THAT",
         blurb: '4 hits of 5 + they skip their next turn reading it', finish: 'NATIONAL SECURITY',
         cpuAfter: 'PAGE ONE OF FORTY',
-        skipLine: 'STILL ON PAGE ONE'
+        skipLine: 'PAGE TWO OF FORTY',
+        skipSub: "reading The Plan. Supers can't be dodged."
       },
       boss: {
         hp: 110,
@@ -559,7 +561,7 @@
     agentswarm:   { dmg: 4, hits: 8 },
     goldrush:     { dmg: 7, hits: 4 },    // Schiff (story boss)
     petrock:      { dmg: 25 },            // Dimon (story boss)
-    plan:         { dmg: 5, hits: 4, skip: 'letter' }, // Warren (story boss): they skip their next turn reading it
+    plan:         { dmg: 5, hits: 4, skip: 'plan' },   // Warren (story boss): they skip their next turn reading it
     what:         { dmg: 22 },            // SBF (story boss)
     // WICK (final boss): the total at each step of your leverage (1x, 2x, 5x, 10x, 25x, 50x), one hit per
     // step; at 100x it takes everything.

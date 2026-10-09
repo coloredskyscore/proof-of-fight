@@ -384,10 +384,14 @@
       if (move === 'mint') me.blocks += D.BLOCKS.mintOk;
       clampBlocks(me);
 
-      // Warren's Letter: no damage; they skip their next turn reading it. Hiding doesn't help, but CZ's
-      // Ignore FUD (and his FUD-proof Super) does: a letter is FUD.
+      // Warren's Letter: no damage; they skip their next turn reading it. A successful hide dodges it, and
+      // so does CZ's Ignore FUD (and his FUD-proof Super): a letter is FUD.
       if (move === 'mint' && F.letter) {
         var LT = D.FIGHTERS[tgt.id];
+        if (!self && hidden[ti]) {
+          push({ t: 'miss', attacker: who, target: ti, move: move });
+          return { code: 'miss' };
+        }
         if (!self && (tgt.shield > 0 || (braced[ti] && LT.brace && LT.brace.ignore && LT.brace.ignore.indexOf('mint') >= 0))) {
           push({ t: 'miss', attacker: who, target: ti, move: move, ignored: true });
           return { code: 'miss' };

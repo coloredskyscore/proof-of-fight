@@ -618,13 +618,18 @@ test('Story: Dimon is bailed out once (too big to fail); the second knockout sti
   assert.strictEqual(k.finish, 'HYPED-UP FRAUD');
 });
 
-test('Story: Warren\'s Letter makes you skip a turn (hiding doesn\'t help, CZ ignores it); Vote No halves', function () {
+test('Story: Warren\'s Letter makes you skip a turn (a hide dodges it, CZ ignores it); Vote No halves', function () {
   var f = E.newFight({ player: 'mert', cpu: 'warren', seed: 1 });
-  rig(f, [cpuRoll('warren', 'mint'), 0 /* Zolana hides */, 0 /* the Letter lands */]);
+  rig(f, [cpuRoll('warren', 'mint'), 0 /* Zolana hides */, 0 /* the Letter would land */]);
   var ev = E.playTurn(f, 'privacy');
-  assert(ev.some(function (e) { return e.t === 'letter' && e.target === 0; }), 'the letter lands on a hidden Mert');
-  assert.strictEqual(f.f[0].hp, 100, 'no damage');
-  assert.strictEqual(E.playerStatus(f).skipped, 'letter');
+  assert(!ev.some(function (e) { return e.t === 'letter'; }) && ev.some(function (e) { return e.t === 'miss' && e.target === 0; }), 'a hidden Mert dodges it');
+  assert(!E.playerStatus(f).skipped, 'return to sender');
+  var m = E.newFight({ player: 'mert', cpu: 'warren', seed: 1 });
+  rig(m, [cpuRoll('warren', 'mint'), 0.99 /* the hide fails */, 0, 0 /* the Letter lands */]);
+  ev = E.playTurn(m, 'privacy');
+  assert(ev.some(function (e) { return e.t === 'letter' && e.target === 0; }), 'the letter lands when the hide fails');
+  assert.strictEqual(m.f[0].hp, 100, 'no damage');
+  assert.strictEqual(E.playerStatus(m).skipped, 'letter');
   var g = E.newFight({ player: 'cz', cpu: 'warren', seed: 1 });
   rig(g, [cpuRoll('warren', 'mint'), 0]);
   ev = E.playTurn(g, 'privacy');
@@ -633,7 +638,7 @@ test('Story: Warren\'s Letter makes you skip a turn (hiding doesn\'t help, CZ ig
   rig(h, [cpuRoll('warren', 'privacy')]);
   E.playTurn(h, 'strike');
   assert.strictEqual(h.f[1].hp, D.BOSSES.warren.boss.hp - 5, 'Vote No halves a strike');
-  assert.strictEqual(h.f[1].blocks, 3 + 1, 'Vote No gives 3 Blocks (+1 for being hit)');
+  assert.strictEqual(h.f[1].blocks, D.BOSSES.warren.brace.blocks + 1, 'Vote No gives its Blocks (+1 for being hit)');
   var k = E.newFight({ player: 'toly', cpu: 'warren', seed: 1 });
   rig(k, [cpuRoll('warren', 'strike')]);
   E.playTurn(k, 'strike');
@@ -666,7 +671,7 @@ test('Story: Warren\'s Plan hits 4 times for 5 and you skip your next turn; her 
   rig(f, []);
   E.playTurn(f, 'strike');
   assert.strictEqual(f.f[0].hp, 100 - 20);
-  assert.strictEqual(E.playerStatus(f).skipped, 'letter');
+  assert.strictEqual(E.playerStatus(f).skipped, 'plan', 'its own reason, so the screen can say it was her Super');
   var g = E.newFight({ player: 'toly', cpu: 'warren', seed: 1 });
   g.f[0].hp = 5; g.f[1].blocks = 10;
   rig(g, []);

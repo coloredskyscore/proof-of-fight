@@ -191,7 +191,7 @@ A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>
 - **Rematches:** tap any boss you've beaten on the ladder to fight them again (pick an ally, full stage and song, and a Satoshi of its own). Rematches never change the run. While the next boss is still being built, the big button is **Rematch** the last boss, and **Start a new run** lets you begin again with another fighter.
 - **Music:** each boss plays their own song once it's added; until then, the fight song.
 
-**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%. Warren, 110 HP: 54%, 73% and 97%. Sam Bankman-Fried, 100 HP plus Caroline's tag-in: 48%, 67% and 96%. WICK, 135 HP, against a player who watches the leverage meter: 50%, 65% and 95%; against a degen who ignores it: 37%, 51% and 87%.
+**Balance** (`node tools/story-sim.js`, a sensible player): Schiff, 110 HP, is beaten 65% of the time with no help, 80% with the assist, and 98% with the assist and Satoshi. Dimon, 100 HP plus a 20 HP bailout: 59%, 72% and 97%. Warren, 110 HP: 59%, 77% and 98%. Sam Bankman-Fried, 100 HP plus Caroline's tag-in: 48%, 67% and 96%. WICK, 135 HP, against a player who watches the leverage meter: 50%, 65% and 95%; against a degen who ignores it: 37%, 51% and 87%.
 
 **Reading time (Oct 9, 2026):** every banner stays up as long as its words take to read (a beat, then about four words a second, up to 4.5 seconds), and the next event waits for it, so one banner never replaces another unread. Popups with words (`IS LEGAL AGAIN`) hold the same way; a Super's line and an ally's line stay up long enough to read; WICK's ending cards move on only when you tap.
 
@@ -248,8 +248,8 @@ Grok's kit merged with the first draft; the user approved it and picked the BANN
 | Button | Name | Does | Lands | Flops |
 |---|---|---|---|---|
 | 🔴 Red | ☠️ Bad Actors | 12 dmg, always | KO: `BAD ACTORS USE CRYPTO` | — |
-| 🔵 Blue | 🗳️ Vote No | Never hides. Always works: half damage from red, pink and purple this turn, +3 Blocks | `VOTE NO` | — |
-| 🩷 Pink | ✉️ The Letter | 40%: no damage, but the target skips their next turn reading it (📜 READING). Hiding doesn't help; CZ's Ignore FUD does | `READ THE LETTER` · on the skipped turn: `STILL ON PAGE ONE` | `STILL READING` |
+| 🔵 Blue | 🗳️ Vote No | Never hides. Always works: half damage from red, pink and purple this turn, +2 Blocks | `VOTE NO` | — |
+| 🩷 Pink | ✉️ The Letter | 40%: no damage, but the target skips their next turn reading it (📜 READING). A successful hide dodges it, and so does CZ's Ignore FUD | `READ THE LETTER` · on the skipped turn: `STILL ON PAGE ONE` / *You skip this turn reading her letter* · dodged: `RETURN TO SENDER` | `STILL READING` |
 | 🟣 Purple | 🏛️ Charter | 36 dmg, 25%, steals 2 Blocks, hits through a dodge | `CHARTER DENIED` | `NOT A BANK` (her May 2026 letter attacked crypto "bank" charters) |
 
 **Super: The Plan** (4 hits of 5, then you skip your next turn reading it). The Anti-Crypto Army, staffers with clipboards, marches across while her letter unrolls off the bottom of the screen; line `I'VE GOT A PLAN FOR THAT`. Super KO: `NATIONAL SECURITY`. After her Super, if you're still standing: `PAGE ONE OF FORTY`.
@@ -263,6 +263,8 @@ Grok's kit merged with the first draft; the user approved it and picked the BANN
 **Garlinghouse:** as your ally against her he shouts `FOR THE XRP ARMY` (army against army); beating her as Garlinghouse reads `CHARTER APPROVED` (Ripple's trust charter was conditionally approved in Dec 2025, one of those her letter went after). His blue button already flops with `BLOCKED BY THE ANTI-CRYPTO ARMY`.
 
 **What changed from Grok's version:** her Super's Sleep became "reading" (Sleep is Charles's), and the Letter moved to pink (a stun on blue would copy Sergey's Shirt).
+
+**Changed after playtesting (Oct 9, 2026):** the Letter went through hiding, so the screen said you vanished and you lost your turn anyway. Now a hide dodges it. Vote No gave her 3 Blocks every time, so The Plan came about 1.7 times a fight; now 2. And the skipped turn says which one it was: `STILL ON PAGE ONE` / *reading her letter*, or `PAGE TWO OF FORTY` / *reading The Plan. Supers can't be dodged.* (the turn note says the same). Win rate with no help went from 54% to 59%; Vitalik, who leans on hiding, from 43% to 49%.
 
 **Art (Oct 8, 2026):** a stern portrait pointing at you in the red cardigan; a sprite pointing, clipboard of letters under her arm; a dim hearing room (wood dais, empty chairs and mics, paper stacks, two flags) for her stage. Her color in the game is slate blue-gray so the red cardigan stands out on it.
 
