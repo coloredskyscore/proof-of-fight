@@ -588,7 +588,9 @@
     dimon: { src: 'audio/dimon.mp3', loopStart: 3.363, loopEnd: 53.319, vol: 0.49 },
     warren: { src: 'audio/warren.mp3', loopStart: 6.432, loopEnd: 57.632, vol: 0.46 },
     sbf: { src: 'audio/sbf.mp3', loopStart: 2.771, loopEnd: 49.083, vol: 0.49 },
-    wick: { src: 'audio/wick.mp3', loopStart: 1.625, loopEnd: 40.02, vol: 0.34 }
+    wick: { src: 'audio/wick.mp3', loopStart: 1.625, loopEnd: 40.02, vol: 0.34 },
+    // The ending plays from its quiet start (under WICK's cards) and loops its last 32 bars, the big finish.
+    ending: { src: 'audio/ending.mp3', loopStart: 120.2, loopEnd: 172.84, vol: 0.54 }
   };
 
   // ---------- Engine (browser only) ----------
@@ -814,8 +816,9 @@
     if (current && current.name === name && !opts.restart) return null;
     var m = MUSIC[name], buf = buffers[name];
     if (!buf) {
+      // Late: a boss song joins at its loop; a song that tells a story (the ending) still starts at the top.
       load(name).then(function () {
-        if (want && want.name === name && !(current && current.name === name)) music(name, { from: 'loop', fade: 1 });
+        if (want && want.name === name && !(current && current.name === name)) music(name, { from: opts.fromStart ? 'start' : 'loop', fade: 1 });
       }).catch(function () { /* no music, game goes on */ });
       return null;
     }

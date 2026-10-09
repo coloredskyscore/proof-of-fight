@@ -1427,6 +1427,8 @@
     var B = ladderBoss(rung);
     // A tag-in partner (SBF's Caroline) only shows up mid-fight: fetch the portrait now so the cut-in isn't blank.
     if (B.tagIn) new Image().src = D.FIGHTERS[B.tagIn.ally].art.head;
+    // The ending song (2.7 MB) downloads during the final fight, so it can start at its first note.
+    if (isFinal(rung) && AU.MUSIC.ending && AU.settings.music) AU.load('ending').catch(function () {});
     startFight({ mode: 'story', rung: rung, practice: !!practice, player: run.player, cpu: B.id, ally: run.ally,
       seed: randomSeed(), rules: 'balanced' });
   }
@@ -1723,7 +1725,7 @@
         await sleep(400);
         // The ending song (once it's in MUSIC) plays from the first card through STORY COMPLETE.
         var song = !!AU.MUSIC.ending;
-        if (song) AU.music('ending', { restart: true, fade: 1.5 });
+        if (song) AU.music('ending', { restart: true, fade: 1.5, fromStart: true });
         // The credits show every portrait: fetch them now, while the cards are up.
         D.ROSTER.concat(Object.keys(D.BOSSES)).forEach(function (id) { var A = D.FIGHTERS[id].art; if (A && A.head) new Image().src = A.head; });
         if (B.boss.reveal) await revealScene(B);
@@ -2207,6 +2209,7 @@
       ['Boss: Warren', function () { AU.music('warren', { restart: true }); }],
       ['Boss: SBF', function () { AU.music('sbf', { restart: true }); }],
       ['Boss: WICK', function () { AU.music('wick', { restart: true }); }],
+      ['Story ending', function () { AU.music('ending', { restart: true, fromStart: true }); }],
       ['Stop music', function () { AU.stopMusic(0.3); }]
     ]], ['Everyone', [
       ['Button tap', 'tap'], ['Punch', 'hit'], ['Big hit', 'heavy'], ['Whiff (they hid)', 'whiff'], ['Hide failed', 'bonk'],

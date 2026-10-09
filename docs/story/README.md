@@ -152,7 +152,7 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
 
-**Made so far:** all five bosses (portrait, sprite, stage, song each), Caroline Ellison (portrait, for SBF's tag-in) and Satoshi (portrait, sprite, music). Not made: the `ending` song (the ending uses Satoshi's music).
+**Made so far:** all five bosses (portrait, sprite, stage, song each), Caroline Ellison (portrait, for SBF's tag-in) and Satoshi (portrait, sprite, music). The `ending` song came in Oct 9, 2026 (Triumph_of_Light.mp3): `audio/ending.mp3`, from its first note through the cards, Satoshi, the credits and STORY COMPLETE, looping its last 32 bars.
 
 **How they go in:**
 ```
@@ -174,6 +174,7 @@ python3 tools/music.py SBF-music.mp3 audio/sbf.mp3 --start 28.32 --loop 31.091 7
 python3 tools/art.py head wick-portrait.jpg art/wick-head.webp
 python3 tools/art.py body wick-sprite.jpg art/wick-body.webp --gap 352,612
 python3 tools/music.py Wick-music.mp3 audio/wick.mp3 --start 41.55 --loop 43.175 81.570
+python3 tools/music.py Triumph_of_Light.mp3 audio/ending.mp3 --start 0 --loop 120.20 172.84
 ```
 `--clear x0,y0,x1,y1` wipes stray background specks inside a box (SBF's curls left white flecks between them); `--gap x,y` clears a pocket of background the outside flood can't reach.
 A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>.webp` (WebP, quality 82). Then the boss gets `art`, `boss.stage.bg` and `boss.music` in `js/data.js`, and the song an entry in `MUSIC` in `js/audio.js`.
