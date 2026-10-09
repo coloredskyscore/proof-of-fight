@@ -344,7 +344,7 @@ The final boss isn't a person: he's the market, and what 100x leverage does to p
 5. **THE HOUSE GETS PAID EITHER WAY:** market makers earn the spread on every trade; exchanges earn the fees, and many keep what's left of a liquidated account in their insurance fund.
 6. **OCT 10, 2025:** $19 billion of leveraged bets liquidated in one day, 1.6 million traders, most of them betting on up.
 
-Then Satoshi: `IT WAS NEVER THE BANKERS.` / `IT WAS THE 100X.`, and STORY COMPLETE.
+Then Satoshi: `IT WAS NEVER THE BANKERS.` / `IT WAS THE 100X.`, then the **credits** (PROOF OF FIGHT, *Thanks for playing*, the whole cast, and last *Game developed by @ProofOfFight on X*, linking to x.com/ProofOfFight; Continue), and STORY COMPLETE. The same credit sits at the bottom of the title screen.
 
 The cards are worded so they hold up: "can", "many", no firm named. **Sources:** CoinGlass's count for Oct 10–11, 2025: 1,618,240 traders liquidated, $19.13 billion, and it said the real total was probably higher; long positions were most of it (around 90% per CoinGlass, as reported by [ForkLog](https://forklog.com/en/forced-liquidations-in-2025-surpass-150-billion/) and [BitPinas](https://bitpinas.com/learn-how-to-guides/largest-liquidation/)). Liquidation heatmaps are public (CoinGlass and others). Insurance funds taking the rest of a liquidated position's margin is how the big futures exchanges document them.
 

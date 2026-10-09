@@ -1602,6 +1602,30 @@
     });
   }
 
+  // The credits, at the very end of the story: the cast, then who made it (the X link), then Continue to
+  // STORY COMPLETE.
+  function creditsScene() {
+    return new Promise(function (resolve) {
+      var el = $('#credits'), btn = $('.cr-next', el);
+      $('.cr-cast', el).innerHTML = D.ROSTER.concat(Object.keys(D.BOSSES)).map(function (id) {
+        var F = D.FIGHTERS[id];
+        return '<span class="face" style="--c:' + F.color + '" title="' + esc(F.name) + '">' + faceHTML(F) + '</span>';
+      }).join('');
+      // Decode the portraits now: the cast fades in at 1.5s, and a lazily decoded one would show blank.
+      $all('.cr-cast img', el).forEach(function (img) { if (img.decode) img.decode().catch(function () {}); });
+      el.hidden = false;
+      void el.offsetWidth;
+      el.classList.add('play');
+      later(function () { btn.focus(); }, 3200);
+      btn.onclick = function () {
+        btn.onclick = null;
+        el.classList.remove('play');
+        el.hidden = true;
+        resolve();
+      };
+    });
+  }
+
   // Satoshi, sliced steel like the Lugano statue: he turns into view, says his piece and turns away.
   function satoshiSVG() {
     return '<svg viewBox="0 0 200 210" aria-hidden="true"><defs>' +
@@ -1700,10 +1724,13 @@
         // The ending song (once it's in MUSIC) plays from the first card through STORY COMPLETE.
         var song = !!AU.MUSIC.ending;
         if (song) AU.music('ending', { restart: true, fade: 1.5 });
+        // The credits show every portrait: fetch them now, while the cards are up.
+        D.ROSTER.concat(Object.keys(D.BOSSES)).forEach(function (id) { var A = D.FIGHTERS[id].art; if (A && A.head) new Image().src = A.head; });
         if (B.boss.reveal) await revealScene(B);
         if (song) AU.duck(true);
         await satoshiScene('ending');
         if (song) AU.duck(false);
+        await creditsScene();
         storySummary(run, true, song);
         return;
       }
