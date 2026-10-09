@@ -216,13 +216,6 @@
     if (S.fight.over) { finishFight(); return; }
     S.busy = true;
     updateControls();
-    var boss = opts.mode === 'story' && D.FIGHTERS[opts.cpu].boss;
-    // WICK talks first, over silence: his portrait and two lines. Then the song drops with the fight.
-    if (boss && boss.prelude && !resumeMoves) {
-      AU.stopMusic(0.4);
-      preludeScene(D.FIGHTERS[opts.cpu]).then(function () { if (S.opts === opts) beginFight(opts, resumeMoves); });
-      return;
-    }
     beginFight(opts, resumeMoves);
   }
 
@@ -1513,33 +1506,63 @@
     });
   }
 
-  // WICK before the fight: the chart behind him, his portrait, his two lines, a clock ticking. Tap to skip.
-  function preludeScene(B) {
+  // The face-off before a boss: you and the boss over their stage. Your line, then theirs (a tap moves it
+  // on sooner), then FIGHT starts it. A rematch shows both lines at once.
+  function versusScene(rung, practice) {
     return new Promise(function (resolve) {
-      var el = $('#bossline'), P = B.boss.prelude;
-      el.classList.add('prelude');
-      el.style.setProperty('--c', B.color);
-      el.style.backgroundImage = 'url(' + B.boss.stage.bg + ')'; // inline: a url() in a CSS variable resolves from css/
-      $('.bl-face', el).innerHTML = faceHTML(B);
-      $('.bl-small', el).textContent = P[0];
-      $('.bl-big', el).textContent = P[1];
+      var B = ladderBoss(rung), P = D.FIGHTERS[S.run.player], sc = B.boss.scene, el = $('#versus');
+      var step = 0, done = false, shownAt = 0, timer = null;
+      el.className = 'versus vs-' + B.id;
+      el.style.backgroundImage = B.boss.stage.bg ? 'url(' + B.boss.stage.bg + ')' : B.boss.stage.sky; // inline: see revealScene
+      $('.vs-kicker', el).textContent = (practice ? 'REMATCH · ' : '') +
+        (isFinal(rung) ? 'FINAL BOSS' : 'BOSS ' + (rung + 1) + ' OF ' + D.STORY.ladder.length) + ' · ' + B.boss.stage.name.toUpperCase();
+      [['.vs-p', P, sc.you], ['.vs-b', B, sc.boss]].forEach(function (r) {
+        var row = $(r[0], el), face = $('.face', row);
+        face.innerHTML = faceHTML(r[1]);
+        face.style.setProperty('--c', r[1].color);
+        $('.vs-name', row).textContent = (r[1].short || r[1].name).toUpperCase();
+        $('.vs-say', row).textContent = '“' + r[2] + '”';
+      });
       el.hidden = false;
-      void el.offsetWidth;
-      el.classList.add('play');
-      var snd = AU.play(B.id + '.prelude');
-      var done = false, timer = later(finish, 5400);
+      AU.stopMusic(0.8);
+      var snd = sc.sound ? AU.play(sc.sound) : null; // WICK: a clock ticking
+      function next() {
+        if (done || step >= 2 || Date.now() - shownAt < 450) return;
+        clearTimeout(timer);
+        step++;
+        shownAt = Date.now();
+        if (step === 1) {
+          el.classList.add('show-p');
+          AU.play('tap');
+          timer = later(next, readMs(sc.you)); // the boss answers once you've had time to read it
+        } else {
+          el.classList.add('show-b', 'ready');
+          if (!sc.sound) AU.play('slam');
+          later(function () { if (!done) $('.vs-fight', el).focus(); }, 500);
+        }
+      }
       function finish() {
         if (done) return;
         done = true;
         clearTimeout(timer);
-        snd.stop(0.3);
+        if (snd) snd.stop(0.3);
         el.onclick = null;
-        el.classList.remove('play', 'prelude');
-        el.style.backgroundImage = '';
+        $('.vs-fight', el).onclick = null;
+        document.removeEventListener('keydown', onKey);
         el.hidden = true;
+        el.style.backgroundImage = '';
         resolve();
       }
-      later(function () { if (!done) el.onclick = finish; }, 900);
+      function onKey(ev) {
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+        ev.preventDefault();
+        if (step >= 2) finish(); else { shownAt = 0; next(); }
+      }
+      $('.vs-fight', el).onclick = function (ev) { ev.stopPropagation(); if (step >= 2) finish(); };
+      el.onclick = next;
+      document.addEventListener('keydown', onKey);
+      if (practice) { el.classList.add('show-p'); step = 1; next(); shownAt = 0; }
+      else next();
     });
   }
 
@@ -1674,9 +1697,14 @@
       runSave(run);
       if (isFinal(o.rung)) {
         await sleep(400);
+        // The ending song (once it's in MUSIC) plays from the first card through STORY COMPLETE.
+        var song = !!AU.MUSIC.ending;
+        if (song) AU.music('ending', { restart: true, fade: 1.5 });
         if (B.boss.reveal) await revealScene(B);
+        if (song) AU.duck(true);
         await satoshiScene('ending');
-        storySummary(run, true);
+        if (song) AU.duck(false);
+        storySummary(run, true, song);
         return;
       }
       var next = D.STORY.ladder[run.rung], nextB = D.BOSSES[next.id];
@@ -1745,7 +1773,7 @@
   }
 
   // The end of a run, won or lost. The run is cleared; the card can still be shared.
-  function storySummary(run, won) {
+  function storySummary(run, won, song) {
     var P = D.FIGHTERS[run.player], n = run.beaten.length, total = D.STORY.ladder.length;
     store.set('story', null);
     var lev = run.peakLev ? ' · peak leverage ' + run.peakLev + 'x' : '';
@@ -1765,7 +1793,7 @@
         ['Menu', 'btn-ghost', function () { closeStory(); renderTitle(); }]]
     });
     if (!won) AU.stopMusic(0.5);
-    else AU.play('win');
+    else if (!song) AU.play('win'); // the ending song is the win
   }
 
   function storyText(res, run) {
@@ -2263,7 +2291,8 @@
       S.run.ally = b.dataset.id;
       runSave(S.run);
       $('#modal-assist').hidden = true;
-      startStoryFight(S.run, S.pick.rung, S.pick.practice);
+      var pick = S.pick;
+      versusScene(pick.rung, pick.practice).then(function () { startStoryFight(S.run, pick.rung, pick.practice); });
     });
     $('#btn-assist').addEventListener('click', onAssist);
     $('#pick-suggest').addEventListener('click', function () {

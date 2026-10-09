@@ -148,7 +148,7 @@ One song per boss, plus two short pieces. Turn on **Instrumental**, paste the st
 | `sbf` | Boss 4 | `instrumental jailhouse blues dubstep boss battle, 145 BPM, harmonica riffs, slide guitar, 8-bit chiptune arpeggios, heavy wobble bass drops, sneaky and frantic, arcade fighting game` |
 | `wick` | Final boss | `instrumental dark riddim dubstep final boss battle, 150 BPM, ticking clock, alarm sirens, glitchy stutters, distorted growling bass, choir stabs, relentless and terrifying` |
 | `satoshi` | His revive (about 8 seconds used) | `instrumental ethereal ambient, angelic choir pads, soft bells, slow swell, hopeful and mysterious, no drums` |
-| `ending` | After WICK | `instrumental triumphant dubstep anthem, 142 BPM, epic choir, soaring synth lead, emotional build into a massive victory drop` |
+| `ending` | After WICK: the six cards, Satoshi, STORY COMPLETE | `instrumental cinematic electronic finale, 140 BPM, opens soft and reflective with warm piano and soft bell pads, slowly builds with an epic choir and a soaring synth lead into a triumphant, emotional victory drop, hopeful, arcade game ending theme` (the soft start sits under the cards; the bell pads match Satoshi's; the code already plays it once it's added) |
 
 Until a boss's song arrives, that fight plays the normal fight song, and a boss without art shows an emoji head, like new fighters did.
 
@@ -178,11 +178,26 @@ python3 tools/music.py Wick-music.mp3 audio/wick.mp3 --start 41.55 --loop 43.175
 `--clear x0,y0,x1,y1` wipes stray background specks inside a box (SBF's curls left white flecks between them); `--gap x,y` clears a pocket of background the outside flood can't reach.
 A stage background is just resized to 1024×1024 and saved as `art/stages/<boss>.webp` (WebP, quality 82). Then the boss gets `art`, `boss.stage.bg` and `boss.music` in `js/data.js`, and the song an entry in `MUSIC` in `js/audio.js`.
 
+## The face-off before each boss (Oct 9, 2026)
+
+After you pick your ally: your portrait and line on the left, the boss's on the right, over their stage, then **FIGHT ▶**. The player's line is the same whichever founder you are. Lines in `boss.scene` in `js/data.js`.
+
+| Boss | You | The boss |
+|---|---|---|
+| Schiff | "I need to convince Schiff gold is a relic of the past!" | "Crypto is a speculative bubble! A Ponzi scheme!" |
+| Dimon | "You called it a pet rock, Jamie. Let's see whose rock is harder." | "If I was the government, I'd close it down." (his words to the Senate Banking Committee, Dec 2023) |
+| Warren | "Senator, we're building the future of finance." | "Crypto isn't modern finance; it's a vehicle for illicit finance and scams!" |
+| SBF | "You froze everyone's money at FTX, Sam. This one's for them." (FTX froze withdrawals in Nov 2022; customers waited years for the bankruptcy payouts) | "I didn't knowingly commingle funds." (his words at the NYT DealBook Summit, Nov 30 2022) |
+| WICK | "Four bosses down. Who is really behind all this?" | "You've made it this far. But do you really know why?" (in red, with a clock ticking) |
+
+Schiff's lines and Warren's are the user's; the others are drafts. WICK's old intro (his portrait and two lines on their own) became his face-off.
+
 ## What's in the game (Oct 7, 2026)
 
 - **📖 Story** on the title screen (after `?story`), or **Resume story · Boss N** when a run is saved.
 - **Pick your fighter**, then the **ladder**: a tower with the final boss on top. Rungs whose boss isn't built yet say *coming soon*, and the final boss is `???` until you reach it.
 - **Pick your ally** before every boss. A ⭐ marks an ally with their own line against that boss.
+- **The face-off** (Oct 9, 2026): after the ally pick, you and the boss over their stage. Your line comes in, then theirs (a tap brings it sooner), then **FIGHT ▶**. A rematch shows both lines at once; CONTINUE goes straight back into the fight. The lines are below.
 - **The fight:** the boss's stage colors (their background art replaces them once it's made), the boss's HP, and your ally's button next to Super (just their face on a phone turned sideways; it used to sit in the stage's top-left corner and covered your move chip). It lights up gold at 35% HP: tap it (or press A) and they slide in, shout their line, and hit for 20. An assist can land the knockout.
 - **Knocked out with Satoshi unused:** he turns into view, `STAND UP.` / `WE'RE ALL COUNTING ON YOU.`, turns away with `I'VE MOVED ON TO OTHER THINGS.`, and you're back up with half your HP. Until his art is made he's drawn as a sliced-steel hooded figure with a laptop.
 - **Losing after that:** **CONTINUE?** with a 10-second countdown. Continue restarts that boss fight (a coin goes in); Give up or zero ends the run with a **GAME OVER** card you can share.
@@ -301,7 +316,7 @@ Grok's numbered kit merged with the first draft; the user approved it. Every but
 
 The final boss isn't a person: he's the market, and what 100x leverage does to people. Black suit, a red candle for a head, a red blade. His stage is the chart itself: green candles climbing, then one red wick straight down.
 
-**Before the fight:** the screen cuts to his portrait over the chart, a clock ticking: `YOU'VE MADE IT THIS FAR.` / `BUT DO YOU REALLY KNOW WHY?` (the user's line). Then `PLACE YOUR BETS.`, **FINAL BOSS / FIGHT!**, and his song drops. If he beats you, CONTINUE? asks the user's other line: *"You've made it this far. Are you sure you want to continue?"*
+**Before the fight:** the face-off, over the chart and a ticking clock, his line in red: you ask *"Four bosses down. Who is really behind all this?"*; WICK: *"You've made it this far. But do you really know why?"* (the user's line). Then `PLACE YOUR BETS.`, **FINAL BOSS / FIGHT!**, and his song drops. If he beats you, CONTINUE? asks the user's other line: *"You've made it this far. Are you sure you want to continue?"*
 
 **The leverage meter (his twist):**
 - Every pink or purple you press against him steps your leverage up: 1x, 2x, 5x, 10x, 25x, 50x, 100x. A 📈 chip on your HUD shows it, red from 2x and pulsing from 25x, and the pink and purple buttons wear a 📈.

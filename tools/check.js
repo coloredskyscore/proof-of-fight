@@ -682,7 +682,11 @@ test('Story: Warren\'s Plan hits 4 times for 5 and you skip your next turn; her 
   rig(h, [cpuRoll('warren', 'strike')]);
   E.playTurn(h, 'strike');
   assert.strictEqual(h.finish, 'CHARTER APPROVED');
-  Object.keys(D.BOSSES).forEach(function (id) { assert(D.BOSSES[id].boss.intro, id + ': needs an opening line'); });
+  Object.keys(D.BOSSES).forEach(function (id) {
+    var b = D.BOSSES[id].boss;
+    assert(b.intro, id + ': needs an opening line');
+    assert(b.scene && b.scene.you && b.scene.boss, id + ': needs a face-off (your line and theirs)');
+  });
 });
 
 test('Story: SBF\'s 1) Fine takes 2 of your Blocks; his Super is one big hit; his KO lines', function () {
@@ -818,7 +822,7 @@ test('Story: WICK\'s Stop Hunt hits through a hide; his lines; the prelude, CONT
   assert(ev.some(function (e) { return e.t === 'hit' && e.attacker === 1 && e.move === 'strike' && e.pierced; }), 'stop hunt');
   assert.strictEqual(f.f[0].hp, 100 - 12);
   var B = D.BOSSES.wick.boss;
-  assert(B.prelude.length === 2 && B.continueLine && B.reveal.length >= 3);
+  assert(B.scene.you && B.scene.boss && B.continueLine && B.reveal.length >= 3);
   B.reveal.forEach(function (c) { assert(c.length === 2 && c[0] && c[1].length < 200, 'a reveal card is a title and a short line'); });
   assert.strictEqual(D.STORY.ladder[D.STORY.ladder.length - 1].id, 'wick', 'WICK is the final boss');
 });
