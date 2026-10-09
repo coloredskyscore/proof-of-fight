@@ -115,7 +115,6 @@
         <div class="sky"></div>
         <div class="skyline" id="skyline" aria-hidden="true"></div>
         <div class="ground"></div>
-        <button class="assist-btn" id="btn-assist" type="button" hidden aria-label="Call in your ally"></button>
         <div class="fighter side-p" id="fighter-p"></div>
         <div class="fighter side-c" id="fighter-c"></div>
         <div class="popups" id="popups" aria-hidden="true"></div>
@@ -126,9 +125,13 @@
 
       <div class="controls" id="controls">
         <p class="turn-note" id="turn-note"></p>
-        <button class="move move-super" data-move="super" type="button">
-          <span class="move-icon">⚡</span><span class="move-label">SUPER</span><span class="move-sub"></span>
-        </button>
+        <div class="super-row">
+          <!-- Story: the ally waits here until you're low enough to call them in -->
+          <button class="assist-btn" id="btn-assist" type="button" hidden aria-label="Call in your ally"></button>
+          <button class="move move-super" data-move="super" type="button">
+            <span class="move-icon">⚡</span><span class="move-label">SUPER</span><span class="move-sub"></span>
+          </button>
+        </div>
         <div class="move-grid">
           <button class="move move-strike" data-move="strike" type="button"><span class="move-icon">👊</span><span class="move-label">Strike</span><span class="move-sub"></span></button>
           <button class="move move-privacy" data-move="privacy" type="button"><span class="move-icon">🥷</span><span class="move-label">Privacy</span><span class="move-sub"></span></button>
