@@ -1,6 +1,6 @@
 # Story mode
 
-**Status:** all five bosses are built (Schiff, Dimon, Warren, Sam Bankman-Fried and WICK, Oct 7 and 8, 2026), with WICK's intro and the ending. Story is still hidden until the user opens it to everyone: open **proofoffight.com/?story** once and the 📖 Story button shows up on that phone or computer from then on. Prompts for every image and song are below.
+**Status:** all five bosses are built (Schiff, Dimon, Warren, Sam Bankman-Fried and WICK, Oct 7 and 8, 2026), with WICK's intro and the ending. **Public since Oct 9, 2026:** the 📖 Story button is on the title screen for everyone (it was behind `?story` while the bosses were built; old `?story` links still work). Prompts for every image and song are below.
 
 ## The story
 
@@ -195,7 +195,7 @@ Schiff's lines and Warren's are the user's; the others are drafts. WICK's old in
 
 ## What's in the game (Oct 7, 2026)
 
-- **📖 Story** on the title screen (after `?story`), or **Resume story · Boss N** when a run is saved.
+- **📖 Story** on the title screen, or **Resume story · Boss N** when a run is saved.
 - **Pick your fighter**, then the **ladder**: a tower with the final boss on top. Rungs whose boss isn't built yet say *coming soon*, and the final boss is `???` until you reach it.
 - **Pick your ally** before every boss. A ⭐ marks an ally with their own line against that boss.
 - **The face-off** (Oct 9, 2026): after the ally pick, you and the boss over their stage. Your line comes in, then theirs (a tap brings it sooner), then **FIGHT ▶**. A rematch shows both lines at once; CONTINUE goes straight back into the fight. The lines are below.
