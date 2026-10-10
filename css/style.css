@@ -383,7 +383,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 .pick-face, .title-roster span, .res-faces span.face, .f-head { overflow: hidden; }
 .cutin-head.has-art { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
 /* The sprite stands a bit taller than the block body, so its label and status bubble sit higher. */
-.f-art {
+.f-art, .f-ghost {
   position: absolute; bottom: 0; left: 50%;
   height: 118%; width: auto; max-width: none;
   transform: translateX(-50%);
@@ -391,17 +391,71 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
 }
 /* A wide sprite (arm out, big stance) shrinks to stay on screen instead of stretching past 150% of its spot. */
 @supports (width: 1cqw) {
-  .f-art { height: auto; max-height: 118cqh; max-width: 150cqw; }
+  .f-art, .f-ghost { height: auto; max-height: 118cqh; max-width: 150cqw; }
 }
 .fighter.has-art .f-chip { top: calc(-18% - 58px); }
 .fighter.has-art .f-bubble { top: calc(-18% - 30px); }
 .fighter.has-art .f-shadow { left: -8%; right: -8%; }
-/* KO: the sprite falls flat on its back, at 70% so it fits on its own side of a phone-width stage.
-   The CPU side is mirrored, so the same transform drops it the other way. */
-.f-art { transform-origin: 50% 100%; transition: transform .35s ease-in; }
-.fighter.has-art.is-ko.side-p, .fighter.has-art.is-ko.side-c { transform: none; }
-.fighter.has-art.is-ko .f-art { transform: translateX(-50%) rotate(-90deg) translate(35%, 40%) scale(.7); }
-.fighter.has-art.is-ko .f-bubble { top: auto; bottom: 22%; }
+/* KO: the sprite breaks up like a worn-out VHS tape. Tinted, scanlined ghosts of it (.f-ghost, hidden until
+   now) peel off backward one after another while the body flickers out. The CPU side is mirrored, so its ghosts
+   peel off the other way. Each ghost's --k (its place in line) and --hue come from js/app.js fighterHTML. */
+.f-ghost { display: none; }
+.fighter.has-art.is-ko.side-p, .fighter.has-art.is-ko.side-c { transform: none; opacity: 1; }
+.fighter.has-art.is-ko .f-art {
+  -webkit-mask-image: repeating-linear-gradient(#000 0 2px, #0005 2px 4px);
+          mask-image: repeating-linear-gradient(#000 0 2px, #0005 2px 4px);
+  animation: koFlicker 1.2s both;
+}
+.fighter.has-art.is-ko .f-ghost {
+  display: block; opacity: 0;
+  mix-blend-mode: screen;
+  -webkit-mask-image: repeating-linear-gradient(#000 0 2px, transparent 2px 4px);
+          mask-image: repeating-linear-gradient(#000 0 2px, transparent 2px 4px);
+  /* Lift the darks before tinting, so a black suit (CZ, WICK) still leaves a ghost. */
+  filter: contrast(.6) brightness(1.5) sepia(1) saturate(5) hue-rotate(var(--hue, 0deg));
+  transform-origin: 100% 50%;
+  animation: koGhost .8s calc(var(--k) * 85ms) cubic-bezier(.3, 0, .7, 1) both;
+}
+.fighter.has-art.is-ko .f-shadow { animation: koGone .6s .4s both; }
+/* What the winner left them with (S.koProp) is all that's left, on the floor where they stood. */
+.fighter.has-art.is-ko .f-bubble { top: auto; bottom: 4%; }
+@keyframes koGhost {
+  0% { transform: translateX(-50%); opacity: 0; }
+  15% { opacity: .9; }
+  100% { transform: translateX(calc(-72% - var(--k) * 18%)) scaleX(1.35); opacity: 0; }
+}
+@keyframes koFlicker {
+  0% { opacity: 1; animation-timing-function: step-end; }
+  10% { opacity: .35; animation-timing-function: step-end; } 16% { opacity: 1; animation-timing-function: step-end; }
+  26% { opacity: .2; animation-timing-function: step-end; } 32% { opacity: .9; animation-timing-function: step-end; }
+  44% { opacity: .1; animation-timing-function: step-end; } 50% { opacity: .6; animation-timing-function: step-end; }
+  64% { opacity: 0; animation-timing-function: step-end; } 70% { opacity: .35; animation-timing-function: step-end; }
+  82% { opacity: 0; animation-timing-function: step-end; } 88% { opacity: .15; animation-timing-function: step-end; }
+  100% { opacity: 0; }
+}
+@keyframes koGone { to { opacity: 0; } }
+/* A boss goes out bigger: seven ghosts, slower, all in their own color, and the body ends like an old TV
+   switching off (squashed to a bright line, then a dot). */
+.fighter[data-id="schiff"] { --hue: 10deg; }   /* gold */
+.fighter[data-id="dimon"] { --hue: 185deg; }   /* steel blue */
+.fighter[data-id="warren"] { --hue: -45deg; }  /* her red jacket */
+.fighter[data-id="sbf"] { --hue: -8deg; }      /* prison orange */
+.fighter[data-id="wick"] { --hue: -48deg; }    /* candle red */
+.fighter.has-art.is-boss.is-ko .f-ghost {
+  filter: contrast(.7) brightness(1.35) sepia(1) saturate(8) hue-rotate(var(--hue, 0deg));
+  animation-duration: 1.25s; animation-delay: calc(var(--k) * 100ms);
+}
+.fighter.has-art.is-boss.is-ko .f-art { transform-origin: 50% 50%; animation: koTvOff 1.45s both; }
+@keyframes koTvOff {
+  0% { opacity: 1; animation-timing-function: step-end; }
+  9% { opacity: .5; animation-timing-function: step-end; } 14% { opacity: 1; animation-timing-function: step-end; }
+  25% { opacity: .45; animation-timing-function: step-end; } 30% { opacity: .95; animation-timing-function: step-end; }
+  41% { opacity: .4; animation-timing-function: step-end; } 46% { opacity: .9; animation-timing-function: step-end; }
+  65% { opacity: .85; transform: translateX(-50%); filter: brightness(1); animation-timing-function: ease-in; }
+  79% { opacity: 1; transform: translateX(-50%) scale(1.2, .014); filter: brightness(5) saturate(0); }
+  93% { opacity: 1; transform: translateX(-50%) scale(.03, .014); filter: brightness(7) saturate(0); }
+  100% { opacity: 0; transform: translateX(-50%) scale(0, 0); filter: brightness(7) saturate(0); }
+}
 
 .fighter.lunge.side-p { transform: translateX(38%); }
 .fighter.lunge.side-c { transform: translateX(-38%); }
@@ -1721,4 +1775,7 @@ button, select, a.btn { font: inherit; touch-action: manipulation; }
     animation: none !important;
   }
   .fighter { transition: none; }
+  /* A KO is a plain fade instead of the VHS break-up. */
+  .fighter.has-art.is-ko .f-ghost { display: none; }
+  .fighter.has-art.is-ko .f-art, .fighter.has-art.is-boss.is-ko .f-art { -webkit-mask-image: none; mask-image: none; animation: koGone .6s both; }
 }

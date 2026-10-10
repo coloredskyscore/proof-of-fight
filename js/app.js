@@ -238,11 +238,20 @@
     return F.art && F.art.head ? '<img class="art-head" src="' + F.art.head + '" alt="" decoding="async">' : F.emoji;
   }
 
+  // The KO ghosts' tints, in the order they peel off (a boss's are all their own color, css/style.css).
+  var GHOST_HUES = [300, 180, 250, 330, 200];
+
   function fighterHTML(F) {
     var top = '<div class="f-chip"></div><div class="f-bubble"></div><div class="f-flip"><div class="f-bob">';
     // A sprite replaces the block body (and anything held, which the art draws itself).
     if (F.art && F.art.body) {
-      return top + '<div class="f-sprite"><img class="f-art" src="' + F.art.body + '" alt="" decoding="async"></div>' +
+      // Hidden copies of the sprite, for the ghosts that peel off it when they're knocked out.
+      var ghosts = '';
+      for (var k = 0; k < (F.boss ? 7 : GHOST_HUES.length); k++) {
+        ghosts += '<img class="f-ghost" src="' + F.art.body + '" alt="" style="--k:' + k +
+          (F.boss ? '' : ';--hue:' + GHOST_HUES[k] + 'deg') + '">';
+      }
+      return top + '<div class="f-sprite"><img class="f-art" src="' + F.art.body + '" alt="" decoding="async">' + ghosts + '</div>' +
         '</div></div><div class="f-shadow"></div>';
     }
     return top + '<div class="f-sprite">' +
@@ -277,7 +286,7 @@
     [0, 1].forEach(function (i) {
       var F = D.FIGHTERS[f.f[i].id], side = SIDE[i];
       var el = $('#fighter-' + side);
-      el.className = 'fighter side-' + side + (F.art && F.art.body ? ' has-art' : '');
+      el.className = 'fighter side-' + side + (F.art && F.art.body ? ' has-art' : '') + (F.boss ? ' is-boss' : '');
       el.dataset.id = F.id;
       el.style.setProperty('--c', F.color);
       el.innerHTML = fighterHTML(F);
