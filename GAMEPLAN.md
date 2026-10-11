@@ -11,6 +11,14 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Oct 11, 2026: Rap Battle test (?rap)
+
+A hidden test mode at `proofoffight.com/?rap`: a **Rap Battle** button appears on the title screen. Toly vs Vitalik, three rounds over a boom-bap beat.
+- Vitalik opens each round, then you pick your couplet: **Safe 75%**, **Spicy 50%** or **Nuclear 25%**. A landed line moves the crowd meter your way; a miss gets booed (record scratch, the DJ cuts the beat for a bar).
+- Toly's last-round gamble is **Skibidi mode 35%**: `SLOP, KINO, SKIBIDI BOP` in double time.
+- The rappers "talk" in chiptune babble (a blip per syllable, on the beat, the words lighting up karaoke-style). No real or cloned voices.
+- Code: `js/rap.js`, `css/rap.css`. Nothing changes without `?rap`.
+
 ### Oct 7, 2026: CZ and Adeniyi join the roster
 
 Fighters nine and ten. Details: [docs/supers/cz.md](docs/supers/cz.md), [docs/supers/adeniyi.md](docs/supers/adeniyi.md).
