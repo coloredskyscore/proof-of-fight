@@ -51,18 +51,41 @@
   }
 
   // ---------- Beats ----------
-  // Three beats, one per round. Each returns a bar's voices (times from the bar's start) given the bar
-  // number k and the 16th-note length s. They play on the music bus, so the Music switch mutes them.
+  // Three styles. Rounds 1 and 2 get an East Coast and a West Coast beat (in random order), the final round
+  // a serious battle beat. Each style draws one of its Suno tracks (cut to loop on a bar line, listed in
+  // js/audio.js MUSIC). A track's measured tempo and first downbeat (`down`, seconds into the file) set the
+  // grid the rappers' words land on. A style with no track yet, or a track that hasn't loaded by its round,
+  // plays its synth stand-in. Both play on the music bus, so the Music switch mutes them.
+  var STYLES = { east: 'East Coast', west: 'West Coast', battle: 'Battle beat' };
+  var TRACKS = {
+    east: [{ id: 'rap-east-1', name: 'Detroit', bpm: 90.931, down: 0.553 }],
+    west: [],
+    battle: [{ id: 'rap-battle-1', name: 'Final Round', bpm: 90.972, down: 0.553 }]
+  };
+
+  // The synth stand-ins. Each returns a bar's voices (times from the bar's start) given the bar number k and
+  // the 16th-note length s.
   function midi(m) { return 440 * Math.pow(2, (m - 69) / 12); }
   function kick(t, v) { return [{ w: 'sine', f: [160, 42], t: t, d: 0.28, v: v || 0.6 }]; }
   function snare(t, tail) {
     return [{ w: 'noise', t: t, d: tail || 0.17, v: 0.3, bp: 1900, q: 0.8 }, { w: 'triangle', f: [210, 160], t: t, d: 0.08, v: 0.28 }];
   }
+  function clap(t) {
+    return [{ w: 'noise', t: t, d: 0.22, v: 0.32, bp: 1300, q: 0.9 }, { w: 'noise', t: t + 0.012, d: 0.18, v: 0.2, bp: 2200, q: 0.9 }];
+  }
   function hat(t, v, open) { return [{ w: 'noise', t: t, d: open ? 0.14 : 0.03, v: v || 0.08, hp: 7500 }]; }
   function swing(i, s) { return i % 2 ? s * 0.16 : 0; } // late off-beat 16ths, the head-nod
 
-  var BEATS = [
-    { // Round 1, the basement: a minor-key piano stab over dusty boom-bap.
+  // The West Coast lead: [16th, note, length in 16ths, the note it slides up or down from].
+  var WHINE = [
+    [[2, 86, 6, 84], [8, 84, 3], [11, 82, 5]],
+    [[0, 79, 12, 82]],
+    [[2, 86, 5, 84], [7, 89, 4, 86], [11, 86, 5, 89]],
+    [[0, 84, 6, 86], [6, 82, 4], [10, 79, 6, 82]]
+  ];
+
+  var SYNTH = {
+    east: { // The basement: a minor-key piano stab over dusty boom-bap.
       name: 'Basement', bpm: 88,
       bar: function (k, s) {
         var vs = [], chords = [[62, 65, 69], [58, 62, 65], [55, 58, 62], [57, 61, 64]], ch = chords[k % 4], root = ch[0] - 24;
@@ -82,26 +105,33 @@
         return vs;
       }
     },
-    { // Round 2, the riff: palm-muted minor guitar chugging over heavier drums.
-      name: 'The Riff', bpm: 92,
+    west: { // The lowrider: G-funk. A whiny sliding sine lead, a rubbery bass, soft chords and big claps.
+      name: 'Lowrider', bpm: 96,
       bar: function (k, s) {
-        var vs = [], riff = k % 4 === 3 ? [0, 0, 0, 3, 7, 6, 5, 3] : [0, 0, 0, 3, 0, 0, 5, 3];
-        riff.forEach(function (n, i) {
-          var f = midi(40 + n);
-          vs.push({ w: 'sawtooth', f: f, t: i * 2 * s, d: 0.13, v: 0.07, lp: 1100, drive: 3 });
-          vs.push({ w: 'sawtooth', f: f * 1.5, t: i * 2 * s, d: 0.13, v: 0.04, lp: 1100, drive: 3 });
+        var vs = [], minor = k % 2 === 0;
+        (minor ? [55, 58, 62, 65] : [60, 63, 67, 70]).forEach(function (m) {   // Gm7, then Cm7
+          vs.push({ w: 'triangle', f: midi(m), t: 0, d: s * 7, v: 0.012, a: 0.03, hold: 0.5 });
+          vs.push({ w: 'triangle', f: midi(m), t: 10 * s, d: s * 5, v: 0.01, a: 0.02, hold: 0.4 });
         });
-        [0, 3, 8, 10].forEach(function (st) {
-          vs = vs.concat(kick(st * s, 0.62));
-          vs.push({ w: 'sine', f: midi(28 + riff[st >> 1]), t: st * s, d: s * 2, v: 0.3 });
+        var bass = minor ? [[0, 31, 3], [3, 31, 1], [6, 34, 2], [8, 38, 2], [11, 36, 2], [14, 34, 2]]
+          : [[0, 36, 3], [3, 36, 1], [6, 39, 2], [8, 43, 2], [11, 41, 2], [14, 38, 2]];
+        bass.forEach(function (n, i) {
+          var from = midi(i ? bass[i - 1][1] : n[1]);
+          vs.push({ w: 'sawtooth', f: [from, midi(n[1])], fd: 0.04, t: n[0] * s, d: n[2] * s * 0.95, v: 0.15, lp: [480, 170], q: 3, hold: 0.6 });
         });
-        [4, 12].forEach(function (st) { vs = vs.concat(snare(st * s, 0.3)); });
-        for (var i = 0; i < 16; i++) vs = vs.concat(hat(i * s + swing(i, s), i % 2 ? 0.035 : 0.07));
+        WHINE[k % 4].forEach(function (n) {
+          var f = [midi(n[3] || n[1]), midi(n[1])];
+          vs.push({ w: 'sine', f: f, fd: 0.09, t: n[0] * s, d: n[2] * s, v: 0.016, a: 0.03, hold: 0.75, vib: [5.5, 14] });
+          vs.push({ w: 'square', f: f, fd: 0.09, t: n[0] * s, d: n[2] * s, v: 0.003, lp: 2400, a: 0.03, hold: 0.75, vib: [5.5, 14] });
+        });
+        [0, 6, 10].forEach(function (st) { vs = vs.concat(kick(st * s, 0.42)); });
+        [4, 12].forEach(function (st) { vs = vs.concat(clap(st * s)); });
+        for (var i = 0; i < 16; i++) vs = vs.concat(hat(i * s + swing(i, s), i % 2 ? 0.02 : 0.04, i === 14));
         return vs;
       }
     },
-    { // Round 3, the final: brass stabs, a dark string pad, 808s and a half-time clap with hat rolls.
-      name: 'Final Round', bpm: 84,
+    battle: { // The last stand: brass stabs, a dark string pad, 808s and a half-time clap with hat rolls.
+      name: 'Last Stand', bpm: 84,
       bar: function (k, s) {
         var vs = [], chords = [[60, 63, 67], [56, 60, 63], [58, 62, 65], [55, 59, 62]], ch = chords[k % 4];
         ch.forEach(function (m) {
@@ -117,31 +147,48 @@
           vs = vs.concat(kick(st * s, 0.55));
           vs.push({ w: 'sine', f: [root * 1.5, root], fd: 0.08, t: st * s, d: 1.1, v: 0.38 });
         });
-        vs.push({ w: 'noise', t: 8 * s, d: 0.22, v: 0.32, bp: 1300, q: 0.9 });          // clap
-        vs.push({ w: 'noise', t: 8 * s + 0.012, d: 0.18, v: 0.2, bp: 2200, q: 0.9 });
+        vs = vs.concat(clap(8 * s));
         for (var i = 0; i < 16; i += 2) vs = vs.concat(hat(i * s, 0.07));
         if (k % 2) for (var r = 0; r < 6; r++) vs = vs.concat(hat(12 * s + r * s * 2 / 3, 0.05)); // the roll
         return vs;
       }
     }
-  ];
+  };
 
-  function startBeat(n, at) {
-    var B = BEATS[n];
-    S.beat = { def: B, bpm: B.bpm, s: 60 / B.bpm / 4, bar: 60 / B.bpm * 4, t0: at || now() + 0.15, done: 0, cut: -1, handles: [] };
-    document.documentElement.style.setProperty('--rap-beat', (60 / B.bpm) + 's');
+  // Draws the battle's three beats and starts downloading their tracks.
+  function setList() {
+    var order = Math.random() < 0.5 ? ['east', 'west', 'battle'] : ['west', 'east', 'battle'];
+    return order.map(function (style) {
+      var pool = TRACKS[style], b = { style: style, track: pool[Math.floor(Math.random() * pool.length)] || null };
+      if (b.track && AU.settings.music) b.loading = AU.load(b.track.id).then(function () { b.ready = true; }, function () {});
+      return b;
+    });
+  }
+  // Round r's beat once its track has loaded, or the wait gave up: b.def is the track, else the style's synth.
+  async function cue(r) {
+    var b = S.set[r];
+    if (b.loading) await Promise.race([b.loading, wait(3000)]);
+    b.def = b.ready ? b.track : SYNTH[b.style];
+    return b;
+  }
+
+  function startBeat(b, at) {
+    var h = b.def.id ? AU.playLoop(b.def.id, at) : null, def = h || !b.def.id ? b.def : SYNTH[b.style]; // music off: the synth's grid
+    S.beat = { def: def, bpm: def.bpm, s: 60 / def.bpm / 4, bar: 60 / def.bpm * 4, t0: at + (h ? def.down : 0),
+      done: 0, handles: h ? [h] : [] };
+    document.documentElement.style.setProperty('--rap-beat', (60 / def.bpm) + 's');
   }
   function stopBeat(fade) {
     if (!S.beat) return;
     S.beat.handles.forEach(function (h) { h.stop(fade || 0.08); });
     S.beat = null;
   }
+  // Schedules the synth beat's bars half a second ahead. (A track loops by itself.)
   function tick() {
-    if (!S || !S.beat) return;
+    if (!S || !S.beat || !S.beat.def.bar) return;
     var B = S.beat, horizon = now() + 0.5;
     while (B.t0 + B.done * B.bar < horizon) {
       var k = B.done++;
-      if (k === B.cut) continue;
       B.handles.push(AU.playVoices(B.def.bar(k, B.s), B.t0 + k * B.bar, 'music'));
       if (B.handles.length > 4) B.handles.shift();
     }
@@ -509,13 +556,16 @@
     await host('Coin toss says ' + name(first) + ' goes first.');
     for (var r = 0; r < ROUNDS; r++) {
       if (!alive(id)) return;
+      var beat = await cue(r);
+      if (!alive(id)) return;
       $('#rap-round').textContent = 'Round ' + (r + 1) + ' of ' + ROUNDS;
-      $('#rap-lyrics').innerHTML = '<p class="rap-call">Round ' + (r + 1) + '</p><p class="rap-sub">' + esc(BEATS[r].name) + '</p>';
+      $('#rap-lyrics').innerHTML = '<p class="rap-call">Round ' + (r + 1) + '</p><p class="rap-sub">' +
+        esc(STYLES[beat.style] + ' · ' + beat.def.name) + '</p>';
       if (r > 0) { stopBeat(0.3); scratch(); }
       await host(r === 0 ? 'DJ, spin it!' : r === ROUNDS - 1 ? 'Final round! DJ, bring it home!' : 'Round two! DJ, next beat!', 100);
       if (!alive(id)) return;
       spinUp();
-      startBeat(r, now() + 1.1);
+      startBeat(beat, now() + 1.1);
       await wait(1100);
       var order = r % 2 ? [first === S.you ? S.cpu : S.you, first] : [first, first === S.you ? S.cpu : S.you];
       for (var o = 0; o < 2; o++) {
@@ -589,7 +639,7 @@
   }
   function begin(you) {
     stopAll();
-    S = { id: Math.random(), meter: 50, used: {}, you: you, cpu: RAPPERS.filter(function (r) { return r !== you; })[0] };
+    S = { id: Math.random(), meter: 50, used: {}, you: you, cpu: RAPPERS.filter(function (r) { return r !== you; })[0], set: setList() };
     S.ticker = setInterval(tick, 100);
     $('#rap-picks').onclick = null;
     setMeter();
