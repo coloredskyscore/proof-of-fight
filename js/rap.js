@@ -1,106 +1,151 @@
-/* Rap Battle prototype (?rap). Toly vs Vitalik, three rounds over a boom-bap beat.
-   Each turn you pick your next couplet: the safer the line, the likelier it lands. A line that lands moves
-   the crowd meter your way; a line that misses gets booed and the DJ cuts the beat.
+/* Rap Battle test mode (?rap). MC Satoshi hosts, a DJ spins a new beat each round, and two founders trade
+   bars. Three rounds, each rapper gets a turn of two couplets. You pick your next couplet as you go; the
+   riskier the line, the less likely it lands. The crowd meter at the top moves DURING the raps (the crowd
+   laughs, oohs or groans at each punchline); the cheer or boo after a turn is just the crowd's verdict.
+   At the end the host points at each rapper and the louder crowd wins.
    The rappers "talk" in chiptune babble (one blip per syllable, on the beat), not real or cloned voices. */
 (function () {
   if (!/[?&]rap\b/i.test(location.search)) return;
-  var D = window.POF_DATA, AU = window.POF_AUDIO;
+  var D = window.POF_DATA, AU = window.POF_AUDIO, LYRICS = window.POF_RAP_LYRICS;
 
-  var BPM = 90, BEAT = 60 / BPM, STEP = BEAT / 4, BAR = BEAT * 4;
+  var RAPPERS = ['toly', 'vitalik'];
+  var HOST = { name: 'MC Satoshi', face: 'art/satoshi.webp', body: 'art/satoshi-sprite.webp' };
 
-  // Each fighter's babble: waveform, base pitch (Hz), the vowel filter's Q, a touch of grit.
+  // Pose art per fighter, filled in as the Grok poses arrive ({ rap, listen, lose } image paths).
+  // Until then the stage sprite stands in, and css/rap.css leans, dims or slumps it per pose.
+  var POSES = {};
+
+  // Each voice: waveform, base pitch (Hz), the vowel filter's Q, a touch of grit, wobble.
   var VOICE = {
     toly:    { w: 'sawtooth', f: 150, q: 2.5, drive: 1.6, vib: null },
-    vitalik: { w: 'square',   f: 270, q: 4,   drive: 0,   vib: [7, 6] }
+    vitalik: { w: 'square',   f: 270, q: 4,   drive: 0,   vib: [7, 6] },
+    host:    { w: 'square',   f: 105, q: 2,   drive: 1.3, vib: null }
   };
 
-  var CPU_ODDS = 0.65, CPU_HIT = 14, CPU_MISS = 8, MISS = 10;
-  var RISK = {
-    safe:    { label: 'Safe',         odds: 0.75, gain: 10 },
-    spicy:   { label: 'Spicy',        odds: 0.5,  gain: 18 },
-    nuclear: { label: 'Nuclear',      odds: 0.25, gain: 34 },
-    skibidi: { label: 'Skibidi mode', odds: 0.35, gain: 40 }
+  // Odds and how far a landed punchline moves the needle. A miss gets a groan and gives a little back.
+  var TIER = {
+    safe:     { label: 'Safe',    odds: 0.75, move: 8 },
+    spicy:    { label: 'Spicy',   odds: 0.5,  move: 14 },
+    nuclear:  { label: 'Nuclear', odds: 0.25, move: 24 },
+    finisher: { label: '',        odds: 0.35, move: 30 }
   };
+  var MISS = 4;
+  var CPU_TIERS = [['safe', 0.45], ['spicy', 0.4], ['nuclear', 0.15]];
+  var ROUNDS = 3, COUPLETS = 2;
 
-  // Vitalik opens each round; you answer. `fast` raps in double time (two syllables per beat-step).
-  var ROUNDS = [
-    {
-      cpu: ['Your chain is so fast that it forgot to stay on', 'Validators on Discord asking where it has gone'],
-      picks: [
-        { risk: 'safe', lines: ['I ship phones to your hands, you ship posts to your blog', 'Every swap on your chain is a gas-guzzling slog'] },
-        { risk: 'spicy', lines: ['Your gas got so high, man, it needs an intervention', 'Fifty layer twos and not one gets a mention'] },
-        { risk: 'nuclear', lines: ['Ultrasound money? Bro, your speaker is on mute', 'Took six years to merge in a unicorn suit'] }
-      ]
-    },
-    {
-      cpu: ['You sell a phone like a late-night infomercial', 'My roadmap is so deep that it is barely commercial'],
-      picks: [
-        { risk: 'safe', lines: ['Four hundred milliseconds, my block is done in a blink', 'Your transaction is pending, go pour you a drink'] },
-        { risk: 'spicy', lines: ['Your roadmap is a maze where the exit is a rollup', 'Read the blog post, then the sequel, then the follow-up'] },
-        { risk: 'nuclear', lines: ['You dance like a badger that lost all its keys', 'Even your meme coins pay gas to say please'] }
-      ]
-    },
-    {
-      cpu: ['When your network goes down, do you call it a feature?', 'Seventeen hours off, even mainnet needs a breather'],
-      picks: [
-        { risk: 'safe', lines: ['Cheap, fast, chain, gud, that is the whole creed', 'Your swap costs a kidney, mine costs a seed'] },
-        { risk: 'spicy', lines: ['I put a chain in a phone and the phone in your hand', 'You put a roadmap in a blog that nobody can understand'] },
-        { risk: 'skibidi', fast: true, lines: [
-          'Slop, kino, skibidi bop, I do not stop, I hop on the block, ship it to prod, top of the charts',
-          'Chewing on glass while you blog it in parts, skibidi, skibidi, cheap fast chain, SKIBIDI BOP'
-        ] }
-      ]
-    }
-  ];
-
-  var S = null;                      // the battle in progress
+  var S = null;
   var $ = function (q, el) { return (el || document).querySelector(q); };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function name(id) { return D.FIGHTERS[id].name; }
+  function alive(id) { return S && S.id === id; }
 
   // ---------- Clock ----------
-  // The audio clock when sound is running (so words land on the beat), else the page clock.
+  // The audio clock while sound runs (so words land on the beat), else the page clock.
   function now() { return AU.ready && AU.time > 0 ? AU.time : performance.now() / 1000; }
-  function nextBar() {
-    var t = now() + 0.15;
-    return S.t0 + Math.ceil((t - S.t0) / BAR) * BAR;
-  }
   function untilTime(t) { return wait(Math.max(0, (t - now()) * 1000)); }
-
-  // ---------- Beat ----------
-  // Boom-bap: kick on 1 and the "and" of 3, snare on 2 and 4, hats on the eighths, a bass note under each kick.
-  var BASS = [55, 55, 43.65, 49];
-  function barVoices(k) {
-    var vs = [], b = BASS[k % 4];
-    [0, 7, 10].forEach(function (s) {
-      vs.push({ w: 'sine', f: [160, 42], t: s * STEP, d: 0.28, v: 0.6 });
-      vs.push({ w: 'triangle', f: b * 2, t: s * STEP, d: s === 0 ? STEP * 6 : STEP * 2.5, v: 0.24, lp: 400, hold: 0.6 });
-    });
-    [4, 12].forEach(function (s) {
-      vs.push({ w: 'noise', t: s * STEP, d: 0.17, v: 0.32, bp: 1900, q: 0.8 });
-      vs.push({ w: 'triangle', f: [210, 160], t: s * STEP, d: 0.08, v: 0.3 });
-    });
-    for (var s = 0; s < 16; s += 2) vs.push({ w: 'noise', t: s * STEP, d: s === 14 ? 0.12 : 0.03, v: s % 4 ? 0.07 : 0.11, hp: 7500 });
-    return vs;
+  function nextBar() {
+    var t = now() + 0.12, B = S.beat;
+    return B.t0 + Math.ceil((t - B.t0) / B.bar) * B.bar;
   }
-  function startBeat() {
-    S.t0 = now() + 0.2;
-    S.barsDone = 0;
-    S.cutBar = -1;
-    function tick() {
-      if (!S || S.over) return;
-      var horizon = now() + 0.5;
-      while (S.t0 + S.barsDone * BAR < horizon) {
-        var k = S.barsDone++;
-        if (k !== S.cutBar) AU.playVoices(barVoices(k), S.t0 + k * BAR, 'music');
+
+  // ---------- Beats ----------
+  // Three beats, one per round. Each returns a bar's voices (times from the bar's start) given the bar
+  // number k and the 16th-note length s. They play on the music bus, so the Music switch mutes them.
+  function midi(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+  function kick(t, v) { return [{ w: 'sine', f: [160, 42], t: t, d: 0.28, v: v || 0.6 }]; }
+  function snare(t, tail) {
+    return [{ w: 'noise', t: t, d: tail || 0.17, v: 0.3, bp: 1900, q: 0.8 }, { w: 'triangle', f: [210, 160], t: t, d: 0.08, v: 0.28 }];
+  }
+  function hat(t, v, open) { return [{ w: 'noise', t: t, d: open ? 0.14 : 0.03, v: v || 0.08, hp: 7500 }]; }
+  function swing(i, s) { return i % 2 ? s * 0.16 : 0; } // late off-beat 16ths, the head-nod
+
+  var BEATS = [
+    { // Round 1, the basement: a minor-key piano stab over dusty boom-bap.
+      name: 'Basement', bpm: 88,
+      bar: function (k, s) {
+        var vs = [], chords = [[62, 65, 69], [58, 62, 65], [55, 58, 62], [57, 61, 64]], ch = chords[k % 4], root = ch[0] - 24;
+        [0, 3, 8, 11].forEach(function (st, i) {
+          if (k % 4 === 3 && i > 1) return; // the turnaround bar breathes
+          ch.forEach(function (m) {
+            vs.push({ w: 'triangle', f: midi(m), t: st * s, d: 0.55, v: 0.07 });
+            vs.push({ w: 'sine', f: midi(m + 12), t: st * s, d: 0.25, v: 0.025 });
+          });
+        });
+        [0, 7, 10].forEach(function (st) {
+          vs = vs.concat(kick(st * s));
+          vs.push({ w: 'triangle', f: midi(root), t: st * s, d: s * (st ? 2.5 : 6), v: 0.26, lp: 400, hold: 0.6 });
+        });
+        [4, 12].forEach(function (st) { vs = vs.concat(snare(st * s)); });
+        for (var i = 0; i < 16; i += 2) vs = vs.concat(hat(i * s + swing(i / 2, s * 2), i % 4 ? 0.06 : 0.09, i === 14));
+        return vs;
+      }
+    },
+    { // Round 2, the riff: palm-muted minor guitar chugging over heavier drums.
+      name: 'The Riff', bpm: 92,
+      bar: function (k, s) {
+        var vs = [], riff = k % 4 === 3 ? [0, 0, 0, 3, 7, 6, 5, 3] : [0, 0, 0, 3, 0, 0, 5, 3];
+        riff.forEach(function (n, i) {
+          var f = midi(40 + n);
+          vs.push({ w: 'sawtooth', f: f, t: i * 2 * s, d: 0.13, v: 0.07, lp: 1100, drive: 3 });
+          vs.push({ w: 'sawtooth', f: f * 1.5, t: i * 2 * s, d: 0.13, v: 0.04, lp: 1100, drive: 3 });
+        });
+        [0, 3, 8, 10].forEach(function (st) {
+          vs = vs.concat(kick(st * s, 0.62));
+          vs.push({ w: 'sine', f: midi(28 + riff[st >> 1]), t: st * s, d: s * 2, v: 0.3 });
+        });
+        [4, 12].forEach(function (st) { vs = vs.concat(snare(st * s, 0.3)); });
+        for (var i = 0; i < 16; i++) vs = vs.concat(hat(i * s + swing(i, s), i % 2 ? 0.035 : 0.07));
+        return vs;
+      }
+    },
+    { // Round 3, the final: brass stabs, a dark string pad, 808s and a half-time clap with hat rolls.
+      name: 'Final Round', bpm: 84,
+      bar: function (k, s) {
+        var vs = [], chords = [[60, 63, 67], [56, 60, 63], [58, 62, 65], [55, 59, 62]], ch = chords[k % 4];
+        ch.forEach(function (m) {
+          [-0.06, 0.06].forEach(function (det) {
+            var f = midi(m) * Math.pow(2, det / 12);
+            vs.push({ w: 'sawtooth', f: f, t: 0, d: 0.4, v: 0.045, lp: [3000, 700], drive: 1.5 });
+            if (k % 2) vs.push({ w: 'sawtooth', f: f, t: 6 * s, d: 0.3, v: 0.035, lp: [3000, 700], drive: 1.5 });
+            vs.push({ w: 'sawtooth', f: f / 2, t: 0, d: s * 16, v: 0.012, lp: 1100, a: 0.5, hold: 0.85 });
+          });
+        });
+        var root = midi(ch[0] - 24);
+        [0, 10].forEach(function (st) {
+          vs = vs.concat(kick(st * s, 0.55));
+          vs.push({ w: 'sine', f: [root * 1.5, root], fd: 0.08, t: st * s, d: 1.1, v: 0.38 });
+        });
+        vs.push({ w: 'noise', t: 8 * s, d: 0.22, v: 0.32, bp: 1300, q: 0.9 });          // clap
+        vs.push({ w: 'noise', t: 8 * s + 0.012, d: 0.18, v: 0.2, bp: 2200, q: 0.9 });
+        for (var i = 0; i < 16; i += 2) vs = vs.concat(hat(i * s, 0.07));
+        if (k % 2) for (var r = 0; r < 6; r++) vs = vs.concat(hat(12 * s + r * s * 2 / 3, 0.05)); // the roll
+        return vs;
       }
     }
-    tick();
-    S.beatTimer = setInterval(tick, 100);
-    document.documentElement.style.setProperty('--rap-beat', BEAT + 's');
+  ];
+
+  function startBeat(n, at) {
+    var B = BEATS[n];
+    S.beat = { def: B, bpm: B.bpm, s: 60 / B.bpm / 4, bar: 60 / B.bpm * 4, t0: at || now() + 0.15, done: 0, cut: -1, handles: [] };
+    document.documentElement.style.setProperty('--rap-beat', (60 / B.bpm) + 's');
   }
-  // The DJ cuts the beat for the next bar (after a boo). Bars already scheduled play out.
-  function cutBeat() { S.cutBar = S.barsDone; }
+  function stopBeat(fade) {
+    if (!S.beat) return;
+    S.beat.handles.forEach(function (h) { h.stop(fade || 0.08); });
+    S.beat = null;
+  }
+  function tick() {
+    if (!S || !S.beat) return;
+    var B = S.beat, horizon = now() + 0.5;
+    while (B.t0 + B.done * B.bar < horizon) {
+      var k = B.done++;
+      if (k === B.cut) continue;
+      B.handles.push(AU.playVoices(B.def.bar(k, B.s), B.t0 + k * B.bar, 'music'));
+      if (B.handles.length > 4) B.handles.shift();
+    }
+  }
 
   // ---------- Babble voice ----------
   // Syllables: vowel groups per word, with a silent final e.
@@ -117,23 +162,21 @@
   // Vowel to filter center: open vowels bright, closed ones dark, so the blips sound like talking.
   var FORMANT = { a: 1100, e: 1700, i: 2200, o: 750, u: 600, y: 2000 };
 
-  // Lays a line's words on 16th steps from `start` (32nds when `fast`). Returns the words with their times.
-  function layout(text, start, fast) {
-    var step = fast ? STEP / 2 : STEP;
+  // Lays words out from `start`, one syllable per `step`, centered in `slots` steps when given.
+  function layout(text, start, step, slots, pause) {
     var words = text.split(/\s+/).map(function (w) { return { text: w, syl: syllables(w) }; });
     var count = words.reduce(function (n, w) { return n + Math.max(1, w.syl.length); }, 0);
-    var slots = fast ? 32 : 16;
-    var t = start + Math.max(0, Math.floor((slots - count) / 2)) * step;
+    var t = start + (slots ? Math.max(0, Math.floor((slots - count) / 2)) * step : 0);
     words.forEach(function (w) {
       w.t = t;
-      if (/[,.?!]$/.test(w.text) && !fast) t += step; // a breath at punctuation
       t += Math.max(1, w.syl.length) * step;
+      if (/[,.?!]$/.test(w.text)) t += pause;
     });
     return { words: words, step: step, end: t };
   }
 
   function babble(who, lay) {
-    var V = VOICE[who], vs = [], all = [], t0 = lay.words[0].t;
+    var V = VOICE[who] || VOICE.host, vs = [], all = [], t0 = lay.words[0].t;
     lay.words.forEach(function (w) {
       (w.syl.length ? w.syl : [{ vowel: 'a', hard: false }]).forEach(function (s, i) {
         all.push({ t: w.t - t0 + i * lay.step, s: s, loud: /[A-Z]{3,}/.test(w.text) });
@@ -142,44 +185,107 @@
     all.forEach(function (x, i) {
       var last = i === all.length - 1;
       // Rap cadence: flat-ish, a lift every fourth syllable, and the last word lands low and long.
-      var semis = (i % 4 === 0 ? 2 : 0) + (Math.random() * 2 - 1) + (last ? -3 : 0);
+      var semis = (i % 4 === 0 ? 2 : 0) + rnd(-1, 1) + (last ? -3 : 0);
       var f = V.f * Math.pow(2, semis / 12);
-      var d = last ? lay.step * 2.5 : lay.step * 0.85;
-      var o = { w: V.w, f: [f * 1.04, f], fd: 0.04, t: x.t, d: d, v: x.loud ? 0.2 : 0.13, bp: FORMANT[x.s.vowel] || 1200, q: V.q, a: 0.006, hold: 0.5 };
+      var o = { w: V.w, f: [f * 1.04, f], fd: 0.04, t: x.t, d: last ? lay.step * 2.5 : lay.step * 0.85, v: x.loud ? 0.2 : 0.13,
+        bp: FORMANT[x.s.vowel] || 1200, q: V.q, a: 0.006, hold: 0.5 };
       if (V.drive) o.drive = V.drive;
       if (V.vib) o.vib = V.vib;
       vs.push(o);
       if (x.s.hard) vs.push({ w: 'noise', t: x.t, d: 0.018, v: 0.08, hp: 3500 }); // the consonant's click
     });
-    return AU.playVoices(vs, t0, 'sfx');
+    AU.playVoices(vs, t0, 'sfx');
   }
 
   // ---------- Crowd ----------
-  function rnd(a, b) { return a + Math.random() * (b - a); }
-  function cheer(big) {
-    var t = now() + 0.02, vs = [];
-    for (var i = 0; i < 5; i++) vs.push({ w: 'noise', t: rnd(0, 0.15), d: big ? 2.4 : 1.6, v: 0.13, bp: rnd(900, 2600), q: 0.7, a: 0.25, hold: 0.5 });
-    for (var j = 0; j < (big ? 8 : 4); j++) { var f = rnd(500, 900); vs.push({ w: 'sine', f: [f, f * 1.7, f * 1.3], t: rnd(0.05, 0.6), d: rnd(0.4, 0.7), v: 0.05, vib: [6, 12] }); }
-    for (var k = 0; k < 10; k++) vs.push({ w: 'noise', t: 0.1 + k * 0.11 + rnd(0, 0.05), d: 0.03, v: 0.16, bp: 1400 }); // claps
-    if (big) [0, 0.28, 0.56].forEach(function (dt) { // air horn
-      [466, 470].forEach(function (hf) { vs.push({ w: 'sawtooth', f: hf, t: dt, d: dt === 0.56 ? 0.5 : 0.2, v: 0.08, lp: 3000, drive: 2 }); });
+  function crowdSound(vs) { AU.playVoices(vs, now() + 0.02, 'sfx'); }
+  function claps(n, spread, v) {
+    var vs = [];
+    for (var k = 0; k < n; k++) vs.push({ w: 'noise', t: rnd(0, spread), d: 0.03, v: v || 0.14, bp: rnd(1100, 1800) });
+    return vs;
+  }
+  function crowdNoise(d, v) {
+    var vs = [];
+    for (var i = 0; i < 5; i++) vs.push({ w: 'noise', t: rnd(0, 0.15), d: d, v: v, bp: rnd(900, 2600), q: 0.7, a: 0.25, hold: 0.5 });
+    return vs;
+  }
+  function woos(n, from) {
+    var vs = [];
+    for (var j = 0; j < n; j++) { var f = rnd(500, 900); vs.push({ w: 'sine', f: [f, f * 1.7, f * 1.3], t: (from || 0) + rnd(0, 0.6), d: rnd(0.4, 0.7), v: 0.05, vib: [6, 12] }); }
+    return vs;
+  }
+  function airHorn(at) {
+    var vs = [];
+    [0, 0.28, 0.56].forEach(function (dt) {
+      [466, 470].forEach(function (hf) { vs.push({ w: 'sawtooth', f: hf, t: (at || 0) + dt, d: dt === 0.56 ? 0.5 : 0.2, v: 0.08, lp: 3000, drive: 2 }); });
     });
-    AU.playVoices(vs, t, 'sfx');
+    return vs;
   }
-  function boo() {
-    var t = now() + 0.02, vs = [];
-    vs.push({ w: 'noise', f: 0, t: 0, d: 0.4, v: 0.45, bp: [3200, 700, 2400, 400], q: 4 }); // record scratch
-    for (var i = 0; i < 7; i++) { var f = rnd(120, 190); vs.push({ w: 'sawtooth', f: [f * 1.06, f, f * 0.8], t: 0.25 + rnd(0, 0.2), d: 1.7, v: 0.07, lp: 650, a: 0.25, hold: 0.55, vib: [rnd(4, 6), 3] }); }
-    AU.playVoices(vs, t, 'sfx');
+  function boos(n, v) {
+    var vs = [];
+    for (var i = 0; i < n; i++) { var f = rnd(120, 190); vs.push({ w: 'sawtooth', f: [f * 1.06, f, f * 0.8], t: rnd(0, 0.25), d: 1.7, v: v || 0.07, lp: 650, a: 0.25, hold: 0.55, vib: [rnd(4, 6), 3] }); }
+    return vs;
   }
+
+  // Mid-rap reactions (these move the needle).
+  var REACT = {
+    // A safe line lands: the crowd laughs, a scatter of "ha"s.
+    laugh: function () {
+      var vs = [];
+      for (var p = 0; p < 7; p++) {
+        var f = rnd(170, 380), start = rnd(0, 0.25), n = 3 + Math.floor(rnd(0, 3));
+        for (var h = 0; h < n; h++) vs.push({ w: 'triangle', f: [f, f * 0.9], t: start + h * rnd(0.13, 0.17), d: 0.1, v: 0.06, bp: 1000, q: 2 });
+      }
+      return vs.concat(claps(5, 0.6, 0.1));
+    },
+    // A spicy line lands: a rising "ooooh".
+    ooh: function () {
+      var vs = [];
+      for (var i = 0; i < 7; i++) { var f = rnd(170, 260); vs.push({ w: 'triangle', f: [f, f * 1.45, f * 1.3], t: rnd(0, 0.1), d: 1.1, v: 0.06, lp: 900, a: 0.12, hold: 0.6, vib: [5, 4] }); }
+      return vs.concat(woos(2, 0.4));
+    },
+    // A nuclear line lands: the crowd loses it.
+    ohhh: function () {
+      var vs = [];
+      for (var i = 0; i < 9; i++) { var f = rnd(160, 250); vs.push({ w: 'sawtooth', f: [f, f * 1.6, f * 1.2], t: rnd(0, 0.1), d: 1.6, v: 0.045, lp: 1100, a: 0.08, hold: 0.6, vib: [5, 5] }); }
+      return vs.concat(crowdNoise(2, 0.12), woos(6, 0.3), claps(12, 1.4), airHorn(0.2));
+    },
+    // A line misses: a low "ehhh" and a cough.
+    groan: function () {
+      var vs = [];
+      for (var i = 0; i < 6; i++) { var f = rnd(150, 210); vs.push({ w: 'sawtooth', f: [f, f * 0.7], t: rnd(0, 0.15), d: 0.9, v: 0.05, lp: 600, a: 0.1, hold: 0.4 }); }
+      vs.push({ w: 'noise', t: 0.9, d: 0.08, v: 0.1, bp: 700 }, { w: 'noise', t: 1.02, d: 0.06, v: 0.08, bp: 700 });
+      return vs;
+    }
+  };
+
+  // After a turn (no needle): the crowd's verdict on the whole turn.
+  function verdictSound(kind) {
+    if (kind === 'cheer') crowdSound(crowdNoise(1.8, 0.13).concat(woos(5), claps(14, 1.3)));
+    else if (kind === 'mixed') crowdSound(claps(7, 1.2, 0.1).concat(woos(2), boos(3, 0.05)));
+    else crowdSound(boos(7));
+  }
+  function scratch() { crowdSound([{ w: 'noise', t: 0, d: 0.4, v: 0.45, bp: [3200, 700, 2400, 400], q: 4 }]); }
+  // The DJ rewinds and spins up: a scratch back and forth, then a riser.
+  function spinUp() {
+    crowdSound([
+      { w: 'noise', t: 0, d: 0.25, v: 0.4, bp: [600, 3500], q: 4 },
+      { w: 'noise', t: 0.25, d: 0.25, v: 0.4, bp: [3500, 500], q: 4 },
+      { w: 'noise', t: 0.55, d: 0.12, v: 0.35, bp: [800, 2600], q: 4 },
+      { w: 'noise', t: 0.7, d: 0.12, v: 0.35, bp: [2600, 800], q: 4 }
+    ]);
+  }
+  function scatter() { crowdSound(claps(6, 1.6, 0.09).concat(boos(3, 0.045), woos(1, 0.5))); }
+  function roar() { crowdSound(crowdNoise(3.2, 0.16).concat(woos(10), woos(6, 1), claps(24, 2.6), airHorn(0.1), airHorn(1.2))); }
 
   // ---------- Screen ----------
   function sprite(id) {
     var F = D.FIGHTERS[id];
-    return F.art && F.art.body ? '<img src="' + F.art.body + '" alt="' + esc(F.name) + '" decoding="async">' : '<span>' + F.emoji + '</span>';
+    return '<span class="fig"><img src="' + (F.art && F.art.body) + '" alt="' + esc(F.name) + '" decoding="async"></span>';
   }
   function build() {
-    if ($('#screen-rap')) return;
+    var old = $('#screen-rap');
+    if (old) old.remove();
     var sec = document.createElement('section');
     sec.id = 'screen-rap';
     sec.className = 'screen rap';
@@ -187,14 +293,16 @@
     sec.innerHTML =
       '<div class="rap-top"><button class="btn btn-ghost btn-sm" id="rap-back" type="button">← Menu</button>' +
         '<span class="rap-round" id="rap-round"></span></div>' +
-      '<div class="rap-meter"><span class="rap-mface" style="--c:' + D.FIGHTERS.toly.color + '"><img src="' + D.FIGHTERS.toly.art.head + '" alt=""></span>' +
-        '<div class="rap-bar"><div class="rap-fill" id="rap-fill"></div><div class="rap-mid"></div></div>' +
-        '<span class="rap-mface" style="--c:' + D.FIGHTERS.vitalik.color + '"><img src="' + D.FIGHTERS.vitalik.art.head + '" alt=""></span></div>' +
-      '<p class="rap-meter-label">CROWD</p>' +
+      '<div class="rap-meter"><span class="rap-mface" id="rap-mface-l"></span>' +
+        '<div class="rap-bar" id="rap-bar"><div class="rap-fill" id="rap-fill"></div><div class="rap-mid"></div></div>' +
+        '<span class="rap-mface" id="rap-mface-r"></span></div>' +
+      '<div class="rap-host" id="rap-host"><span class="rap-hface"><img src="' + HOST.face + '" alt=""></span>' +
+        '<div class="rap-hsay"><b>' + esc(HOST.name) + '</b><p id="rap-hline"></p></div>' +
+        '</div>' +
       '<div class="rap-stage" id="rap-stage">' +
         '<div class="rap-lyrics" id="rap-lyrics"></div>' +
-        '<div class="rapper you" id="rap-you">' + sprite('toly') + '<b>' + esc(D.FIGHTERS.toly.name) + '</b></div>' +
-        '<div class="rapper cpu" id="rap-cpu">' + sprite('vitalik') + '<b>' + esc(D.FIGHTERS.vitalik.name) + '</b></div>' +
+        '<div class="rapper left" id="rap-l"></div>' +
+        '<div class="rapper right" id="rap-r"></div>' +
         '<div class="rap-pop" id="rap-pop" hidden></div>' +
       '</div>' +
       '<div class="rap-crowd" id="rap-crowd">' + Array.apply(null, Array(14)).map(function (_, i) { return '<i style="--d:' + (i % 3) * 0.08 + 's;--h:' + (180 + i * 37 % 140) + '"></i>'; }).join('') + '</div>' +
@@ -204,9 +312,37 @@
   }
   function show(id) { document.querySelectorAll('.screen').forEach(function (el) { el.hidden = el.id !== id; }); }
 
+  function side(id) { return id === S.you ? 'l' : 'r'; }
+  function setStage() {
+    [['l', S.you], ['r', S.cpu]].forEach(function (p) {
+      var F = D.FIGHTERS[p[1]];
+      $('#rap-' + p[0]).innerHTML = sprite(p[1]) + '<b>' + esc(F.name) + (p[1] === S.you && !S.picking ? ' <small>you</small>' : '') + '</b>';
+      $('#rap-' + p[0]).dataset.id = p[1];
+      $('#rap-mface-' + p[0]).innerHTML = '<img src="' + F.art.head + '" alt="">';
+      $('#rap-mface-' + p[0]).style.setProperty('--c', F.color);
+    });
+    $('#rap-bar').style.setProperty('--cl', D.FIGHTERS[S.you].color);
+    $('#rap-bar').style.setProperty('--cr', D.FIGHTERS[S.cpu].color);
+  }
+  // Poses: rap, listen, lose, win, or '' for standing by. A Grok pose replaces the image when it exists.
+  function pose(id, p) {
+    var el = $('#rap-' + side(id)), img = el.querySelector('img'), art = POSES[id] || {};
+    var keep = el.classList.contains('pointed') ? ' pointed' : '';
+    el.className = 'rapper ' + (side(id) === 'l' ? 'left' : 'right') + (p ? ' ' + p : '') + keep;
+    var src = art[p] || D.FIGHTERS[id].art.body;
+    if (img.getAttribute('src') !== src) img.src = src;
+  }
+
   function setMeter() {
     $('#rap-fill').style.width = S.meter + '%';
-    $('#rap-fill').classList.toggle('losing', S.meter < 50);
+  }
+  function moveMeter(who, amt) {
+    S.meter = Math.max(2, Math.min(98, S.meter + (who === S.you ? amt : -amt)));
+    setMeter();
+    var bar = $('#rap-bar');
+    bar.classList.remove('nudge');
+    void bar.offsetWidth;
+    bar.classList.add('nudge');
   }
   function pop(text, kind) {
     var p = $('#rap-pop');
@@ -218,22 +354,85 @@
   }
   function crowd(mood) {
     var c = $('#rap-crowd');
-    c.classList.remove('hype', 'boo');
+    c.classList.remove('hype', 'boo', 'laugh', 'mixed');
     if (mood) { void c.offsetWidth; c.classList.add(mood); }
   }
+  // The host points at a rapper: an arrow bounces over their head and the host bar leans their way.
+  function point(id) {
+    ['l', 'r'].forEach(function (k) { $('#rap-' + k).classList.toggle('pointed', !!id && side(id) === k); });
+    $('#rap-host').className = 'rap-host' + (id ? ' to-' + side(id) : '');
+  }
 
-  // Raps a couplet: karaoke words light up as the babble hits them. Resolves when the last word is out.
-  async function rap(who, lines, fast) {
-    var box = $('#rap-lyrics');
-    $('#rap-you').classList.toggle('on', who === 'toly');
-    $('#rap-cpu').classList.toggle('on', who === 'vitalik');
-    box.className = 'rap-lyrics ' + (who === 'toly' ? 'from-you' : 'from-cpu') + (fast ? ' fast' : '');
-    var start = nextBar(), lays = [], t = start;
-    lines.forEach(function (line) {
-      var lay = layout(line, t, fast);
-      lays.push(lay);
-      t = start + Math.ceil((lay.end - start - 0.001) / BAR) * BAR; // a long line spills into the next bar
+  // The host talks at speech speed, not on the beat. Resolves when the line is out.
+  async function host(text, hold) {
+    var el = $('#rap-hline'), lay = layout(text, now() + 0.05, 0.085, 0, 0.18);
+    el.innerHTML = lay.words.map(function (w) { return '<span>' + esc(w.text) + '</span>'; }).join(' ');
+    $('#rap-host').classList.add('on');
+    babble('host', lay);
+    var spans = el.querySelectorAll('span');
+    lay.words.forEach(function (w, i) { setTimeout(function () { spans[i].classList.add('on'); }, Math.max(0, (w.t - now()) * 1000)); });
+    await untilTime(lay.end + 0.15);
+    $('#rap-host').classList.remove('on');
+    await wait(hold == null ? 350 : hold);
+  }
+
+  // ---------- Lines ----------
+  function draw(id, tier) {
+    var bank = LYRICS[id][tier], used = S.used[id + tier] || (S.used[id + tier] = []);
+    if (used.length >= bank.length) used.length = 0;
+    var free = bank.map(function (_, i) { return i; }).filter(function (i) { return used.indexOf(i) < 0; });
+    var i = free[Math.floor(Math.random() * free.length)];
+    used.push(i);
+    return { tier: tier, lines: bank[i] };
+  }
+  function finisher(id) {
+    var F = LYRICS[id].finisher;
+    return { tier: 'finisher', label: F.name, lines: F.lines, fast: true };
+  }
+  function options(id, last) {
+    return [draw(id, 'safe'), draw(id, 'spicy'), last ? finisher(id) : draw(id, 'nuclear')];
+  }
+  function cpuPick(last) {
+    if (last && Math.random() < 0.3) return finisher(S.cpu);
+    var r = Math.random(), acc = 0;
+    for (var i = 0; i < CPU_TIERS.length; i++) { acc += CPU_TIERS[i][1]; if (r < acc) return draw(S.cpu, CPU_TIERS[i][0]); }
+    return draw(S.cpu, 'safe');
+  }
+
+  function pickHTML(p, i) {
+    var T = TIER[p.tier];
+    return '<button class="rap-pick tier-' + p.tier + '" type="button" data-i="' + i + '">' +
+      '<span class="rap-tag">' + esc(p.label || T.label) + ' · ' + Math.round(T.odds * 100) + '%</span>' +
+      p.lines.map(function (l) { return '<span class="rap-line">' + esc(l) + '</span>'; }).join('') + '</button>';
+  }
+  // Shows your options and resolves with the one you tap. The beat keeps rolling while you decide.
+  function choose(opts, title) {
+    var box = $('#rap-picks');
+    box.innerHTML = '<p class="rap-your">' + esc(title) + '</p>' + opts.map(pickHTML).join('');
+    return new Promise(function (resolve) {
+      box.onclick = function (e) {
+        var b = e.target.closest('.rap-pick');
+        if (!b) return;
+        box.onclick = null;
+        AU.play('tap');
+        box.innerHTML = '<p class="rap-your">Locked in</p><div class="rap-locked">' + pickHTML(opts[+b.dataset.i], 0) + '</div>';
+        resolve(opts[+b.dataset.i]);
+      };
     });
+  }
+  function waiting(text) { $('#rap-picks').innerHTML = '<p class="rap-wait">' + esc(text) + '</p>'; }
+
+  // Raps one couplet on the beat: karaoke words light up as the babble hits them. At the punchline the
+  // crowd reacts and the needle moves. Resolves true if it landed.
+  async function couplet(who, pick) {
+    var B = S.beat, box = $('#rap-lyrics'), step = pick.fast ? B.s / 2 : B.s, slots = pick.fast ? 32 : 16;
+    var start = nextBar(), t = start, lays = [];
+    pick.lines.forEach(function (line) {
+      var lay = layout(line, t, step, slots, pick.fast ? 0 : B.s);
+      lays.push(lay);
+      t = start + Math.ceil((lay.end - start - 0.001) / B.bar) * B.bar; // a long line spills into the next bar
+    });
+    box.className = 'rap-lyrics ' + (who === S.you ? 'from-l' : 'from-r') + (pick.fast ? ' fast' : '');
     box.innerHTML = lays.map(function (lay) {
       return '<p>' + lay.words.map(function (w) { return '<span>' + esc(w.text) + '</span>'; }).join(' ') + '</p>';
     }).join('');
@@ -245,106 +444,172 @@
         setTimeout(function () { el.classList.add('on'); }, Math.max(0, (w.t - now()) * 1000));
       });
     });
-    await untilTime(lays[lays.length - 1].end + STEP * 2);
-    $('#rap-you').classList.remove('on');
-    $('#rap-cpu').classList.remove('on');
+    await untilTime(lays[lays.length - 1].end);
+    var T = TIER[pick.tier], landed = Math.random() < T.odds;
+    if (landed) {
+      var r = pick.tier === 'safe' ? 'laugh' : pick.tier === 'spicy' ? 'ooh' : 'ohhh';
+      crowdSound(REACT[r]());
+      crowd(r === 'laugh' ? 'laugh' : 'hype');
+      pop(r === 'laugh' ? 'HA HA HA' : r === 'ooh' ? 'OOOOH!' : 'OHHHHH!', 'land');
+      moveMeter(who, T.move);
+    } else {
+      crowdSound(REACT.groan());
+      crowd('boo');
+      pop('EHHH...', 'miss');
+      moveMeter(who, -MISS);
+    }
+    setTimeout(function () { if (S) crowd(null); }, 1300);
+    return landed;
   }
 
-  async function verdict(landed, gain, mine, big) {
-    if (landed) {
-      S.meter = Math.max(0, Math.min(100, S.meter + (mine ? gain : -gain)));
-      cheer(big);
-      crowd('hype');
-      pop(big ? 'OHHHHH!' : 'YEAH!', 'land');
-    } else {
-      S.meter = Math.max(0, Math.min(100, S.meter + (mine ? -MISS : CPU_MISS)));
-      cutBeat();
-      boo();
-      crowd('boo');
-      pop('BOOOO!', 'miss');
+  async function turn(who, round) {
+    var mine = who === S.you, other = who === S.you ? S.cpu : S.you, landed = 0, last = round === ROUNDS - 1;
+    pose(who, 'rap');
+    pose(other, 'listen');
+    point(null);
+    var next = mine ? choose(options(who, false), 'Your opening bars') : Promise.resolve(cpuPick(false));
+    if (!mine) waiting(name(who) + ' has the mic');
+    for (var c = 0; c < COUPLETS; c++) {
+      var lastPick = last && c === COUPLETS - 1;
+      var pick = await next;
+      if (!S) return 0;
+      // The next pick goes up while this couplet plays, so you choose your follow-up on the beat.
+      if (c < COUPLETS - 1) next = mine ? choose(options(who, last && c + 1 === COUPLETS - 1), lastPickTitle(last && c + 1 === COUPLETS - 1)) : Promise.resolve(cpuPick(last));
+      else if (mine) waiting('Finish strong');
+      if (await couplet(who, pick)) landed++;
+      if (!S) return 0;
     }
-    setMeter();
-    await wait(1700);
+    await wait(900);
+    pose(who, '');
+    pose(other, '');
+    // The crowd's verdict on the turn. It doesn't move the needle; the raps already did.
+    var v = landed === COUPLETS ? 'cheer' : landed ? 'mixed' : 'boo';
+    verdictSound(v);
+    crowd(v === 'cheer' ? 'hype' : v === 'boo' ? 'boo' : 'mixed');
+    pop(v === 'cheer' ? 'CHEERS!' : v === 'boo' ? 'BOOOO!' : 'SOME LOVE', v === 'boo' ? 'miss' : v === 'cheer' ? 'land' : 'meh');
+    await wait(1800);
     crowd(null);
     $('#rap-pop').hidden = true;
+    return landed;
   }
-
-  function pickHTML(p, i) {
-    var R = RISK[p.risk];
-    return '<button class="rap-pick risk-' + p.risk + '" type="button" data-i="' + i + '">' +
-      '<span class="rap-tag">' + R.label + ' · ' + Math.round(R.odds * 100) + '%</span>' +
-      p.lines.map(function (l) { return '<span class="rap-line">' + esc(l) + '</span>'; }).join('') + '</button>';
-  }
-  function choose(round) {
-    var box = $('#rap-picks');
-    box.innerHTML = '<p class="rap-your">Your bars</p>' + round.picks.map(pickHTML).join('');
-    return new Promise(function (resolve) {
-      box.onclick = function (e) {
-        var b = e.target.closest('.rap-pick');
-        if (!b) return;
-        box.onclick = null;
-        box.innerHTML = '';
-        AU.play('tap');
-        resolve(round.picks[+b.dataset.i]);
-      };
-    });
-  }
+  function lastPickTitle(finisherUp) { return finisherUp ? 'Your closer' : 'Your next bars'; }
 
   async function battle() {
     var id = S.id;
-    for (var r = 0; r < ROUNDS.length; r++) {
-      if (!S || S.id !== id) return;
-      var round = ROUNDS[r];
-      $('#rap-round').textContent = 'Round ' + (r + 1) + ' of ' + ROUNDS.length;
-      $('#rap-lyrics').innerHTML = '<p class="rap-call">' + (r === 0 ? 'Vitalik has the mic' : 'Round ' + (r + 1)) + '</p>';
-      await wait(r === 0 ? 1200 : 700);
-      if (!S || S.id !== id) return;
-      await rap('vitalik', round.cpu);
-      if (!S || S.id !== id) return;
-      await verdict(Math.random() < CPU_ODDS, CPU_HIT, false, false);
-      if (!S || S.id !== id) return;
-      var pick = await choose(round);
-      if (!S || S.id !== id) return;
-      await rap('toly', pick.lines, pick.fast);
-      if (!S || S.id !== id) return;
-      var R = RISK[pick.risk];
-      await verdict(Math.random() < R.odds, R.gain, true, R.gain >= 30);
+    setStage();
+    pose(S.you, '');
+    pose(S.cpu, '');
+    $('#rap-lyrics').innerHTML = '';
+    waiting('');
+    await host('Welcome to the Proof of Fight rap battle!');
+    if (!alive(id)) return;
+    await host(name(S.you) + ' versus ' + name(S.cpu) + '. Three rounds. You, the crowd, decide.');
+    if (!alive(id)) return;
+    var first = Math.random() < 0.5 ? S.you : S.cpu;
+    await host('Coin toss says ' + name(first) + ' goes first.');
+    for (var r = 0; r < ROUNDS; r++) {
+      if (!alive(id)) return;
+      $('#rap-round').textContent = 'Round ' + (r + 1) + ' of ' + ROUNDS;
+      $('#rap-lyrics').innerHTML = '<p class="rap-call">Round ' + (r + 1) + '</p><p class="rap-sub">' + esc(BEATS[r].name) + '</p>';
+      if (r > 0) { stopBeat(0.3); scratch(); }
+      await host(r === 0 ? 'DJ, spin it!' : r === ROUNDS - 1 ? 'Final round! DJ, bring it home!' : 'Round two! DJ, next beat!', 100);
+      if (!alive(id)) return;
+      spinUp();
+      startBeat(r, now() + 1.1);
+      await wait(1100);
+      var order = r % 2 ? [first === S.you ? S.cpu : S.you, first] : [first, first === S.you ? S.cpu : S.you];
+      for (var o = 0; o < 2; o++) {
+        if (!alive(id)) return;
+        await turn(order[o], r);
+        if (!alive(id)) return;
+        if (o === 0) await host(name(order[1]) + ', your turn!', 150);
+      }
     }
-    if (!S || S.id !== id) return;
-    finish();
+    if (!alive(id)) return;
+    await finale();
   }
 
-  function finish() {
-    var won = S.meter > 50, tie = S.meter === 50;
-    var who = won ? 'Toly' : 'Vitalik';
-    if (won) { cheer(true); crowd('hype'); }
-    $('#rap-lyrics').innerHTML = '<p class="rap-result">' + (tie ? 'DRAW' : esc(who.toUpperCase()) + ' TAKES THE CROWD') + '</p>' +
-      '<p class="rap-sub">' + (tie ? 'The crowd wants a rematch.' : won ? 'Slop, kino, skibidi bop.' : 'Back to the blog.') + '</p>';
-    $('#rap-picks').innerHTML = '<button class="btn btn-gold btn-big" id="rap-again" type="button">Run it back</button>';
-    $('#rap-again').onclick = function () { AU.play('tap'); start(); };
-  }
-
-  function stop() {
-    if (!S) return;
-    S.over = true;
-    clearInterval(S.beatTimer);
-    S = null;
-  }
-  function start() {
-    stop();
-    build();
-    S = { id: Math.random(), meter: 50 };
-    show('screen-rap');
-    AU.stopMusic(0.4);
-    $('#rap-picks').innerHTML = '';
-    $('#rap-round').textContent = '';
+  async function finale() {
+    var id = S.id, youWin = S.meter >= 50, winner = youWin ? S.you : S.cpu, loser = youWin ? S.cpu : S.you;
+    stopBeat(0.6);
+    scratch();
+    $('#rap-round').textContent = 'The decision';
+    $('#rap-lyrics').innerHTML = '';
+    waiting('The crowd decides');
+    await host('Alright, alright! Who took it? Make some noise for...', 200);
+    if (!alive(id)) return;
+    point(loser);
+    await host(name(loser) + '!', 0);
+    scatter();
+    crowd('mixed');
+    await wait(2200);
+    if (!alive(id)) return;
     crowd(null);
+    point(winner);
+    await host('And ' + name(winner) + '!', 0);
+    roar();
+    crowd('hype');
+    pose(winner, 'win');
+    pose(loser, 'lose');
+    point(null);
+    await wait(2600);
+    if (!alive(id)) return;
+    $('#rap-lyrics').className = 'rap-lyrics';
+    $('#rap-lyrics').innerHTML = '<p class="rap-result">' + esc(name(winner).toUpperCase()) + ' WINS THE CROWD</p>' +
+      '<p class="rap-sub">' + (youWin ? 'You took it.' : 'The crowd went the other way.') + '</p>';
+    $('#rap-picks').innerHTML = '<button class="btn btn-gold btn-big" id="rap-again" type="button">Run it back</button>' +
+      '<button class="btn btn-ghost" id="rap-switch" type="button">Switch rappers</button>';
+    $('#rap-again').onclick = function () { AU.play('tap'); begin(S.you); };
+    $('#rap-switch').onclick = function () { AU.play('tap'); pickRapper(); };
+  }
+
+  // ---------- Flow ----------
+  function pickRapper() {
+    stopAll();
+    S = { id: Math.random(), meter: 50, used: {}, you: RAPPERS[0], cpu: RAPPERS[1], picking: true };
+    setStage();
+    $('#rap-round').textContent = 'Rap Battle';
+    $('#rap-lyrics').className = 'rap-lyrics';
+    $('#rap-lyrics').innerHTML = '<p class="rap-call">Pick your rapper</p>';
+    $('#rap-hline').textContent = 'Who is stepping up to the mic?';
+    point(null);
     setMeter();
-    startBeat();
+    $('#rap-picks').innerHTML = '<div class="rap-choose">' + RAPPERS.map(function (id) {
+      var F = D.FIGHTERS[id];
+      return '<button class="rap-choice" type="button" data-id="' + id + '" style="--c:' + F.color + '">' +
+        '<img src="' + F.art.head + '" alt=""><b>' + esc(F.name) + '</b><small>' + esc(LYRICS[id].finisher.name) + '</small></button>';
+    }).join('') + '</div>';
+    $('#rap-picks').onclick = function (e) {
+      var b = e.target.closest('.rap-choice');
+      if (!b) return;
+      $('#rap-picks').onclick = null;
+      AU.play('tap');
+      begin(b.dataset.id);
+    };
+  }
+  function begin(you) {
+    stopAll();
+    S = { id: Math.random(), meter: 50, used: {}, you: you, cpu: RAPPERS.filter(function (r) { return r !== you; })[0] };
+    S.ticker = setInterval(tick, 100);
+    $('#rap-picks').onclick = null;
+    setMeter();
+    crowd(null);
     battle();
   }
+  function stopAll() {
+    if (!S) return;
+    clearInterval(S.ticker);
+    stopBeat(0.1);
+    S = null;
+  }
+  function open() {
+    build();
+    show('screen-rap');
+    AU.stopMusic(0.4);
+    pickRapper();
+  }
   function leave() {
-    stop();
+    stopAll();
     show('screen-title');
     AU.music('menu', { from: 'loop', fade: 0.8 });
   }
@@ -359,7 +624,7 @@
     b.className = 'btn btn-big btn-arcade btn-rap';
     b.innerHTML = '<svg class="ico" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V3a3 3 0 0 1 3-3zM3 6.5h1.5V7a3.5 3.5 0 0 0 7 0v-.5H13V7a5 5 0 0 1-4.25 4.94V14H11v2H5v-2h2.25v-2.06A5 5 0 0 1 3 7z"/></svg>Rap Battle <small>Test</small>';
     story.insertAdjacentElement('afterend', b);
-    b.addEventListener('click', start);
+    b.addEventListener('click', open);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addButton); else addButton();
 })();

@@ -1,4 +1,4 @@
-/* Rap Battle prototype (?rap). See js/rap.js. */
+/* Rap Battle test mode (?rap). See js/rap.js. */
 .btn-rap { background: linear-gradient(#3ddcc0, #19a88a 55%, #0f7a64); color: #fff; }
 #btn-rap small { font-family: var(--body); font-weight: 700; font-size: .7em; opacity: .85; margin-left: .3em; }
 
@@ -6,62 +6,106 @@
 .rap-top { display: flex; align-items: center; justify-content: space-between; }
 .rap-round { font-family: var(--display); color: var(--gold); font-size: .9rem; }
 
+/* The crowd meter: your color fills from the left. */
 .rap-meter { display: flex; align-items: center; gap: 8px; }
-.rap-mface { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 3px solid var(--c); background: var(--panel-2); flex: none; }
+.rap-mface { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 3px solid var(--c, var(--line)); background: var(--panel-2); flex: none; }
 .rap-mface img { width: 100%; height: 100%; object-fit: cover; }
-.rap-bar { position: relative; flex: 1; height: 20px; border: 3px solid var(--line); border-radius: 10px; background: #9b7bff; overflow: hidden; }
-.rap-fill { height: 100%; width: 50%; background: linear-gradient(#5ff0cf, #19c6a0); transition: width .6s cubic-bezier(.3, 1.6, .5, 1); }
+.rap-bar { position: relative; flex: 1; height: 20px; border: 3px solid var(--line); border-radius: 10px; background: var(--cr, #9b7bff); overflow: hidden; }
+.rap-fill { height: 100%; width: 50%; background: var(--cl, #19c6a0); box-shadow: inset 0 6px 0 rgba(255, 255, 255, .25); transition: width .7s cubic-bezier(.3, 1.6, .5, 1); }
 .rap-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 3px; margin-left: -1.5px; background: var(--line); }
-.rap-meter-label { margin: 0; text-align: center; font-family: var(--display); font-size: .7rem; color: var(--muted); letter-spacing: .1em; }
+.rap-bar.nudge { animation: rap-nudge .35s ease-out; }
+@keyframes rap-nudge { 30% { transform: scaleY(1.35); } }
 
+/* The host bar: MC Satoshi's face, what he's saying, and which side he's pointing at. */
+.rap-host { position: relative; display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 4px 8px; border-radius: 12px; background: var(--panel); border: 2px solid #2a2340; }
+.rap-hface { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex: none; background: #000; border: 2px solid var(--gold); }
+.rap-hface img { width: 100%; height: 100%; object-fit: cover; }
+.rap-hsay { flex: 1; min-width: 0; }
+.rap-hsay b { display: block; font-family: var(--display); font-size: .62rem; color: var(--gold); letter-spacing: .05em; }
+.rap-hsay p { margin: 0; font-size: .9rem; font-weight: 700; line-height: 1.25; }
+.rap-hsay span { color: rgba(246, 243, 255, .35); }
+.rap-hsay span.on { color: var(--ink); }
+.rap-host.on .rap-hface { box-shadow: 0 0 12px rgba(255, 210, 63, .7); }
+.rap-host.to-l { border-color: var(--gold); box-shadow: -6px 0 0 -2px var(--gold); }
+.rap-host.to-r { border-color: var(--gold); box-shadow: 6px 0 0 -2px var(--gold); }
+
+/* The stage: lyrics on top, the two rappers facing each other below. */
 .rap-stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto minmax(0, 1fr); align-items: end; gap: 4px 24px;
   background: radial-gradient(ellipse at 50% 110%, rgba(255, 210, 63, .18), transparent 60%); }
-.rapper { grid-row: 2; min-height: 0; height: 100%; justify-content: flex-end; display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: .55; transition: opacity .2s, filter .2s; }
-.rapper img { width: 100%; min-height: 0; flex: 0 1 auto; max-height: 100%; object-fit: contain; object-position: bottom; image-rendering: pixelated; }
-.rapper.cpu img { transform: scaleX(-1); }
-.rapper > span { font-size: 4rem; }
-.rapper b { font-family: var(--display); font-size: .8rem; }
-.rapper.on { opacity: 1; filter: drop-shadow(0 0 14px rgba(255, 210, 63, .5)); }
-.rapper.on img, .rapper.on > span { animation: rap-bob var(--rap-beat, .667s) ease-in-out infinite; }
-.rapper.cpu.on img { animation-name: rap-bob-flip; }
-@keyframes rap-bob { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(6px) rotate(-2deg); } }
-@keyframes rap-bob-flip { 0%, 100% { transform: scaleX(-1) translateY(0); } 30% { transform: scaleX(-1) translateY(6px) rotate(-2deg); } }
-
-.rap-lyrics { grid-column: 1 / -1; grid-row: 1; align-self: start; min-height: 6.6em; padding: 4px 6px; text-align: center; font-weight: 800; font-size: 1.1rem; line-height: 1.3; }
-.rap-lyrics p { margin: 0 0 .6em; }
+.rap-lyrics { grid-column: 1 / -1; grid-row: 1; align-self: start; min-height: 6.4em; padding: 2px 6px; text-align: center; font-weight: 800; font-size: 1.08rem; line-height: 1.3; }
+.rap-lyrics p { margin: 0 0 .5em; }
 .rap-lyrics span { color: rgba(246, 243, 255, .3); transition: color .08s; }
 .rap-lyrics span.on { color: var(--ink); }
-.rap-lyrics.from-you span.on { color: #5ff0cf; }
-.rap-lyrics.from-cpu span.on { color: #c4b2ff; }
-.rap-lyrics.fast { font-size: .88rem; }
-.rap-call { font-family: var(--display); color: var(--gold); }
+.rap-lyrics.from-l span.on { color: #5ff0cf; }
+.rap-lyrics.from-r span.on { color: #c4b2ff; }
+.rap-lyrics.fast { font-size: .9rem; }
+.rap-call { font-family: var(--display); color: var(--gold); font-size: 1.3rem; }
 .rap-result { font-family: var(--display); color: var(--gold); font-size: 1.5rem; line-height: 1.1; }
-.rap-sub { color: var(--muted); }
+.rap-sub { color: var(--muted); font-weight: 600; }
 
-.rap-pop { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%); font-family: var(--display); font-size: 3rem; pointer-events: none;
-  -webkit-text-stroke: 2px var(--line); text-shadow: 0 4px 0 var(--line); white-space: nowrap; }
+.rapper { grid-row: 2; min-height: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; transition: opacity .25s, filter .25s; }
+.rapper .fig { display: block; min-height: 0; max-height: 100%; transition: transform .35s ease, filter .35s ease; transform-origin: 50% 100%; }
+.rapper img { display: block; width: 100%; max-height: 100%; object-fit: contain; object-position: bottom; image-rendering: pixelated; }
+.rapper.right img { transform: scaleX(-1); }
+.rapper b { font-family: var(--display); font-size: .8rem; }
+.rapper b small { font-family: var(--body); font-size: .7rem; color: var(--gold); }
+/* Stand-in poses until the Grok art arrives: rap bobs and glows, listen leans back unimpressed, lose slumps. */
+.rapper.rap .fig { filter: drop-shadow(0 0 14px rgba(255, 210, 63, .5)); animation: rap-bob var(--rap-beat, .667s) ease-in-out infinite; }
+.rapper.listen .fig { filter: brightness(.7) saturate(.75); transform: rotate(-3deg) translateX(-4%); }
+.rapper.right.listen .fig { transform: rotate(3deg) translateX(4%); }
+.rapper.lose .fig { filter: grayscale(.85) brightness(.5); transform: translateY(5%) rotate(5deg) scale(.96); }
+.rapper.right.lose .fig { transform: translateY(5%) rotate(-5deg) scale(.96); }
+.rapper.win .fig { filter: drop-shadow(0 0 18px rgba(255, 210, 63, .8)); animation: rap-jump .45s ease-out 4 alternate; }
+.rapper { position: relative; }
+.rapper.pointed .fig { filter: drop-shadow(0 0 16px rgba(255, 255, 255, .6)); }
+.rapper.pointed::before { content: ''; position: absolute; top: -34px; left: 50%; margin-left: -16px; border: 16px solid transparent; border-top: 22px solid var(--gold);
+  filter: drop-shadow(0 3px 0 var(--line)); animation: rap-point .45s ease-in-out infinite alternate; z-index: 1; }
+@keyframes rap-point { to { transform: translateY(8px); } }
+@keyframes rap-bob { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(5px) rotate(-1.5deg); } }
+@keyframes rap-jump { to { transform: translateY(-14px); } }
+
+.rap-pop { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); font-family: var(--display); font-size: 2.6rem; pointer-events: none;
+  -webkit-text-stroke: 2px var(--line); text-shadow: 0 4px 0 var(--line); white-space: nowrap; z-index: 2; }
 .rap-pop.land { color: var(--gold); }
 .rap-pop.miss { color: var(--bad); }
-.rap-pop.go { animation: rap-pop 1.6s ease-out forwards; }
+.rap-pop.meh { color: var(--muted); }
+.rap-pop.go { animation: rap-pop 1.4s ease-out forwards; }
 @keyframes rap-pop { 0% { transform: translate(-50%, -50%) scale(.3); opacity: 0; } 12% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
   25% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -70%); } }
 
-/* The crowd: heads bobbing on the beat. Cheering jumps, booing goes red and sinks. */
+/* The crowd: heads nodding on the beat. Hype jumps, laughs shake, boos go red and sink. */
 .rap-crowd { display: flex; justify-content: center; gap: 2px; height: 30px; align-items: flex-end; }
 .rap-crowd i { width: 22px; height: 26px; border-radius: 50% 50% 4px 4px; background: hsl(var(--h) 25% 30%);
   animation: rap-nod var(--rap-beat, .667s) ease-in-out infinite; animation-delay: var(--d); }
-.rap-crowd.hype i { animation: rap-jump .3s ease-out 4 alternate; background: hsl(var(--h) 60% 50%); }
+.rap-crowd.hype i { animation: rap-hop .3s ease-out 4 alternate; background: hsl(var(--h) 60% 50%); }
+.rap-crowd.laugh i { animation: rap-shake .12s linear 8 alternate; background: hsl(var(--h) 50% 45%); }
+.rap-crowd.mixed i:nth-child(odd) { background: #8a2a2a; }
+.rap-crowd.mixed i:nth-child(even) { animation: rap-hop .3s ease-out 2 alternate; background: hsl(var(--h) 50% 45%); }
 .rap-crowd.boo i { background: #8a2a2a; transform: translateY(6px); animation: none; }
 @keyframes rap-nod { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(3px); } }
-@keyframes rap-jump { to { transform: translateY(-10px); } }
+@keyframes rap-hop { to { transform: translateY(-10px); } }
+@keyframes rap-shake { to { transform: translateY(-3px) rotate(6deg); } }
 
-.rap-picks { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
-.rap-your { margin: 0; font-family: var(--display); font-size: .75rem; color: var(--muted); text-align: center; }
-.rap-pick { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 7px 10px; border: 3px solid var(--line);
+/* Your picks. The box keeps its height so the stage doesn't jump between turns. */
+.rap-picks { display: flex; flex-direction: column; gap: 6px; min-height: 12.5rem; justify-content: flex-end; }
+.rap-your, .rap-wait { margin: 0; font-family: var(--display); font-size: .75rem; color: var(--muted); text-align: center; }
+.rap-wait { margin: auto 0; font-size: .9rem; }
+.rap-pick { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; text-align: left; padding: 7px 10px; border: 3px solid var(--line);
   border-radius: 12px; color: #fff; cursor: pointer; box-shadow: 0 3px 0 var(--line); font: inherit; }
 .rap-pick:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
-.rap-pick.risk-safe { background: var(--role-privacy); }
-.rap-pick.risk-spicy { background: var(--role-mint); }
-.rap-pick.risk-nuclear, .rap-pick.risk-skibidi { background: var(--role-strike); }
+.rap-pick.tier-safe { background: var(--role-privacy); }
+.rap-pick.tier-spicy { background: var(--role-mint); }
+.rap-pick.tier-nuclear { background: var(--role-strike); }
+.rap-pick.tier-finisher { background: linear-gradient(90deg, var(--role-strike), var(--role-rug)); }
+.rap-locked .rap-pick { opacity: .6; pointer-events: none; }
 .rap-tag { font-family: var(--display); font-size: .72rem; color: var(--gold); }
 .rap-line { font-size: .82rem; font-weight: 600; line-height: 1.25; }
+.rap-picks > .btn { width: 100%; }
+
+.rap-choose { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rap-choice { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; border: 3px solid var(--line); border-radius: 14px;
+  background: var(--panel-2); color: var(--ink); cursor: pointer; box-shadow: 0 4px 0 var(--line); font: inherit; }
+.rap-choice img { width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--c); object-fit: cover; }
+.rap-choice b { font-family: var(--display); font-size: 1rem; }
+.rap-choice small { color: var(--gold); font-weight: 700; font-size: .75rem; }
+.rap-choice:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }

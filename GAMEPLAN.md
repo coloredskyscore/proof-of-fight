@@ -13,11 +13,15 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ### Oct 11, 2026: Rap Battle test (?rap)
 
-A hidden test mode at `proofoffight.com/?rap`: a **Rap Battle** button appears on the title screen. Toly vs Vitalik, three rounds over a boom-bap beat.
-- Vitalik opens each round, then you pick your couplet: **Safe 75%**, **Spicy 50%** or **Nuclear 25%**. A landed line moves the crowd meter your way; a miss gets booed (record scratch, the DJ cuts the beat for a bar).
-- Toly's last-round gamble is **Skibidi mode 35%**: `SLOP, KINO, SKIBIDI BOP` in double time.
-- The rappers "talk" in chiptune babble (a blip per syllable, on the beat, the words lighting up karaoke-style). No real or cloned voices.
-- Code: `js/rap.js`, `css/rap.css`. Nothing changes without `?rap`.
+A hidden test mode at `proofoffight.com/?rap`: a **Rap Battle** button appears on the title screen. Pick Toly or Vitalik; MC Satoshi hosts.
+- **Three rounds, a new beat each.** The host calls the DJ, who scratches and spins up the next beat (basement piano, a palm-muted guitar riff, then brass and 808s for the final round). A coin toss picks who goes first, and the order flips each round.
+- **Turns:** each rapper gets two couplets per round. You pick each couplet from **Safe 75%**, **Spicy 50%** or **Nuclear 25%**, and you pick the next one while the current one is still playing. On your very last pick, the nuclear slot becomes your closer: Toly's **Skibidi mode** (`SLOP, KINO, SKIBIDI BOP`) or Vitalik's **Badger mode**, both 35% and rapped in double time.
+- **The needle moves during the raps:** at each punchline the crowd laughs (safe), oohs (spicy) or loses it (nuclear) and the meter swings that way; a miss gets a groan and gives a little back. After each turn the crowd cheers, gives some love, or boos, but that verdict doesn't move the needle.
+- **The decision:** the host points at the loser first (scattered cheers and boos), then the winner (a roar). The needle decides who is who.
+- **Lyrics:** 22 couplets per rapper (8 safe, 8 spicy, 6 nuclear) plus a closer, drawn without repeats, in `js/rap-lyrics.js`.
+- The rappers and host "talk" in chiptune babble (a blip per syllable, on the beat). No real or cloned voices.
+- **Art and beats to come:** each rapper gets rap, listen and lose poses, the host gets hype and point poses (Grok), and three 90 BPM beats (Suno). The prompts are in the project files (`rap-battle/prompts.md`). Until those arrive, the stage sprites lean, dim or slump for each pose, and the beats are synthesized.
+- Code: `js/rap.js`, `js/rap-lyrics.js`, `css/rap.css`. Nothing changes without `?rap`.
 
 ### Oct 7, 2026: CZ and Adeniyi join the roster
 
