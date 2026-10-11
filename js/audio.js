@@ -590,7 +590,11 @@
     sbf: { src: 'audio/sbf.mp3', loopStart: 2.771, loopEnd: 49.083, vol: 0.49 },
     wick: { src: 'audio/wick.mp3', loopStart: 1.625, loopEnd: 40.02, vol: 0.34 },
     // The ending plays from its quiet start (under WICK's cards) and loops its last 32 bars, the big finish.
-    ending: { src: 'audio/ending.mp3', loopStart: 120.2, loopEnd: 172.84, vol: 0.54 }
+    ending: { src: 'audio/ending.mp3', loopStart: 120.2, loopEnd: 172.84, vol: 0.54 },
+    // Rap Battle beats (?rap), started by playLoop() at a time js/rap.js picks, so it knows where every bar
+    // lands. Each file opens half a second before its loop (loopStart includes the MP3's 25 ms of padding).
+    'rap-east-1': { src: 'audio/rap/east-1.mp3', loopStart: 0.525, loopEnd: 42.7548, vol: 0.3 },
+    'rap-battle-1': { src: 'audio/rap/battle-1.mp3', loopStart: 0.525, loopEnd: 42.7358, vol: 0.28 }
   };
 
   // ---------- Engine (browser only) ----------
@@ -857,6 +861,30 @@
     return m.drop != null && offset < m.drop ? { dropIn: m.drop - offset + 0.02 + latency() } : null;
   }
 
+  // Starts a loaded song from its top at an exact audio-clock time `at`, alongside (not instead of) music().
+  // Returns { stop(fade) }, or null when music is off or the song hasn't loaded.
+  function playLoop(name, at) {
+    var m = MUSIC[name], buf = buffers[name];
+    if (!m || !buf || !settings.music || !ensure() || ctx.state !== 'running') return null;
+    var src = ctx.createBufferSource(), g = ctx.createGain(), late = Math.max(0, ctx.currentTime + 0.005 - at);
+    src.buffer = buf;
+    src.loop = true;
+    src.loopStart = m.loopStart;
+    src.loopEnd = m.loopEnd;
+    src.connect(g);
+    g.connect(musicBus);
+    g.gain.value = m.vol;
+    src.start(at + late, late);
+    return {
+      stop: function (fade) {
+        var now = ctx.currentTime;
+        g.gain.cancelScheduledValues(now);
+        g.gain.setTargetAtTime(0, now, (fade || 0.1) / 3);
+        src.stop(now + (fade || 0.1) * 2 + 0.05);
+      }
+    };
+  }
+
   function duck(on) {
     if (!ctx || ducked === on) return;
     ducked = on;
@@ -903,7 +931,7 @@
 
   return {
     SFX: SFX, CLIPS: CLIPS, MUSIC: MUSIC, N: N, PEAK: PEAK, target: target, moveSounds: moveSounds,
-    setup: setup, unlock: unlock, load: load, music: music, stopMusic: function (f) { if (ctx) stopMusic(f); },
+    setup: setup, unlock: unlock, load: load, music: music, playLoop: playLoop, stopMusic: function (f) { if (ctx) stopMusic(f); },
     duck: duck, play: play, playVoices: playVoices, measure: measure, set: set,
     move: function (fighter, move, outcome) {
       moveSounds(fighter, move, outcome).forEach(function (id) { if (SFX[id]) play(id); });
