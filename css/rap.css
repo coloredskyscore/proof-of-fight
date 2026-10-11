@@ -1,0 +1,67 @@
+/* Rap Battle prototype (?rap). See js/rap.js. */
+.btn-rap { background: linear-gradient(#3ddcc0, #19a88a 55%, #0f7a64); color: #fff; }
+#btn-rap small { font-family: var(--body); font-weight: 700; font-size: .7em; opacity: .85; margin-left: .3em; }
+
+.rap { padding: 8px 12px 12px; gap: 6px; overflow: hidden; }
+.rap-top { display: flex; align-items: center; justify-content: space-between; }
+.rap-round { font-family: var(--display); color: var(--gold); font-size: .9rem; }
+
+.rap-meter { display: flex; align-items: center; gap: 8px; }
+.rap-mface { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 3px solid var(--c); background: var(--panel-2); flex: none; }
+.rap-mface img { width: 100%; height: 100%; object-fit: cover; }
+.rap-bar { position: relative; flex: 1; height: 20px; border: 3px solid var(--line); border-radius: 10px; background: #9b7bff; overflow: hidden; }
+.rap-fill { height: 100%; width: 50%; background: linear-gradient(#5ff0cf, #19c6a0); transition: width .6s cubic-bezier(.3, 1.6, .5, 1); }
+.rap-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 3px; margin-left: -1.5px; background: var(--line); }
+.rap-meter-label { margin: 0; text-align: center; font-family: var(--display); font-size: .7rem; color: var(--muted); letter-spacing: .1em; }
+
+.rap-stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto minmax(0, 1fr); align-items: end; gap: 4px 24px;
+  background: radial-gradient(ellipse at 50% 110%, rgba(255, 210, 63, .18), transparent 60%); }
+.rapper { grid-row: 2; min-height: 0; height: 100%; justify-content: flex-end; display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: .55; transition: opacity .2s, filter .2s; }
+.rapper img { width: 100%; min-height: 0; flex: 0 1 auto; max-height: 100%; object-fit: contain; object-position: bottom; image-rendering: pixelated; }
+.rapper.cpu img { transform: scaleX(-1); }
+.rapper > span { font-size: 4rem; }
+.rapper b { font-family: var(--display); font-size: .8rem; }
+.rapper.on { opacity: 1; filter: drop-shadow(0 0 14px rgba(255, 210, 63, .5)); }
+.rapper.on img, .rapper.on > span { animation: rap-bob var(--rap-beat, .667s) ease-in-out infinite; }
+.rapper.cpu.on img { animation-name: rap-bob-flip; }
+@keyframes rap-bob { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(6px) rotate(-2deg); } }
+@keyframes rap-bob-flip { 0%, 100% { transform: scaleX(-1) translateY(0); } 30% { transform: scaleX(-1) translateY(6px) rotate(-2deg); } }
+
+.rap-lyrics { grid-column: 1 / -1; grid-row: 1; align-self: start; min-height: 6.6em; padding: 4px 6px; text-align: center; font-weight: 800; font-size: 1.1rem; line-height: 1.3; }
+.rap-lyrics p { margin: 0 0 .6em; }
+.rap-lyrics span { color: rgba(246, 243, 255, .3); transition: color .08s; }
+.rap-lyrics span.on { color: var(--ink); }
+.rap-lyrics.from-you span.on { color: #5ff0cf; }
+.rap-lyrics.from-cpu span.on { color: #c4b2ff; }
+.rap-lyrics.fast { font-size: .88rem; }
+.rap-call { font-family: var(--display); color: var(--gold); }
+.rap-result { font-family: var(--display); color: var(--gold); font-size: 1.5rem; line-height: 1.1; }
+.rap-sub { color: var(--muted); }
+
+.rap-pop { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%); font-family: var(--display); font-size: 3rem; pointer-events: none;
+  -webkit-text-stroke: 2px var(--line); text-shadow: 0 4px 0 var(--line); white-space: nowrap; }
+.rap-pop.land { color: var(--gold); }
+.rap-pop.miss { color: var(--bad); }
+.rap-pop.go { animation: rap-pop 1.6s ease-out forwards; }
+@keyframes rap-pop { 0% { transform: translate(-50%, -50%) scale(.3); opacity: 0; } 12% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  25% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -70%); } }
+
+/* The crowd: heads bobbing on the beat. Cheering jumps, booing goes red and sinks. */
+.rap-crowd { display: flex; justify-content: center; gap: 2px; height: 30px; align-items: flex-end; }
+.rap-crowd i { width: 22px; height: 26px; border-radius: 50% 50% 4px 4px; background: hsl(var(--h) 25% 30%);
+  animation: rap-nod var(--rap-beat, .667s) ease-in-out infinite; animation-delay: var(--d); }
+.rap-crowd.hype i { animation: rap-jump .3s ease-out 4 alternate; background: hsl(var(--h) 60% 50%); }
+.rap-crowd.boo i { background: #8a2a2a; transform: translateY(6px); animation: none; }
+@keyframes rap-nod { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(3px); } }
+@keyframes rap-jump { to { transform: translateY(-10px); } }
+
+.rap-picks { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.rap-your { margin: 0; font-family: var(--display); font-size: .75rem; color: var(--muted); text-align: center; }
+.rap-pick { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 7px 10px; border: 3px solid var(--line);
+  border-radius: 12px; color: #fff; cursor: pointer; box-shadow: 0 3px 0 var(--line); font: inherit; }
+.rap-pick:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.rap-pick.risk-safe { background: var(--role-privacy); }
+.rap-pick.risk-spicy { background: var(--role-mint); }
+.rap-pick.risk-nuclear, .rap-pick.risk-skibidi { background: var(--role-strike); }
+.rap-tag { font-family: var(--display); font-size: .72rem; color: var(--gold); }
+.rap-line { font-size: .82rem; font-weight: 600; line-height: 1.25; }

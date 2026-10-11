@@ -721,6 +721,23 @@
     };
   }
 
+  // Plays synth voices built on the fly (the Rap Battle's babble voices, beat and crowd) at an exact
+  // audio-clock time `at`. bus 'music' follows the music switch; anything else follows sounds.
+  function playVoices(vs, at, bus) {
+    var isMusic = bus === 'music';
+    if (!(isMusic ? settings.music : settings.sfx) || !ensure() || ctx.state !== 'running') return SILENT;
+    var g = ctx.createGain();
+    g.connect(isMusic ? musicBus : sfxBus);
+    vs.forEach(function (v) { voice(ctx, g, v, Math.max(at, ctx.currentTime + 0.005)); });
+    return {
+      stop: function (fade) {
+        var now = ctx.currentTime;
+        g.gain.cancelScheduledValues(now);
+        g.gain.setTargetAtTime(0, now, (fade || 0.1) / 3);
+      }
+    };
+  }
+
   function playClip(clip, buf, delay) {
     var t0 = ctx.currentTime + 0.01 + (delay || 0), src = ctx.createBufferSource(), g = ctx.createGain();
     src.buffer = buf;
@@ -887,7 +904,7 @@
   return {
     SFX: SFX, CLIPS: CLIPS, MUSIC: MUSIC, N: N, PEAK: PEAK, target: target, moveSounds: moveSounds,
     setup: setup, unlock: unlock, load: load, music: music, stopMusic: function (f) { if (ctx) stopMusic(f); },
-    duck: duck, play: play, measure: measure, set: set,
+    duck: duck, play: play, playVoices: playVoices, measure: measure, set: set,
     move: function (fighter, move, outcome) {
       moveSounds(fighter, move, outcome).forEach(function (id) { if (SFX[id]) play(id); });
     },
