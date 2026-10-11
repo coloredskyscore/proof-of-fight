@@ -2034,100 +2034,34 @@
   }
 
   // ---------- Help ----------
-  // What a Super does, from its real effect (so the help can't drift from the rules).
-  function superEffect(F) {
-    var fx = D.SUPERS[F.super.id];
-    var hit = fx.hits > 1 ? fx.hits + ' hits of ' + fx.dmg + ' damage' : fx.dmg + ' damage', parts = [];
-    parts.push(fx.prune ? 'strips their HODL, then ' + hit : hit);
-    if (fx.skip === 'blind') parts.push('Blind (they skip their next turn)');
-    if (fx.skip === 'sleep') parts.push('Asleep (they skip their next turn)');
-    if (fx.drain) parts.push('they lose ' + fx.drain + ' Blocks');
-    if (fx.hypno) parts.push('Hypnotized (their next red, pink or purple hits themselves)');
-    if (fx.hodl) parts.push('HODL (you take half damage this turn and next)');
-    if (fx.shield) parts.push('FUD-proof (red, pink and purple do nothing to you this turn and next)');
-    var out = parts.join(' + ');
-    return out.charAt(0).toUpperCase() + out.slice(1);
-  }
-
-  // Opened mid-fight it uses your fighter's buttons, damage and odds; from the menu it explains the jobs.
+  // Short on purpose: the goal and one line per button. Opened mid-fight it uses your
+  // fighter's move names (and their blue if it works differently); damage and odds live on the buttons.
   function openHelp() {
     var inFight = S.fight && !$('#screen-fight').hidden;
-    var R = inFight ? S.fight.rules : D.RULESETS[S.rules];
     var me = inFight ? S.fight.f[0].id : null, F = me && D.FIGHTERS[me];
-    function label(color, b) {
+    function row(role, color, b, text) {
       var m = me && moveOf(me, b);
-      return '<b>' + color + (m ? ' · ' + m.icon + ' ' + esc(m.name) : '') + '</b>';
+      return '<li><span class="help-dot ' + role + '"></span><span><b>' + color + (m ? ' · ' + esc(m.name) : '') + '</b> ' + text + '</span></li>';
     }
-    function dmg(b) { return me ? dmgText(me, b, R) : String(R[b]); }
-    function odds(b) { return me ? ' (' + pct(F[b]) + ' for ' + esc(F.name) + ')' : ' (odds depend on your fighter)'; }
-
-    var intro = me
-      ? '<p>Your buttons as ' + esc(F.name) + '. Every fighter has the same five, under their own names: same color, same job.</p>'
-      : '<p>Every fighter has the same five buttons under their own names (Toly\'s red is Comrades, Saylor\'s purple is MSTR): same color, same job. ' +
-        'Your fighter\'s damage and odds are on each button.</p>';
-    var blue = F && F.brace && F.brace.ignore
-      ? 'never hides. It always works: red and pink do nothing to you this turn, purple does half, and it gives +' + F.brace.blocks + ' Block.'
-      : F && F.brace
-      ? 'never hides. It always works, halves damage from red, pink and purple this turn, and gives +' + F.brace.blocks + ' Block.'
-      : F && F.walrus
-      ? 'try to hide' + odds('hide') + '. Hidden, red and pink miss you; purple and Supers still hit. A hit you dodge is stored on Walrus and added to your next hit that lands.'
-      : F && F.stun
-      ? 'never hides, so their attack this turn still lands. When it works' + odds('hide') + ', they stare at the pattern and lose their next turn.'
-      : 'try to hide' + odds('hide') + '. Hidden, red and pink miss you' +
-        (R.rugPiercesHidden ? '; purple and Supers still hit.' : '; so does purple. Supers still hit.');
-    // Fighters who break the shared numbers (Saylor), named only on the menu version.
-    var odd = me ? '' : D.ROSTER.map(function (id) {
-      var X = D.FIGHTERS[id], bits = [];
-      ['strike', 'mint', 'rug'].forEach(function (b) {
-        if (dmgText(id, b, R) !== String(R[b])) bits.push(moveOf(id, b).name + ' does ' + dmgText(id, b, R));
-      });
-      if (X.brace && X.brace.ignore) bits.push(moveOf(id, 'privacy').name + ' never hides (red and pink do nothing to him, purple does half)');
-      else if (X.brace) bits.push(moveOf(id, 'privacy').name + ' never hides (it halves the damage instead)');
-      if (X.walrus) bits.push(moveOf(id, 'privacy').name + ' stores a dodged hit and adds it to his next one');
-      if (X.stun) bits.push(moveOf(id, 'privacy').name + ' never hides (when it works, they lose their next turn)');
-      if (!bits.length) return '';
-      var list = bits.length > 1 ? bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1] : bits[0];
-      return esc(X.name) + ' plays by his own numbers: ' + esc(list) + '.';
-    }).filter(Boolean).join(' ');
+    var blue = F && F.brace && F.brace.ignore ? 'Red and pink do nothing to you this turn.'
+      : F && F.brace ? 'Take half damage this turn.'
+      : F && F.stun ? 'If it works, they lose their next turn.'
+      : 'Try to hide. If it works, red and pink miss you.';
 
     $('#help-body').innerHTML =
-      '<p>You and the CPU each pick a move at the same time. First to 0 HP loses.</p>' +
-      '<h3>The five buttons</h3>' + intro + '<ul>' +
-      '<li>' + label('🔴 Red', 'strike') + ': ' + dmg('strike') + ' damage. Always lands unless they hid. The honest move.</li>' +
-      '<li>' + label('🔵 Blue', 'privacy') + ': ' + blue + '</li>' +
-      '<li>' + label('🩷 Pink', 'mint') + ': ' + dmg('mint') + ' damage if it lands' + odds('mint') + '.</li>' +
-      '<li>' + label('🟣 Purple', 'rug') + ': ' + dmg('rug') + ' damage and steals 2 Blocks' +
-        (R.rugPiercesHidden ? ', even if they hid' : '') + odds('rug') + '. If it flops you lose 2 Blocks (or take ' + R.rugRecoil + ' damage if you have none).</li>' +
-      '<li><b>🟡 Gold · ⚡ ' + (F ? esc(F.super.name) : 'Super') + '</b>: once all 10 Blocks are full. Plays a cut-in and can\'t be dodged.' +
-        (F ? ' ' + superEffect(F) + '.' : ' Every fighter\'s is different (below).') + '</li></ul>' +
-      (odd ? '<p>' + odd + '</p>' : '') +
-      '<h3>Blocks</h3>' +
-      '<p>Red +2 · blue +3 if you hid, +1 if not · pink +2, or +1 if it flops · purple steals 2 when it lands · getting hit +1. ' +
-      'The CPU fires its Super the moment its row is full, and you get a warning first.</p>' +
-      '<h3>Supers</h3><ul>' + D.ROSTER.map(function (id) {
-        var X = D.FIGHTERS[id];
-        return '<li><b>' + esc(X.name) + ' · ' + esc(X.super.name) + '</b>: ' + superEffect(X) + '.</li>';
-      }).join('') + '</ul>' +
-      '<h3>Statuses</h3><ul>' +
-      '<li>🙈 <b>Blind</b> / 💤 <b>Asleep</b> / 👀 <b>Staring</b> (Sergey\'s shirt): skip your next turn.</li>' +
-      '<li>🌀 <b>Hypnotized</b>: your next red, pink or purple hits yourself. Blue or Super is safe.</li>' +
-      '<li>💎 <b>HODL</b>: take half damage this turn and next.</li>' +
-      '<li>4️⃣ <b>FUD-proof</b> (CZ\'s Super): red, pink and purple do nothing to him this turn and next. Supers still hit.</li>' +
-      '<li>🦭 <b>Stored</b> (Adeniyi\'s Walrus): a hit he dodged, added to his next hit that lands.</li>' +
-      '<li>🛡️ <b>Braced</b> (Saylor\'s STRF): half damage from red, pink and purple this turn. Supers aren\'t halved.</li></ul>' +
-      '<h3>Order of a turn</h3>' +
-      '<p>Skips and hypnosis from last turn, then Supers, then blue, then red / pink / purple. You go first in each step. ' +
-      'The fight ends the instant someone hits 0. After ' + D.TURN_CAP + ' turns the chain halts: whoever has more HP left wins (ties go to you).</p>' +
-      '<h3>Story</h3>' +
-        '<p>Beat ' + D.STORY.ladder.length + ' bosses in a row with one founder. Before each boss you pick an ally from the other founders: when you\'re at ' +
-        pct(D.STORY.assistAt) + ' HP or lower, tap their button next to Super and they hit for ' + D.STORY.assistDmg +
-        ' that can\'t be dodged, without using your turn. Once per run, Satoshi gets you back up with half your HP when you\'re knocked out. ' +
-        'After that, a loss is CONTINUE? (that boss fight starts over) or game over. Every boss has a trick of their own; the banner says what it is when it happens.</p>' +
-      '<h3>Daily Fight</h3>' +
-      '<p>Everyone gets the same matchup and the same luck each day. One try. Share your grid; fewer turns is better.</p>' +
-      '<h3>Sound and keys</h3>' +
-      '<p>Music and sounds have switches on the title screen; 🔊 in a fight mutes everything. ' +
-      'On a keyboard: 1 to 4 for the four buttons, 5 or Space for your Super.</p>';
+      '<p class="help-goal">Pick a move each turn while the CPU picks theirs. Knock their HP to 0 to win.</p>' +
+      '<ul class="help-moves">' +
+      row('role-strike', 'Red', 'strike', 'Small hit that always lands, unless they hide.') +
+      row('role-privacy', 'Blue', 'privacy', blue) +
+      row('role-mint', 'Pink', 'mint', 'Bigger hit that might miss.') +
+      row('role-rug', 'Purple', 'rug', 'Huge hit that steals Blocks. If it flops, it costs you.') +
+      '<li><span class="help-dot role-super"></span><span><b>Gold · ' + (F ? esc(F.super.name) : 'Super') + '</b> ' +
+        'Fill all 10 Blocks to unlock it. It can\'t be dodged.</span></li>' +
+      '</ul>' +
+      '<p class="help-note">' + (me
+        ? 'Each button shows its damage and odds.'
+        : 'Every fighter has these five colors under their own names. Each button shows its damage and odds.') +
+      '<span class="help-keys"> Keys: 1 to 4, and 5 or Space for Super.</span></p>';
     $('#modal-help').hidden = false;
   }
 
