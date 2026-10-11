@@ -58,8 +58,15 @@
   // plays its synth stand-in. Both play on the music bus, so the Music switch mutes them.
   var STYLES = { east: 'East Coast', west: 'West Coast', battle: 'Battle beat' };
   var TRACKS = {
-    east: [{ id: 'rap-east-1', name: 'Detroit', bpm: 90.931, down: 0.553 }],
-    west: [],
+    east: [
+      { id: 'rap-east-1', name: 'Detroit', bpm: 90.931, down: 0.553 },
+      { id: 'rap-east-3', name: 'Cold Streets', bpm: 93.149, down: 0.539 }
+    ],
+    west: [
+      { id: 'rap-west-1', name: 'Gangsta', bpm: 92.969, down: 0.545 },
+      { id: 'rap-west-2', name: 'The Bounce', bpm: 100.06, down: 0.55 },
+      { id: 'rap-west-3', name: 'Night Ride', bpm: 88.988, down: 0.544 }
+    ],
     battle: [{ id: 'rap-battle-1', name: 'Final Round', bpm: 90.972, down: 0.553 }]
   };
 

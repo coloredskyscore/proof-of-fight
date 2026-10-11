@@ -594,6 +594,10 @@
     // Rap Battle beats (?rap), started by playLoop() at a time js/rap.js picks, so it knows where every bar
     // lands. Each file opens half a second before its loop (loopStart includes the MP3's 25 ms of padding).
     'rap-east-1': { src: 'audio/rap/east-1.mp3', loopStart: 0.525, loopEnd: 42.7548, vol: 0.3 },
+    'rap-east-3': { src: 'audio/rap/east-3.mp3', loopStart: 0.525, loopEnd: 41.7493, vol: 0.29 },
+    'rap-west-1': { src: 'audio/rap/west-1.mp3', loopStart: 0.525, loopEnd: 41.8291, vol: 0.3 },
+    'rap-west-2': { src: 'audio/rap/west-2.mp3', loopStart: 0.525, loopEnd: 58.0905, vol: 0.23 },
+    'rap-west-3': { src: 'audio/rap/west-3.mp3', loopStart: 0.525, loopEnd: 43.6769, vol: 0.33 },
     'rap-battle-1': { src: 'audio/rap/battle-1.mp3', loopStart: 0.525, loopEnd: 42.7358, vol: 0.28 }
   };
 
