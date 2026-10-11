@@ -420,7 +420,7 @@
         scene: { you: "You called it a pet rock, Jamie. Let's see whose rock is harder.",
           boss: "If I was the government, I'd close it down." },  // to the Senate Banking Committee, Dec 2023
         stage: { name: 'The Bank', bg: 'art/stages/dimon.webp', sky: 'linear-gradient(#0c1222 0%, #1d2a44 55%, #3b4660 78%, #6b7280 82%)', floor: 'linear-gradient(#3a3f4b, #15171d)' },
-        allyLines: { adam: 'CHANCELLOR ON BRINK OF SECOND BAILOUT', garlinghouse: 'HOW ARE PEOPLE STILL FIGHTING THIS?!' }
+        allyLines: { adam: "SOUND MONEY DOESN'T NEED A BAILOUT", garlinghouse: 'HOW ARE PEOPLE STILL FIGHTING THIS?!' }
       }
     },
     warren: {
