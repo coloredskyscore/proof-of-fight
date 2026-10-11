@@ -119,22 +119,37 @@
     $all('.screen').forEach(function (el) { el.hidden = el.id !== id; });
   }
 
+  // Title-screen icons: flat shapes in the button's own text color (no emoji, so they look the same everywhere).
+  var ICON = {
+    daily: '<path d="M4 1h2v2h4V1h2v2h3v12H1V3h3zM3 7v6h10V7zm1 1h2v2H4zm3 0h2v2H7zm3 0h2v2h-2zm-6 3h2v2H4zm3 0h2v2H7z"/>',
+    done: '<path d="M1 8.5l2.5-2.5L6.5 9l6-6.5L15 5l-8.5 9z"/>',
+    resume: '<path d="M3 1.5l11 6.5-11 6.5z"/>',
+    fight: '<path d="M10 0L2 9.5h5L5 16l9-10H9z"/>',
+    story: '<path d="M1 3.5l4 4L8 1l3 6.5 4-4L13.5 12h-11zM2.5 13.5h11V15h-11z"/>',
+    music: '<path d="M5 1.5h10v10a2.5 2.5 0 1 1-2-2.45V4.5H7v8.5a2.5 2.5 0 1 1-2-2.45z"/>',
+    sound: '<path d="M1 5.5h3L8.5 2v12L4 10.5H1z"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M13 3a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    mute: '<path d="M1 5.5h3L8.5 2v12L4 10.5H1z"/><path d="M11 5.5l4 5m0-5l-4 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+  };
+  function iconLabel(icon, html) {
+    return '<svg class="ico" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' + ICON[icon] + '</svg>' + html;
+  }
+
   function renderTitle() {
     S.today = dailySetup(dayNumber(new Date()));
     var t = S.today, P = D.FIGHTERS[t.player], C = D.FIGHTERS[t.cpu];
     var done = store.get('daily.' + t.n);
     var prog = store.get('progress');
-    var label = done ? '✅ Daily #' + t.n + ' done: see result'
-      : (prog && prog.n === t.n) ? '▶️ Resume Daily #' + t.n
-      : '🗓️ Daily Fight #' + t.n;
-    $('#btn-daily').innerHTML = '<span>' + esc(label) + '</span><small>You are ' + esc(P.name) + ' vs ' + esc(C.name) + '</small>';
+    var label = done ? iconLabel('done', 'Daily #' + t.n + ' done')
+      : (prog && prog.n === t.n) ? iconLabel('resume', 'Resume Daily #' + t.n)
+      : iconLabel('daily', 'Daily Fight #' + t.n);
+    $('#btn-daily').innerHTML = '<span>' + label + '</span><small>' + (done ? 'See result: ' : 'You are ') + esc(P.name) + ' vs ' + esc(C.name) + '</small>';
 
     var st = store.get('stats', null);
     $('#title-stats').textContent = st && st.played
       ? 'Daily played ' + st.played + ' · won ' + st.won + ' · streak ' + st.streak + (st.best > st.streak ? ' (best ' + st.best + ')' : '')
       : 'Same fight for everyone, every day. Fewest turns wins.';
     var run = runGet();
-    $('#btn-story').textContent = run ? '📖 Resume story · Boss ' + (Math.min(run.rung, D.STORY.ladder.length - 1) + 1) : '📖 Story';
+    $('#btn-story').innerHTML = run ? iconLabel('resume', 'Resume story <small>Boss ' + (Math.min(run.rung, D.STORY.ladder.length - 1) + 1) + '</small>') : iconLabel('story', 'Story');
     show('screen-title');
     AU.music('menu', { from: 'loop', fade: 0.8 });
   }
@@ -2068,12 +2083,12 @@
   // ---------- Sound ----------
   function renderSoundButtons() {
     var st = AU.settings;
-    $('#btn-music').textContent = st.music ? '🎵 Music on' : '🎵 Music off';
+    $('#btn-music').innerHTML = iconLabel('music', st.music ? 'Music on' : 'Music off');
     $('#btn-music').setAttribute('aria-pressed', st.music);
-    $('#btn-sfx').textContent = st.sfx ? '🔊 Sounds on' : '🔈 Sounds off';
+    $('#btn-sfx').innerHTML = iconLabel(st.sfx ? 'sound' : 'mute', st.sfx ? 'Sounds on' : 'Sounds off');
     $('#btn-sfx').setAttribute('aria-pressed', st.sfx);
     $('#btn-mute').textContent = st.music || st.sfx ? '🔊' : '🔇';
-    $('#press-hint').textContent = st.music || st.sfx ? '🔊 Sound on' : '🔇 Sound off';
+    $('#press-hint').innerHTML = st.music || st.sfx ? iconLabel('sound', 'Sound on') : iconLabel('mute', 'Sound off');
   }
 
   // First visit of the page: PRESS START. The tap starts the menu song 8 beats before its drop; a portrait
