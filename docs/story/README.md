@@ -251,7 +251,7 @@ Drafted from his public record; edit anything.
 
 **When he loses:** `WE ACCEPT IT AS COLLATERAL NOW` (JPMorgan said in Oct 2025 it would take bitcoin and ether as loan collateral).
 
-**Allies against him:** Adam Back shouts `CHANCELLOR ON BRINK OF SECOND BAILOUT`; Garlinghouse shouts `HOW ARE PEOPLE STILL FIGHTING THIS?!` (his line about banks).
+**Allies against him:** Adam Back shouts `SOUND MONEY DOESN'T NEED A BAILOUT` (the Genesis-block headline is saved for Dimon's own bailout scene, so it isn't said twice); Garlinghouse shouts `HOW ARE PEOPLE STILL FIGHTING THIS?!` (his line about banks).
 
 **Art (Oct 8, 2026):** silver hair, navy suit, light blue shirt, dark tie, the pet rock in his palm; his stage is a marble bank lobby at night with the pet rock in a museum case under a spotlight and the city through tall windows.
 
