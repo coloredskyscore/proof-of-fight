@@ -24,6 +24,10 @@ Two songs (made by the user in Suno), seven recorded sounds picked from free CC0
 | `audio/wick.mp3` | Wick-music.mp3 (177s), story final boss | 150 BPM | starts at the first drop (41.55s) | the 24 bars after it (43.18s to 81.57s) |
 | `audio/ending.mp3` | Triumph_of_Light.mp3 (182s), the story ending | 146 BPM | the whole song from its first note: the quiet start sits under WICK's cards | the last 32 bars, the big finish (120.20s to 172.84s); downloaded during the final fight (2.7 MB) |
 | `audio/rap/east-1.mp3` | Detroit-Beat.mp3 (89s), Rap Battle East Coast beat (`?rap`) | 90.9 BPM | starts half a second before the loop | the 16 bars from 21.13s to 63.36s |
+| `audio/rap/east-3.mp3` | East-3.mp3 (107s), Rap Battle East Coast beat "Cold Streets" (`?rap`) | 93.1 BPM | starts half a second before the loop | the 16 bars from 13.33s to 54.56s |
+| `audio/rap/west-1.mp3` | West-1.mp3 (157s), Rap Battle West Coast beat "Gangsta" (`?rap`) | 93.0 BPM | starts half a second before the loop | the 16 bars from 87.82s to 129.12s |
+| `audio/rap/west-2.mp3` | West-2.mp3 (108s), Rap Battle West Coast beat "The Bounce" (`?rap`) | 100.1 BPM | starts half a second before the loop | the 24 bars from 22.75s to 80.31s |
+| `audio/rap/west-3.mp3` | West-3.mp3 (164s), Rap Battle West Coast beat "Night Ride" (`?rap`) | 89.0 BPM | starts half a second before the loop | the 16 bars from 21.69s to 64.85s |
 | `audio/rap/battle-1.mp3` | Final_Round.mp3 (116s), Rap Battle final-round beat (`?rap`) | 91.0 BPM | starts half a second before the loop | the 16 bars from 9.60s to 51.81s, ending on a 6-beat breakdown |
 
 The loop points were found by fitting a beat grid and matching the audio on both sides of the seam; the menu loop's best match landed on exactly 24 bars. `tools/music.py` bakes a crossfade into the seam, so it loops without a click even when a browser pads the start of an MP3. To swap a song:
