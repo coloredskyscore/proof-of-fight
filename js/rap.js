@@ -1,7 +1,9 @@
 /* Rap Battle test mode (?rap). MC Satoshi hosts, a DJ spins a new beat each round, and two founders trade
-   bars. Three rounds, each rapper gets a turn of two couplets. You pick your next couplet as you go; the
-   riskier the line, the less likely it lands. The crowd meter at the top moves DURING the raps (the crowd
-   laughs, oohs or groans at each punchline); the cheer or boo after a turn is just the crowd's verdict.
+   bars. The host explains the rules, introduces both rappers and has you call a coin toss for who raps first.
+   Three rounds, each rapper gets a turn of two couplets. Before each couplet you pick a tier (safe, spicy,
+   nuclear) and get a random couplet from it; the riskier the tier, the less likely it lands. The crowd meter
+   at the top moves DURING the raps (the crowd laughs, oohs or groans at each punchline); the cheer or boo
+   after a turn is just the crowd's verdict.
    At the end the host points at each rapper and the louder crowd wins.
    The rappers "talk" in chiptune babble (one blip per syllable, on the beat), not real or cloned voices. */
 (function () {
@@ -22,16 +24,19 @@
     host:    { w: 'square',   f: 105, q: 2,   drive: 1.3, vib: null }
   };
 
-  // Odds and how far a landed punchline moves the needle. A miss gets a groan and gives a little back.
+  // Odds, how far a landed punchline moves the needle, and the button's one-liner. A miss gets a groan and
+  // gives a little back.
   var TIER = {
-    safe:     { label: 'Safe',    odds: 0.75, move: 8 },
-    spicy:    { label: 'Spicy',   odds: 0.5,  move: 14 },
-    nuclear:  { label: 'Nuclear', odds: 0.25, move: 24 },
-    finisher: { label: '',        odds: 0.35, move: 30 }
+    safe:     { label: 'Safe',    odds: 0.75, move: 8,  blurb: 'Lame but likable' },
+    spicy:    { label: 'Spicy',   odds: 0.5,  move: 14, blurb: 'Real jabs' },
+    nuclear:  { label: 'Nuclear', odds: 0.25, move: 24, blurb: 'Controversial' },
+    finisher: { label: '',        odds: 0.35, move: 30, blurb: 'Double-time closer' }
   };
   var MISS = 4;
   var CPU_TIERS = [['safe', 0.45], ['spicy', 0.4], ['nuclear', 0.15]];
   var ROUNDS = 3, COUPLETS = 2;
+  var LEAD = 2;        // bars of beat before the CPU raps when it opens a round, so you hear the beat first
+  var told = false;    // the rules are explained once per visit
 
   var S = null;
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -248,7 +253,7 @@
       vs.push(o);
       if (x.s.hard) vs.push({ w: 'noise', t: x.t, d: 0.018, v: 0.08, hp: 3500 }); // the consonant's click
     });
-    AU.playVoices(vs, t0, 'sfx');
+    return AU.playVoices(vs, t0, 'sfx');
   }
 
   // ---------- Crowd ----------
@@ -331,6 +336,16 @@
   }
   function scatter() { crowdSound(claps(6, 1.6, 0.09).concat(boos(3, 0.045), woos(1, 0.5))); }
   function roar() { crowdSound(crowdNoise(3.2, 0.16).concat(woos(10), woos(6, 1), claps(24, 2.6), airHorn(0.1), airHorn(1.2))); }
+  function cheer() { crowdSound(claps(12, 1.2, 0.12).concat(woos(3), crowdNoise(1, 0.08))); }
+  // The coin: a thumb flick that rings as it spins, then a clink and a little bounce when it lands.
+  function flick() {
+    crowdSound([{ w: 'noise', t: 0, d: 0.03, v: 0.2, hp: 4000 }, { w: 'sine', f: 2637, t: 0.01, d: 0.7, v: 0.07 },
+      { w: 'sine', f: 3951, t: 0.01, d: 0.4, v: 0.03 }]);
+  }
+  function clink() {
+    crowdSound([{ w: 'noise', t: 0, d: 0.04, v: 0.14, bp: 3000 }, { w: 'sine', f: 2349, t: 0, d: 0.3, v: 0.1 }, { w: 'sine', f: 3520, t: 0, d: 0.18, v: 0.04 },
+      { w: 'sine', f: 2349, t: 0.15, d: 0.18, v: 0.05 }, { w: 'sine', f: 2349, t: 0.25, d: 0.12, v: 0.025 }]);
+  }
 
   // ---------- Screen ----------
   function sprite(id) {
@@ -417,20 +432,22 @@
     $('#rap-host').className = 'rap-host' + (id ? ' to-' + side(id) : '');
   }
 
-  // The host talks at speech speed, not on the beat. Resolves when the line is out.
+  // The host talks at speech speed, not on the beat. Resolves when the line is out, or at once when you skip
+  // the intro (S.cut resolves).
   async function host(text, hold) {
-    var el = $('#rap-hline'), lay = layout(text, now() + 0.05, 0.085, 0, 0.18);
+    var el = $('#rap-hline'), lay = layout(text, now() + 0.05, 0.085, 0, 0.18), cut = S && S.cut;
     el.innerHTML = lay.words.map(function (w) { return '<span>' + esc(w.text) + '</span>'; }).join(' ');
     $('#rap-host').classList.add('on');
-    babble('host', lay);
-    var spans = el.querySelectorAll('span');
-    lay.words.forEach(function (w, i) { setTimeout(function () { spans[i].classList.add('on'); }, Math.max(0, (w.t - now()) * 1000)); });
-    await untilTime(lay.end + 0.15);
+    var voice = babble('host', lay), spans = el.querySelectorAll('span');
+    var timers = lay.words.map(function (w, i) { return setTimeout(function () { spans[i].classList.add('on'); }, Math.max(0, (w.t - now()) * 1000)); });
+    var skipped = await Promise.race([untilTime(lay.end + 0.15).then(function () { return false; }), cut || new Promise(function () {})]);
     $('#rap-host').classList.remove('on');
+    if (skipped) { voice.stop(0.05); timers.forEach(clearTimeout); return; }
     await wait(hold == null ? 350 : hold);
   }
 
   // ---------- Lines ----------
+  // A random couplet from a tier, with no repeats until the tier runs dry.
   function draw(id, tier) {
     var bank = LYRICS[id][tier], used = S.used[id + tier] || (S.used[id + tier] = []);
     if (used.length >= bank.length) used.length = 0;
@@ -443,9 +460,9 @@
     var F = LYRICS[id].finisher;
     return { tier: 'finisher', label: F.name, lines: F.lines, fast: true };
   }
-  function options(id, last) {
-    return [draw(id, 'safe'), draw(id, 'spicy'), last ? finisher(id) : draw(id, 'nuclear')];
-  }
+  function bars(id, tier) { return tier === 'finisher' ? finisher(id) : draw(id, tier); }
+  // Your three buttons: safe, spicy, and nuclear, or your finisher on the very last pick.
+  function options(last) { return ['safe', 'spicy', last ? 'finisher' : 'nuclear']; }
   function cpuPick(last) {
     if (last && Math.random() < 0.3) return finisher(S.cpu);
     var r = Math.random(), acc = 0;
@@ -453,24 +470,43 @@
     return draw(S.cpu, 'safe');
   }
 
-  function pickHTML(p, i) {
-    var T = TIER[p.tier];
-    return '<button class="rap-pick tier-' + p.tier + '" type="button" data-i="' + i + '">' +
-      '<span class="rap-tag">' + esc(p.label || T.label) + ' · ' + Math.round(T.odds * 100) + '%</span>' +
-      p.lines.map(function (l) { return '<span class="rap-line">' + esc(l) + '</span>'; }).join('') + '</button>';
+  function pickHTML(id, tier, i) {
+    var T = TIER[tier];
+    return '<button class="rap-pick tier-' + tier + '" type="button" data-i="' + i + '">' +
+      '<b>' + esc(T.label || LYRICS[id].finisher.name) + '</b><span class="rap-odds">' + Math.round(T.odds * 100) + '% odds</span>' +
+      '<span class="rap-blurb">' + esc(T.blurb) + '</span></button>';
   }
-  // Shows your options and resolves with the one you tap. The beat keeps rolling while you decide.
-  function choose(opts, title) {
+  // Shows the tiers and resolves with a random couplet from the one you tap: you hear the bars when they're
+  // rapped. The beat keeps rolling while you decide.
+  function choose(id, tiers, title) {
     var box = $('#rap-picks');
-    box.innerHTML = '<p class="rap-your">' + esc(title) + '</p>' + opts.map(pickHTML).join('');
+    box.innerHTML = '<p class="rap-your">' + esc(title) + '</p><div class="rap-opts">' +
+      tiers.map(function (t, i) { return pickHTML(id, t, i); }).join('') + '</div>';
     return new Promise(function (resolve) {
       box.onclick = function (e) {
         var b = e.target.closest('.rap-pick');
         if (!b) return;
         box.onclick = null;
         AU.play('tap');
-        box.innerHTML = '<p class="rap-your">Locked in</p><div class="rap-locked">' + pickHTML(opts[+b.dataset.i], 0) + '</div>';
-        resolve(opts[+b.dataset.i]);
+        var tier = tiers[+b.dataset.i];
+        box.innerHTML = '<p class="rap-your">Locked in</p><div class="rap-opts rap-locked">' + pickHTML(id, tier, 0) + '</div>';
+        resolve(bars(id, tier));
+      };
+    });
+  }
+  // Heads or tails buttons; resolves with your call.
+  function callIt() {
+    var box = $('#rap-picks');
+    box.innerHTML = '<p class="rap-your">Call the toss</p><div class="rap-calls">' + ['heads', 'tails'].map(function (c) {
+      return '<button class="btn btn-big rap-callbtn" type="button" data-c="' + c + '">' + (c === 'heads' ? 'Heads' : 'Tails') + '</button>';
+    }).join('') + '</div>';
+    return new Promise(function (resolve) {
+      box.onclick = function (e) {
+        var b = e.target.closest('.rap-callbtn');
+        if (!b) return;
+        box.onclick = null;
+        AU.play('tap');
+        resolve(b.dataset.c);
       };
     });
   }
@@ -516,19 +552,23 @@
     return landed;
   }
 
-  async function turn(who, round) {
+  // One rapper's turn. `opens`: first turn of the round, so if the CPU has it the beat rides a little first.
+  async function turn(who, round, opens) {
     var mine = who === S.you, other = who === S.you ? S.cpu : S.you, landed = 0, last = round === ROUNDS - 1;
     pose(who, 'rap');
     pose(other, 'listen');
     point(null);
-    var next = mine ? choose(options(who, false), 'Your opening bars') : Promise.resolve(cpuPick(false));
-    if (!mine) waiting(name(who) + ' has the mic');
+    var next = mine ? choose(who, options(false), 'Your opening bars') : Promise.resolve(cpuPick(false));
+    if (!mine) {
+      waiting(name(who) + ' has the mic');
+      if (opens) await untilTime(S.beat.t0 + LEAD * S.beat.bar - 0.3); // nextBar() then lands on bar LEAD
+      if (!S) return 0;
+    }
     for (var c = 0; c < COUPLETS; c++) {
-      var lastPick = last && c === COUPLETS - 1;
       var pick = await next;
       if (!S) return 0;
       // The next pick goes up while this couplet plays, so you choose your follow-up on the beat.
-      if (c < COUPLETS - 1) next = mine ? choose(options(who, last && c + 1 === COUPLETS - 1), lastPickTitle(last && c + 1 === COUPLETS - 1)) : Promise.resolve(cpuPick(last));
+      if (c < COUPLETS - 1) next = mine ? choose(who, options(last && c + 1 === COUPLETS - 1), lastPickTitle(last && c + 1 === COUPLETS - 1)) : Promise.resolve(cpuPick(last));
       else if (mine) waiting('Finish strong');
       if (await couplet(who, pick)) landed++;
       if (!S) return 0;
@@ -548,19 +588,87 @@
   }
   function lastPickTitle(finisherUp) { return finisherUp ? 'Your closer' : 'Your next bars'; }
 
-  async function battle() {
+  // The host's opening: the rules (once per visit), then each rapper steps up. A rematch gets one line.
+  // Skip intro cuts it short.
+  async function intro(rematch) {
+    var me = S, steps = [];
+    function say(text, hold) { steps.push(function () { return host(text, hold); }); }
+    function act(fn) { steps.push(fn); }
+    me.cut = new Promise(function (r) { me.skip = r; });
+    $('#rap-picks').innerHTML = '<button class="btn btn-ghost btn-sm rap-skip" id="rap-skip" type="button">Skip intro ›</button>';
+    $('#rap-skip').onclick = function () { AU.play('tap'); me.skipped = true; me.skip(true); waiting(''); };
+    if (rematch) say('Run it back! Same two rappers, fresh beats.');
+    else {
+      say('Welcome to the Proof of Fight rap battle!', 0);
+      act(function () { cheer(); crowd('hype'); return wait(900); });
+      if (!told) {
+        say('Here is how it works. Three rounds, and the DJ drops a fresh beat every round.');
+        say('Each round, both rappers get one turn on the mic.');
+        say('Pick your bars. Safe is corny, nuclear is controversial.');
+        say('Riskier bars land less, but hit way harder. Win the crowd, win the battle!');
+      }
+      [S.you, S.cpu].forEach(function (who, i) {
+        act(function () { crowd(null); point(who); return wait(150); });
+        say((i ? 'And in this corner, ' : 'In this corner, ') + LYRICS[who].intro + '...', 100);
+        say(name(who).toUpperCase() + '!', 0);
+        act(function () { cheer(); crowd('hype'); return wait(1300); });
+        act(function () { point(null); return wait(150); });
+      });
+    }
+    for (var i = 0; i < steps.length && alive(me.id) && !me.skipped; i++) await steps[i]();
+    if (!alive(me.id)) return;
+    told = true;
+    me.cut = null;
+    point(null);
+    pose(S.you, '');
+    pose(S.cpu, '');
+    crowd(null);
+    waiting('');
+  }
+
+  // The coin toss: you call it, the coin flips, and whoever wins the toss raps first.
+  async function toss() {
+    var id = S.id, el = $('#rap-lyrics');
+    el.className = 'rap-lyrics';
+    el.innerHTML = '<div class="rap-toss"><div class="rap-arc" id="rap-arc"><div class="rap-coin" id="rap-coin">' +
+      '<span class="heads"><img src="' + HOST.face + '" alt=""></span><span class="tails">POF</span></div></div></div>' +
+      '<p class="rap-sub" id="rap-tsay">Heads or tails?</p>';
+    var calling = callIt();
+    await host('Coin toss decides who raps first. ' + name(S.you) + ', call it!', 0);
+    var call = await calling;
+    if (!alive(id)) return null;
+    var side = Math.random() < 0.5 ? 'heads' : 'tails', first = side === call ? S.you : S.cpu;
+    waiting('');
+    $('#rap-tsay').textContent = 'You called ' + call + '...';
+    $('#rap-coin').style.setProperty('--end', (side === 'heads' ? 1800 : 1980) + 'deg');
+    $('#rap-arc').classList.add('go');
+    $('#rap-coin').classList.add('go');
+    flick();
+    await wait(1320); // it lands (css/rap.css times the toss)
+    if (!alive(id)) return null;
+    clink();
+    $('#rap-tsay').innerHTML = '<b class="rap-side">' + side.toUpperCase() + '!</b>';
+    await wait(350);
+    point(first);
+    await host(side === 'heads' ? 'Heads!' : 'Tails!', 0);
+    if (!alive(id)) return null;
+    await host(first === S.you ? name(S.you) + ' called it and takes the mic first.' : name(S.cpu) + ' wins the toss and raps first.', 500);
+    point(null);
+    return first;
+  }
+
+  async function battle(rematch) {
     var id = S.id;
     setStage();
     pose(S.you, '');
     pose(S.cpu, '');
-    $('#rap-lyrics').innerHTML = '';
-    waiting('');
-    await host('Welcome to the Proof of Fight rap battle!');
+    $('#rap-lyrics').className = 'rap-lyrics';
+    $('#rap-lyrics').innerHTML = '<p class="rap-call">' + esc(name(S.you)) + ' vs ' + esc(name(S.cpu)) + '</p><p class="rap-sub">Three rounds · Rap Battle</p>';
+    $('#rap-round').textContent = 'Rap Battle';
+    await intro(rematch);
     if (!alive(id)) return;
-    await host(name(S.you) + ' versus ' + name(S.cpu) + '. Three rounds. You, the crowd, decide.');
-    if (!alive(id)) return;
-    var first = Math.random() < 0.5 ? S.you : S.cpu;
-    await host('Coin toss says ' + name(first) + ' goes first.');
+    var first = await toss();
+    if (!alive(id) || !first) return;
     for (var r = 0; r < ROUNDS; r++) {
       if (!alive(id)) return;
       var beat = await cue(r);
@@ -577,7 +685,7 @@
       var order = r % 2 ? [first === S.you ? S.cpu : S.you, first] : [first, first === S.you ? S.cpu : S.you];
       for (var o = 0; o < 2; o++) {
         if (!alive(id)) return;
-        await turn(order[o], r);
+        await turn(order[o], r, o === 0);
         if (!alive(id)) return;
         if (o === 0) await host(name(order[1]) + ', your turn!', 150);
       }
@@ -616,7 +724,7 @@
       '<p class="rap-sub">' + (youWin ? 'You took it.' : 'The crowd went the other way.') + '</p>';
     $('#rap-picks').innerHTML = '<button class="btn btn-gold btn-big" id="rap-again" type="button">Run it back</button>' +
       '<button class="btn btn-ghost" id="rap-switch" type="button">Switch rappers</button>';
-    $('#rap-again').onclick = function () { AU.play('tap'); begin(S.you); };
+    $('#rap-again').onclick = function () { AU.play('tap'); begin(S.you, true); };
     $('#rap-switch').onclick = function () { AU.play('tap'); pickRapper(); };
   }
 
@@ -644,14 +752,14 @@
       begin(b.dataset.id);
     };
   }
-  function begin(you) {
+  function begin(you, rematch) {
     stopAll();
     S = { id: Math.random(), meter: 50, used: {}, you: you, cpu: RAPPERS.filter(function (r) { return r !== you; })[0], set: setList() };
     S.ticker = setInterval(tick, 100);
     $('#rap-picks').onclick = null;
     setMeter();
     crowd(null);
-    battle();
+    battle(rematch);
   }
   function stopAll() {
     if (!S) return;
