@@ -13,9 +13,15 @@
   var RAPPERS = ['toly', 'vitalik'];
   var HOST = { name: 'MC Satoshi', face: 'art/satoshi.webp', body: 'art/satoshi-sprite.webp' };
 
-  // Pose art per fighter, filled in as the Grok poses arrive ({ rap, listen, lose } image paths).
-  // Until then the stage sprite stands in, and css/rap.css leans, dims or slumps it per pose.
-  var POSES = {};
+  // Pose art per fighter, made with tools/poses.py from the Grok poses: all on one canvas, so the rapper
+  // keeps his size and spot when the pose changes. `stand` is the stage sprite on that canvas. A fighter
+  // without poses yet uses his stage sprite, and css/rap.css leans, dims or slumps it per pose.
+  var POSES = {
+    toly: { stand: 'art/toly-stand.webp', rap: 'art/toly-rap.webp', listen: 'art/toly-listen.webp',
+      lose: 'art/toly-lose.webp', win: 'art/toly-win.webp' },
+    vitalik: { stand: 'art/vitalik-stand.webp', rap: 'art/vitalik-rap.webp', listen: 'art/vitalik-listen.webp',
+      lose: 'art/vitalik-lose.webp', win: 'art/vitalik-win.webp' }
+  };
 
   // Each voice: waveform, base pitch (Hz), the vowel filter's Q, a touch of grit, wobble.
   var VOICE = {
@@ -65,6 +71,7 @@
   var TRACKS = {
     east: [
       { id: 'rap-east-1', name: 'Detroit', bpm: 90.931, down: 0.553 },
+      { id: 'rap-east-2', name: 'Glitch Chop', bpm: 86.06, down: 0.522 },
       { id: 'rap-east-3', name: 'Cold Streets', bpm: 93.149, down: 0.539 }
     ],
     west: [
@@ -72,7 +79,11 @@
       { id: 'rap-west-2', name: 'The Bounce', bpm: 100.06, down: 0.55 },
       { id: 'rap-west-3', name: 'Night Ride', bpm: 88.988, down: 0.544 }
     ],
-    battle: [{ id: 'rap-battle-1', name: 'Final Round', bpm: 90.972, down: 0.553 }]
+    battle: [
+      { id: 'rap-battle-1', name: 'Final Round', bpm: 90.972, down: 0.553 },
+      { id: 'rap-battle-2', name: 'The Riff', bpm: 96.951, down: 0.523 },
+      { id: 'rap-battle-3', name: 'Showdown', bpm: 84.246, down: 0.528 }
+    ]
   };
 
   // The synth stand-ins. Each returns a bar's voices (times from the bar's start) given the bar number k and
@@ -349,8 +360,15 @@
 
   // ---------- Screen ----------
   function sprite(id) {
-    var F = D.FIGHTERS[id];
-    return '<span class="fig"><img src="' + (F.art && F.art.body) + '" alt="' + esc(F.name) + '" decoding="async"></span>';
+    var F = D.FIGHTERS[id], P = POSES[id];
+    return '<span class="fig"><img src="' + (P ? P.stand : F.art && F.art.body) + '" alt="' + esc(F.name) + '" decoding="async"></span>';
+  }
+  // Fetches both rappers' poses up front, so a pose doesn't pop in late the first time it shows.
+  function preload() {
+    [S.you, S.cpu].forEach(function (id) {
+      var P = POSES[id] || {};
+      Object.keys(P).forEach(function (k) { new Image().src = P[k]; });
+    });
   }
   function build() {
     var old = $('#screen-rap');
@@ -397,8 +415,8 @@
   function pose(id, p) {
     var el = $('#rap-' + side(id)), img = el.querySelector('img'), art = POSES[id] || {};
     var keep = el.classList.contains('pointed') ? ' pointed' : '';
-    el.className = 'rapper ' + (side(id) === 'l' ? 'left' : 'right') + (p ? ' ' + p : '') + keep;
-    var src = art[p] || D.FIGHTERS[id].art.body;
+    el.className = 'rapper ' + (side(id) === 'l' ? 'left' : 'right') + (POSES[id] ? ' posed' : '') + (p ? ' ' + p : '') + keep;
+    var src = art[p || 'stand'] || D.FIGHTERS[id].art.body;
     if (img.getAttribute('src') !== src) img.src = src;
   }
 
@@ -756,6 +774,7 @@
     stopAll();
     S = { id: Math.random(), meter: 50, used: {}, you: you, cpu: RAPPERS.filter(function (r) { return r !== you; })[0], set: setList() };
     S.ticker = setInterval(tick, 100);
+    preload();
     $('#rap-picks').onclick = null;
     setMeter();
     crowd(null);

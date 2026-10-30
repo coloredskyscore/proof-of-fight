@@ -56,6 +56,10 @@
 .rapper.lose .fig { filter: grayscale(.85) brightness(.5); transform: translateY(5%) rotate(5deg) scale(.96); }
 .rapper.right.lose .fig { transform: translateY(5%) rotate(-5deg) scale(.96); }
 .rapper.win .fig { filter: drop-shadow(0 0 18px rgba(255, 210, 63, .8)); animation: rap-jump .45s ease-out 4 alternate; }
+/* With real pose art (POSES in js/rap.js) the art does the acting: no lean or slump, just a dim on the
+   listener and the loser so the eye goes to the rapper and the winner. */
+.rapper.posed.listen .fig, .rapper.right.posed.listen .fig { filter: brightness(.85); transform: none; }
+.rapper.posed.lose .fig, .rapper.right.posed.lose .fig { filter: brightness(.75) saturate(.85); transform: none; }
 .rapper { position: relative; }
 .rapper.pointed .fig { filter: drop-shadow(0 0 16px rgba(255, 255, 255, .6)); }
 .rapper.pointed::before { content: ''; position: absolute; top: -34px; left: 50%; margin-left: -16px; border: 16px solid transparent; border-top: 22px solid var(--gold);
