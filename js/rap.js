@@ -71,6 +71,7 @@
   var TRACKS = {
     east: [
       { id: 'rap-east-1', name: 'Detroit', bpm: 90.931, down: 0.553 },
+      { id: 'rap-east-2', name: 'Glitch Chop', bpm: 86.06, down: 0.522 },
       { id: 'rap-east-3', name: 'Cold Streets', bpm: 93.149, down: 0.539 }
     ],
     west: [
@@ -78,7 +79,11 @@
       { id: 'rap-west-2', name: 'The Bounce', bpm: 100.06, down: 0.55 },
       { id: 'rap-west-3', name: 'Night Ride', bpm: 88.988, down: 0.544 }
     ],
-    battle: [{ id: 'rap-battle-1', name: 'Final Round', bpm: 90.972, down: 0.553 }]
+    battle: [
+      { id: 'rap-battle-1', name: 'Final Round', bpm: 90.972, down: 0.553 },
+      { id: 'rap-battle-2', name: 'The Riff', bpm: 96.951, down: 0.523 },
+      { id: 'rap-battle-3', name: 'Showdown', bpm: 84.246, down: 0.528 }
+    ]
   };
 
   // The synth stand-ins. Each returns a bar's voices (times from the bar's start) given the bar number k and
