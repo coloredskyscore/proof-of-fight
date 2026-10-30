@@ -13,9 +13,13 @@
   var RAPPERS = ['toly', 'vitalik'];
   var HOST = { name: 'MC Satoshi', face: 'art/satoshi.webp', body: 'art/satoshi-sprite.webp' };
 
-  // Pose art per fighter, filled in as the Grok poses arrive ({ rap, listen, lose } image paths).
-  // Until then the stage sprite stands in, and css/rap.css leans, dims or slumps it per pose.
-  var POSES = {};
+  // Pose art per fighter, made with tools/poses.py from the Grok poses: all on one canvas, so the rapper
+  // keeps his size and spot when the pose changes. `stand` is the stage sprite on that canvas. A fighter
+  // without poses yet uses his stage sprite, and css/rap.css leans, dims or slumps it per pose.
+  var POSES = {
+    toly: { stand: 'art/toly-stand.webp', rap: 'art/toly-rap.webp', listen: 'art/toly-listen.webp',
+      lose: 'art/toly-lose.webp', win: 'art/toly-win.webp' }
+  };
 
   // Each voice: waveform, base pitch (Hz), the vowel filter's Q, a touch of grit, wobble.
   var VOICE = {
@@ -349,8 +353,15 @@
 
   // ---------- Screen ----------
   function sprite(id) {
-    var F = D.FIGHTERS[id];
-    return '<span class="fig"><img src="' + (F.art && F.art.body) + '" alt="' + esc(F.name) + '" decoding="async"></span>';
+    var F = D.FIGHTERS[id], P = POSES[id];
+    return '<span class="fig"><img src="' + (P ? P.stand : F.art && F.art.body) + '" alt="' + esc(F.name) + '" decoding="async"></span>';
+  }
+  // Fetches both rappers' poses up front, so a pose doesn't pop in late the first time it shows.
+  function preload() {
+    [S.you, S.cpu].forEach(function (id) {
+      var P = POSES[id] || {};
+      Object.keys(P).forEach(function (k) { new Image().src = P[k]; });
+    });
   }
   function build() {
     var old = $('#screen-rap');
@@ -397,8 +408,8 @@
   function pose(id, p) {
     var el = $('#rap-' + side(id)), img = el.querySelector('img'), art = POSES[id] || {};
     var keep = el.classList.contains('pointed') ? ' pointed' : '';
-    el.className = 'rapper ' + (side(id) === 'l' ? 'left' : 'right') + (p ? ' ' + p : '') + keep;
-    var src = art[p] || D.FIGHTERS[id].art.body;
+    el.className = 'rapper ' + (side(id) === 'l' ? 'left' : 'right') + (POSES[id] ? ' posed' : '') + (p ? ' ' + p : '') + keep;
+    var src = art[p || 'stand'] || D.FIGHTERS[id].art.body;
     if (img.getAttribute('src') !== src) img.src = src;
   }
 
@@ -756,6 +767,7 @@
     stopAll();
     S = { id: Math.random(), meter: 50, used: {}, you: you, cpu: RAPPERS.filter(function (r) { return r !== you; })[0], set: setList() };
     S.ticker = setInterval(tick, 100);
+    preload();
     $('#rap-picks').onclick = null;
     setMeter();
     crowd(null);

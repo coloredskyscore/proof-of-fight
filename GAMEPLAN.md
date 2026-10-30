@@ -21,7 +21,7 @@ A hidden test mode at `proofoffight.com/?rap`: a **Rap Battle** button appears o
 - **The decision:** the host points at the loser first (scattered cheers and boos), then the winner (a roar). The needle decides who is who.
 - **Lyrics:** 26 or 27 couplets per rapper (8 corny safe ones, 10 or 11 spicy, 7 or 9 nuclear) plus a closer and the host's intro line, drawn without repeats, in `js/rap-lyrics.js`.
 - The rappers and host "talk" in chiptune babble (a blip per syllable, on the beat). No real or cloned voices.
-- **Art and beats to come:** each rapper gets rap, listen and lose poses, the host gets hype and point poses (Grok), and three 90 BPM beats (Suno). The prompts are in the project files (`rap-battle/prompts.md`). Until those arrive, the stage sprites lean, dim or slump for each pose, and the beats are synthesized.
+- **Poses:** each rapper gets four Grok poses: rap, listen, lose and win (prompts in the project's `rap-battle/prompts.md`, made into sprites with `tools/poses.py`). Toly's are in: he scrolls his phone while the other rapper raps, drops it when he loses, and mic-drops when he wins. A rapper without poses yet leans, dims or slumps his stage sprite instead. The host's hype and point poses are still to come.
 - Code: `js/rap.js`, `js/rap-lyrics.js`, `css/rap.css`. Nothing changes without `?rap`.
 
 ### Oct 7, 2026: CZ and Adeniyi join the roster
