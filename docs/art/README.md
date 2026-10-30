@@ -193,9 +193,10 @@ Mert's head filled the top of the frame, so his crop starts above the image (the
 
 ```
 python3 tools/poses.py toly rap=toly-rap.jpg listen=toly-listen.jpg lose=toly-lose.jpg win=toly-win.jpg --shirt 005c74 --scale listen=1.1 --scale lose=1.07 --scale win=1.08 --flip win --gap lose=668,868
+python3 tools/poses.py vitalik rap=vitalik-rap.jpg listen=vitalik-listen.jpg lose=vitalik-lose.jpg win=vitalik-win.jpg --shirt 58348c --scale listen=1.12 --scale lose=0.95 --scale win=1.1 --gap rap=568,440 --gap lose=448,492 --gap win=468,596 --gap win=580,332
 ```
 
-Toly's lose pocket was the background between his mic cord and his leg.
+Toly's lose pocket was the background between his mic cord and his leg; Vitalik's were the gaps between his arms and his body. Vitalik's head-down lose pose came back drawn bigger than his stage sprite, so it scales down. His unicorn is a handy size check, since it's the same graphic in every pose.
 
 Then the fighter gets `art: { head: 'art/<id>-head.webp', body: 'art/<id>-body.webp' }` in `js/data.js`. On stage the sprite stands about 18% taller than the block body (a very wide pose shrinks to stay on screen); when KO'd it breaks up like a worn VHS tape: tinted, scanlined ghosts of the sprite peel off backward while it flickers out (a boss gets more ghosts in its own color, `--hue` in css/style.css, and ends like an old TV switching off). That needs no extra art. A fighter with only a portrait shows it as the head on the block body.
 

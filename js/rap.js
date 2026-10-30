@@ -18,7 +18,9 @@
   // without poses yet uses his stage sprite, and css/rap.css leans, dims or slumps it per pose.
   var POSES = {
     toly: { stand: 'art/toly-stand.webp', rap: 'art/toly-rap.webp', listen: 'art/toly-listen.webp',
-      lose: 'art/toly-lose.webp', win: 'art/toly-win.webp' }
+      lose: 'art/toly-lose.webp', win: 'art/toly-win.webp' },
+    vitalik: { stand: 'art/vitalik-stand.webp', rap: 'art/vitalik-rap.webp', listen: 'art/vitalik-listen.webp',
+      lose: 'art/vitalik-lose.webp', win: 'art/vitalik-win.webp' }
   };
 
   // Each voice: waveform, base pitch (Hz), the vowel filter's Q, a touch of grit, wobble.
