@@ -1,0 +1,81 @@
+/* Guitar Battle test mode (?guitar). See js/guitar.js. Shares the meter, host bar, pops, crowd and pick
+   buttons with css/rap.css. */
+.btn-gtr { background: linear-gradient(#ff9a5a, #e8612a 55%, #b8441a); color: #fff; }
+#btn-gtr small { font-family: var(--body); font-weight: 700; font-size: .7em; opacity: .85; margin-left: .3em; }
+
+.gtr { padding: 8px 12px 12px; gap: 6px; overflow: hidden; touch-action: manipulation; }
+
+/* The stage: a dark club, the band backlit behind, a spotlight on whoever is playing. */
+.gtr-stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
+  align-items: end; gap: 2px 18px; border-radius: 14px; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 72%, rgba(120, 70, 255, .35), transparent 62%), linear-gradient(#120d22, #07060b 85%); }
+.gtr-band { position: absolute; left: 50%; bottom: 14%; width: 92%; max-width: 440px; height: 46%; transform: translateX(-50%); pointer-events: none;
+  filter: drop-shadow(0 0 1.5px rgba(190, 150, 255, .9)) drop-shadow(0 0 10px rgba(140, 90, 255, .5)); }
+.gtr-band .bm { animation: gtr-bob var(--rap-beat, .5s) ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.gtr-band .keys { animation-delay: calc(var(--rap-beat, .5s) * -.5); }
+.gtr-band .arm { transform-box: fill-box; animation: gtr-hit calc(var(--rap-beat, .5s)) ease-in infinite; }
+.gtr-band .arm.l { transform-origin: 100% 0; }
+.gtr-band .arm.r { transform-origin: 0 0; animation-delay: calc(var(--rap-beat, .5s) * -.5); }
+@keyframes gtr-bob { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(3px); } }
+@keyframes gtr-hit { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-14deg); } }
+
+.gtr-spot { position: absolute; top: -10%; bottom: 0; width: 56%; opacity: 0; transition: opacity .35s; pointer-events: none;
+  background: linear-gradient(rgba(255, 244, 200, .5), rgba(255, 236, 170, .14) 70%, rgba(255, 236, 170, .22));
+  clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); mix-blend-mode: screen; }
+.gtr-spot.l { left: -3%; }
+.gtr-spot.r { right: -3%; }
+.gtr-spot.on { opacity: 1; }
+
+.gtr-info { position: relative; z-index: 1; grid-column: 1 / -1; grid-row: 1; align-self: start; min-height: 3.6em; padding: 6px 6px 0; text-align: center; font-weight: 800; line-height: 1.25; }
+.gtr-info p { margin: 0 0 .25em; }
+
+/* Each player's box is a size container, so the sprite (on its 670x1100 canvas) fits both its width and
+   height and the guitar, placed in canvas percent, stays on it. */
+.gtr-player { position: relative; z-index: 1; grid-row: 2; min-height: 0; height: 100%; container-type: size; }
+.gtr-player.left { grid-column: 1; }
+.gtr-player.right { grid-column: 2; }
+.gtr-fig { position: absolute; left: 50%; bottom: 16px; height: min(calc(100cqh - 16px), calc(100cqw * 1100 / 670)); aspect-ratio: 670 / 1100; margin-left: calc(min(calc(100cqh - 16px), calc(100cqw * 1100 / 670)) * -670 / 2200); transform-origin: 50% 100%; transition: transform .35s ease, filter .35s ease; }
+.gtr-flip { position: absolute; inset: 0; }
+.gtr-player.right .gtr-flip { transform: scaleX(-1); }
+.gtr-fig img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: bottom; image-rendering: pixelated; }
+.gtr-axe { position: absolute; transform: translate(-50%, -50%) rotate(var(--r)); transform-origin: 30% 50%; }
+.gtr-axe svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .5)); }
+.gtr-player b { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-family: var(--display); font-size: .8rem; line-height: 16px; text-shadow: 0 2px 0 var(--line); }
+.gtr-player b small { font-family: var(--body); font-size: .7rem; color: var(--gold); }
+
+/* Stand-in poses until the Grok art arrives. */
+.gtr-player.ready .gtr-fig { filter: drop-shadow(0 0 10px rgba(255, 210, 63, .35)); }
+.gtr-player.play .gtr-fig { filter: drop-shadow(0 0 16px rgba(255, 210, 63, .55)); animation: gtr-rock var(--rap-beat, .5s) ease-in-out infinite; }
+.gtr-player.play .gtr-axe { animation: gtr-strum calc(var(--rap-beat, .5s) / 2) ease-in-out infinite; }
+.gtr-player.listen .gtr-fig { filter: brightness(.55) saturate(.7); }
+.gtr-player.lose .gtr-fig { filter: grayscale(.85) brightness(.45); transform: translateY(4%) rotate(4deg) scale(.96); }
+.gtr-player.right.lose .gtr-fig { transform: translateY(4%) rotate(-4deg) scale(.96); }
+.gtr-player.win .gtr-fig { filter: drop-shadow(0 0 18px rgba(255, 210, 63, .8)); animation: rap-jump .45s ease-out 4 alternate; }
+@keyframes gtr-rock { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(3px) rotate(-2deg); } }
+@keyframes gtr-strum { 0%, 100% { transform: translate(-50%, -50%) rotate(var(--r)); } 50% { transform: translate(-50%, -52%) rotate(calc(var(--r) - 4deg)); } }
+
+.gtr-stage .rap-pop { top: 36%; font-size: 2.2rem; }
+.gtr-crowd { margin-top: -2px; }
+
+/* The lane: notes slide in from the right to the gold ring. Tapping anywhere on it strums. */
+.gtr-lane { position: relative; height: 62px; flex: none; border: 3px solid var(--line); border-radius: 14px; background: linear-gradient(#1d1730, #120e1f); cursor: pointer;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.gtr-lane canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.gtr-lane.hit { animation: gtr-flash .18s ease-out; }
+@keyframes gtr-flash { 0% { box-shadow: inset 0 0 0 2px rgba(255, 210, 63, .9), 0 0 14px rgba(255, 210, 63, .5); } 100% { box-shadow: none; } }
+.gtr-judge { position: absolute; left: max(44px, 16%); top: -4px; transform: translate(-50%, -100%); font-family: var(--display); font-size: .85rem; pointer-events: none; opacity: 0;
+  -webkit-text-stroke: 1px var(--line); text-shadow: 0 2px 0 var(--line); white-space: nowrap; }
+.gtr-judge.perfect { color: var(--gold); }
+.gtr-judge.good { color: var(--good); }
+.gtr-judge.miss { color: var(--bad); }
+.gtr-judge.off { color: var(--muted); }
+.gtr-judge.go { animation: gtr-judge .5s ease-out forwards; }
+@keyframes gtr-judge { 0% { opacity: 0; transform: translate(-50%, -80%) scale(.7); } 20% { opacity: 1; transform: translate(-50%, -100%) scale(1.1); } 100% { opacity: 0; transform: translate(-50%, -150%); } }
+
+.gtr-picks .gtr-strum { width: 100%; min-height: 76px; font-family: var(--display); font-size: 1.5rem; letter-spacing: .06em; color: #fff;
+  background: var(--c, var(--role-strike)); text-shadow: 0 2px 0 rgba(0, 0, 0, .35); touch-action: none; }
+.gtr-picks .gtr-strum:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+#gtr-cal-tap { color: #1a1200; text-shadow: 0 1px 0 rgba(255, 255, 255, .45); }
+.gtr-hint { font-size: .62rem; }
+.gtr-part[disabled] { opacity: .35; cursor: not-allowed; filter: grayscale(.6); }
+.gtr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

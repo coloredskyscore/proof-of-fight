@@ -947,6 +947,7 @@
     get playing() { return current ? current.name : null; },
     get ready() { return !!ctx && unlocked; },
     get time() { return ctx ? ctx.currentTime : 0; },
+    get latency() { return latency(); },
     supported: supported
   };
 });
