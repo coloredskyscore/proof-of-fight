@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Turn a Suno song's stems into a Guitar Battle song (?guitar): three small MP3s and the note charts.
-Needs: pip install numpy librosa miniaudio lameenc onnxruntime, plus basic-pitch (pip install --no-deps basic-pitch)
+Needs: pip install numpy scipy librosa miniaudio lameenc
 
   python3 tools/gtr_song.py STEMS_DIR gtr-1a --name "Arena Anthem" --rhythm 0:20 1:32 --solo 0:29 1:48
 
@@ -11,11 +11,15 @@ every one of those sections, unless --drums gives sections of its own. The band 
 guitar, the drums and the vocals; the drums file and the guitar file are those stems. All three hold the same
 clips at the same times: a 2-bar loop the band vamps on between turns, then each section.
 
-The charts come from the guitar stem: basic-pitch transcribes it, notes that start together become one
-strum, and each part keeps its strongest strums with a minimum gap. Rhythm follows the low strings and Solo
-the high lead, since one stem can hold several guitars. Strums are pinned to the guitar's attack, then onto
-the drum grid (8ths for Rhythm, 16ths for Solo). The grid comes from the drum stem beat by beat, so a song
-whose tempo drifts still lines up. The Drums chart is the easy one: a hit on every beat.
+Every note sits where you hear something happen, never on a grid guess:
+- Drums: each beat where the drum stem actually hits.
+- Rhythm: each chug, found as a jump in the guitar's low end (60-500 Hz) that reaches the loud part of the
+  section. Suno can put every guitar on one stem; the chugs are the only thing down there.
+- Solo: each new note of the lead, found by tracking the loudest pitch in the lead's register (300-1600 Hz)
+  along its smoothest path (so the tracker doesn't hop between two guitars) and starting a note where the
+  pitch moves and holds, or the note is picked again. Vibrato, bends and trills stay one note, and a long
+  note gets a tail.
+A note's time is its attack plus 10 ms (when the ear places it, and where the sync check's clicks sit).
 Writes audio/guitar/<id>-band.mp3, -drums.mp3 and -guitar.mp3, and the song's entry in js/guitar-songs.js.
 """
 import argparse
@@ -28,17 +32,18 @@ import lameenc
 import librosa
 import miniaudio
 import numpy as np
+from scipy.ndimage import median_filter
+from scipy.signal import butter, sosfiltfilt, stft
 
 SR = 44100
 BARS = 4                    # bars in a part
 PAD = 0.025                 # what browsers add to the front of these MP3s (measured, as for the rap beats)
 GAP = 0.4                   # silence between clips in the files
-# Per part: min seconds between strums, most and fewest strums, and the register it follows. Suno can put
-# every guitar on one stem, so Rhythm follows the low strings (the chugs) and Solo the high lead line.
-PART = {
-    'rhythm': {'gap': 0.26, 'max': 18, 'min': 12, 'lo': 0, 'hi': 60, 'div': 2},     # on 8ths
-    'solo':   {'gap': 0.15, 'max': 28, 'min': 16, 'lo': 64, 'hi': 128, 'div': 4},   # on 16ths
-}
+HOP = 220                   # analysis frames: 5 ms
+FR = HOP / SR
+PC = 0.010                  # where the ear places an attack: 10 ms after its steepest rise
+MIN_GAP = 0.12              # closest two notes can be (a 16th at 125 BPM)
+RING = 0.45                 # a note held at least this long gets a tail on the lane
 
 
 def load(path):
@@ -53,98 +58,218 @@ def secs(s):
     return float(s)
 
 
+# ---------- Attacks ----------
+def band_db(x, lo, hi, win=0.01):
+    """Level of one frequency band in dB, one value per 5 ms frame (frame i centred on sample i*HOP)."""
+    y = sosfiltfilt(butter(4, [lo, hi], 'bandpass', fs=SR, output='sos'), x)
+    w = int(win * SR)
+    return 10 * np.log10(np.convolve(y * y, np.ones(w) / w, mode='same')[::HOP] + 1e-10)
+
+
+def attacks(db, rise, back=0.06, mind=0.06):
+    """Where the level jumps at least `rise` dB above its low over the last `back` seconds:
+    [(time of the steepest rise, frame, peak dB)]."""
+    k, n = int(back / FR), len(db)
+    slope = np.diff(db, prepend=db[0])
+    out, i = [], k
+    while i < n:
+        lo = db[i - k:i].min()
+        if db[i] - lo >= rise:
+            j0 = i - k + int(np.argmin(db[i - k:i]))
+            top = i + int(np.argmax(db[i:i + int(0.04 / FR)]))
+            st = j0 + int(np.argmax(slope[j0 + 1:top + 1])) + 1
+            out.append((st * FR, st, float(db[st:st + int(0.08 / FR)].max())))
+            i = top + int(mind / FR)
+        else:
+            i += 1
+    return out
+
+
 def grid(drums):
-    """Beat times from the drum stem, and which beats are downbeats (the kick's strongest phase)."""
+    """Beat times from the drum stem, and the downbeats (the kick's strongest phase). The tracker's beats run
+    late of the hits, so the whole grid moves onto the drum stem's own attacks."""
     mono = drums.mean(1)
     y = librosa.resample(mono, orig_sr=SR, target_sr=22050)
     oe = librosa.onset.onset_strength(y=y, sr=22050, hop_length=256)
-    tempo, beats = librosa.beat.beat_track(onset_envelope=oe, sr=22050, hop_length=256, units='time', tightness=300)
+    _, beats = librosa.beat.beat_track(onset_envelope=oe, sr=22050, hop_length=256, units='time', tightness=300)
     S = np.abs(librosa.stft(y, n_fft=1024, hop_length=256))
     f = librosa.fft_frequencies(sr=22050, n_fft=1024)
     kick = S[f < 120].sum(0)
     fr = librosa.time_to_frames(beats, sr=22050, hop_length=256)
     ks = np.array([kick[max(0, i - 2):i + 4].max() for i in fr])
     phase = int(np.argmax([ks[np.arange(len(beats)) % 4 == p].mean() for p in range(4)]))
-    return beats, beats[np.arange(len(beats)) % 4 == phase]
+    db = band_db(mono, 40, 12000)
+    hits = np.array([a[0] + PC for a in attacks(db, 6.0, mind=0.1)])
+    near = [hits[np.argmin(np.abs(hits - b))] - b for b in beats if np.min(np.abs(hits - b)) < 0.06]
+    shift = float(np.median(near)) if near else 0.0
+    print(f'beat grid: {len(beats)} beats, moved {shift * 1000:+.0f} ms onto the drum hits')
+    beats = beats + shift
+    soft = np.array([a[0] + PC for a in attacks(db, 3.0, mind=0.03)])  # quieter hits, and hits right after another
+    return beats, beats[np.arange(len(beats)) % 4 == phase], (hits, soft, db)
 
 
-def transcribe(guitar_path):
-    """basic-pitch notes on the guitar stem: [(start, end, midi pitch, amplitude)]."""
-    from basic_pitch import ICASSP_2022_MODEL_PATH
-    from basic_pitch.inference import predict
-    _, _, notes = predict(guitar_path, ICASSP_2022_MODEL_PATH, onset_threshold=0.5, frame_threshold=0.3, minimum_note_length=60)
-    return [(float(n[0]), float(n[1]), int(n[2]), float(n[3])) for n in notes]
-
-
-def strums(notes):
-    """Notes that start together become one strum: [{t, end, pitch, amp}]."""
+def drum_notes(start, end, beats, drums):
+    """A hit on every beat where the drums play one, at the hit's own time (a softer hit if that's all there
+    is near the beat, or the beat itself when the drums are going but no single attack stands out)."""
+    hits, soft, db = drums
+    med = np.median(db[int(start / FR):int(end / FR)])
     out = []
-    for s, e, p, a in sorted(notes, key=lambda n: n[0]):
-        if out and s - out[-1]['t'] < 0.045:
-            c = out[-1]
-            c['ps'].append(p)
-            c['amp'] = max(c['amp'], a)
-            c['end'] = max(c['end'], e)
+    for b in beats:
+        if not start - 0.04 <= b < end - 0.15:
+            continue
+        for pool in (hits, soft):
+            j = int(np.argmin(np.abs(pool - b)))
+            if abs(pool[j] - b) < 0.05:
+                out.append([round(float(pool[j]) - start, 3), 0])
+                break
         else:
-            out.append({'t': float(s), 'end': float(e), 'ps': [p], 'amp': float(a)})
-    for c in out:
-        c['pitch'] = float(np.median(c['ps']))
+            i = int(b / FR)
+            if db[i - 6:i + 6].max() >= med:
+                out.append([round(float(b) - start, 3), 0])
     return out
 
 
-def flux(stem):
-    """A stem's attack strength (spectral flux), 100 frames a second, to pin each note's start."""
-    y = librosa.resample(stem.mean(1), orig_sr=SR, target_sr=22050)
-    return librosa.onset.onset_strength(y=y, sr=22050, hop_length=220, lag=1, max_size=3)
-
-
-def pin(t, fl, beats, div):
-    """Moves a strum to the strongest attack within 70 ms (basic-pitch starts are smeared), then onto the
-    drum grid (div slots a beat), so the notes ride the beat you feel."""
-    i = int(round(t * 100))
-    w = fl[max(0, i - 7):i + 8]
-    if len(w):
-        t = (max(0, i - 7) + int(np.argmax(w))) / 100
-    j = np.searchsorted(beats, t)
-    if 0 < j < len(beats):
-        q = np.linspace(beats[j - 1], beats[j], div + 1)
-        t = float(q[np.argmin(np.abs(q - t))])
-    return t
-
-
-def chart(notes, part, start, end, beats, fl):
-    P = PART[part]
-    cands = strums([n for n in notes if P['lo'] <= n[2] < P['hi']])
-    for c in cands:
-        c['t'] = pin(c['t'], fl, beats, P['div'])
-    pool = [c for c in cands if start - 0.04 <= c['t'] < end - 0.15]
-    pool.sort(key=lambda c: -c['amp'] * (1 + 0.2 * len(c['ps'])))
+def rhythm_notes(low, start, end, rise=8.0, pct=85):
+    """The chugs: jumps of `rise` dB in the guitar's low end that peak in the loudest (100 - pct)% of the
+    section. A chug that rings gets a tail."""
+    i0, i1 = int(start / FR), int(end / FR)
+    top = np.percentile(low[i0:i1], pct)
     keep = []
-    for c in pool:
-        if len(keep) >= P['max']:
-            break
-        if all(abs(c['t'] - k['t']) >= P['gap'] for k in keep):
-            keep.append(c)
-    # Too few strums found: fill in on the beats the guitar left empty.
-    if len(keep) < P['min']:
-        for b in beats:
-            if start <= b < end - 0.15 and all(abs(b - k['t']) >= P['gap'] for k in keep):
-                keep.append({'t': float(b), 'end': float(b) + 0.2, 'ps': [], 'pitch': 0, 'amp': 0})
-            if len(keep) >= P['min']:
-                break
-    keep.sort(key=lambda c: c['t'])
-    notes = []
-    for i, c in enumerate(keep):
-        nxt = keep[i + 1]['t'] if i + 1 < len(keep) else end
-        ring = min(c['end'], nxt - 0.12) - c['t']
-        notes.append([round(c['t'] - start, 3), round(ring, 3) if ring > 0.45 else 0])
-    return notes
+    for t, fr, pk in attacks(low, rise):
+        if start - 0.04 <= t + PC < end - 0.15 and pk >= top - 1.0 and not (keep and t - keep[-1][0] < MIN_GAP):
+            keep.append((t, fr, pk))
+    out = []
+    for k, (t, fr, pk) in enumerate(keep):
+        nxt = keep[k + 1][1] if k + 1 < len(keep) else i1
+        e = fr
+        while e < nxt and low[e] > pk - 8:
+            e += 1
+        ring = (e - fr) * FR
+        out.append([round(t + PC - start, 3), round(ring, 3) if ring >= RING else 0])
+    return out
 
 
-def drum_chart(start, end, beats):
-    """A hit on every beat of the section. The beats come from the drum stem itself and land within about
-    15 ms of each kick and snare peak (spectral flux runs about 35 ms late on drums, so it isn't used)."""
-    return [[round(float(b) - start, 3), 0] for b in beats if start - 0.04 <= b < end - 0.15]
+# ---------- The lead ----------
+def lead_salience(x, fmin=300, fmax=1600, nfft=2048):
+    """How strongly each pitch (quarter-semitone steps) sounds in each frame, summing its first 4 harmonics."""
+    f, _, Z = stft(x, fs=SR, window='hann', nperseg=nfft, noverlap=nfft - HOP, boundary='even', padded=True)
+    M = np.abs(Z)
+    q = np.arange(round(48 * np.log2(fmin / 440)), round(48 * np.log2(fmax / 440)))
+    cands = 440 * 2 ** (q / 48)
+    df = f[1] - f[0]
+    sal = np.zeros((len(cands), M.shape[1]))
+    for h, w in zip(range(1, 5), [1.0, 0.6, 0.4, 0.3]):
+        fb = cands * h / df
+        lo = np.floor(fb).astype(int)
+        fr = fb - lo
+        sal += w * (M[lo] * (1 - fr)[:, None] + M[lo + 1] * fr[:, None])
+    return 69 + 12 * np.log2(cands / 440), sal
+
+
+def lead_path(midis, sal, i0, i1, jump_cost=1.0):
+    """The loudest smooth pitch path (Viterbi): each frame scores dB below its loudest pitch, and moving costs
+    jump_cost dB per semitone, so vibrato is cheap and hopping between two guitars is not.
+    Returns (pitch, level dB, how far it stands above the frame's median)."""
+    S = 20 * np.log10(sal[:, i0:i1] + 1e-9)
+    E = S - S.max(0)
+    n, T = S.shape
+    D = np.abs(midis[:, None] - midis[None, :]) * jump_cost
+    score, back = E[:, 0].copy(), np.zeros((T, n), dtype=np.int32)
+    for t in range(1, T):
+        tot = score[None, :] - D
+        b = np.argmax(tot, 1)
+        score = tot[np.arange(n), b] + E[:, t]
+        back[t] = b
+    path = np.zeros(T, dtype=int)
+    path[-1] = int(np.argmax(score))
+    for t in range(T - 1, 0, -1):
+        path[t - 1] = back[t, path[t]]
+    level = S[path, np.arange(T)]
+    return midis[path], level, level - np.median(S, 0)
+
+
+def lead_segments(m, lv, con, t0, voiced=8.0, big=1.4, small=0.7, hold_big=0.04, hold_small=0.10, reatk=7.0,
+                  mindur=0.07):
+    """Notes along the lead's path: [(start, length, pitch)]. A new note starts where the pitch leaves the
+    note's centre by more than `big` semitones for hold_big, or by more than `small` and holds steady for
+    hold_small (vibrato swings that far but never holds); where the lead comes back after a gap; or where its
+    level jumps `reatk` dB after a dip (picked again). A slow glide into the new pitch is a bend: same note."""
+    m, lv = median_filter(m, 5), median_filter(lv, 3)
+    v = median_filter((con >= voiced).astype(int), 9).astype(bool)
+    hb, hs = int(hold_big / FR), int(hold_small / FR)
+    notes, cur, i, n = [], None, 0, len(m)
+    while i < n:
+        if not v[i]:
+            if cur is not None:
+                notes.append((cur, i))
+            cur = None
+            i += 1
+            continue
+        if cur is None:
+            cur = i
+            i += 1
+            continue
+        c = np.median(m[cur:i])
+        w1, w2 = m[i:i + hb], m[i:i + hs]
+        if (len(w1) == hb and np.all(np.abs(w1 - c) > big)) or \
+                (len(w2) == hs and np.all(np.abs(w2 - c) > small) and np.ptp(w2) < 0.4):
+            k = i
+            while k > cur and abs(m[k - 1] - c) > 0.35:
+                k -= 1
+            if (i - k) * FR > 0.07:
+                i += 1
+                continue
+            notes.append((cur, i))
+            cur = i
+            i += 3
+            continue
+        if i - cur > 10:
+            win = lv[max(cur, i - 16):i]
+            if lv[i] - win.min() >= reatk and lv[i] >= win.max() - 0.5 and np.argmin(win) > len(win) // 3:
+                notes.append((cur, i))
+                cur = i
+                i += 4
+                continue
+        i += 1
+    if cur is not None:
+        notes.append((cur, n))
+    return [(t0 + a * FR, (b - a) * FR, float(np.median(m[a:b]))) for a, b in notes if (b - a) * FR >= mindur]
+
+
+def solo_notes(midis, sal, start, end, low_pitch=69):
+    """The lead's notes in a solo section: only notes up in the lead's range (A4 and up) and not much quieter
+    than the section's lead; a quick wobble between two neighbouring pitches is one note; a slide into a long
+    note joins it."""
+    i0, i1 = int((start - 0.3) / FR), int((end + 0.1) / FR)
+    m, lv, con = lead_path(midis, sal, i0, i1)
+    raw = lead_segments(m, lv, con, i0 * FR)
+    lvl = [float(np.median(lv[int(st / FR) - i0:int(st / FR) - i0 + max(1, int(du / FR))])) for st, du, _ in raw]
+    ref = np.percentile(lvl, 75) if lvl else 0
+    notes = [(st, du, p) for (st, du, p), lev in zip(raw, lvl) if p >= low_pitch and lev >= ref - 12]
+    merged = []
+    for st, du, p in notes:
+        if len(merged) >= 2 and du < 0.16 and merged[-1][1] < 0.16 and abs(p - merged[-2][2]) < 0.5 \
+                and abs(p - merged[-1][2]) <= 2.5 and st - (merged[-2][0] + merged[-2][1]) < 0.2:
+            merged.pop()
+            b = merged.pop()
+            merged.append((b[0], st + du - b[0], b[2]))
+            continue
+        merged.append((st, du, p))
+    keep = []
+    for st, du, _ in merged:
+        t = st + PC
+        if not (start - 0.04 <= t < end - 0.15):
+            continue
+        if keep and t - keep[-1][0] < MIN_GAP:
+            keep[-1][1] = max(keep[-1][1], t + du)
+            continue
+        keep.append([t, t + du])
+    out = []
+    for k, (t, e) in enumerate(keep):
+        nxt = keep[k + 1][0] if k + 1 < len(keep) else end
+        ring = min(e, nxt - 0.1, end) - t
+        out.append([round(t - start, 3), round(ring, 3) if ring >= RING else 0])
+    return out
 
 
 def mp3(x, path):
@@ -163,7 +288,7 @@ def main():
     ap.add_argument('stems')
     ap.add_argument('id')
     ap.add_argument('--name', required=True)
-    for p in PART:
+    for p in ('rhythm', 'solo'):
         ap.add_argument('--' + p, required=True, nargs='+', help='where each such section starts (m:ss or seconds)')
     ap.add_argument('--drums', nargs='+', help='sections for the Drums part (default: every rhythm and solo section)')
     ap.add_argument('--vamp', help='where the 2-bar vamp starts (default: the first rhythm section)')
@@ -185,7 +310,7 @@ def main():
     n = min([len(guitar), len(drums)] + [len(s) for s in stems])
     guitar, drums = guitar[:n], drums[:n]
     band = sum(s[:n] for s in stems)
-    beats, downs = grid(drums)
+    beats, downs, drum_hits = grid(drums)
 
     def snap(t):
         return float(downs[np.argmin(np.abs(downs - t))])
@@ -194,13 +319,14 @@ def main():
         i = int(np.argmin(np.abs(downs - t)))
         return float(downs[min(i + k, len(downs) - 1)])
 
-    notes = transcribe(gpath)
-    fl = flux(guitar)
-    song = {'name': args.name, 'vol': args.vol, 'parts': {p: [] for p in list(PART) + ['drums']}}
+    gmono = guitar.mean(1)
+    low = band_db(gmono, 60, 500)
+    midis, sal = lead_salience(gmono)
+    song = {'name': args.name, 'vol': args.vol, 'parts': {'rhythm': [], 'solo': [], 'drums': []}}
     vs = snap(secs(args.vamp or args.rhythm[0]))
     ve = bar_after(vs, 2)
     clips = [(['vamp'], vs, vs - 0.1, ve + 0.25)]
-    asked = [(p, t) for p in PART for t in getattr(args, p)] + [('drums', t) for t in (args.drums or [])]
+    asked = [(p, t) for p in ('rhythm', 'solo') for t in getattr(args, p)] + [('drums', t) for t in (args.drums or [])]
     for p, t in asked:
         s = snap(secs(t))
         if (bar_after(s, BARS) - s) < (ve - vs) * BARS / 2 * 0.85:
@@ -224,12 +350,14 @@ def main():
             e = bar_after(s, BARS)
             bar = (e - s) / BARS
             local = [round(float(x) - s, 3) for x in beats if s - bar - 0.01 <= x <= e + 0.01]
+            charts = {'drums': lambda: drum_notes(s, e, beats, drum_hits), 'rhythm': lambda: rhythm_notes(low, s, e),
+                      'solo': lambda: solo_notes(midis, sal, s, e)}
             for p in parts:
                 song['parts'][p].append({
                     'at': round(at + PAD + (s - a), 4),      # file time of the section's first downbeat
                     'len': round(e - s, 4),                  # its four bars
                     'beats': local,                          # from the bar before (the lead-in) to the end
-                    'notes': drum_chart(s, e, beats) if p == 'drums' else chart(notes, p, s, e, beats, fl),
+                    'notes': charts[p](),
                     'src': round(s, 3)                       # where it is in the song
                 })
         for k in srcs:
