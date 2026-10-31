@@ -8,7 +8,7 @@
    The rappers "talk" in chiptune babble (one blip per syllable, on the beat), not real or cloned voices. */
 (function () {
   if (!/[?&]rap\b/i.test(location.search)) return;
-  var D = window.POF_DATA, AU = window.POF_AUDIO, LYRICS = window.POF_RAP_LYRICS;
+  var D = window.POF_DATA, AU = window.POF_AUDIO, LYRICS = window.POF_RAP_LYRICS, CROWD = window.POF_RAP_CROWD;
 
   var RAPPERS = ['toly', 'vitalik'];
   var HOST = { name: 'MC Satoshi', face: 'art/satoshi.webp', body: 'art/satoshi-sprite.webp' };
@@ -391,11 +391,12 @@
         '<div class="rapper left" id="rap-l"></div>' +
         '<div class="rapper right" id="rap-r"></div>' +
         '<div class="rap-pop" id="rap-pop" hidden></div>' +
+        '<canvas class="rap-crowd" id="rap-crowd" aria-hidden="true"></canvas>' +
       '</div>' +
-      '<div class="rap-crowd" id="rap-crowd">' + Array.apply(null, Array(14)).map(function (_, i) { return '<i style="--d:' + (i % 3) * 0.08 + 's;--h:' + (180 + i * 37 % 140) + '"></i>'; }).join('') + '</div>' +
       '<div class="rap-picks" id="rap-picks"></div>';
     $('#app').appendChild(sec);
     $('#rap-back').addEventListener('click', leave);
+    CROWD.mount($('#rap-crowd'), { now: now, beat: function () { return S && S.beat ? { t0: S.beat.t0, len: 60 / S.beat.bpm } : null; } });
   }
   function show(id) { document.querySelectorAll('.screen').forEach(function (el) { el.hidden = el.id !== id; }); }
 
@@ -410,6 +411,7 @@
     });
     $('#rap-bar').style.setProperty('--cl', D.FIGHTERS[S.you].color);
     $('#rap-bar').style.setProperty('--cr', D.FIGHTERS[S.cpu].color);
+    CROWD.lights(D.FIGHTERS[S.you].color, D.FIGHTERS[S.cpu].color);
   }
   // Poses: rap, listen, lose, win, or '' for standing by. A Grok pose replaces the image when it exists.
   function pose(id, p) {
@@ -422,6 +424,7 @@
 
   function setMeter() {
     $('#rap-fill').style.width = S.meter + '%';
+    CROWD.meter(S.meter);
   }
   function moveMeter(who, amt) {
     S.meter = Math.max(2, Math.min(98, S.meter + (who === S.you ? amt : -amt)));
@@ -439,11 +442,8 @@
     void p.offsetWidth;
     p.classList.add('go');
   }
-  function crowd(mood) {
-    var c = $('#rap-crowd');
-    c.classList.remove('hype', 'boo', 'laugh', 'mixed');
-    if (mood) { void c.offsetWidth; c.classList.add(mood); }
-  }
+  // The crowd's mood (js/rap-crowd.js): hype, wild, laugh, ooh, groan, boo, mixed, or null to just nod along.
+  function crowd(mood) { CROWD.mood(mood); }
   // The host points at a rapper: an arrow bounces over their head and the host bar leans their way.
   function point(id) {
     ['l', 'r'].forEach(function (k) { $('#rap-' + k).classList.toggle('pointed', !!id && side(id) === k); });
@@ -557,12 +557,12 @@
     if (landed) {
       var r = pick.tier === 'safe' ? 'laugh' : pick.tier === 'spicy' ? 'ooh' : 'ohhh';
       crowdSound(REACT[r]());
-      crowd(r === 'laugh' ? 'laugh' : 'hype');
+      crowd(r === 'ohhh' ? 'wild' : r);
       pop(r === 'laugh' ? 'HA HA HA' : r === 'ooh' ? 'OOOOH!' : 'OHHHHH!', 'land');
       moveMeter(who, T.move);
     } else {
       crowdSound(REACT.groan());
-      crowd('boo');
+      crowd('groan');
       pop('EHHH...', 'miss');
       moveMeter(who, -MISS);
     }
@@ -789,11 +789,13 @@
   function open() {
     build();
     show('screen-rap');
+    CROWD.start();
     AU.stopMusic(0.4);
     pickRapper();
   }
   function leave() {
     stopAll();
+    CROWD.stop();
     show('screen-title');
     AU.music('menu', { from: 'loop', fade: 0.8 });
   }
