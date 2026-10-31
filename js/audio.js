@@ -892,6 +892,56 @@
     };
   }
 
+  // Plays part of a loaded song at an exact audio-clock time `at`: from `offset` seconds into the file for
+  // `dur` seconds, or looping `opts.loop` seconds from `offset`. opts.fadeIn / opts.fadeOut in seconds.
+  // Returns { stop(fade, at), level(v, at) }: level sets the volume (0 to 1) from time `at`, so the Guitar
+  // Battle can mute the guitar stem on a miss. Returns null when music is off or the song hasn't loaded.
+  function playPart(name, at, offset, dur, opts) {
+    opts = opts || {};
+    var m = MUSIC[name], buf = buffers[name];
+    if (!m || !buf || !settings.music || !ensure() || ctx.state !== 'running') return null;
+    var src = ctx.createBufferSource(), g = ctx.createGain(), late = Math.max(0, ctx.currentTime + 0.005 - at);
+    var vol = m.vol == null ? 1 : m.vol, t0 = at + late, end = dur ? at + dur : 0;
+    src.buffer = buf;
+    if (opts.loop) {
+      src.loop = true;
+      src.loopStart = offset;
+      src.loopEnd = offset + opts.loop;
+    }
+    src.connect(g);
+    g.connect(musicBus);
+    if (opts.fadeIn) {
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(vol, t0 + opts.fadeIn);
+    } else g.gain.setValueAtTime(vol, t0);
+    if (end && opts.fadeOut) {
+      g.gain.setValueAtTime(vol, Math.max(t0, end - opts.fadeOut));
+      g.gain.linearRampToValueAtTime(0.0001, end);
+    }
+    src.start(t0, offset + late);
+    if (end) src.stop(end + 0.02);
+    return {
+      level: function (v, when) {
+        var t = Math.max(ctx.currentTime, when || 0), to = Math.max(0.0001, vol * v);
+        g.gain.cancelScheduledValues(t);
+        g.gain.setTargetAtTime(to, t, 0.01);
+        if (end && opts.fadeOut) { // keep the fade at the end
+          var fs = Math.max(t + 0.04, end - opts.fadeOut);
+          if (fs < end) {
+            g.gain.setValueAtTime(to, fs);
+            g.gain.linearRampToValueAtTime(0.0001, end);
+          }
+        }
+      },
+      stop: function (fade, when) {
+        var t = Math.max(ctx.currentTime, when || 0), f = fade || 0.1;
+        g.gain.cancelScheduledValues(t);
+        g.gain.setTargetAtTime(0, t, f / 3);
+        try { src.stop(t + f * 2 + 0.05); } catch (e) { /* already stopped */ }
+      }
+    };
+  }
+
   function duck(on) {
     if (!ctx || ducked === on) return;
     ducked = on;
@@ -938,7 +988,7 @@
 
   return {
     SFX: SFX, CLIPS: CLIPS, MUSIC: MUSIC, N: N, PEAK: PEAK, target: target, moveSounds: moveSounds,
-    setup: setup, unlock: unlock, load: load, music: music, playLoop: playLoop, stopMusic: function (f) { if (ctx) stopMusic(f); },
+    setup: setup, unlock: unlock, load: load, music: music, playLoop: playLoop, playPart: playPart, stopMusic: function (f) { if (ctx) stopMusic(f); },
     duck: duck, play: play, playVoices: playVoices, measure: measure, set: set,
     move: function (fighter, move, outcome) {
       moveSounds(fighter, move, outcome).forEach(function (id) { if (SFX[id]) play(id); });
