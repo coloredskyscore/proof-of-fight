@@ -1,9 +1,12 @@
-/* Guitar Battle test mode (?guitar). A proof of concept for the timing feel, on code-made audio.
-   Two founders trade guitar parts over a backing band. Three rounds, one turn each per round. At the start of
-   your turn you pick a part (Rhythm, Riff or Solo, never the same one twice in a row), then strum on each note
-   as it reaches the ring. The guitar part is scheduled ahead in sync with the band, so a tap never starts a
-   sound late: the tap only decides whether the note is judged a hit. A miss chokes the note with a clank and
-   the guitar drops out until your next hit. The crowd meter moves on every note. A short calibration on first
+/* Guitar Battle test mode (?guitar). Two founders trade guitar parts over a backing band. Three rounds, one
+   turn each per round. At the start of your turn you pick a part, Rhythm (the safe chugs) or Solo (risky, but
+   it swings the crowd hard), then strum on each note as it reaches the ring. A round plays one of the Suno
+   songs (js/guitar-songs.js, made by tools/gtr_song.py from the song's stems): each pick draws one of that
+   song's chug or solo sections, and the band vamps on a 2-bar loop between turns. A round without a song
+   uses the code-made band and guitar.
+   The guitar is scheduled ahead in sync with the band, so a tap never starts a sound late: the tap only
+   decides whether the note is judged a hit. A miss mutes the guitar with a clank; after two in a row it
+   stays out until your next hit. The crowd meter moves on every note. A short calibration on first
    play measures the delay between the audio clock and your taps (speakers, Bluetooth, touch screen) and the
    game shifts both the judging and the scrolling notes by it.
    MC Satoshi hosts. The guitars here are drawn in code over the stage sprites until the Grok poses arrive. */
@@ -25,14 +28,20 @@
   // The three parts. `max` is how far a flawless turn moves the needle; a miss costs `miss`. `cpu` is the
   // CPU's hit rate. Harder parts swing the crowd harder both ways.
   var PART = {
-    rhythm: { label: 'Rhythm', blurb: 'Palm-muted chugs', diff: 'Easy',   max: 12, miss: 1.0, cpu: 0.93, color: '#3aa8e8' },
-    riff:   { label: 'Riff',   blurb: 'The hook',         diff: 'Medium', max: 18, miss: 1.3, cpu: 0.84, color: '#e0559f' },
-    solo:   { label: 'Solo',   blurb: 'Shred it',         diff: 'Hard',   max: 26, miss: 1.6, cpu: 0.72, color: '#ff7a3d' }
+    rhythm: { label: 'Rhythm', blurb: 'Palm-muted chugs', diff: 'Safe',   max: 12, miss: 1.0, cpu: 0.93, color: '#3aa8e8' },
+    solo:   { label: 'Solo',   blurb: 'Shred it',         diff: 'Risky',  max: 26, miss: 1.6, cpu: 0.72, color: '#ff7a3d' }
   };
   var GOOD_SHARE = 0.6;     // a good (not perfect) hit is worth this much of a perfect one
   var STRAY = 0.5;          // a tap with no note near it: mashing costs you
   var PERFECT = 0.06, GOOD = 0.13, NEAR = 0.22; // hit windows, seconds either side
   var ROUND_BPM = [108, 118, 128];
+  // The Suno songs, two slots per round (see guitar-battle/prompts.md). Each round plays one of its slots that
+  // exists, at random; a round with none, or whose song hasn't loaded in time, uses the code-made band.
+  var SONGS = window.POF_GUITAR_SONGS || {};
+  var ROUND_SONGS = [['gtr-1a', 'gtr-1b'], ['gtr-2a', 'gtr-2b'], ['gtr-3a', 'gtr-3b']];
+  Object.keys(SONGS).forEach(function (id) { // each song's band and guitar files, for AU.load and AU.playPart
+    ['band', 'guitar'].forEach(function (k) { AU.MUSIC[id + '-' + k] = { src: 'audio/guitar/' + id + '-' + k + '.mp3', vol: SONGS[id].vol || 0.8 }; });
+  });
   var ROUNDS = 3, PART_BARS = 4;
   var LOOK = 0.12;          // how far ahead guitar notes are scheduled (short, so a miss mutes the next note)
   var SHOW = 1.7;           // seconds of notes visible on the lane
@@ -102,7 +111,7 @@
     });
     return vs;
   }
-  // A single note: low riff notes or the lead. `from` bends up into it; long notes get vibrato.
+  // A single note (the lead up high). `from` bends up into it; long notes get vibrato.
   function note(m, d, opts) {
     opts = opts || {};
     var f = opts.from ? [midi(opts.from), midi(m)] : midi(m), lead = m >= 60, vs = [];
@@ -170,20 +179,6 @@
     }
     return taps;
   }
-  // The riff: a power chord, then a walk up the E minor pentatonic (G, A, B), the same shape every bar
-  // over the band's changes, and a big open chord to close.
-  function riffChart() {
-    var taps = [], RIFF = [[0, 'pc', 3], [3, 43, 2], [6, 45, 2], [8, 'pc', 2], [11, 47, 2], [14, 45, 2]],
-      LAST = [[0, 'pc', 3], [3, 43, 2], [6, 45, 2], [8, 'pc', 2], [12, 'pc', 4]];
-    for (var b = 0; b < PART_BARS; b++) {
-      (b === PART_BARS - 1 ? LAST : RIFF).forEach(function (n) {
-        taps.push({ at: b * 16 + n[0], len: n[2] >= 3 ? n[2] : 0, kind: 'n', play: n[1] === 'pc'
-          ? function (s, r) { return chord(r, s * n[2] * 0.95, false); }
-          : function (s) { return note(n[1], s * n[2] * 0.95); } });
-      });
-    }
-    return taps;
-  }
   // The solo: E minor pentatonic up high. [16th, note or run, length in 16ths, bend from].
   var SOLO = [
     [[0, 76, 4, 74], [6, 74, 2], [8, 71, 2], [10, [69, 71, 74]], [14, 76, 2]],
@@ -203,7 +198,7 @@
     });
     return taps;
   }
-  var CHART = { rhythm: rhythmChart, riff: riffChart, solo: soloChart };
+  var CHART = { rhythm: rhythmChart, solo: soloChart };
 
   // ---------- Screen ----------
   function guitarSVG(id) {
@@ -356,8 +351,69 @@
   }
   function stopBand(fade) {
     if (!S.band) return;
-    S.band.handles.forEach(function (h) { h.stop(fade || 0.1); });
+    var B = S.band;
+    B.handles.forEach(function (h) { h.stop(fade || 0.1); });
+    if (B.vamp) B.vamp.stop(fade || 0.1);
+    if (B.part) B.part.stop(fade || 0.1);
+    if (S.turn && S.turn.gtr) S.turn.gtr.stop(fade || 0.1);
     S.band = null;
+  }
+
+  // ---------- Songs ----------
+  // Picks each round's song and starts loading its band and guitar files.
+  function setList() {
+    return ROUND_SONGS.map(function (slots) {
+      var have = slots.filter(function (id) { return SONGS[id] && SONGS[id].parts.rhythm.length && SONGS[id].parts.solo.length; });
+      if (!have.length || !AU.settings.music) return null;
+      var id = have[Math.floor(Math.random() * have.length)], e = { id: id, song: SONGS[id] };
+      e.loading = Promise.all([AU.load(id + '-band'), AU.load(id + '-guitar')]).then(function () { e.ready = true; }, function () {});
+      return e;
+    });
+  }
+  // Round r's song once loaded, or null (the code-made band) if there is none or it took too long.
+  async function cue(r) {
+    var e = S.set[r];
+    if (!e) return null;
+    if (e.loading) await Promise.race([e.loading, wait(4000)]);
+    return e.ready ? e : null;
+  }
+  // The band vamps on the song's 2-bar loop (no guitar) from `at` until a part starts.
+  function startSong(e, at) {
+    var V = e.song.vamp, h = AU.playPart(e.id + '-band', at, V.at, 0, { loop: V.len, fadeIn: 0.01 });
+    if (!h) return false;
+    var bpm = Math.round(480 / V.len);
+    S.band = { song: e, bpm: bpm, bar: V.len / 2, s: V.len / 32, t0: at, done: 0, handles: [], vamp: h };
+    setBeat(480 / V.len);
+    return true;
+  }
+  // A part of the song: the vamp rides through the lead-in bar, then on the part's first downbeat `at` the
+  // band jumps to that section and the guitar stem comes in. (The song's own bar before a section can be a
+  // break, or the guitar-only intro.) The vamp picks up again when the four bars end. Returns the notes.
+  function playSongPart(T, at) {
+    var B = S.band, e = B.song, V = e.song.vamp, P = section(e, T.part), back = at + P.len;
+    B.vamp.stop(0.02, at - 0.02);
+    B.part = AU.playPart(e.id + '-band', at - 0.02, P.at - 0.02, P.len + 0.32, { fadeIn: 0.02, fadeOut: 0.25 });
+    T.gtr = AU.playPart(e.id + '-guitar', at - 0.05, P.at - 0.05, P.len + 0.4, { fadeIn: 0.04, fadeOut: 0.3 });
+    B.vamp = AU.playPart(e.id + '-band', back, V.at, 0, { loop: V.len, fadeIn: 0.03 });
+    B.t0 = back;
+    B.bpm = Math.round(960 / P.len);
+    setBeat(960 / P.len);
+    T.beats = P.beats.map(function (b) { return at + b; });
+    return P.notes.map(function (n) { return { t: at + n[0], len: n[1], kind: 'n', bar: 0, play: null }; });
+  }
+  // One of the song's sections for a part, at random, never the same one twice in a row.
+  function section(e, part) {
+    var list = e.song.parts[part], key = e.id + part, last = S.lastSec[key];
+    var pool = list.length > 1 ? list.filter(function (x) { return x !== last; }) : list;
+    return (S.lastSec[key] = pool[Math.floor(Math.random() * pool.length)]);
+  }
+  // A missed note mutes the guitar stem. After one slip it comes back for the next note; after two in a
+  // row it stays out until a hit.
+  function choke(T, n, at) {
+    if (!T.gtr) { if (n.handle) n.handle.stop(0.03); return; }
+    T.gtr.level(0.08, at);
+    var next = T.notes[T.notes.indexOf(n) + 1];
+    if (next && (T.cpu || T.slump < 2)) T.gtr.level(1, next.t - 0.01);
   }
   function nextBar(after) {
     var B = S.band, t = (after || now()) + 0.1;
@@ -370,7 +426,7 @@
   function tick() {
     if (!S) return;
     var t = now(), B = S.band;
-    if (B) {
+    if (B && !B.song) {
       while (B.t0 + B.done * B.bar < t + 0.5) {
         var k = B.done++;
         B.handles.push(AU.playVoices(bandBar(k, B.s), B.t0 + k * B.bar, 'music'));
@@ -382,7 +438,8 @@
     T.notes.forEach(function (n) {
       if (!n.sched && n.t < t + LOOK) {
         n.sched = true;
-        if (T.cpu && n.cpu === 'miss') n.handle = AU.playVoices(clank(), n.t, 'sfx');
+        if (T.cpu && n.cpu === 'miss') { n.handle = AU.playVoices(clank(), n.t, 'sfx'); if (T.gtr) choke(T, n, n.t); }
+        else if (!n.play) n.handle = null; // a song part: the guitar stem is already playing
         else n.handle = AU.playVoices(scale(n.play(B ? B.s : 0.125, ROOT[n.bar % 4]), T.muted && !T.cpu ? 0.12 : 1), n.t, 'music');
       }
       if (T.cpu && !n.judged && t >= n.t + offsetNow()) land(n, n.cpu, n.cpu === 'miss' ? 0 : n.cpuErr);
@@ -407,19 +464,20 @@
     n.err = err || 0;
     var val = P.max / T.notes.length;
     if (grade === 'miss') {
+      T.streak = 0;
+      T.slump++;
       if (!T.cpu) {
-        if (n.handle) n.handle.stop(0.03);
+        choke(T, n, now());
         sfx(clank());
         T.muted = true;
       }
-      T.streak = 0;
-      T.slump++;
       moveMeter(T.who, -P.miss);
       if (T.slump >= 3 && T.slump % 2 === 1) { sfx(boos(4, 0.05)); crowd('boo'); pop('BOOO!', 'miss'); }
       else if (T.slump === 1) sfx(groan());
       judge('MISS', 'miss');
     } else {
       T.hits++;
+      if (T.gtr && T.muted && !T.cpu) T.gtr.level(1);
       T.muted = false;
       T.slump = 0;
       T.streak++;
@@ -475,8 +533,16 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, W, H);
     var hx = Math.max(44, W * 0.16), cy = H / 2, pps = (W - hx) / SHOW, t = now() - offsetNow();
-    // Beat lines from the band's clock.
-    if (S.band) {
+    // Beat lines: a song part's own beats (its tempo can drift), else the band's clock.
+    var TB = S.turn && S.turn.beats;
+    if (TB) {
+      TB.forEach(function (bt, i) {
+        var x = hx + (bt - t) * pps;
+        if (x < 0 || x > W) return;
+        g.fillStyle = (i % 4 === 0) ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.08)';
+        g.fillRect(x - 1, 6, 2, H - 12);
+      });
+    } else if (S.band) {
       var beat = S.band.bar / 4, first = Math.ceil((t - 0.3 - S.band.t0) / beat);
       for (var b = first; ; b++) {
         var bt = S.band.t0 + b * beat, x = hx + (bt - t) * pps;
@@ -487,7 +553,7 @@
       }
     }
     // The ring.
-    var pulse = S.band ? Math.max(0, 1 - ((t - S.band.t0) / (S.band.bar / 4) % 1) * 3) : 0;
+    var ph = S.band ? (((t - S.band.t0) / (S.band.bar / 4)) % 1 + 1) % 1 : 1, pulse = Math.max(0, 1 - ph * 3);
     g.lineWidth = 4;
     g.strokeStyle = 'rgba(255,210,63,' + (0.55 + pulse * 0.45) + ')';
     g.beginPath(); g.arc(hx, cy, 17 + pulse * 3, 0, Math.PI * 2); g.stroke();
@@ -561,30 +627,25 @@
   }
 
   // ---------- Battle ----------
-  // Your part buttons; resolves with the part you tap. The one you just played is locked.
-  function choose(last) {
+  // Your two part buttons; resolves with the part you tap.
+  function choose() {
     var box = $('#gtr-picks');
-    box.innerHTML = '<p class="rap-your">Pick your part</p><div class="rap-opts">' + Object.keys(PART).map(function (k) {
-      var P = PART[k], off = k === last;
-      return '<button class="rap-pick gtr-part" type="button" data-k="' + k + '" style="background:' + P.color + '"' + (off ? ' disabled' : '') + '>' +
-        '<b>' + P.label + '</b><span class="rap-odds">' + (off ? 'Just played' : P.diff) + '</span><span class="rap-blurb">' + P.blurb + '</span></button>';
+    box.innerHTML = '<p class="rap-your">Pick your part</p><div class="rap-opts gtr-two">' + Object.keys(PART).map(function (k) {
+      var P = PART[k];
+      return '<button class="rap-pick gtr-part" type="button" data-k="' + k + '" style="background:' + P.color + '">' +
+        '<b>' + P.label + '</b><span class="rap-odds">' + P.diff + '</span><span class="rap-blurb">' + P.blurb + '</span></button>';
     }).join('') + '</div>';
     return new Promise(function (resolve) {
       box.onclick = function (e) {
         var b = e.target.closest('.gtr-part');
-        if (!b || b.disabled) return;
+        if (!b) return;
         box.onclick = null;
         AU.play('tap');
         resolve(b.dataset.k);
       };
     });
   }
-  function cpuPart(last) {
-    var opts = [['rhythm', 0.25], ['riff', 0.4], ['solo', 0.35]].filter(function (o) { return o[0] !== last; });
-    var sum = opts.reduce(function (a, o) { return a + o[1]; }, 0), r = Math.random() * sum;
-    for (var i = 0; i < opts.length; i++) { r -= opts[i][1]; if (r < 0) return opts[i][0]; }
-    return opts[0][0];
-  }
+  function cpuPart() { return Math.random() < 0.45 ? 'rhythm' : 'solo'; }
 
   async function turn(who, round) {
     var id = S.id, mine = who === S.you, other = mine ? S.cpu : S.you;
@@ -592,17 +653,18 @@
     pose(who, 'ready');
     pose(other, 'listen');
     var part;
-    if (mine) part = await choose(S.last[who]);
+    if (mine) part = await choose();
     else {
       waiting(name(who) + ' is picking a part');
       await wait(900);
-      part = cpuPart(S.last[who]);
+      part = cpuPart();
     }
     if (!alive(id)) return;
-    S.last[who] = part;
     var P = PART[part], at = nextBar(now() + 0.2) + S.band.bar; // one bar of lead so the notes scroll in
-    info('<p class="rap-call" style="color:' + P.color + '">' + esc(name(who)) + ': ' + P.label + '</p><p class="rap-sub">Round ' + (round + 1) + ' · ' + S.band.bpm + ' BPM</p>');
-    var T = { who: who, part: part, cpu: !mine, notes: chartFor(part, at), hits: 0, streak: 0, slump: 0, muted: false };
+    var T = { who: who, part: part, cpu: !mine, hits: 0, streak: 0, slump: 0, muted: false };
+    T.notes = S.band.song ? playSongPart(T, at) : chartFor(part, at);
+    info('<p class="rap-call" style="color:' + P.color + '">' + esc(name(who)) + ': ' + P.label + '</p><p class="rap-sub">Round ' + (round + 1) + ' · ' +
+      (S.band.song ? esc(S.band.song.song.name) + ' · ' : '') + S.band.bpm + ' BPM</p>');
     if (T.cpu) T.notes.forEach(function (n) {
       var r = Math.random();
       n.cpu = r < P.cpu ? (r < P.cpu * 0.5 ? 'perfect' : 'good') : 'miss';
@@ -639,7 +701,7 @@
     $('#gtr-picks').innerHTML = '<button class="btn btn-ghost btn-sm rap-skip" id="gtr-skip" type="button">Skip intro ›</button>';
     $('#gtr-skip').onclick = function () { AU.play('tap'); me.skipped = true; waiting(''); };
     var lines = rematch ? ['Run it back! Same two guitarists.'] : ['Welcome to the Proof of Fight guitar battle!'];
-    if (!rematch && !told) lines.push('Three rounds. Each round, both players take one turn.', 'Pick a part. Rhythm is easy, Riff is tricky, Solo is wild.',
+    if (!rematch && !told) lines.push('Three rounds. Each round, both players take one turn.', 'Pick a part. Rhythm is safe. Solo is risky, but it swings the crowd.',
       'Strum on every note. Play in sync and the crowd is yours. Miss and they let you know!');
     if (!rematch) lines.push('In this corner, ' + name(S.you) + '! And in this corner, ' + name(S.cpu) + '!');
     for (var i = 0; i < lines.length && alive(me.id) && !me.skipped; i++) {
@@ -660,14 +722,16 @@
     await intro(rematch);
     if (!alive(id)) return;
     for (var r = 0; r < ROUNDS; r++) {
-      var bpm = ROUND_BPM[r], beat = 60 / bpm;
+      var song = await cue(r);
+      if (!alive(id)) return;
+      var bpm = song ? Math.round(480 / song.song.vamp.len) : ROUND_BPM[r], beat = song ? song.song.vamp.len / 8 : 60 / bpm;
       $('#gtr-round').textContent = 'Round ' + (r + 1) + ' of ' + ROUNDS;
-      info('<p class="rap-call">Round ' + (r + 1) + '</p><p class="rap-sub">' + bpm + ' BPM</p>');
+      info('<p class="rap-call">Round ' + (r + 1) + '</p><p class="rap-sub">' + (song ? esc(song.song.name) + ' · ' : '') + bpm + ' BPM</p>');
       await host(r === 0 ? 'Band, hit it!' : r === ROUNDS - 1 ? 'Final round! Turn it up!' : 'Round two! Pick up the pace!', 100);
       if (!alive(id)) return;
       var at = now() + 0.3;
       sticks(at, beat);
-      startBand(bpm, at + beat * 4);
+      if (!song || !startSong(song, at + beat * 4)) startBand(bpm, at + beat * 4);
       await untilTime(at + beat * 4);
       if (!alive(id)) return;
       var order = r % 2 ? [S.cpu, S.you] : [S.you, S.cpu];
@@ -741,6 +805,8 @@
   function begin(you, rematch) {
     stopAll();
     S = { id: Math.random(), meter: 50, you: you, cpu: PLAYERS.filter(function (p) { return p !== you; })[0], last: {} };
+    S.set = setList();
+    S.lastSec = {};
     S.ticker = setInterval(tick, 25);
     S.raf = requestAnimationFrame(draw);
     $('#gtr-picks').onclick = null;
