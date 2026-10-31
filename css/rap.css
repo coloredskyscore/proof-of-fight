@@ -2,7 +2,8 @@
 .btn-rap { background: linear-gradient(#3ddcc0, #19a88a 55%, #0f7a64); color: #fff; }
 #btn-rap small { font-family: var(--body); font-weight: 700; font-size: .7em; opacity: .85; margin-left: .3em; }
 
-.rap { padding: 8px 12px 12px; gap: 6px; overflow: hidden; }
+/* .screen.rap, not .rap: a rapper mid-verse has the class rap too. */
+.screen.rap { padding: 8px 12px 12px; gap: 6px; overflow: hidden; }
 .rap-top { display: flex; align-items: center; justify-content: space-between; }
 .rap-round { font-family: var(--display); color: var(--gold); font-size: .9rem; }
 
@@ -30,7 +31,8 @@
 .rap-host.to-r { border-color: var(--gold); box-shadow: 6px 0 0 -2px var(--gold); }
 
 /* The stage: lyrics on top, the two rappers facing each other below. */
-.rap-stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto minmax(0, 1fr); align-items: end; gap: 4px 24px;
+/* The bottom 75px is the crowd's (see .rap-crowd below), so the rappers' feet land on the stage's front edge. */
+.rap-stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto minmax(0, 1fr); align-items: end; gap: 4px 24px; padding-bottom: 75px;
   background: radial-gradient(ellipse at 50% 110%, rgba(255, 210, 63, .18), transparent 60%); }
 .rap-lyrics { grid-column: 1 / -1; grid-row: 1; align-self: start; min-height: 6.4em; padding: 2px 6px; text-align: center; font-weight: 800; font-size: 1.08rem; line-height: 1.3; }
 .rap-lyrics p { margin: 0 0 .5em; }
@@ -47,7 +49,9 @@
 .rapper .fig { display: block; min-height: 0; max-height: 100%; transition: transform .35s ease, filter .35s ease; transform-origin: 50% 100%; }
 .rapper img { display: block; width: 100%; max-height: 100%; object-fit: contain; object-position: bottom; image-rendering: pixelated; }
 .rapper.right img { transform: scaleX(-1); }
-.rapper b { font-family: var(--display); font-size: .8rem; }
+/* Name tags sit over the crowd, just under the stage's edge. */
+.rapper b { position: absolute; left: 50%; bottom: -30px; transform: translateX(-50%); z-index: 3; white-space: nowrap; padding: 1px 8px; border-radius: 8px;
+  background: rgba(8, 6, 16, .8); font-family: var(--display); font-size: .8rem; }
 .rapper b small { font-family: var(--body); font-size: .7rem; color: var(--gold); }
 /* Stand-in poses until the Grok art arrives: rap bobs and glows, listen leans back unimpressed, lose slumps. */
 .rapper.rap .fig { filter: drop-shadow(0 0 14px rgba(255, 210, 63, .5)); animation: rap-bob var(--rap-beat, .667s) ease-in-out infinite; }
@@ -77,18 +81,10 @@
 @keyframes rap-pop { 0% { transform: translate(-50%, -50%) scale(.3); opacity: 0; } 12% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
   25% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -70%); } }
 
-/* The crowd: heads nodding on the beat. Hype jumps, laughs shake, boos go red and sink. */
-.rap-crowd { display: flex; justify-content: center; gap: 2px; height: 30px; align-items: flex-end; }
-.rap-crowd i { width: 22px; height: 26px; border-radius: 50% 50% 4px 4px; background: hsl(var(--h) 25% 30%);
-  animation: rap-nod var(--rap-beat, .667s) ease-in-out infinite; animation-delay: var(--d); }
-.rap-crowd.hype i { animation: rap-hop .3s ease-out 4 alternate; background: hsl(var(--h) 60% 50%); }
-.rap-crowd.laugh i { animation: rap-shake .12s linear 8 alternate; background: hsl(var(--h) 50% 45%); }
-.rap-crowd.mixed i:nth-child(odd) { background: #8a2a2a; }
-.rap-crowd.mixed i:nth-child(even) { animation: rap-hop .3s ease-out 2 alternate; background: hsl(var(--h) 50% 45%); }
-.rap-crowd.boo i { background: #8a2a2a; transform: translateY(6px); animation: none; }
-@keyframes rap-nod { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(3px); } }
-@keyframes rap-hop { to { transform: translateY(-10px); } }
-@keyframes rap-shake { to { transform: translateY(-3px) rotate(6deg); } }
+/* The crowd (js/rap-crowd.js): the stage's front edge and the audience, drawn on a small canvas and scaled up
+   3x with hard pixel edges. The edge is 33px from the canvas top, level with the rappers' feet, so the top
+   of the canvas is open air where hands go up over the rappers' legs. It runs out to the screen's edges. */
+.rap-crowd { position: absolute; left: -12px; right: -12px; bottom: 0; width: calc(100% + 24px); height: 108px; z-index: 1; pointer-events: none; image-rendering: pixelated; }
 
 /* Your picks: three tier buttons in a row (the bars are drawn when you tap). The box keeps its height so the
    stage doesn't jump between turns. */
