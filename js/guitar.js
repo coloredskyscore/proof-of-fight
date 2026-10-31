@@ -1,13 +1,13 @@
-/* Guitar Battle test mode (?guitar). Two founders trade guitar parts over a backing band. Three rounds, one
-   turn each per round. At the start of your turn you pick a part, Rhythm (the safe chugs) or Solo (risky, but
-   it swings the crowd hard), then strum on each note as it reaches the ring. Every round plays one of the
-   Suno songs (js/guitar-songs.js, made by tools/gtr_song.py from the song's stems): each pick draws one of
-   that song's chug or solo sections, and the band vamps on a 2-bar loop between turns.
-   The guitar is scheduled ahead in sync with the band, so a tap never starts a sound late: the tap only
-   decides whether the note is judged a hit. A miss mutes the guitar with a clank; after two in a row it
-   stays out until your next hit. The crowd meter moves on every note. A short calibration on first
-   play measures the delay between the audio clock and your taps (speakers, Bluetooth, touch screen) and the
-   game shifts both the judging and the scrolling notes by it.
+/* Guitar Battle test mode (?guitar). Two founders trade parts over a backing band. Three rounds, one turn
+   each per round. At the start of your turn you pick a part, Drums (easy: every beat), Rhythm (medium: the
+   chugs) or Solo (hard, but it swings the crowd most), then hit each note as it reaches the ring. Every
+   round plays one of the Suno songs (js/guitar-songs.js, made by tools/gtr_song.py from the song's stems):
+   each pick draws one of that song's sections for the part, and the band vamps on a 2-bar loop between turns.
+   The song's stems are all scheduled ahead in sync, so a tap never starts a sound late: the tap only decides
+   whether the note is judged a hit. A miss mutes your stem (the guitar, or the drums on a Drums turn) with a
+   clank; after two in a row it stays out until your next hit. The crowd meter moves on every note. A short
+   calibration on first play measures the delay between the audio clock and your taps (speakers, Bluetooth,
+   touch screen) and the game shifts both the judging and the scrolling notes by it.
    MC Satoshi hosts. The guitars here are drawn in code over the stage sprites until the Grok poses arrive. */
 (function () {
   if (!/[?&]guitar\b/i.test(location.search)) return;
@@ -25,11 +25,13 @@
   };
 
   // The three parts. `max` is how far a flawless turn moves the needle; a miss costs `miss`. `cpu` is the
-  // CPU's hit rate. Harder parts swing the crowd harder both ways.
+  // CPU's hit rate. Harder parts swing the crowd harder both ways. `stem` is the file a miss mutes.
   var PART = {
-    rhythm: { label: 'Rhythm', blurb: 'Palm-muted chugs', diff: 'Safe',   max: 12, miss: 1.0, cpu: 0.93, color: '#3aa8e8' },
-    solo:   { label: 'Solo',   blurb: 'Shred it',         diff: 'Risky',  max: 26, miss: 1.6, cpu: 0.72, color: '#ff7a3d' }
+    drums:  { label: 'Drums',  blurb: 'Keep the beat',    diff: 'Easy',   max: 8,  miss: 0.8, cpu: 0.96, color: '#49c46f', stem: 'drums' },
+    rhythm: { label: 'Rhythm', blurb: 'Palm-muted chugs', diff: 'Medium', max: 13, miss: 1.0, cpu: 0.92, color: '#3aa8e8', stem: 'guitar' },
+    solo:   { label: 'Solo',   blurb: 'Shred it',         diff: 'Hard',   max: 26, miss: 1.6, cpu: 0.75, color: '#ff7a3d', stem: 'guitar' }
   };
+  var STEMS = ['band', 'drums', 'guitar']; // each song's files: the band without drums or guitar, then those two
   var GOOD_SHARE = 0.6;     // a good (not perfect) hit is worth this much of a perfect one
   var STRAY = 0.5;          // a tap with no note near it: mashing costs you
   var PERFECT = 0.06, GOOD = 0.13, NEAR = 0.22; // hit windows, seconds either side
@@ -37,8 +39,8 @@
   // exists, at random. A round with no song of its own yet plays one of the songs that are in.
   var SONGS = window.POF_GUITAR_SONGS || {};
   var ROUND_SONGS = [['gtr-1a', 'gtr-1b'], ['gtr-2a', 'gtr-2b'], ['gtr-3a', 'gtr-3b']];
-  Object.keys(SONGS).forEach(function (id) { // each song's band and guitar files, for AU.load and AU.playPart
-    ['band', 'guitar'].forEach(function (k) { AU.MUSIC[id + '-' + k] = { src: 'audio/guitar/' + id + '-' + k + '.mp3', vol: SONGS[id].vol || 0.8 }; });
+  Object.keys(SONGS).forEach(function (id) { // each song's files, for AU.load and AU.playPart
+    STEMS.forEach(function (k) { AU.MUSIC[id + '-' + k] = { src: 'audio/guitar/' + id + '-' + k + '.mp3', vol: SONGS[id].vol || 0.8 }; });
   });
   var ROUNDS = 3, PART_BARS = 4;
   var LOOK = 0.12;          // how far ahead a CPU miss is scheduled (short, so it cuts the guitar on time)
@@ -78,7 +80,12 @@
     AU.playVoices(vs, at, 'sfx');
   }
 
-  // A missed note: a sour, choked strum.
+  // A missed note: a sour, choked strum, or on drums a dead stick off the rim.
+  function miss(part) { return part === 'drums' ? flub() : clank(); }
+  function flub() {
+    return [{ w: 'noise', d: 0.07, v: 0.2, bp: [900, 400], q: 2.5 }, { w: 'sine', f: [110, 55], d: 0.14, v: 0.22 },
+      { w: 'square', f: 2300, t: 0.02, d: 0.012, v: 0.04 }];
+  }
   function clank() {
     return [{ w: 'sawtooth', f: [midi(41), midi(40)], d: 0.22, v: 0.07, drive: 4, lp: 1700 },
       { w: 'sawtooth', f: midi(46), d: 0.2, v: 0.06, drive: 4, lp: 1700 },
@@ -215,6 +222,7 @@
     ['l', 'r'].forEach(function (k) { $('#gtr-spot-' + k).classList.toggle('on', !!id && side(id) === k); });
   }
   function info(html) { $('#gtr-info').innerHTML = html; }
+  function drumming(on) { var st = $('#gtr-stage'); if (st) st.classList.toggle('drumming', on); }
   function setMeter() { $('#gtr-fill').style.width = S.meter + '%'; }
   function moveMeter(who, amt) {
     S.meter = Math.max(2, Math.min(98, S.meter + (who === S.you ? amt : -amt)));
@@ -266,15 +274,16 @@
   function stopBand(fade) {
     if (!S.band) return;
     var B = S.band;
-    if (B.vamp) B.vamp.stop(fade || 0.1);
-    if (B.part) B.part.stop(fade || 0.1);
-    if (S.turn && S.turn.gtr) S.turn.gtr.stop(fade || 0.1);
+    stop(B.vamp, fade || 0.1);
+    stop(B.part, fade || 0.1);
+    if (S.turn && S.turn.stem) S.turn.stem.stop(fade || 0.1);
+    drumming(false);
     S.band = null;
   }
 
   // ---------- Songs ----------
-  // Picks each round's song and starts loading its band and guitar files.
-  var ALL_SONGS = Object.keys(SONGS).filter(function (id) { return SONGS[id].parts.rhythm.length && SONGS[id].parts.solo.length; });
+  // Picks each round's song and starts loading its files.
+  var ALL_SONGS = Object.keys(SONGS).filter(function (id) { return Object.keys(PART).every(function (p) { return (SONGS[id].parts[p] || []).length; }); });
   function setList() {
     var picked = {};
     return ROUND_SONGS.map(function (slots) {
@@ -283,7 +292,7 @@
       var id = have[Math.floor(Math.random() * have.length)];
       if (!picked[id]) {
         var e = picked[id] = { id: id, song: SONGS[id] };
-        e.loading = Promise.all([AU.load(id + '-band'), AU.load(id + '-guitar')]).then(function () { e.ready = true; }, function () { e.failed = true; });
+        e.loading = Promise.all(STEMS.map(function (k) { return AU.load(id + '-' + k); })).then(function () { e.ready = true; }, function () { e.failed = true; });
       }
       return picked[id];
     });
@@ -298,25 +307,37 @@
     }
     return e.ready ? e : null;
   }
-  // The band vamps on the song's 2-bar loop (no guitar) from `at` until a part starts. The song plays even
-  // with the music setting off: in this mode it's the game, not background music.
+  // Plays one of the song's files (band, drums or guitar). The song plays even with the music setting off:
+  // in this mode it's the game, not background music.
+  function clip(e, k, at, off, dur, opts) { return AU.playPart(e.id + '-' + k, at, off, dur, Object.assign({ always: true }, opts)); }
+  function stop(hs, fade, at) { (hs || []).forEach(function (h) { if (h) h.stop(fade, at); }); }
+  // The band and drums vamp on the song's 2-bar loop (no guitar) from `at` until a part starts.
+  function vamp(e, at, fadeIn) {
+    var V = e.song.vamp;
+    return ['band', 'drums'].map(function (k) { return clip(e, k, at, V.at, 0, { loop: V.len, fadeIn: fadeIn }); });
+  }
   function startSong(e, at) {
-    var V = e.song.vamp, h = AU.playPart(e.id + '-band', at, V.at, 0, { loop: V.len, fadeIn: 0.01, always: true });
-    if (!h) return false;
+    var V = e.song.vamp, h = vamp(e, at, 0.01);
+    if (!h[0] || !h[1]) { stop(h, 0.05); return false; }
     var bpm = Math.round(480 / V.len);
     S.band = { song: e, bpm: bpm, bar: V.len / 2, t0: at, vamp: h };
     setBeat(480 / V.len);
     return true;
   }
   // A part of the song: the vamp rides through the lead-in bar, then on the part's first downbeat `at` the
-  // band jumps to that section and the guitar stem comes in. (The song's own bar before a section can be a
-  // break, or the guitar-only intro.) The vamp picks up again when the four bars end. Returns the notes.
+  // band jumps to that section and the guitar comes in. (The song's own bar before a section can be a
+  // break, or the guitar-only intro.) The vamp picks up again when the four bars end. The player's stem
+  // (the guitar, or the drums on a Drums turn) is kept apart so a miss can mute it. Returns the notes.
   function playSongPart(T, at) {
-    var B = S.band, e = B.song, V = e.song.vamp, P = section(e, T.part), back = at + P.len;
-    if (B.vamp) B.vamp.stop(0.02, at - 0.02);
-    B.part = AU.playPart(e.id + '-band', at - 0.02, P.at - 0.02, P.len + 0.32, { fadeIn: 0.02, fadeOut: 0.25, always: true });
-    T.gtr = AU.playPart(e.id + '-guitar', at - 0.05, P.at - 0.05, P.len + 0.4, { fadeIn: 0.04, fadeOut: 0.3, always: true });
-    B.vamp = AU.playPart(e.id + '-band', back, V.at, 0, { loop: V.len, fadeIn: 0.03, always: true });
+    var B = S.band, e = B.song, P = section(e, T.part), back = at + P.len, mine = PART[T.part].stem;
+    stop(B.vamp, 0.02, at - 0.02);
+    B.part = [];
+    STEMS.forEach(function (k) {
+      var g = k === 'guitar', lead = g ? 0.05 : 0.02; // the guitar fades in a hair earlier, for its pick attack
+      var h = clip(e, k, at - lead, P.at - lead, P.len + (g ? 0.4 : 0.32), { fadeIn: g ? 0.04 : 0.02, fadeOut: g ? 0.3 : 0.25 });
+      if (k === mine) T.stem = h; else B.part.push(h);
+    });
+    B.vamp = vamp(e, back, 0.03);
     B.t0 = back;
     B.bpm = Math.round(960 / P.len);
     setBeat(960 / P.len);
@@ -329,20 +350,20 @@
     var pool = list.length > 1 ? list.filter(function (x) { return x !== last; }) : list;
     return (S.lastSec[key] = pool[Math.floor(Math.random() * pool.length)]);
   }
-  // A missed note mutes the guitar stem. After one slip it comes back for the next note; after two in a
+  // A missed note mutes the player's stem. After one slip it comes back for the next note; after two in a
   // row it stays out until a hit.
   function choke(T, n, at) {
-    if (!T.gtr) return;
-    T.gtr.level(0.08, at);
+    if (!T.stem) return;
+    T.stem.level(0.08, at);
     var next = T.notes[T.notes.indexOf(n) + 1];
-    if (next && (T.cpu || T.slump < 2)) T.gtr.level(1, next.t - 0.01);
+    if (next && (T.cpu || T.slump < 2)) T.stem.level(1, next.t - 0.01);
   }
   function nextBar(after) {
     var B = S.band, t = (after || now()) + 0.1;
     return B.t0 + Math.ceil((t - B.t0) / B.bar) * B.bar;
   }
 
-  // Runs every 25ms: schedules the CPU's misses LOOK ahead (a clank, and the guitar stem cut on time) and
+  // Runs every 25ms: schedules the CPU's misses LOOK ahead (a clank, and its stem cut on time) and
   // judges notes the player let go by.
   function tick() {
     if (!S) return;
@@ -351,7 +372,7 @@
     T.notes.forEach(function (n) {
       if (!n.sched && n.t < t + LOOK) {
         n.sched = true;
-        if (T.cpu && n.cpu === 'miss') { AU.playVoices(clank(), n.t, 'sfx'); choke(T, n, n.t); }
+        if (T.cpu && n.cpu === 'miss') { AU.playVoices(miss(T.part), n.t, 'sfx'); choke(T, n, n.t); }
       }
       if (T.cpu && !n.judged && t >= n.t + offsetNow()) land(n, n.cpu, n.cpu === 'miss' ? 0 : n.cpuErr);
       if (!T.cpu && !n.judged && t > n.t + offsetNow() + GOOD) land(n, 'miss');
@@ -371,7 +392,7 @@
       T.slump++;
       if (!T.cpu) {
         choke(T, n, now());
-        sfx(clank());
+        sfx(miss(T.part));
         T.muted = true;
       }
       moveMeter(T.who, -P.miss);
@@ -380,7 +401,7 @@
       judge('MISS', 'miss');
     } else {
       T.hits++;
-      if (T.gtr && T.muted && !T.cpu) T.gtr.level(1);
+      if (T.stem && T.muted && !T.cpu) T.stem.level(1);
       T.muted = false;
       T.slump = 0;
       T.streak++;
@@ -528,10 +549,10 @@
   }
 
   // ---------- Battle ----------
-  // Your two part buttons; resolves with the part you tap.
+  // Your part buttons; resolves with the part you tap.
   function choose() {
     var box = $('#gtr-picks');
-    box.innerHTML = '<p class="rap-your">Pick your part</p><div class="rap-opts gtr-two">' + Object.keys(PART).map(function (k) {
+    box.innerHTML = '<p class="rap-your">Pick your part</p><div class="rap-opts">' + Object.keys(PART).map(function (k) {
       var P = PART[k];
       return '<button class="rap-pick gtr-part" type="button" data-k="' + k + '" style="background:' + P.color + '">' +
         '<b>' + P.label + '</b><span class="rap-odds">' + P.diff + '</span><span class="rap-blurb">' + P.blurb + '</span></button>';
@@ -546,7 +567,7 @@
       };
     });
   }
-  function cpuPart() { return Math.random() < 0.45 ? 'rhythm' : 'solo'; }
+  function cpuPart() { var r = Math.random(); return r < 0.25 ? 'drums' : r < 0.62 ? 'rhythm' : 'solo'; }
 
   async function turn(who, round) {
     var id = S.id, mine = who === S.you, other = mine ? S.cpu : S.you;
@@ -564,6 +585,7 @@
     var P = PART[part], at = nextBar(now() + 0.2) + S.band.bar; // one bar of lead so the notes scroll in
     var T = { who: who, part: part, cpu: !mine, hits: 0, streak: 0, slump: 0, muted: false };
     T.notes = playSongPart(T, at);
+    drumming(part === 'drums'); // the band's drummer lights up: that's who you're playing
     info('<p class="rap-call" style="color:' + P.color + '">' + esc(name(who)) + ': ' + P.label + '</p><p class="rap-sub">Round ' + (round + 1) + ' · ' +
       esc(S.band.song.song.name) + ' · ' + S.band.bpm + ' BPM</p>');
     if (T.cpu) T.notes.forEach(function (n) {
@@ -573,7 +595,7 @@
     });
     S.turn = T;
     if (mine) {
-      $('#gtr-picks').innerHTML = '<button class="btn btn-big gtr-strum" id="gtr-strum" type="button" style="--c:' + P.color + '">STRUM</button>' +
+      $('#gtr-picks').innerHTML = '<button class="btn btn-big gtr-strum" id="gtr-strum" type="button" style="--c:' + P.color + '">' + (P.stem === 'drums' ? 'HIT' : 'STRUM') + '</button>' +
         '<p class="rap-your gtr-hint">Tap the lane, this button, or press Space</p>';
       $('#gtr-strum').addEventListener('pointerdown', strum);
     } else waiting(name(who) + ' is playing ' + P.label.toLowerCase());
@@ -584,6 +606,7 @@
     await untilTime(end.t + end.len + offsetNow() + GOOD + 0.25);
     if (!alive(id)) return;
     S.turn = null;
+    drumming(false);
     pose(who, '');
     pose(other, '');
     // The crowd's verdict on the turn. It doesn't move the needle; the notes already did.
@@ -602,8 +625,8 @@
     $('#gtr-picks').innerHTML = '<button class="btn btn-ghost btn-sm rap-skip" id="gtr-skip" type="button">Skip intro ›</button>';
     $('#gtr-skip').onclick = function () { AU.play('tap'); me.skipped = true; waiting(''); };
     var lines = rematch ? ['Run it back! Same two guitarists.'] : ['Welcome to the Proof of Fight guitar battle!'];
-    if (!rematch && !told) lines.push('Three rounds. Each round, both players take one turn.', 'Pick a part. Rhythm is safe. Solo is risky, but it swings the crowd.',
-      'Strum on every note. Play in sync and the crowd is yours. Miss and they let you know!');
+    if (!rematch && !told) lines.push('Three rounds. Each round, both players take one turn.', 'Pick a part. Drums is easy, Rhythm is harder, and Solo is hardest, but it swings the crowd the most.',
+      'Hit every note. Play in sync and the crowd is yours. Miss and they let you know!');
     if (!rematch) lines.push('In this corner, ' + name(S.you) + '! And in this corner, ' + name(S.cpu) + '!');
     for (var i = 0; i < lines.length && alive(me.id) && !me.skipped; i++) {
       await host(lines[i]);

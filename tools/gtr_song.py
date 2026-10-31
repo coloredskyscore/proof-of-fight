@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
-"""Turn a Suno song's stems into a Guitar Battle song (?guitar): two small MP3s and the note charts.
+"""Turn a Suno song's stems into a Guitar Battle song (?guitar): three small MP3s and the note charts.
 Needs: pip install numpy librosa miniaudio lameenc onnxruntime, plus basic-pitch (pip install --no-deps basic-pitch)
 
   python3 tools/gtr_song.py STEMS_DIR gtr-1a --name "Arena Anthem" --rhythm 0:20 1:32 --solo 0:29 1:48
 
 STEMS_DIR holds Suno's stem download (files ending in Guitar.mp3, Drums.mp3, Bass.mp3 and so on). Give the
 start of each chugging section (--rhythm) and each solo section (--solo); each snaps to the nearest downbeat
-and becomes a four-bar part, and a pick in the game draws one of them at random. The band file is every stem
-except the guitar and the vocals; the guitar file is the guitar stem. Both hold the same clips at the same
-times: a 2-bar loop the band vamps on between turns, then each section.
+and becomes a four-bar part, and a pick in the game draws one of them at random. The Drums part plays over
+every one of those sections, unless --drums gives sections of its own. The band file is every stem except the
+guitar, the drums and the vocals; the drums file and the guitar file are those stems. All three hold the same
+clips at the same times: a 2-bar loop the band vamps on between turns, then each section.
 
 The charts come from the guitar stem: basic-pitch transcribes it, notes that start together become one
 strum, and each part keeps its strongest strums with a minimum gap. Rhythm follows the low strings and Solo
 the high lead, since one stem can hold several guitars. Strums are pinned to the guitar's attack, then onto
 the drum grid (8ths for Rhythm, 16ths for Solo). The grid comes from the drum stem beat by beat, so a song
-whose tempo drifts still lines up.
-Writes audio/guitar/<id>-band.mp3, audio/guitar/<id>-guitar.mp3 and the song's entry in js/guitar-songs.js.
+whose tempo drifts still lines up. The Drums chart is the easy one: a hit on every beat.
+Writes audio/guitar/<id>-band.mp3, -drums.mp3 and -guitar.mp3, and the song's entry in js/guitar-songs.js.
 """
 import argparse
 import glob
@@ -91,9 +92,9 @@ def strums(notes):
     return out
 
 
-def flux(guitar):
-    """The guitar stem's attack strength (spectral flux), 100 frames a second, to pin each strum's start."""
-    y = librosa.resample(guitar.mean(1), orig_sr=SR, target_sr=22050)
+def flux(stem):
+    """A stem's attack strength (spectral flux), 100 frames a second, to pin each note's start."""
+    y = librosa.resample(stem.mean(1), orig_sr=SR, target_sr=22050)
     return librosa.onset.onset_strength(y=y, sr=22050, hop_length=220, lag=1, max_size=3)
 
 
@@ -140,6 +141,12 @@ def chart(notes, part, start, end, beats, fl):
     return notes
 
 
+def drum_chart(start, end, beats):
+    """A hit on every beat of the section. The beats come from the drum stem itself and land within about
+    15 ms of each kick and snare peak (spectral flux runs about 35 ms late on drums, so it isn't used)."""
+    return [[round(float(b) - start, 3), 0] for b in beats if start - 0.04 <= b < end - 0.15]
+
+
 def mp3(x, path):
     enc = lameenc.Encoder()
     enc.set_bit_rate(128)
@@ -158,6 +165,7 @@ def main():
     ap.add_argument('--name', required=True)
     for p in PART:
         ap.add_argument('--' + p, required=True, nargs='+', help='where each such section starts (m:ss or seconds)')
+    ap.add_argument('--drums', nargs='+', help='sections for the Drums part (default: every rhythm and solo section)')
     ap.add_argument('--vamp', help='where the 2-bar vamp starts (default: the first rhythm section)')
     ap.add_argument('--vol', type=float, default=0.8, help='playback volume for both files')
     ap.add_argument('--root', default=os.path.join(os.path.dirname(__file__), '..'))
@@ -167,16 +175,17 @@ def main():
     def find(word):
         hit = [f for f in files if re.search(word + r'\.mp3$', f, re.I)]
         return hit[0] if hit else None
-    gpath = find('guitar')
-    band_paths = [f for f in files if f != gpath and not re.search(r'(vocals|full.song)\.mp3$', f, re.I)]
+    gpath, dpath = find('guitar'), find('drums')
+    band_paths = [f for f in files if f not in (gpath, dpath) and not re.search(r'(vocals|full.song)\.mp3$', f, re.I)]
     print('guitar:', os.path.basename(gpath))
+    print('drums:', os.path.basename(dpath))
     print('band:', ', '.join(os.path.basename(f) for f in band_paths))
-    guitar = load(gpath)
+    guitar, drums = load(gpath), load(dpath)
     stems = [load(f) for f in band_paths]
-    n = min([len(guitar)] + [len(s) for s in stems])
-    guitar = guitar[:n]
+    n = min([len(guitar), len(drums)] + [len(s) for s in stems])
+    guitar, drums = guitar[:n], drums[:n]
     band = sum(s[:n] for s in stems)
-    beats, downs = grid(load(find('drums'))[:n])
+    beats, downs = grid(drums)
 
     def snap(t):
         return float(downs[np.argmin(np.abs(downs - t))])
@@ -187,52 +196,52 @@ def main():
 
     notes = transcribe(gpath)
     fl = flux(guitar)
-    song = {'name': args.name, 'vol': args.vol, 'parts': {p: [] for p in PART}}
+    song = {'name': args.name, 'vol': args.vol, 'parts': {p: [] for p in list(PART) + ['drums']}}
     vs = snap(secs(args.vamp or args.rhythm[0]))
     ve = bar_after(vs, 2)
-    clips = [('vamp', vs, vs - 0.1, ve + 0.25)]
-    for p in PART:
-        for t in getattr(args, p):
-            s = snap(secs(t))
-            if (bar_after(s, BARS) - s) < (ve - vs) * BARS / 2 * 0.85:
-                print(f'skipping {p} at {t}: the song ends before four bars are up')
-                continue
-            clips.append((p, s, s - 0.1, bar_after(s, BARS) + 0.45))
+    clips = [(['vamp'], vs, vs - 0.1, ve + 0.25)]
+    asked = [(p, t) for p in PART for t in getattr(args, p)] + [('drums', t) for t in (args.drums or [])]
+    for p, t in asked:
+        s = snap(secs(t))
+        if (bar_after(s, BARS) - s) < (ve - vs) * BARS / 2 * 0.85:
+            print(f'skipping {p} at {t}: the song ends before four bars are up')
+            continue
+        clips.append(([p] if args.drums or p == 'drums' else [p, 'drums'], s, s - 0.1, bar_after(s, BARS) + 0.45))
 
-    out_b, out_g, at = [np.zeros((int(0.3 * SR), 2))], [np.zeros((int(0.3 * SR), 2))], 0.3
-    for name, s, a, b in clips:
+    srcs = {'band': band, 'drums': drums, 'guitar': guitar}
+    outs, at = {k: [np.zeros((int(0.3 * SR), 2))] for k in srcs}, 0.3
+    for parts, s, a, b in clips:
         ia, ib = int(a * SR), int(b * SR)
-        seg_b, seg_g = band[ia:ib].copy(), guitar[ia:ib].copy()
+        segs = {k: x[ia:ib].copy() for k, x in srcs.items()}
         fade = int(0.01 * SR)
-        for seg in (seg_b, seg_g):
+        for seg in segs.values():
             seg[:fade] *= np.linspace(0, 1, fade)[:, None]
             seg[-fade:] *= np.linspace(1, 0, fade)[:, None]
-        if name == 'vamp':
-            seg_g[:] = 0  # the band waits for its guitarist
+        if parts == ['vamp']:
+            segs['guitar'][:] = 0  # the band waits for its guitarist
             song['vamp'] = {'at': round(at + PAD + (s - a), 4), 'len': round(ve - vs, 4)}
         else:
             e = bar_after(s, BARS)
             bar = (e - s) / BARS
             local = [round(float(x) - s, 3) for x in beats if s - bar - 0.01 <= x <= e + 0.01]
-            song['parts'][name].append({
-                'at': round(at + PAD + (s - a), 4),      # file time of the section's first downbeat
-                'len': round(e - s, 4),                  # its four bars
-                'beats': local,                          # from the bar before (the lead-in) to the end
-                'notes': chart(notes, name, s, e, beats, fl),
-                'src': round(s, 3)                       # where it is in the song
-            })
-        out_b.append(seg_b)
-        out_g.append(seg_g)
-        at += (ib - ia) / SR
-        out_b.append(np.zeros((int(GAP * SR), 2)))
-        out_g.append(np.zeros((int(GAP * SR), 2)))
-        at += int(GAP * SR) / SR
+            for p in parts:
+                song['parts'][p].append({
+                    'at': round(at + PAD + (s - a), 4),      # file time of the section's first downbeat
+                    'len': round(e - s, 4),                  # its four bars
+                    'beats': local,                          # from the bar before (the lead-in) to the end
+                    'notes': drum_chart(s, e, beats) if p == 'drums' else chart(notes, p, s, e, beats, fl),
+                    'src': round(s, 3)                       # where it is in the song
+                })
+        for k in srcs:
+            outs[k].append(segs[k])
+            outs[k].append(np.zeros((int(GAP * SR), 2)))
+        at += (ib - ia) / SR + int(GAP * SR) / SR
     os.makedirs(os.path.join(args.root, 'audio', 'guitar'), exist_ok=True)
-    mp3(np.concatenate(out_b), os.path.join(args.root, 'audio', 'guitar', args.id + '-band.mp3'))
-    mp3(np.concatenate(out_g), os.path.join(args.root, 'audio', 'guitar', args.id + '-guitar.mp3'))
+    for k in srcs:
+        mp3(np.concatenate(outs[k]), os.path.join(args.root, 'audio', 'guitar', args.id + '-' + k + '.mp3'))
     for p, secs_ in song['parts'].items():
         for v in secs_:
-            print(f"{p:6s} {v['src']:7.2f}s  {240 / v['len'] * BARS:6.2f} BPM  {len(v['notes'])} strums")
+            print(f"{p:6s} {v['src']:7.2f}s  {240 / v['len'] * BARS:6.2f} BPM  {len(v['notes'])} notes")
 
     js = os.path.join(args.root, 'js', 'guitar-songs.js')
     songs = {}
@@ -244,7 +253,7 @@ def main():
     with open(js, 'w') as f:
         f.write('/* Guitar Battle songs (?guitar), written by tools/gtr_song.py from each song\'s Suno stems. Per song: the\n'
                 '   band\'s 2-bar vamp and, per part, its sections (file time of the first downbeat, four bars long,\n'
-                '   the beat grid and the strums: [seconds from the downbeat, how long it rings]). */\n')
+                '   the beat grid and the notes: [seconds from the downbeat, how long it rings]). */\n')
         f.write('window.POF_GUITAR_SONGS = ' + json.dumps(songs, separators=(',', ':')) + ';\n')
     print('wrote', js)
 
