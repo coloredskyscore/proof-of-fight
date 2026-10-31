@@ -852,23 +852,23 @@ test('10,000 random fights: always end, HP and Blocks stay in range, replays mat
   }
 });
 
-test('Guitar Battle songs: files exist, both parts have sections, strums fit their four bars', function () {
+test('Guitar Battle songs: files exist, all three parts have sections, notes fit their four bars', function () {
   var fs = require('fs'), path = require('path');
   var src = fs.readFileSync(path.join(__dirname, '..', 'js', 'guitar-songs.js'), 'utf8');
   var songs = JSON.parse(src.match(/window\.POF_GUITAR_SONGS = (\{.*\});/s)[1]);
   Object.keys(songs).forEach(function (id) {
     var g = songs[id];
-    ['band', 'guitar'].forEach(function (k) {
+    ['band', 'drums', 'guitar'].forEach(function (k) {
       assert(fs.existsSync(path.join(__dirname, '..', 'audio', 'guitar', id + '-' + k + '.mp3')), id + ': missing ' + k + ' file');
     });
     assert(g.vamp && g.vamp.len > 2 && g.vamp.len < 8, id + ': vamp is two bars');
-    ['rhythm', 'solo'].forEach(function (p) {
+    ['drums', 'rhythm', 'solo'].forEach(function (p) {
       assert(g.parts[p] && g.parts[p].length, id + ': no ' + p + ' sections');
       g.parts[p].forEach(function (x) {
-        assert(x.notes.length >= 8, id + ' ' + p + ': too few strums');
+        assert(x.notes.length >= 8, id + ' ' + p + ': too few notes');
         x.notes.forEach(function (n, i) {
-          assert(n[0] >= -0.05 && n[0] + n[1] <= x.len + 0.1, id + ' ' + p + ': a strum outside its bars');
-          if (i) assert(n[0] > x.notes[i - 1][0], id + ' ' + p + ': strums out of order');
+          assert(n[0] >= -0.05 && n[0] + n[1] <= x.len + 0.1, id + ' ' + p + ': a note outside its bars');
+          if (i) assert(n[0] > x.notes[i - 1][0], id + ' ' + p + ': notes out of order');
         });
       });
     });

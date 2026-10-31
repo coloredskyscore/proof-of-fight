@@ -16,6 +16,8 @@
 .gtr-band .arm { transform-box: fill-box; animation: gtr-hit calc(var(--rap-beat, .5s)) ease-in infinite; }
 .gtr-band .arm.l { transform-origin: 100% 0; }
 .gtr-band .arm.r { transform-origin: 0 0; animation-delay: calc(var(--rap-beat, .5s) * -.5); }
+.gtr-band .drums { transition: filter .3s; }
+.gtr-stage.drumming .gtr-band .drums { filter: drop-shadow(0 0 3px #49c46f) drop-shadow(0 0 12px rgba(73, 196, 111, .7)); }
 @keyframes gtr-bob { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(3px); } }
 @keyframes gtr-hit { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-14deg); } }
 
@@ -77,6 +79,5 @@
 .gtr-picks .gtr-strum:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
 #gtr-cal-tap { color: #1a1200; text-shadow: 0 1px 0 rgba(255, 255, 255, .45); }
 .gtr-hint { font-size: .62rem; }
-.gtr-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .gtr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .gtr-part .rap-odds { color: #fff; opacity: .9; }

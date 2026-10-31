@@ -895,11 +895,12 @@
   // Plays part of a loaded song at an exact audio-clock time `at`: from `offset` seconds into the file for
   // `dur` seconds, or looping `opts.loop` seconds from `offset`. opts.fadeIn / opts.fadeOut in seconds.
   // Returns { stop(fade, at), level(v, at) }: level sets the volume (0 to 1) from time `at`, so the Guitar
-  // Battle can mute the guitar stem on a miss. Returns null when music is off or the song hasn't loaded.
+  // Battle can mute the guitar stem on a miss. Returns null when the song hasn't loaded, or when music is off
+  // (unless opts.always: the Guitar Battle's song is the game itself, not background music).
   function playPart(name, at, offset, dur, opts) {
     opts = opts || {};
     var m = MUSIC[name], buf = buffers[name];
-    if (!m || !buf || !settings.music || !ensure() || ctx.state !== 'running') return null;
+    if (!m || !buf || !(settings.music || opts.always) || !ensure() || ctx.state !== 'running') return null;
     var src = ctx.createBufferSource(), g = ctx.createGain(), late = Math.max(0, ctx.currentTime + 0.005 - at);
     var vol = m.vol == null ? 1 : m.vol, t0 = at + late, end = dur ? at + dur : 0;
     src.buffer = buf;
