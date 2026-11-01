@@ -852,7 +852,7 @@ test('10,000 random fights: always end, HP and Blocks stay in range, replays mat
   }
 });
 
-test('Guitar Battle songs: files exist, all three parts have sections, notes fit their four bars', function () {
+test('Guitar Battle songs: files exist, eight-bar sections, notes fit their bars, an ending, and a playable full-song chart', function () {
   var fs = require('fs'), path = require('path');
   var src = fs.readFileSync(path.join(__dirname, '..', 'js', 'guitar-songs.js'), 'utf8');
   var songs = JSON.parse(src.match(/window\.POF_GUITAR_SONGS = (\{.*\});/s)[1]);
@@ -862,10 +862,25 @@ test('Guitar Battle songs: files exist, all three parts have sections, notes fit
       assert(fs.existsSync(path.join(__dirname, '..', 'audio', 'guitar', id + '-' + k + '.mp3')), id + ': missing ' + k + ' file');
     });
     assert(g.vamp && g.vamp.len > 2 && g.vamp.len < 8, id + ': vamp is two bars');
+    assert(g.end && g.end.at > 0 && g.end.len > 2, id + ': no ending');
+    if (g.full) { // Play the Song: stretches in order, every note inside one, in order and playable
+      var F = g.full;
+      assert(F.segs.length >= 3 && F.notes.length >= 50 && F.at > 0 && F.len > 30, id + ': full song too short');
+      F.segs.forEach(function (x, i) {
+        assert(F.parts.indexOf(x[0]) >= 0 && x[2] > x[1], id + ': a bad stretch');
+        if (i) assert(Math.abs(x[1] - F.segs[i - 1][2]) < 0.01, id + ': stretches leave a gap');
+      });
+      F.notes.forEach(function (n, i) {
+        assert(F.segs.some(function (x) { return n[0] >= x[1] - 0.05 && n[0] < x[2] && F.parts[n[2]] === x[0]; }), id + ': a full-song note outside its stretch');
+        if (i) assert(n[0] - F.notes[i - 1][0] >= 0.1, id + ': full-song notes too close');
+      });
+      assert(F.notes[F.notes.length - 1][0] < F.len, id + ': a note after the song ends');
+    }
     ['drums', 'rhythm', 'solo'].forEach(function (p) {
       assert(g.parts[p] && g.parts[p].length, id + ': no ' + p + ' sections');
       g.parts[p].forEach(function (x) {
         assert(x.notes.length >= 8, id + ' ' + p + ': too few notes');
+        assert(Math.abs(x.len / g.vamp.len - 4) < 0.4, id + ' ' + p + ': a turn is eight bars (four vamps)');
         x.notes.forEach(function (n, i) {
           assert(n[0] >= -0.05 && n[0] + n[1] <= x.len + 0.1, id + ' ' + p + ': a note outside its bars');
           if (i) assert(n[0] > x.notes[i - 1][0], id + ' ' + p + ': notes out of order');
