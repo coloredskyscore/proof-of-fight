@@ -81,3 +81,11 @@
 .gtr-hint { font-size: .62rem; }
 .gtr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .gtr-part .rap-odds { color: #fff; opacity: .9; }
+
+/* Mode choice, and Play the Song's end screen. */
+.gtr-modes { display: grid; gap: 8px; }
+.gtr-mode { flex-direction: column; gap: 1px; line-height: 1.15; }
+.gtr-mode small { display: block; font-family: var(--body); font-weight: 700; font-size: .68em; opacity: .85; letter-spacing: 0; }
+.gtr-row:has(> :nth-child(3)) { grid-template-columns: repeat(3, 1fr); }
+.gtr-row .btn { font-size: .8rem; padding-inline: .4em; }
+.gtr-score { font-family: var(--display); font-size: .85rem; }

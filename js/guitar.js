@@ -8,6 +8,8 @@
    clank; after two in a row it stays out until your next hit. The crowd meter moves on every note. A short
    calibration on first play measures the delay between the audio clock and your taps (speakers, Bluetooth,
    touch screen) and the game shifts both the judging and the scrolling notes by it.
+   Play the Song: the whole song, start to finish, solo. The part you play follows the song (the lane says when
+   to switch between drums, rhythm and solo), and the end screen gives your sync per part and your best.
    MC Satoshi hosts. The guitars here are drawn in code over the stage sprites until the Grok poses arrive. */
 (function () {
   if (!/[?&]guitar\b/i.test(location.search)) return;
@@ -45,8 +47,9 @@
   var ROUNDS = 3;
   var LOOK = 0.12;          // how far ahead a CPU miss is scheduled (short, so it cuts the guitar on time)
   var SHOW = 1.7;           // seconds of notes visible on the lane
-  var OFFSET_KEY = 'pof-guitar-offset';
-  var told = false;
+  var OFFSET_KEY = 'pof-guitar-offset', BEST_KEY = 'pof-guitar-best-';
+  var FULL_SONGS = Object.keys(SONGS).filter(function (id) { return SONGS[id].full; }); // songs you can play start to finish
+  var told = false, toldSong = false;
 
   var S = null;
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -290,12 +293,14 @@
       var have = slots.filter(function (id) { return ALL_SONGS.indexOf(id) >= 0; });
       if (!have.length) have = ALL_SONGS;
       var id = have[Math.floor(Math.random() * have.length)];
-      if (!picked[id]) {
-        var e = picked[id] = { id: id, song: SONGS[id] };
-        e.loading = Promise.all(STEMS.map(function (k) { return AU.load(id + '-' + k); })).then(function () { e.ready = true; }, function () { e.failed = true; });
-      }
-      return picked[id];
+      return picked[id] || (picked[id] = entry(id));
     });
+  }
+  // A song, with its files loading.
+  function entry(id) {
+    var e = { id: id, song: SONGS[id] };
+    e.loading = Promise.all(STEMS.map(function (k) { return AU.load(id + '-' + k); })).then(function () { e.ready = true; }, function () { e.failed = true; });
+    return e;
   }
   // Round r's song once its files have loaded, or null if they couldn't load.
   async function cue(r) {
@@ -374,10 +379,11 @@
   // A missed note mutes the player's stem. After one slip it comes back for the next note; after two in a
   // row it stays out until a hit.
   function choke(T, n, at) {
-    if (!T.stem) return;
-    T.stem.level(0.08, at);
+    var st = n.stem || T.stem;
+    if (!st) return;
+    st.level(0.08, at);
     var next = T.notes[T.notes.indexOf(n) + 1];
-    if (next && (T.cpu || T.slump < 2)) T.stem.level(1, next.t - 0.01);
+    if (next && (T.cpu || T.slump < 2)) st.level(1, next.t - 0.01);
   }
   function nextBar(after) {
     var B = S.band, t = (after || now()) + 0.1;
@@ -390,6 +396,7 @@
     if (!S) return;
     var t = now(), T = S.turn;
     if (!T) return;
+    if (T.song) songTick(T, t);
     T.notes.forEach(function (n) {
       if (!n.sched && n.t < t + LOOK) {
         n.sched = true;
@@ -404,28 +411,31 @@
   // ---------- Turns ----------
   // A note is judged: the needle moves and the crowd reacts to streaks and slumps.
   function land(n, grade, err) {
-    var T = S.turn, P = PART[T.part];
+    var T = S.turn, part = n.part || T.part, P = PART[part], stem = n.stem || T.stem;
     n.judged = grade;
     n.err = err || 0;
-    var val = P.max / T.notes.length;
+    // In a battle a flawless turn moves the needle P.max; playing the song, it's the crowd's hype.
+    var val = T.song ? 0.9 : P.max / T.notes.length;
     if (grade === 'miss') {
       T.streak = 0;
       T.slump++;
       if (!T.cpu) {
         choke(T, n, now());
-        sfx(miss(T.part));
+        sfx(miss(part));
         T.muted = true;
       }
-      moveMeter(T.who, -P.miss);
+      moveMeter(T.who, -(T.song ? 2.4 : P.miss));
       if (T.slump >= 3 && T.slump % 2 === 1) { sfx(boos(4, 0.05)); crowd('boo'); pop('BOOO!', 'miss'); }
       else if (T.slump === 1) sfx(groan());
       judge('MISS', 'miss');
     } else {
       T.hits++;
-      if (T.stem && T.muted && !T.cpu) T.stem.level(1);
+      if (stem && T.muted && !T.cpu) stem.level(1);
       T.muted = false;
       T.slump = 0;
       T.streak++;
+      T.best = Math.max(T.best || 0, T.streak);
+      if (grade === 'perfect') T.perfect = (T.perfect || 0) + 1;
       moveMeter(T.who, grade === 'perfect' ? val : val * GOOD_SHARE);
       if (T.streak % 6 === 0) { sfx(woos(T.streak >= 12 ? 4 : 2).concat(claps(6, 0.8, 0.1))); crowd('hype'); if (T.streak >= 12) pop('ON FIRE!', 'land'); }
       judge(grade === 'perfect' ? 'PERFECT' : 'GOOD', grade);
@@ -479,12 +489,12 @@
     g.clearRect(0, 0, W, H);
     var hx = Math.max(44, W * 0.16), cy = H / 2, pps = (W - hx) / SHOW, t = now() - offsetNow();
     // Beat lines: a song part's own beats (its tempo can drift), else the band's clock.
-    var TB = S.turn && S.turn.beats;
+    var TB = S.turn && S.turn.beats, b0 = (S.turn && S.turn.beat0) || 0;
     if (TB) {
       TB.forEach(function (bt, i) {
         var x = hx + (bt - t) * pps;
         if (x < 0 || x > W) return;
-        g.fillStyle = (i % 4 === 0) ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.08)';
+        g.fillStyle = (((i - b0) % 4 + 4) % 4 === 0) ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.08)';
         g.fillRect(x - 1, 6, 2, H - 12);
       });
     } else if (S.band) {
@@ -511,9 +521,17 @@
     }
     var T = S.turn;
     if (!T) return;
-    var col = PART[T.part].color;
+    // Playing the song: where the part changes, a line in the new part's color with its name.
+    if (T.segs) T.segs.forEach(function (G, k) {
+      var x = hx + (G.s - t) * pps;
+      if (x < hx - 4 || x > W || (k && G.part === T.segs[k - 1].part)) return;
+      g.fillStyle = PART[G.part].color;
+      g.fillRect(x - 1.5, 3, 3, H - 6);
+      g.font = '800 11px system-ui, sans-serif';
+      g.fillText(PART[G.part].label.toUpperCase(), x + 5, 13);
+    });
     for (var i = T.notes.length - 1; i >= 0; i--) {
-      var n = T.notes[i], nx = hx + (n.t - t) * pps;
+      var n = T.notes[i], nx = hx + (n.t - t) * pps, col = PART[n.part || T.part].color;
       if (nx > W + 30 || nx + n.len * pps < -30) continue;
       if (n.judged && n.judged !== 'miss') {
         // A hit: the tail keeps ringing past the ring, the head bursts.
@@ -702,12 +720,12 @@
   }
 
   // The song couldn't load or play: say so, with a way to try again.
-  function noBand(text) {
+  function noBand(text, retry) {
     stopBand(0.1);
     spot(null);
     info('<p class="rap-call">No band tonight</p><p class="rap-sub">' + esc(text) + '</p>');
     $('#gtr-picks').innerHTML = '<button class="btn btn-gold btn-big" id="gtr-again" type="button">Try again</button>';
-    $('#gtr-again').onclick = function () { AU.play('tap'); begin(S.you, true); };
+    $('#gtr-again').onclick = function () { AU.play('tap'); (retry || function () { begin(S.you, true); })(); };
   }
 
   async function finale() {
@@ -733,12 +751,146 @@
     await wait(2400);
     if (!alive(id)) return;
     info('<p class="rap-result">' + esc(name(winner).toUpperCase()) + ' WINS THE CROWD</p><p class="rap-sub">' + (youWin ? 'You took it.' : 'The crowd went the other way.') + '</p>');
-    $('#gtr-picks').innerHTML = '<button class="btn btn-gold btn-big" id="gtr-again" type="button">Run it back</button>' +
-      '<div class="gtr-row"><button class="btn btn-ghost" id="gtr-switch" type="button">Switch guitarist</button>' +
-      '<button class="btn btn-ghost" id="gtr-recal" type="button">Recalibrate</button></div>';
+    $('#gtr-picks').innerHTML = '<button class="btn btn-gold btn-big" id="gtr-again" type="button">Run it back</button>' + endRow(FULL_SONGS.length ? 'Play the Song' : '');
     $('#gtr-again').onclick = function () { AU.play('tap'); begin(S.you, true); };
+    wireEndRow(function () { beginSong(S.you); }, function () { begin(S.you, true); });
+  }
+  // The end screen's smaller buttons: the other mode, a new guitarist, and a fresh sync check.
+  function endRow(other) {
+    return '<div class="gtr-row">' + (other ? '<button class="btn btn-ghost" id="gtr-other" type="button">' + other + '</button>' : '') +
+      '<button class="btn btn-ghost" id="gtr-switch" type="button">Switch guitarist</button>' +
+      '<button class="btn btn-ghost" id="gtr-recal" type="button">Recalibrate</button></div>';
+  }
+  function wireEndRow(other, again) {
+    if ($('#gtr-other')) $('#gtr-other').onclick = function () { AU.play('tap'); other(); };
     $('#gtr-switch').onclick = function () { AU.play('tap'); pickPlayer(); };
-    $('#gtr-recal').onclick = function () { AU.play('tap'); offset = null; begin(S.you, true); };
+    $('#gtr-recal').onclick = function () { AU.play('tap'); offset = null; again(); };
+  }
+
+  // ---------- Play the Song ----------
+  function fmt(t) { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ':' + ('0' + t % 60).slice(-2); }
+  function readBest(id) { try { return parseInt(localStorage.getItem(BEST_KEY + id), 10) || 0; } catch (e) { return 0; } }
+  function saveBest(id, v) { try { localStorage.setItem(BEST_KEY + id, String(v)); } catch (e) { /* private window */ } }
+  // You alone on stage; the meter is the crowd's hype.
+  function setSoloStage() {
+    var F = D.FIGHTERS[S.you];
+    $('#gtr-l').innerHTML = player(S.you, 'l');
+    $('#gtr-r').innerHTML = '';
+    $('#gtr-mface-l').innerHTML = '<img src="' + F.art.head + '" alt="">';
+    $('#gtr-mface-l').style.setProperty('--c', F.color);
+    $('#gtr-mface-r').innerHTML = '<img src="' + HOST.face + '" alt="">';
+    $('#gtr-mface-r').style.setProperty('--c', '#8a7fb0');
+    $('#gtr-bar').style.setProperty('--cl', F.color);
+    $('#gtr-bar').style.setProperty('--cr', '#2a2440');
+  }
+  // The strum button and the drummer's glow follow the part you're on.
+  function partUI(part) {
+    var P = PART[part], b = $('#gtr-strum');
+    if (b) { b.textContent = P.stem === 'drums' ? 'HIT' : 'STRUM'; b.style.setProperty('--c', P.color); }
+    drumming(part === 'drums');
+  }
+  // Starts the whole song at `at`: all three files from the top, in sync. Returns the turn: every note of the
+  // song with its part and the file a miss mutes, and the stretches where the part changes.
+  function startFull(e, at) {
+    var F = e.song.full, h = {};
+    STEMS.forEach(function (k) { h[k] = clip(e, k, at, F.at, F.len + 0.1, { fadeIn: 0.01, fadeOut: 0.3 }); });
+    if (!h.band || !h.drums || !h.guitar) { stop([h.band, h.drums, h.guitar], 0.05); return null; }
+    var beat = (F.beats[F.beats.length - 1] - F.beats[0]) / (F.beats.length - 1), stems = { guitar: h.guitar, drums: h.drums };
+    S.band = { song: e, bpm: Math.round(60 / beat), bar: beat * 4, t0: at + F.downs[0], vamp: null, part: [h.band, h.drums, h.guitar], mine: null, done: at + F.len };
+    setBeat(60 / beat);
+    var T = { who: S.you, song: true, cpu: false, part: F.segs[0][0], hits: 0, streak: 0, slump: 0, best: 0, perfect: 0, muted: false, stems: stems, at: at, len: F.len, seg: -1, sec: -1 };
+    T.notes = F.notes.map(function (n) { var p = F.parts[n[2]]; return { t: at + n[0], len: n[1], part: p, stem: stems[PART[p].stem] }; });
+    T.segs = F.segs.map(function (g) { return { part: g[0], s: at + g[1], e: at + g[2] }; });
+    T.beats = F.beats.map(function (b) { return at + b; });
+    T.beat0 = Math.max(0, F.beats.findIndex(function (b) { return Math.abs(b - F.downs[0]) < 0.01; }));
+    return T;
+  }
+  // Every tick while the song plays: the clock in the corner, a heads-up a bar before the part changes, and
+  // the switch itself (button, lights, and the file you just left back at full volume).
+  function songTick(T, t) {
+    var sec = Math.floor(t - T.at);
+    if (sec !== T.sec) { T.sec = sec; $('#gtr-round').textContent = fmt(t - T.at) + ' / ' + fmt(T.len); }
+    var i = T.seg + 1, G = T.segs[i];
+    if (!G) return;
+    var title = esc(S.band.song.song.name), P = PART[G.part];
+    if (!G.told && t >= G.s - S.band.bar && i && G.part !== T.segs[i - 1].part) {
+      G.told = true;
+      info('<p class="rap-call" style="color:' + P.color + '">Next: ' + P.label + '</p><p class="rap-sub">' + title + '</p>');
+    }
+    if (t < G.s - 0.03) return;
+    T.seg = i;
+    T.part = G.part;
+    partUI(G.part);
+    info('<p class="rap-call" style="color:' + P.color + '">' + P.label + '</p><p class="rap-sub">' + title + ' · ' + P.blurb + '</p>');
+    var other = P.stem === 'drums' ? 'guitar' : 'drums';
+    T.stems[other].level(1, G.s);
+    if (i) { // the crowd's take on the stretch you just finished
+      var L = T.segs[i - 1], ns = T.notes.filter(function (n) { return n.t >= L.s && n.t < L.e; }), hit = ns.filter(function (n) { return n.judged && n.judged !== 'miss'; }).length;
+      if (ns.length >= 6 && hit / ns.length >= 0.9) { cheer(); crowd('hype'); pop('NAILED IT', 'land'); }
+      else if (ns.length >= 6 && hit / ns.length < 0.5) { sfx(boos(5)); crowd('boo'); }
+    }
+  }
+  async function playSong(again) {
+    var id = S.id, e = S.set[0], F = e.song.full;
+    setSoloStage();
+    spot(S.you);
+    pose(S.you, 'ready');
+    setMeter();
+    $('#gtr-round').textContent = 'Play the Song';
+    info('<p class="rap-call">' + esc(e.song.name) + '</p><p class="rap-sub">The whole song · ' + fmt(F.len) + '</p>');
+    if (offset == null) { await calibrate(); if (!alive(id)) return; }
+    var me = S;
+    $('#gtr-picks').innerHTML = '<button class="btn btn-ghost btn-sm rap-skip" id="gtr-skip" type="button">Skip intro ›</button>';
+    $('#gtr-skip').onclick = function () { AU.play('tap'); me.skipped = true; waiting(''); };
+    var lines = [again ? 'One more time! ' + e.song.name + '!' : e.song.name + ', start to finish!'];
+    if (!toldSong) lines.push('Follow the band. The lane tells you when to switch between drums, rhythm and solo.', 'Hit every note and the crowd is yours!');
+    for (var i = 0; i < lines.length && alive(id) && !me.skipped; i++) {
+      await host(lines[i]);
+      if (i === 0) { cheer(); crowd('hype'); }
+    }
+    if (!alive(id)) return;
+    toldSong = true;
+    me.skipped = false;
+    var song = await cue(0);
+    if (!alive(id)) return;
+    var retry = function () { beginSong(S.you, true); };
+    if (!song) { noBand('The song didn\'t load. Check your connection and try again.', retry); return; }
+    var T = startFull(song, now() + 0.5);
+    if (!T) { noBand('The band couldn\'t start. Tap Try again.', retry); return; }
+    S.turn = T;
+    $('#gtr-picks').innerHTML = '<button class="btn btn-big gtr-strum" id="gtr-strum" type="button">STRUM</button>' +
+      '<p class="rap-your gtr-hint">Tap the lane, this button, or press Space</p>';
+    $('#gtr-strum').addEventListener('pointerdown', strum);
+    partUI(T.segs[0].part);
+    info('<p class="rap-call">' + esc(e.song.name) + '</p><p class="rap-sub">First up: ' + PART[T.segs[0].part].label + '</p>');
+    $('#gtr-hline').textContent = 'Band, hit it!';
+    pose(S.you, 'play');
+    while (alive(id) && now() < T.at + T.len + 0.2) await wait(200);
+    if (!alive(id)) return;
+    S.turn = null;
+    drumming(false);
+    songResults(T, e);
+  }
+  // The end screen: sync overall and per part, the best streak, and your best on this song.
+  async function songResults(T, e) {
+    var id = S.id, pct = Math.round(T.hits / T.notes.length * 100), best = readBest(e.id), by = {};
+    Object.keys(PART).forEach(function (k) { by[k] = { n: 0, h: 0 }; });
+    T.notes.forEach(function (n) { by[n.part].n++; if (n.judged && n.judged !== 'miss') by[n.part].h++; });
+    if (pct > best) saveBest(e.id, pct);
+    var title = pct >= 95 ? 'Legend' : pct >= 85 ? 'Headliner' : pct >= 70 ? 'Opening act' : pct >= 50 ? 'Garage band' : 'Back to the woodshed';
+    $('#gtr-round').textContent = 'Encore?';
+    pose(S.you, pct >= 70 ? 'win' : 'lose');
+    if (pct >= 85) { roar(); crowd('hype'); } else if (pct >= 60) { cheer(); crowd('mixed'); } else { sfx(boos(6)); crowd('boo'); }
+    info('<p class="rap-result">' + pct + '% in sync</p><p class="rap-sub">' + title + ' · ' + (pct > best ? (best ? 'New best!' : 'Your first run') : 'Best ' + best + '%') + '</p>' +
+      '<p class="gtr-score">' + Object.keys(PART).filter(function (k) { return by[k].n; }).map(function (k) {
+        return '<span style="color:' + PART[k].color + '">' + PART[k].label + ' ' + Math.round(by[k].h / by[k].n * 100) + '%</span>';
+      }).join(' · ') + '</p><p class="rap-sub">Best streak ' + T.best + ' · ' + T.perfect + ' perfect of ' + T.notes.length + '</p>');
+    $('#gtr-picks').innerHTML = '';
+    await host(pct >= 85 ? 'Now that is how you play ' + e.song.name + '!' : pct >= 60 ? 'Not bad! The crowd wants another go.' : 'Rough night. Shake it off and run it back!', 200);
+    if (!alive(id)) return;
+    $('#gtr-picks').innerHTML = '<button class="btn btn-gold btn-big" id="gtr-again" type="button">Play it again</button>' + endRow('Guitar Battle');
+    $('#gtr-again').onclick = function () { AU.play('tap'); beginSong(S.you, true); };
+    wireEndRow(function () { begin(S.you); }, function () { beginSong(S.you, true); });
   }
 
   // ---------- Flow ----------
@@ -761,7 +913,26 @@
       if (!b) return;
       $('#gtr-picks').onclick = null;
       AU.play('tap');
-      begin(b.dataset.id);
+      if (FULL_SONGS.length) pickMode(b.dataset.id); else begin(b.dataset.id);
+    };
+  }
+  // Play the Song, or a battle.
+  function pickMode(you) {
+    S.you = you;
+    S.cpu = PLAYERS.filter(function (p) { return p !== you; })[0];
+    setStage();
+    pose(you, 'ready');
+    info('<p class="rap-call">' + esc(name(you)) + ' plugs in</p><p class="rap-sub">What are we playing?</p>');
+    $('#gtr-hline').textContent = 'Pick a mode.';
+    $('#gtr-picks').innerHTML = '<div class="gtr-modes">' +
+      '<button class="btn btn-gold btn-big gtr-mode" data-m="song" type="button">Play the Song<small>' + esc(SONGS[FULL_SONGS[0]].name) + ', start to finish</small></button>' +
+      '<button class="btn btn-gtr btn-big gtr-mode" data-m="battle" type="button">Guitar Battle<small>Three rounds vs ' + esc(name(S.cpu)) + '</small></button></div>';
+    $('#gtr-picks').onclick = function (e) {
+      var b = e.target.closest('.gtr-mode');
+      if (!b) return;
+      $('#gtr-picks').onclick = null;
+      AU.play('tap');
+      if (b.dataset.m === 'song') beginSong(you); else begin(you);
     };
   }
   function begin(you, rematch) {
@@ -774,6 +945,16 @@
     $('#gtr-picks').onclick = null;
     setMeter();
     battle(rematch);
+  }
+  function beginSong(you, again) {
+    stopAll();
+    S = { id: Math.random(), meter: 50, you: you, cpu: PLAYERS.filter(function (p) { return p !== you; })[0], last: {}, lastSec: {} };
+    S.set = [entry(FULL_SONGS[Math.floor(Math.random() * FULL_SONGS.length)])];
+    S.ticker = setInterval(tick, 25);
+    S.raf = requestAnimationFrame(draw);
+    $('#gtr-picks').onclick = null;
+    setMeter();
+    playSong(again);
   }
   function stopAll() {
     if (!S) return;
