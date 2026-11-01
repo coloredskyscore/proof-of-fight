@@ -42,7 +42,7 @@
   Object.keys(SONGS).forEach(function (id) { // each song's files, for AU.load and AU.playPart
     STEMS.forEach(function (k) { AU.MUSIC[id + '-' + k] = { src: 'audio/guitar/' + id + '-' + k + '.mp3', vol: SONGS[id].vol || 0.8 }; });
   });
-  var ROUNDS = 3, PART_BARS = 4;
+  var ROUNDS = 3;
   var LOOK = 0.12;          // how far ahead a CPU miss is scheduled (short, so it cuts the guitar on time)
   var SHOW = 1.7;           // seconds of notes visible on the lane
   var OFFSET_KEY = 'pof-guitar-offset';
@@ -276,7 +276,7 @@
     var B = S.band;
     stop(B.vamp, fade || 0.1);
     stop(B.part, fade || 0.1);
-    if (S.turn && S.turn.stem) S.turn.stem.stop(fade || 0.1);
+    if (B.mine) B.mine.stop(fade || 0.1);
     drumming(false);
     S.band = null;
   }
@@ -326,22 +326,43 @@
   }
   // A part of the song: the vamp rides through the lead-in bar, then on the part's first downbeat `at` the
   // band jumps to that section and the guitar comes in. (The song's own bar before a section can be a
-  // break, or the guitar-only intro.) The vamp picks up again when the four bars end. The player's stem
-  // (the guitar, or the drums on a Drums turn) is kept apart so a miss can mute it. Returns the notes.
-  function playSongPart(T, at) {
+  // break, or the guitar-only intro.) The player's stem (the guitar, or the drums on a Drums turn) is kept
+  // apart so a miss can mute it. When the eight bars are up, `after` says what the band does next:
+  //   'vamp': back to the vamp for the next turn, with the guitar's last note ringing out over it;
+  //   'fade': the song plays on and fades away (the end of a round);
+  //   'end':  the song's own ending (the end of the battle).
+  // Returns the notes.
+  function playSongPart(T, at, after) {
     var B = S.band, e = B.song, P = section(e, T.part), back = at + P.len, mine = PART[T.part].stem;
+    if (after === 'end' && !e.song.end) after = 'fade';
+    var tail = { // how long each file plays on past the part, and the fade over that time
+      vamp: { band: [0.32, 0.25], drums: [0.32, 0.25], guitar: [1.0, 0.9] },
+      fade: { band: [3.0, 2.9], drums: [3.0, 2.9], guitar: [1.4, 1.3] },
+      end:  { band: [0.06, 0.06], drums: [0.06, 0.06], guitar: [0.1, 0.1] }
+    }[after || 'vamp'];
     stop(B.vamp, 0.02, at - 0.02);
+    B.vamp = null;
     B.part = [];
     STEMS.forEach(function (k) {
       var g = k === 'guitar', lead = g ? 0.05 : 0.02; // the guitar fades in a hair earlier, for its pick attack
-      var h = clip(e, k, at - lead, P.at - lead, P.len + (g ? 0.4 : 0.32), { fadeIn: g ? 0.04 : 0.02, fadeOut: g ? 0.3 : 0.25 });
+      var h = clip(e, k, at - lead, P.at - lead, P.len + lead + tail[k][0], { fadeIn: g ? 0.04 : 0.02, fadeOut: tail[k][1] });
       if (k === mine) T.stem = h; else B.part.push(h);
     });
-    B.vamp = vamp(e, back, 0.03);
+    B.mine = T.stem;
+    var E = e.song.end;
+    if (after === 'end') {
+      STEMS.forEach(function (k) { B.part.push(clip(e, k, back - 0.02, E.at - 0.02, E.len + 0.02, { fadeIn: 0.02, fadeOut: 0.4 })); });
+      B.done = back + E.len;
+    } else if (after === 'vamp') {
+      B.vamp = vamp(e, back, 0.03);
+      B.done = 0;
+    } else B.done = back + tail.band[0];
     B.t0 = back;
-    B.bpm = Math.round(960 / P.len);
-    setBeat(960 / P.len);
+    var beats = P.beats.filter(function (b) { return b > -0.01 && b < P.len - 0.01; }).length;
+    B.bpm = Math.round(60 * beats / P.len);
+    setBeat(60 * beats / P.len);
     T.beats = P.beats.map(function (b) { return at + b; });
+    T.back = back;
     return P.notes.map(function (n) { return { t: at + n[0], len: n[1] }; });
   }
   // One of the song's sections for a part, at random, never the same one twice in a row.
@@ -569,7 +590,8 @@
   }
   function cpuPart() { var r = Math.random(); return r < 0.25 ? 'drums' : r < 0.62 ? 'rhythm' : 'solo'; }
 
-  async function turn(who, round) {
+  // One player's turn. `after` is what the band does when it's over (see playSongPart).
+  async function turn(who, round, after) {
     var id = S.id, mine = who === S.you, other = mine ? S.cpu : S.you;
     spot(who);
     pose(who, 'ready');
@@ -584,7 +606,7 @@
     if (!alive(id)) return;
     var P = PART[part], at = nextBar(now() + 0.2) + S.band.bar; // one bar of lead so the notes scroll in
     var T = { who: who, part: part, cpu: !mine, hits: 0, streak: 0, slump: 0, muted: false };
-    T.notes = playSongPart(T, at);
+    T.notes = playSongPart(T, at, after);
     drumming(part === 'drums'); // the band's drummer lights up: that's who you're playing
     info('<p class="rap-call" style="color:' + P.color + '">' + esc(name(who)) + ': ' + P.label + '</p><p class="rap-sub">Round ' + (round + 1) + ' · ' +
       esc(S.band.song.song.name) + ' · ' + S.band.bpm + ' BPM</p>');
@@ -602,8 +624,8 @@
     await untilTime(at - 0.05);
     if (!alive(id)) return;
     pose(who, 'play');
-    var end = T.notes[T.notes.length - 1];
-    await untilTime(end.t + end.len + offsetNow() + GOOD + 0.25);
+    var end = T.notes[T.notes.length - 1]; // the turn is over when its bars are, or its last note is judged
+    await untilTime(Math.max(end.t + end.len + offsetNow() + GOOD + 0.25, T.back));
     if (!alive(id)) return;
     S.turn = null;
     drumming(false);
@@ -663,14 +685,17 @@
       if (!alive(id)) return;
       var order = r % 2 ? [S.cpu, S.you] : [S.you, S.cpu];
       for (var o = 0; o < 2; o++) {
-        await turn(order[o], r);
+        await turn(order[o], r, o === 0 ? 'vamp' : r === ROUNDS - 1 ? 'end' : 'fade');
         if (!alive(id)) return;
         if (o === 0) await host(name(order[1]) + ', show them what you got!', 100);
         if (!alive(id)) return;
       }
-      stopBand(0.8);
+      if (r === ROUNDS - 1) break; // the song's ending plays on through the decision
+      await untilTime(S.band.done); // let the round's music fade away
+      if (!alive(id)) return;
+      stopBand(0.1);
       spot(null);
-      await wait(600);
+      await wait(400);
       if (!alive(id)) return;
     }
     await finale();
@@ -697,6 +722,7 @@
     scatter();
     crowd('mixed');
     await wait(2000);
+    if (S.band && S.band.done) await untilTime(S.band.done - 3.6); // the winner's roar lands as the band's last chord rings
     if (!alive(id)) return;
     spot(winner);
     await host('And ' + name(winner) + '!', 0);

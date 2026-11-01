@@ -6,10 +6,11 @@ Needs: pip install numpy scipy librosa miniaudio lameenc
 
 STEMS_DIR holds Suno's stem download (files ending in Guitar.mp3, Drums.mp3, Bass.mp3 and so on). Give the
 start of each chugging section (--rhythm) and each solo section (--solo); each snaps to the nearest downbeat
-and becomes a four-bar part, and a pick in the game draws one of them at random. The Drums part plays over
+and becomes an eight-bar part, and a pick in the game draws one of them at random. The Drums part plays over
 every one of those sections, unless --drums gives sections of its own. The band file is every stem except the
 guitar, the drums and the vocals; the drums file and the guitar file are those stems. All three hold the same
-clips at the same times: a 2-bar loop the band vamps on between turns, then each section.
+clips at the same times: a 2-bar loop the band vamps on between turns, each section, and the song's ending
+(from the last downbeat, or --end, to the end of the file), which plays when the battle is over.
 
 Every note sits where you hear something happen, never on a grid guess:
 - Drums: each beat where the drum stem actually hits.
@@ -36,7 +37,8 @@ from scipy.ndimage import median_filter
 from scipy.signal import butter, sosfiltfilt, stft
 
 SR = 44100
-BARS = 4                    # bars in a part
+BARS = 8                    # bars in a part (a turn); --bars changes it
+TAIL = 3.2                  # seconds kept after a section, so the music can ring out or fade when a turn ends
 PAD = 0.025                 # what browsers add to the front of these MP3s (measured, as for the rap beats)
 GAP = 0.4                   # silence between clips in the files
 HOP = 220                   # analysis frames: 5 ms
@@ -292,6 +294,8 @@ def main():
         ap.add_argument('--' + p, required=True, nargs='+', help='where each such section starts (m:ss or seconds)')
     ap.add_argument('--drums', nargs='+', help='sections for the Drums part (default: every rhythm and solo section)')
     ap.add_argument('--vamp', help='where the 2-bar vamp starts (default: the first rhythm section)')
+    ap.add_argument('--end', help='where the ending starts (default: the last downbeat); it snaps to a drum hit')
+    ap.add_argument('--bars', type=int, default=BARS, help='bars in each part (default %(default)s)')
     ap.add_argument('--vol', type=float, default=0.8, help='playback volume for both files')
     ap.add_argument('--root', default=os.path.join(os.path.dirname(__file__), '..'))
     args = ap.parse_args()
@@ -329,47 +333,70 @@ def main():
     asked = [(p, t) for p in ('rhythm', 'solo') for t in getattr(args, p)] + [('drums', t) for t in (args.drums or [])]
     for p, t in asked:
         s = snap(secs(t))
-        if (bar_after(s, BARS) - s) < (ve - vs) * BARS / 2 * 0.85:
-            print(f'skipping {p} at {t}: the song ends before four bars are up')
+        if (bar_after(s, args.bars) - s) < (ve - vs) * args.bars / 2 * 0.85:
+            print(f'skipping {p} at {t}: the song ends before {args.bars} bars are up')
             continue
-        clips.append(([p] if args.drums or p == 'drums' else [p, 'drums'], s, s - 0.1, bar_after(s, BARS) + 0.45))
+        clips.append(([p] if args.drums or p == 'drums' else [p, 'drums'], s, s - 0.1, bar_after(s, args.bars) + TAIL))
+    hits = drum_hits[0]
+    es = secs(args.end) if args.end else float(downs[-1])
+    es = float(hits[np.argmin(np.abs(hits - es))]) if np.min(np.abs(hits - es)) < 0.5 else es
+    clips.append((['end'], es, es - 0.1, n / SR))
 
+    # Clips that overlap (a chug section running into a solo) share one stretch of the files.
+    regions = [[clips[0][2], clips[0][3], True]]          # the vamp stands alone: its guitar is muted
+    for c in sorted(clips[1:], key=lambda c: c[2]):
+        if len(regions) > 1 and c[2] <= regions[-1][1] + 1.0:
+            regions[-1][1] = max(regions[-1][1], c[3])
+        else:
+            regions.append([c[2], c[3], False])
     srcs = {'band': band, 'drums': drums, 'guitar': guitar}
     outs, at = {k: [np.zeros((int(0.3 * SR), 2))] for k in srcs}, 0.3
-    for parts, s, a, b in clips:
+    starts = []
+    for a, b, vamp in regions:
         ia, ib = int(a * SR), int(b * SR)
         segs = {k: x[ia:ib].copy() for k, x in srcs.items()}
         fade = int(0.01 * SR)
         for seg in segs.values():
             seg[:fade] *= np.linspace(0, 1, fade)[:, None]
             seg[-fade:] *= np.linspace(1, 0, fade)[:, None]
-        if parts == ['vamp']:
+        if vamp:
             segs['guitar'][:] = 0  # the band waits for its guitarist
-            song['vamp'] = {'at': round(at + PAD + (s - a), 4), 'len': round(ve - vs, 4)}
+        starts.append((a, b, at, vamp))
+        for k in srcs:
+            outs[k].append(segs[k])
+            outs[k].append(np.zeros((int(GAP * SR), 2)))
+        at += (ib - ia) / SR + int(GAP * SR) / SR
+
+    def file_time(s, vamp=False):  # where song time s sits in the files
+        for a, b, t, v in starts:
+            if v == vamp and a <= s <= b:
+                return round(t + PAD + (s - a), 4)
+
+    for parts, s, a, b in clips:
+        if parts == ['vamp']:
+            song['vamp'] = {'at': file_time(s, True), 'len': round(ve - vs, 4)}
+        elif parts == ['end']:
+            song['end'] = {'at': file_time(s), 'len': round(b - s, 4)}
         else:
-            e = bar_after(s, BARS)
-            bar = (e - s) / BARS
+            e = bar_after(s, args.bars)
+            bar = (e - s) / args.bars
             local = [round(float(x) - s, 3) for x in beats if s - bar - 0.01 <= x <= e + 0.01]
             charts = {'drums': lambda: drum_notes(s, e, beats, drum_hits), 'rhythm': lambda: rhythm_notes(low, s, e),
                       'solo': lambda: solo_notes(midis, sal, s, e)}
             for p in parts:
                 song['parts'][p].append({
-                    'at': round(at + PAD + (s - a), 4),      # file time of the section's first downbeat
-                    'len': round(e - s, 4),                  # its four bars
+                    'at': file_time(s),                      # file time of the section's first downbeat
+                    'len': round(e - s, 4),                  # its bars
                     'beats': local,                          # from the bar before (the lead-in) to the end
                     'notes': charts[p](),
                     'src': round(s, 3)                       # where it is in the song
                 })
-        for k in srcs:
-            outs[k].append(segs[k])
-            outs[k].append(np.zeros((int(GAP * SR), 2)))
-        at += (ib - ia) / SR + int(GAP * SR) / SR
     os.makedirs(os.path.join(args.root, 'audio', 'guitar'), exist_ok=True)
     for k in srcs:
         mp3(np.concatenate(outs[k]), os.path.join(args.root, 'audio', 'guitar', args.id + '-' + k + '.mp3'))
     for p, secs_ in song['parts'].items():
         for v in secs_:
-            print(f"{p:6s} {v['src']:7.2f}s  {240 / v['len'] * BARS:6.2f} BPM  {len(v['notes'])} notes")
+            print(f"{p:6s} {v['src']:7.2f}s  {240 / v['len'] * args.bars:6.2f} BPM  {len(v['notes'])} notes")
 
     js = os.path.join(args.root, 'js', 'guitar-songs.js')
     songs = {}
@@ -380,8 +407,8 @@ def main():
     songs[args.id] = song
     with open(js, 'w') as f:
         f.write('/* Guitar Battle songs (?guitar), written by tools/gtr_song.py from each song\'s Suno stems. Per song: the\n'
-                '   band\'s 2-bar vamp and, per part, its sections (file time of the first downbeat, four bars long,\n'
-                '   the beat grid and the notes: [seconds from the downbeat, how long it rings]). */\n')
+                '   band\'s 2-bar vamp, the ending, and per part its sections (file time of the first downbeat, length in\n'
+                '   seconds, the beat grid and the notes: [seconds from the downbeat, how long it rings]). */\n')
         f.write('window.POF_GUITAR_SONGS = ' + json.dumps(songs, separators=(',', ':')) + ';\n')
     print('wrote', js)
 
