@@ -1,0 +1,105 @@
+/* Tower Defense test mode (?td). See js/td.js. */
+.btn-td { background: linear-gradient(#7fe08a, #2f9b4a 55%, #1d6a32); color: #fff; }
+#btn-td small { font-family: var(--body); font-weight: 700; font-size: .7em; opacity: .85; margin-left: .3em; }
+
+.screen.td { padding: 6px 8px 8px; gap: 6px; overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+
+/* Top bar: menu, the node's integrity, tokens, wave, speed, pause. */
+.td-top { display: flex; align-items: center; gap: 5px; }
+.td-top .btn-sm { padding: 5px 8px; min-width: 34px; }
+.td-back { font-size: 1.1rem; line-height: 1; }
+.td-stat { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border-radius: 10px; background: var(--panel); border: 2px solid #2a2340;
+  font-family: var(--display); font-size: .95rem; line-height: 1; white-space: nowrap; }
+.td-stat small { font-size: .55rem; color: var(--muted); letter-spacing: .04em; }
+.td-wave { margin-left: auto; }
+.td-int b { color: #7ff0d6; }
+.td-int.low { border-color: var(--bad); animation: td-low 0.9s steps(2) infinite; }
+.td-int.low b { color: var(--bad); }
+.td-int.hit { animation: td-hit .4s ease-out; }
+.td-tokbox b { color: var(--gold); min-width: 2.2em; }
+.td-tokbox.got { animation: td-got .25s ease-out; }
+.td-tokbox.short { animation: td-short .35s ease-out; }
+@keyframes td-low { 50% { box-shadow: 0 0 0 2px rgba(255, 77, 77, .5); } }
+@keyframes td-hit { 30% { transform: scale(1.18); background: #4a1520; } }
+@keyframes td-got { 40% { transform: scale(1.1); } }
+@keyframes td-short { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+.td-speed.on { background: var(--gold); color: #1a1200; }
+.td-pause { font-size: .7rem; letter-spacing: -.1em; }
+
+/* Icons drawn in CSS: a gold token, the node. */
+.td-coin { display: inline-block; width: .95em; height: .95em; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff6c8 0 12%, #ffd23f 13% 55%, #e0a800 56%);
+  border: 2px solid #8a6400; flex: none; vertical-align: -.12em; }
+.td-node { display: inline-block; width: .8em; height: 1.05em; border-radius: 3px; background: repeating-linear-gradient(#2d2a3c 0 3px, #19c6a0 3px 4px); border: 2px solid var(--line); }
+
+/* The map. The canvas fills it; the CRT scanlines sit on top. */
+.td-field { position: relative; flex: 1; min-height: 0; border-radius: 12px; overflow: hidden; background: #2f5d2a; border: 3px solid var(--line); }
+.td-field canvas { position: absolute; inset: 0; display: block; touch-action: none; }
+.td-field::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: repeating-linear-gradient(rgba(0, 0, 0, .07) 0 1px, transparent 1px 3px); mix-blend-mode: multiply; }
+.td-field::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; box-shadow: inset 0 0 40px 10px rgba(255, 30, 50, .85); }
+.td-field.hurt::after { animation: td-hurt .5s ease-out; }
+@keyframes td-hurt { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+.td-banner { position: absolute; left: 0; right: 0; top: 30%; z-index: 5; text-align: center; pointer-events: none; }
+.td-banner b { display: block; font-family: var(--display); font-weight: 400; font-size: clamp(1.8rem, 9vw, 2.6rem); color: var(--gold);
+  -webkit-text-stroke: 2px var(--line); text-shadow: 0 4px 0 #b3261e, 0 7px 0 var(--line); line-height: 1.05; }
+.td-banner small { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 8px; background: rgba(7, 6, 11, .8); font-weight: 800; font-size: .9rem; }
+.td-banner.good b { color: #7ff0b0; text-shadow: 0 4px 0 #1d6a32, 0 7px 0 var(--line); }
+.td-banner.warn b { color: #ff6b5a; text-shadow: 0 4px 0 #5a0d16, 0 7px 0 var(--line); }
+.td-banner.show { animation: td-banner 2.1s ease-out forwards; }
+@keyframes td-banner {
+  0% { opacity: 0; transform: scale(1.8); }
+  10% { opacity: 1; transform: scale(.95); }
+  16% { transform: scale(1); }
+  80% { opacity: 1; transform: scale(1); filter: none; }
+  86% { filter: drop-shadow(-4px 0 0 rgba(255, 42, 85, .8)) drop-shadow(4px 0 0 rgba(34, 230, 255, .8)); }
+  100% { opacity: 0; transform: scale(1.05) translateY(-10px); }
+}
+
+/* Between waves: what's coming, and the button to call it. */
+.td-next { position: absolute; left: 50%; bottom: 10px; z-index: 4; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: max-content; max-width: calc(100% - 16px); }
+.td-prev { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 10px; background: rgba(7, 6, 11, .82); border: 2px solid #2a2340; font-weight: 800; font-size: .8rem; }
+.td-prev small { font-family: var(--display); font-size: .6rem; color: var(--gold); margin-right: 2px; }
+.td-pv { display: inline-flex; align-items: center; gap: 1px; }
+.td-pv img { width: 24px; height: 24px; }
+.td-go { padding: 9px 16px; font-size: .95rem; box-shadow: 0 4px 0 var(--line), 0 0 18px rgba(255, 210, 63, .45); animation: td-go 1.2s ease-in-out infinite; }
+.td-go small { font-weight: 700; font-size: .78rem; opacity: .85; }
+@keyframes td-go { 50% { box-shadow: 0 4px 0 var(--line), 0 0 26px rgba(255, 210, 63, .8); } }
+
+/* A tower's card: name, numbers, sell. */
+.td-pop { position: absolute; z-index: 6; display: flex; flex-direction: column; gap: 2px; min-width: 150px; max-width: 220px; padding: 7px 10px; border-radius: 10px;
+  background: rgba(16, 13, 26, .95); border: 2px solid #3a3058; box-shadow: 0 4px 0 var(--line); font-size: .8rem; }
+.td-pop b { font-family: var(--display); font-weight: 400; font-size: .9rem; }
+.td-pop small { color: var(--muted); font-weight: 700; }
+.td-sell { margin-top: 5px; align-self: flex-start; background: #3a3058; color: #fff; display: inline-flex; align-items: center; gap: 5px; }
+
+.td-paused, .td-end { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: rgba(7, 6, 11, .62); }
+.td-paused { align-content: center; gap: 12px; }
+.td-paused b { font-family: var(--display); font-weight: 400; font-size: 2rem; color: var(--gold); -webkit-text-stroke: 2px var(--line); }
+.td-card-end { width: min(320px, calc(100% - 32px)); padding: 18px 16px; border-radius: 16px; text-align: center; background: var(--panel); border: 3px solid var(--line); box-shadow: 0 6px 0 var(--line);
+  animation: td-in .4s cubic-bezier(.3, 1.6, .5, 1); }
+.td-card-end small { font-family: var(--display); font-size: .6rem; color: var(--muted); letter-spacing: .06em; }
+.td-card-end h2 { margin: 4px 0 6px; font-family: var(--display); font-weight: 400; font-size: 1.9rem; color: #7ff0b0; -webkit-text-stroke: 1.5px var(--line); text-shadow: 0 4px 0 #1d6a32; }
+.td-card-end.lose h2 { color: #ff6b5a; text-shadow: 0 4px 0 #5a0d16; }
+.td-card-end p { margin: 6px 0; font-weight: 700; }
+.td-card-end .td-stats { color: var(--muted); font-size: .85rem; }
+.td-stars { font-size: 2.2rem; letter-spacing: .1em; }
+.td-stars i { font-style: normal; color: #3a3450; -webkit-text-stroke: 2px var(--line); }
+.td-stars i.on { color: var(--gold); text-shadow: 0 0 14px rgba(255, 210, 63, .7); }
+.td-end-btns { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+@keyframes td-in { from { transform: scale(.6); opacity: 0; } }
+
+/* The shop: the founder's four towers. Pick one, then tap a tile. */
+.td-shop { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.td-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 2px 6px; border-radius: 12px; cursor: pointer;
+  color: #fff; background: linear-gradient(var(--c), var(--d)); border: 3px solid var(--line); box-shadow: 0 4px 0 var(--line); transition: transform .08s; }
+.td-card:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
+.td-card.on { outline: 3px solid var(--gold); outline-offset: 1px; transform: translateY(-3px); box-shadow: 0 7px 0 var(--line), 0 0 18px rgba(255, 210, 63, .5); }
+.td-card.poor { filter: grayscale(.75) brightness(.7); }
+.td-thumb { width: 44px; height: 44px; display: grid; place-items: center; }
+.td-thumb img { width: 100%; height: 100%; }
+.td-cname { font-family: var(--display); font-size: .62rem; line-height: 1.1; text-align: center; -webkit-text-stroke: .4px var(--line); }
+.td-cost { display: inline-flex; align-items: center; gap: 3px; font-weight: 800; font-size: .8rem; }
+.td-card kbd { position: absolute; top: 3px; left: 5px; font-family: var(--body); font-size: .6rem; opacity: .6; }
+@media (hover: none) { .td-card kbd { display: none; } }
+@media (max-height: 640px) { .td-thumb { width: 32px; height: 32px; } .td-cname { font-size: .55rem; } }

@@ -11,6 +11,17 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 7, 2026: Tower Defense test (?td), step 1 of 3
+
+A hidden test mode at `proofoffight.com/?td`: a **Tower Defense** button appears on the title screen. Real time, not turns. The full design (towers, maps, enemies, base, story) is in the project's design doc; this is step 1, the core loop on one map.
+- **The Hearing:** a 12 x 20 tile map in a three-quarter top-down view. Aides pour out of the Capitol door, down the plaza steps (height 2), across a terrace (height 1) and over the lawn (height 0, with a raised mound and a hill) to Toly's validator node. A tower gets +1 range for each level of high ground.
+- **Toly's four towers,** the fight mode's four buttons under his move names: **Comrades** (Strike: fast tracers, the only one that hits flyers), **Seed Vault** (Privacy: a fog field that slows 40%), **Slop Cannon** (Mint: lobbed coin bombs with splash, ground only) and **MEV Hunt** (Rug: sits beside the path, throws a rug that yanks an enemy back 1.5 tiles and ignores armor). Build on any open tile off the path; tap a tower to see its range or sell it for 70%.
+- **Tokens:** 300 to start, paid per takedown plus a wave-clear bonus. Calling the next wave early pays 2 tokens per second left on the 15-second countdown.
+- **15 waves** of aides, interns (swarms), lobbyists (sprinters), filing cabinets (armored), subpoenas (flyers), coffee runners (heal others) and The Filibuster (a mini-boss stack of bills) on waves 5, 10, 14 and 15. Enemy health grows 12% a wave. Leaks cost the node 1 integrity (3 for a cabinet, 8 for the Filibuster) out of 20.
+- **The look:** code-drawn sprites with thick outlines until the painted art exists, tracers and coin arcs with glow, the VHS break-up on every takedown, tokens flying to the counter, a red edge flash on a leak, a smoking node at low integrity, and the light going from day to dusk to a red night over the waves. 2x speed and pause.
+- **Balance:** `node tools/td-sim.js` has bots play the stage. A sensible mix wins; one-tower builds fall around waves 11 to 14.
+- **Next (step 2):** upgrades with the tier 3 split, Toly's signature tower, tower chatter, Red Tape, the Warren walk, ally strike, Satoshi's save, stars and the between-stage upgrade screen. Step 3 is the painted map and tower art.
+
 ### Oct 11, 2026: Rap Battle test (?rap)
 
 A hidden test mode at `proofoffight.com/?rap`: a **Rap Battle** button appears on the title screen. Pick Toly or Vitalik; MC Satoshi hosts.
