@@ -22,7 +22,8 @@ A hidden test mode at `proofoffight.com/?rap`: a **Rap Battle** button appears o
 - **Lyrics:** 26 or 27 couplets per rapper (8 corny safe ones, 10 or 11 spicy, 7 or 9 nuclear) plus a closer and the host's intro line, drawn without repeats, in `js/rap-lyrics.js`.
 - The rappers and host "talk" in chiptune babble (a blip per syllable, on the beat). No real or cloned voices.
 - **Poses:** each rapper gets four Grok poses: rap, listen, lose and win (prompts in the project's `rap-battle/prompts.md`, made into sprites with `tools/poses.py`). Toly scrolls his phone while the other rapper raps, drops it when he loses, and mic-drops when he wins. Vitalik points at his rival when he raps, crosses his arms to listen, spills his tea when he loses, and takes a smug sip when he wins. Every rapper is drawn to one scale at his real height (Toly 5'10", Vitalik 6'1"), so the taller one stands taller in every pose. A rapper without poses leans, dims or slumps his stage sprite instead. The host's hype and point poses are still to come.
-- Code: `js/rap.js`, `js/rap-lyrics.js`, `css/rap.css`. Nothing changes without `?rap`.
+- **The crowd:** the bottom of the stage is the audience seen from behind, two rows of pixel people drawn in code, each with their own hair, skin and shirt, lit along their top edges by each rapper's color on his side. They nod on the beat, jump with hands up and phones out on a hype, put their hands on their heads for an ooh, and shake their heads and give a thumbs down under red light on a boo. The side winning the meter gets the brighter light. The rappers stand on the stage's lit front edge, with their name tags over the crowd. Still to come: a venue backdrop from Grok and real crowd sound clips (both listed in the project's `rap-battle/prompts.md`).
+- Code: `js/rap.js`, `js/rap-lyrics.js`, `js/rap-crowd.js`, `css/rap.css`. Nothing changes without `?rap`.
 
 ### Oct 7, 2026: CZ and Adeniyi join the roster
 
