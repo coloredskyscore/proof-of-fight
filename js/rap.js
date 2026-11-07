@@ -391,12 +391,12 @@
         '<div class="rapper left" id="rap-l"></div>' +
         '<div class="rapper right" id="rap-r"></div>' +
         '<div class="rap-pop" id="rap-pop" hidden></div>' +
-        '<canvas class="rap-crowd" id="rap-crowd" aria-hidden="true"></canvas>' +
+        '<canvas class="rap-audience" id="rap-audience" aria-hidden="true"></canvas>' +
       '</div>' +
       '<div class="rap-picks" id="rap-picks"></div>';
     $('#app').appendChild(sec);
     $('#rap-back').addEventListener('click', leave);
-    CROWD.mount($('#rap-crowd'), { now: now, beat: function () { return S && S.beat ? { t0: S.beat.t0, len: 60 / S.beat.bpm } : null; } });
+    CROWD.mount($('#rap-audience'), { now: now, beat: function () { return S && S.beat ? { t0: S.beat.t0, len: 60 / S.beat.bpm } : null; } });
   }
   function show(id) { document.querySelectorAll('.screen').forEach(function (el) { el.hidden = el.id !== id; }); }
 
