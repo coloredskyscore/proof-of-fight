@@ -3,9 +3,9 @@
    The Hearing: aides and paper pushers pour out of the Capitol and march down the steps and across the lawn
    toward Toly's validator node. You build his four towers (the fight mode's four buttons, under his move
    names) on any open tile, earn tokens for every kill, and hold for 15 waves. Real time, with 2x speed.
-   The towers, enemies and node are Grok paintings (art/td/, cut by tools/td_art.py); the map is still drawn
-   in code until its painting exists. Sprites are drawn once per screen size onto small canvases, then
-   stamped every frame, so the frame stays cheap on a phone. */
+   The map, towers, enemies and node are Grok paintings in art/td/ (the map fitted to the grid by
+   tools/td_map.py, the sprites cut from sheets by tools/td_art.py). Sprites are drawn once per screen size
+   onto small canvases, then stamped every frame, so the frame stays cheap on a phone. */
 (function () {
   if (!/[?&]td\b/i.test(location.search)) return;
   var D = window.POF_DATA, AU = window.POF_AUDIO, C = window.POF_TD_CORE;
@@ -142,7 +142,7 @@
   // in pixels is its size on the map. Each one is redrawn once per screen size onto a canvas at the exact
   // size it's stamped at, so the frame stays cheap on a phone.
   var ART = 'art/td/', PPT = 160;
-  var PIC_NAMES = ['tower-strike', 'tower-privacy', 'tower-mint', 'tower-rug', 'enemy-walker', 'enemy-swarm', 'enemy-sprinter',
+  var PIC_NAMES = ['hearing-map', 'tower-strike', 'tower-privacy', 'tower-mint', 'tower-rug', 'enemy-walker', 'enemy-swarm', 'enemy-sprinter',
     'enemy-support', 'enemy-armored', 'enemy-flyer', 'enemy-boss', 'node-toly', 'node-toly-lights'];
   var PICS = {}, picsReady = null;
   function loadPics() {
@@ -211,7 +211,7 @@
     return E;
   }
   // Toly's validator node, plus its glowing lights as their own layer, so they can pulse and turn red.
-  var NODE_SCALE = 0.85;
+  var NODE_SCALE = 1;
   function buildBaseSprites() {
     var im = PICS['node-toly'], ay = im && im.naturalWidth ? 1 - 0.2 * im.naturalWidth / im.naturalHeight : 0.9;
     var lights = pic('node-toly-lights', 0.5, ay, NODE_SCALE);
@@ -226,195 +226,30 @@
   }
 
   // ---------- The map, drawn once per size ----------
-  var LAWN = ['#4f9b3f', '#58a547'], MOUND = ['#66b24f', '#6dba55'], TERRACE = '#5aa64a', TERRACE_FACE = '#8c7b62';
-  var PLAZA = '#d9d2c3', PLAZA_FACE = '#a59c8a', PATH = '#e6d6a8', PATH_EDGE = '#bfa978', DIRT = '#7a5a3a';
-  function tileTop(c, r) {
-    var M = S.G.map, t = M.tile(c, r), h = M.height(c, r);
-    if (t === 'w') return '#3b7fc4';
-    if (M.onPath[c + ',' + r]) return PATH;
-    if (h === 2 && r < 5) return PLAZA;
-    if (r >= 5 && r < 9) return TERRACE;
-    if (h > 0) return MOUND[(c + r) % 2];
-    return LAWN[c % 2];
-  }
-  function faceColor(c, r) {
-    var M = S.G.map, h = M.height(c, r);
-    if (h === 2 && r < 5) return PLAZA_FACE;
-    if (r >= 5 && r < 9) return TERRACE_FACE;
-    return DIRT;
-  }
+  // Grok's painting, already stretched to the grid by tools/td_map.py. It shows the plaza, terrace and lawn
+  // at their heights, so nothing is lifted on screen; heights only add tower range.
   function drawTerrain() {
-    var M = S.G.map, T = S.T, L = S.L, cv = S.terrain;
+    var art = S.G.map.def.art, T = S.T, cv = S.terrain, im = PICS[art.pic];
     cv.width = Math.round(S.W * S.dpr); cv.height = Math.round(S.H * S.dpr);
     var c = cv.getContext('2d');
     c.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
-    // the sky behind the Capitol
-    var sky = c.createLinearGradient(0, 0, 0, S.oy + T * 0.5);
-    sky.addColorStop(0, '#7fb6e8'); sky.addColorStop(1, '#cfe6f5');
-    c.fillStyle = sky;
-    c.fillRect(0, 0, S.W, S.oy + T);
-    // a deep border so the map reads as a diorama on a table
-    c.fillStyle = '#2f5d2a';
-    c.fillRect(0, S.oy + T * 0.6, S.W, S.H);
-    for (var r = 0; r < M.def.rows; r++) {
-      for (var cc = 0; cc < M.def.cols; cc++) {
-        var h = M.height(cc, r), x = S.ox + cc * T, y = S.oy + r * T - h * L;
-        c.fillStyle = tileTop(cc, r);
-        c.fillRect(x - 0.5, y - 0.5, T + 1, T + 1);
-        var top = tileTop(cc, r);
-        if (top === PATH) {
-          // gravel: edges where the path doesn't continue
-          c.fillStyle = PATH_EDGE;
-          var on = function (dc, dr) { return M.onPath[(cc + dc) + ',' + (r + dr)] || M.tile(cc + dc, r + dr) === 'B' || (r + dr <= 1 && M.tile(cc + dc, r + dr) === '#'); };
-          var e = T * 0.09;
-          if (!on(0, -1)) c.fillRect(x, y, T, e);
-          if (!on(0, 1)) c.fillRect(x, y + T - e, T, e);
-          if (!on(-1, 0)) c.fillRect(x, y, e, T);
-          if (!on(1, 0)) c.fillRect(x + T - e, y, e, T);
-          c.fillStyle = 'rgba(120,96,50,.18)';
-          for (var k = 0; k < 5; k++) c.fillRect(x + ((cc * 37 + r * 11 + k * 23) % 90) / 100 * T, y + ((cc * 13 + r * 29 + k * 41) % 90) / 100 * T, T * 0.06, T * 0.06);
-        } else if (top === PLAZA) {
-          c.strokeStyle = 'rgba(120,110,90,.22)'; c.lineWidth = 1;
-          c.strokeRect(x + 0.5, y + 0.5, T - 1, T - 1);
-        } else if (top !== '#3b7fc4') {
-          c.fillStyle = 'rgba(255,255,255,.05)';
-          if ((cc * 7 + r * 3) % 5 === 0) c.fillRect(x + T * 0.3, y + T * 0.4, T * 0.05, T * 0.12);
-          if ((cc * 5 + r * 11) % 7 === 0) c.fillRect(x + T * 0.65, y + T * 0.2, T * 0.05, T * 0.1);
-        }
-      }
-      // faces: where this row stands above the row in front of it
-      for (cc = 0; cc < M.def.cols; cc++) {
-        h = M.height(cc, r);
-        var hb = r + 1 < M.def.rows ? M.height(cc, r + 1) : -1.2;
-        if (hb >= h) continue;
-        x = S.ox + cc * T; y = S.oy + (r + 1) * T - h * L;
-        var fh = (h - hb) * L;
-        var stairs = M.onPath[cc + ',' + r] && M.onPath[cc + ',' + (r + 1)];
-        if (stairs) {
-          for (var s = 0; s < 4; s++) {
-            c.fillStyle = s % 2 ? '#cbb98a' : '#efe2bb';
-            c.fillRect(x, y + s * fh / 4, T, fh / 4 + 0.5);
-          }
-          c.fillStyle = PATH_EDGE; c.fillRect(x, y, T * 0.09, fh); c.fillRect(x + T * 0.91, y, T * 0.09, fh);
-        } else {
-          c.fillStyle = faceColor(cc, r);
-          c.fillRect(x - 0.5, y, T + 1, fh);
-          if (faceColor(cc, r) !== DIRT) {
-            c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = 1;
-            for (var b = 1; b < h - hb + 1; b++) { c.beginPath(); c.moveTo(x, y + fh * b / (h - hb + 1)); c.lineTo(x + T, y + fh * b / (h - hb + 1)); c.stroke(); }
-          } else {
-            c.fillStyle = 'rgba(0,0,0,.15)'; c.fillRect(x, y + fh * 0.5, T, fh * 0.5);
-          }
-          c.fillStyle = 'rgba(0,0,0,.45)'; c.fillRect(x - 0.5, y, T + 1, Math.max(1.5, T * 0.05));
-        }
-      }
-    }
-    // a soft shadow at the foot of every cliff, so the heights read at a glance
-    for (r = 0; r < M.def.rows - 1; r++) for (cc = 0; cc < M.def.cols; cc++) {
-      var hh = M.height(cc, r), hl = M.height(cc, r + 1);
-      if (hl >= hh) continue;
-      var fy = S.oy + (r + 1) * T - hl * L, g = c.createLinearGradient(0, fy, 0, fy + T * 0.35);
-      g.addColorStop(0, 'rgba(0,0,0,.28)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-      c.fillStyle = g;
-      c.fillRect(S.ox + cc * T, fy, T, T * 0.35);
-    }
-    drawCapitol(c);
-    drawTrees(c);
-  }
-  // The Capitol across the top two rows, the door at the path's start.
-  function drawCapitol(c) {
-    var M = S.G.map, T = S.T, L = S.L, x0 = S.ox + 2 * T, x1 = S.ox + 11 * T, cx = (x0 + x1) / 2;
-    var ground = S.oy + 2 * T - 2 * L;         // the plaza's front edge under the building
-    c.save();
-    c.lineJoin = 'round';
-    c.strokeStyle = OL; c.lineWidth = Math.max(1.5, T * 0.05);
-    // the steps
-    for (var k = 0; k < 4; k++) {
-      c.fillStyle = k % 2 ? '#e3dccc' : '#f2ecdf';
-      var sw = (x1 - x0) * (0.5 - k * 0.06);
-      c.fillRect(cx - sw / 2, ground - (k + 1) * T * 0.12, sw, T * 0.12);
-    }
-    var fy = ground - T * 0.48, fh = T * 1.25;   // facade bottom and height
-    c.fillStyle = '#efe9dc';
-    c.fillRect(x0, fy - fh, x1 - x0, fh);
-    c.strokeRect(x0, fy - fh, x1 - x0, fh);
-    // wings' windows
-    c.fillStyle = '#9fb1c4';
-    for (var w = 0; w < 4; w++) {
-      [x0 + T * (0.35 + w * 0.6), x1 - T * (0.6 + w * 0.6)].forEach(function (wx) {
-        c.fillRect(wx, fy - fh * 0.72, T * 0.22, fh * 0.26);
-        c.fillRect(wx, fy - fh * 0.34, T * 0.22, fh * 0.22);
-      });
-    }
-    // the center portico: columns and a pediment
-    var px = T * 2.4;
-    c.fillStyle = '#f7f2e7';
-    c.fillRect(cx - px, fy - fh * 1.05, px * 2, fh * 1.05);
-    c.strokeRect(cx - px, fy - fh * 1.05, px * 2, fh * 1.05);
-    c.fillStyle = 'rgba(80,70,60,.22)';
-    for (var col = 0; col < 8; col++) {
-      var colX = cx - px + T * 0.18 + col * (px * 2 - T * 0.36) / 7;
-      c.fillRect(colX - T * 0.05, fy - fh * 0.95, T * 0.1, fh * 0.95);
-    }
-    c.fillStyle = '#efe9dc';
-    c.beginPath(); c.moveTo(cx - px - T * 0.1, fy - fh * 1.05); c.lineTo(cx, fy - fh * 1.45); c.lineTo(cx + px + T * 0.1, fy - fh * 1.05); c.closePath();
-    c.fill(); c.stroke();
-    // the door the aides come out of
-    c.fillStyle = '#3b2a1e';
-    rrPx(c, cx - T * 0.32, fy - T * 0.7, T * 0.64, T * 0.7, T * 0.3); c.fill(); c.stroke();
-    // the dome
-    var dy = fy - fh * 1.45, dw = T * 1.9;
-    c.fillStyle = '#efe9dc';
-    c.fillRect(cx - dw / 2, dy - T * 0.55, dw, T * 0.55); c.strokeRect(cx - dw / 2, dy - T * 0.55, dw, T * 0.55);
-    c.fillStyle = 'rgba(80,70,60,.25)';
-    for (var dc = 0; dc < 9; dc++) c.fillRect(cx - dw / 2 + T * 0.12 + dc * (dw - T * 0.24) / 8 - T * 0.03, dy - T * 0.5, T * 0.06, T * 0.45);
-    c.fillStyle = '#f4efe4';
-    c.beginPath(); c.ellipse(cx, dy - T * 0.55, dw * 0.46, T * 0.72, 0, Math.PI, 0); c.closePath(); c.fill(); c.stroke();
-    c.strokeStyle = 'rgba(80,70,60,.3)'; c.lineWidth = 1;
-    for (var rib = -2; rib <= 2; rib++) { c.beginPath(); c.ellipse(cx, dy - T * 0.55, Math.abs(rib) * dw * 0.09 + 0.1, T * 0.72, 0, Math.PI, Math.PI * 2); c.stroke(); }
-    c.strokeStyle = OL; c.lineWidth = Math.max(1.5, T * 0.05);
-    c.fillStyle = '#efe9dc';
-    c.fillRect(cx - T * 0.13, dy - T * 1.49, T * 0.26, T * 0.26); c.strokeRect(cx - T * 0.13, dy - T * 1.49, T * 0.26, T * 0.26);
-    c.beginPath(); c.moveTo(cx, dy - T * 1.49); c.lineTo(cx, dy - T * 1.7); c.stroke();
-    c.restore();
-    S.capitol = { cx: cx, top: fy - fh * 1.05, x0: x0, x1: x1, fy: fy };
-  }
-  function rrPx(c, x, y, w, h, r) {
-    c.beginPath();
-    c.moveTo(x, y + h); c.lineTo(x, y + r); c.arcTo(x, y, x + r, y, r); c.lineTo(x + w - r, y); c.arcTo(x + w, y, x + w, y + r, r); c.lineTo(x + w, y + h); c.closePath();
-  }
-  function drawTrees(c) {
-    var M = S.G.map, T = S.T, L = S.L;
-    for (var r = 0; r < M.def.rows; r++) for (var cc = 0; cc < M.def.cols; cc++) {
-      if (M.tile(cc, r) !== 't') continue;
-      var x = S.ox + (cc + 0.5) * T, y = S.oy + (r + 0.7) * T - M.height(cc, r) * L;
-      c.save();
-      c.translate(x, y); c.scale(T, T);
-      c.lineWidth = 0.05; c.strokeStyle = OL; c.lineJoin = 'round';
-      ell(c, 0, 0.05, 0.38, 0.15); c.fillStyle = 'rgba(0,0,0,.3)'; c.fill();
-      // outline every part first, then fill: one thick outline around the whole tree
-      var parts = [
-        function () { rr(c, -0.06, -0.3, 0.12, 0.34, 0.03); }, function () { ell(c, -0.14, -0.45, 0.24, 0.22); },
-        function () { ell(c, 0.15, -0.48, 0.24, 0.22); }, function () { ell(c, 0, -0.66, 0.26, 0.24); }];
-      var fills = ['#6b4a2e', '#2f7a3a', '#2f7a3a', '#3f9448'];
-      c.lineWidth = 0.1;
-      parts.forEach(function (f) { f(); c.stroke(); });
-      parts.forEach(function (f, k) { f(); c.fillStyle = fills[k]; c.fill(); });
-      ell(c, -0.06, -0.72, 0.1, 0.08); c.fillStyle = 'rgba(255,255,255,.18)'; c.fill();
-      c.restore();
-    }
+    c.fillStyle = '#7fb6e8';                          // the sky, if the field is taller than the painting
+    c.fillRect(0, 0, S.W, S.oy + art.y * T + 2);
+    c.imageSmoothingQuality = 'high';
+    if (im && im.naturalWidth) c.drawImage(im, S.ox + art.x * T, S.oy + art.y * T, art.w * T, art.h * T);
   }
 
   // ---------- Screen and size ----------
   function layout() {
     var field = $('#td-field'), cv = $('#td-cv');
     var W = field.clientWidth, H = field.clientHeight, M = S.G.map.def;
-    var TOP = 2.9;                                   // tiles of sky over the plaza, for the dome
-    var T = Math.floor(Math.min(W / M.cols, H / (M.rows + TOP)) * 2) / 2;
-    S.W = W; S.H = H; S.T = T; S.L = T * 0.45;
+    // The whole painting fits top to bottom (the sky and dome over row 0 included); the side borders
+    // past the grid can be cut off.
+    var art = M.art, T = Math.floor(Math.min(W / M.cols, H / art.h) * 2) / 2;
+    S.W = W; S.H = H; S.T = T; S.L = 0;
     S.dpr = Math.min(2, window.devicePixelRatio || 1);
     S.ox = Math.round((W - M.cols * T) / 2);
-    S.oy = Math.round(H - M.rows * T - (H - (M.rows + TOP) * T) / 2) ;
+    S.oy = Math.round((H - art.h * T) / 2 - art.y * T);
     cv.width = Math.round(W * S.dpr); cv.height = Math.round(H * S.dpr);
     cv.style.width = W + 'px'; cv.style.height = H + 'px';
     S.spr = { tower: buildTowerSprites(), enemy: buildEnemySprites(), base: buildBaseSprites(), coin: buildCoinSprite() };
@@ -433,7 +268,7 @@
   }
   function sx(x) { return S.ox + x * S.T; }
   function sy(y, h) { return S.oy + y * S.T - h * S.L; }
-  // The tile under a screen point: front rows first, since a raised tile can cover the one behind it.
+  // The tile under a screen point.
   function tileAt(px, py) {
     var M = S.G.map;
     for (var r = M.def.rows - 1; r >= 0; r--) for (var c = 0; c < M.def.cols; c++) {
@@ -726,22 +561,6 @@
         c.fillRect(x + T * (0.15 + 0.6 * ((k * 0.7 + r * 0.3) % 1)), y + T * ph, T * 0.25 * Math.sin(ph * Math.PI), Math.max(1, T * 0.04));
       }
     }
-    // flags on the Capitol
-    var cap = S.capitol;
-    [cap.x0 + T * 0.4, cap.x1 - T * 0.4].forEach(function (fxp, k) {
-      var top = cap.fy - T * 2.1;
-      c.strokeStyle = OL; c.lineWidth = Math.max(1, T * 0.04);
-      c.beginPath(); c.moveTo(fxp, cap.fy - T * 1.25); c.lineTo(fxp, top); c.stroke();
-      c.beginPath();
-      for (var i = 0; i <= 6; i++) {
-        var wx = fxp + i * T * 0.07, wy = top + Math.sin(now * 5 + i * 0.9 + k) * T * 0.04;
-        if (i === 0) c.moveTo(wx, wy); else c.lineTo(wx, wy);
-      }
-      for (i = 6; i >= 0; i--) c.lineTo(fxp + i * T * 0.07, top + T * 0.26 + Math.sin(now * 5 + i * 0.9 + k) * T * 0.04);
-      c.closePath();
-      c.fillStyle = '#c8102e'; c.fill();
-      c.fillStyle = '#1f3b8a'; c.fillRect(fxp, top + T * 0.02, T * 0.17, T * 0.12);
-    });
     // drifting cloud shadows
     c.fillStyle = 'rgba(10,30,20,.08)';
     for (var k2 = 0; k2 < 3; k2++) {

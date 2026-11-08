@@ -44,15 +44,18 @@
   };
 
   // ---------- The Hearing ----------
-  // Rows top to bottom. '#' the Capitol, 't' trees, 'w' the reflecting pool, 'B' your base, '.' open ground.
-  // The path is laid over this from `path`; its tiles can't be built on.
+  // Rows top to bottom. '#' the Capitol and its steps, 't' trees, 'w' the reflecting pool, 'B' your base,
+  // '.' open ground. The path is laid over this from `path`; its tiles can't be built on.
+  // The grid is fitted to Grok's painting (tools/td_map.py): `art` is where the painting sits, in tiles
+  // from the grid's top left corner (it runs past the grid: the sky and dome above, the border walls).
   var HEARING = {
     id: 'hearing', name: 'The Hearing', boss: 'warren',
     cols: 12, rows: 20,
+    art: { pic: 'hearing-map', x: -0.538, y: -1.587, w: 12.949, h: 21.638 },
     tiles: [
       'tt#########t',
       'tt#########t',
-      '............',
+      '....##.##...',
       '............',
       '............',
       '............',
@@ -83,19 +86,19 @@
       '111111111111',
       '000000000000',
       '000000000000',
-      '000012210000',
-      '000012210000',
+      '000011110000',
+      '000011110000',
+      '000000000011',
+      '000000000011',
+      '000000000011',
       '000000000000',
-      '000000000111',
-      '000000000121',
-      '000000000111',
       '000000000000',
       '000000000000',
       '000000000000'
     ],
     // Waypoints, tile coordinates (the path runs through tile centers). Starts at the Capitol door.
     path: [[6, 1], [6, 4], [2, 4], [2, 7], [9, 7], [9, 10], [3, 10], [3, 13], [8, 13], [8, 16], [4, 16], [4, 18]],
-    base: [4, 18.6],        // where the node stands (center), tile coordinates
+    base: [4, 18.8],        // where the node stands (center), tile coordinates: on the round pad
     // Each wave: [type, count, gap between them (s), start (s into the wave)].
     waves: [
       [['walker', 8, 1.4, 0]],
