@@ -158,7 +158,8 @@
     }
     return picsReady;
   }
-  // A painting as a sprite. ax, ay: the spot it stands on, as fractions of its width and height.
+  // A painting as a sprite. ax, ay: the spot it stands on, as fractions of its width and height (kept in
+  // tiles, like every sprite, so stamp() works on it too).
   // y0..y1: only that band of rows (a tower's turret, drawn apart from its pedestal so it can recoil).
   function pic(name, ax, ay, scale, y0, y1) {
     var im = PICS[name], k = scale || 1, ok = im && im.naturalWidth;
@@ -172,7 +173,7 @@
       if (y0 !== undefined) { c.beginPath(); c.rect(0, y0 * cv.height, cv.width, (y1 - y0) * cv.height); c.clip(); }
       c.drawImage(im, 0, 0, cv.width, cv.height);
     }
-    return { cv: cv, w: w, h: h, ax: ax, ay: ay };
+    return { cv: cv, w: w, h: h, ax: ax * w, ay: ay * h };
   }
   // Stamp with a turn and a stretch around the spot it stands on (the walk, the flap).
   function stampT(ctx, s, x, y, rot, kx, ky) {
@@ -181,7 +182,7 @@
     ctx.translate(x, y);
     if (rot) ctx.rotate(rot);
     ctx.scale(kx, ky);
-    ctx.drawImage(s.cv, -s.ax * s.w * T, -s.ay * s.h * T, s.w * T, s.h * T);
+    ctx.drawImage(s.cv, -s.ax * T, -s.ay * T, s.w * T, s.h * T);
     ctx.restore();
   }
 
@@ -233,7 +234,7 @@
     cv.width = Math.round(S.W * S.dpr); cv.height = Math.round(S.H * S.dpr);
     var c = cv.getContext('2d');
     c.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
-    c.fillStyle = '#7fb6e8';                          // the sky, if the field is taller than the painting
+    c.fillStyle = '#6eabe6';                          // the painting's sky, if the field is taller than it
     c.fillRect(0, 0, S.W, S.oy + art.y * T + 2);
     c.imageSmoothingQuality = 'high';
     if (im && im.naturalWidth) c.drawImage(im, S.ox + art.x * T, S.oy + art.y * T, art.w * T, art.h * T);
@@ -243,13 +244,13 @@
   function layout() {
     var field = $('#td-field'), cv = $('#td-cv');
     var W = field.clientWidth, H = field.clientHeight, M = S.G.map.def;
-    // The whole painting fits top to bottom (the sky and dome over row 0 included); the side borders
-    // past the grid can be cut off.
+    // The whole painting fits top to bottom (the sky and dome over row 0 included), standing on the bottom
+    // edge; any room left over goes to the sky. The side borders past the grid can be cut off.
     var art = M.art, T = Math.floor(Math.min(W / M.cols, H / art.h) * 2) / 2;
     S.W = W; S.H = H; S.T = T; S.L = 0;
     S.dpr = Math.min(2, window.devicePixelRatio || 1);
     S.ox = Math.round((W - M.cols * T) / 2);
-    S.oy = Math.round((H - art.h * T) / 2 - art.y * T);
+    S.oy = Math.round(H - (art.y + art.h) * T);
     cv.width = Math.round(W * S.dpr); cv.height = Math.round(H * S.dpr);
     cv.style.width = W + 'px'; cv.style.height = H + 'px';
     S.spr = { tower: buildTowerSprites(), enemy: buildEnemySprites(), base: buildBaseSprites(), coin: buildCoinSprite() };
@@ -655,7 +656,7 @@
     if (!sp.top) stampT(c, sp.whole, X, Y, 0, fl, 1);
     else {
       stampT(c, sp.base, X, Y, 0, fl, 1);
-      var cutY = Y - (sp.top.ay - sp.cut) * sp.top.h * T;   // where the turret meets the pedestal
+      var cutY = Y - (sp.top.ay - sp.cut * sp.top.h) * T;   // where the turret meets the pedestal
       c.save();
       if (t.type === 'strike') c.translate(fl * t.kick * T * 0.07, 0);                       // recoil away from the target
       else if (t.type === 'mint') { c.translate(X, cutY); c.scale(1 + t.kick * 0.08, 1 - t.kick * 0.14); c.translate(-X, -cutY); }  // the mortar squashes
@@ -728,7 +729,7 @@
     var G = S.G, T = S.T, bp = G.map.def.base, X = sx(bp[0] + 0.5), Y = sy(bp[1], 0) + T * 0.3, B = S.spr.base;
     var hurt = 1 - G.integrity / G.maxIntegrity;
     if (S.baseHit > 0) S.baseHit -= dt;
-    var jx = S.baseHit > 0 ? rnd(-1, 1) * T * 0.06 : 0, top = Y - B.body.ay * B.body.h * T, foot = Y;
+    var jx = S.baseHit > 0 ? rnd(-1, 1) * T * 0.06 : 0, top = Y - B.body.ay * T, foot = Y;
     c.fillStyle = 'rgba(0,0,0,.4)';
     c.beginPath(); c.ellipse(X, Y + T * 0.04, T * 0.62, T * 0.22, 0, 0, Math.PI * 2); c.fill();
     stamp(c, B.body, X + jx, Y);
@@ -888,7 +889,7 @@
       } else if (f.kind === 'ghost') {
         // the VHS break-up: red and cyan copies pull apart in slices and fade
         var s = f.sp, sw = s.cv.width, shh = s.cv.height, gh = S.ghost[f.e.type], z = f.e.size || 1;
-        var W = s.w * T * z, H = s.h * T * z, ox = f.x - s.ax * W, oy = f.y - s.ay * H, spread = (1 - k) * T * 0.35, slices = 6;
+        var W = s.w * T * z, H = s.h * T * z, ox = f.x - s.ax * T * z, oy = f.y - s.ay * T * z, spread = (1 - k) * T * 0.35, slices = 6;
         c.globalCompositeOperation = 'lighter';
         c.globalAlpha = k;
         for (var i = 0; i < slices; i++) {
@@ -913,7 +914,7 @@
     S.G.enemies.forEach(function (e) {
       if (e.hp >= e.maxHp * 0.97 && e.type !== 'boss') return;
       var p = enemyScreen(e), big = e.type === 'boss', w = T * (big ? 1.1 : 0.55), h = Math.max(3, T * (big ? 0.12 : 0.08));
-      var s = S.spr.enemy[e.type], above = e.fly ? T * (0.75 + s.h * 0.6) : s.ay * s.h * T * (e.size || 1) + T * 0.08;
+      var s = S.spr.enemy[e.type], above = e.fly ? T * (0.75 + s.h * 0.6) : s.ay * T * (e.size || 1) + T * 0.08;
       var y = p.y - above, x = p.x - w / 2, k = clamp(e.hp / e.maxHp, 0, 1);
       c.fillStyle = OL; c.fillRect(x - 1, y - 1, w + 2, h + 2);
       c.fillStyle = k > 0.5 ? '#3ddc97' : k > 0.25 ? '#ffd23f' : '#ff4d4d';
