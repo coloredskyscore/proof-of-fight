@@ -2,23 +2,24 @@
 // node tools/td-sim.js            -> every bot, a line per wave
 // Each bot spends its tokens between waves on a build order, putting each tower on the open tile that
 // covers the most path. "mix" is a sensible player; the one-tower bots show what a lopsided build gets.
-// 'up' in an order upgrades the tower that has done the most damage; the up-a and up-b bots take every
+// 'node' buys the node's next level (block runners). 'up' in an order upgrades the tower that has done the most damage; the up-a and up-b bots take every
 // tower down that tier 3 path, so each path gets played.
 'use strict';
 var TD = require('../js/td-core.js');
 
 var BOTS = {
-  mix:     ['strike', 'strike', 'mint', 'privacy', 'rug', 'strike', 'mint', 'strike', 'rug', 'mint', 'privacy', 'strike'],
+  mix:     ['strike', 'strike', 'mint', 'privacy', 'node', 'strike', 'mint', 'strike', 'node', 'mint', 'privacy', 'strike', 'node'],
   strike:  ['strike'],
   mint:    ['mint'],
-  nofly:   ['mint', 'privacy', 'rug', 'mint'],
-  'up-a':  ['strike', 'strike', 'mint', 'privacy', 'rug', 'up', 'up', 'strike', 'up', 'mint', 'up', 'rug', 'up', 'up', 'privacy', 'up', 'strike', 'up'],
-  'up-b':  ['strike', 'strike', 'mint', 'privacy', 'rug', 'up', 'up', 'strike', 'up', 'mint', 'up', 'rug', 'up', 'up', 'privacy', 'up', 'strike', 'up']
+  nofly:   ['mint', 'privacy', 'mint'],
+  nodes:   ['strike', 'node', 'node', 'node', 'strike'],
+  'up-a':  ['strike', 'strike', 'mint', 'privacy', 'node', 'up', 'up', 'strike', 'up', 'mint', 'up', 'node', 'up', 'up', 'privacy', 'up', 'strike', 'node', 'up'],
+  'up-b':  ['strike', 'strike', 'mint', 'privacy', 'node', 'up', 'up', 'strike', 'up', 'mint', 'up', 'node', 'up', 'up', 'privacy', 'up', 'strike', 'node', 'up']
 };
 var PATH = { 'up-a': 'a', 'up-b': 'b' };
 
 function coverage(G, type, c, r) {
-  var T = TD.TOWERS[type], h = G.map.height(c, r), range = T.range + (type === 'rug' ? 0 : h), n = 0;
+  var T = TD.TOWERS[type], h = G.map.height(c, r), range = T.range + h, n = 0;
   for (var d = 0; d < G.map.length; d += 0.25) {
     var p = G.map.at(d), dd = Math.hypot(p.x - c - 0.5, p.y - r - 0.5);
     if (dd <= range && !(T.minRange && dd < T.minRange)) n += 1 + d / G.map.length; // later path counts a bit more
@@ -43,6 +44,14 @@ function run(name, order, quiet, path) {
   function spend() {
     for (;;) {
       var type = order[k % order.length];
+      if (type === 'node') {   // the node's next level (a or b for the last, like the towers)
+        var no = G.nodeOptions(), pick = no.length > 1 ? no[(path || (rand() < 0.5 ? 'a' : 'b')) === 'a' ? 0 : 1] : no[0];
+        if (!pick) { k++; continue; }
+        if (G.tokens < pick.cost) return;
+        G.upgradeNode(pick.key);
+        k++;
+        continue;
+      }
       if (type === 'up') {
         var t = G.towers.filter(function (x) { return x.tier < 3; }).sort(function (a, b) { return b.dealt - a.dealt; })[0];
         if (!t) { k++; continue; }
@@ -74,7 +83,7 @@ function run(name, order, quiet, path) {
   if (!quiet) log.forEach(function (l) { console.log('  ' + l); });
   if (!quiet) {   // what each kind of tower did for its tokens
     var per = {};
-    G.towers.forEach(function (t) { var q = per[t.type] = per[t.type] || { d: 0, s: 0 }; q.d += t.dealt; q.s += t.spent; });
+    G.towers.concat(G.node.level ? [G.node] : []).forEach(function (t) { var q = per[t.type] = per[t.type] || { d: 0, s: 0 }; q.d += t.dealt; q.s += t.spent; });
     console.log('  damage per token: ' + Object.keys(per).map(function (k) { return k + ' ' + (per[k].d / per[k].s).toFixed(1); }).join(', '));
   }
   var tiers = G.towers.map(function (t) { return t.tier; }), up = tiers.filter(function (x) { return x > 1; }).length;

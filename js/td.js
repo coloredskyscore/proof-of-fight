@@ -1,8 +1,9 @@
 /* Tower Defense test mode (?td). Step 1 of three: the core loop on one map. The rules live in js/td-core.js;
    this file draws them and takes your taps.
    The Hearing: aides and paper pushers pour out of the Capitol and march down the steps and across the lawn
-   toward Toly's validator node. You build his four towers (the fight mode's four buttons, under his move
-   names) on any open tile, earn tokens for every kill, and hold for 15 waves. Real time, with 2x speed.
+   toward Toly's validator node. You build his three towers (under his move names) on any open tile, can
+   upgrade the node so it sends blocks up the path, earn tokens for every kill, and hold for 15 waves. Real
+   time, with 2x speed.
    The map, towers, enemies and node are Grok paintings in art/td/ (the map fitted to the grid by
    tools/td_map.py, the sprites cut from sheets by tools/td_art.py). Sprites are drawn once per screen size
    onto small canvases, then stamped every frame, so the frame stays cheap on a phone. */
@@ -17,9 +18,9 @@
     strike:  { c: '#e8553f', d: '#9c2a17', l: '#ff8f74', glow: '255,120,80' },
     privacy: { c: '#2a8fb8', d: '#165a78', l: '#7fd3f2', glow: '90,190,255' },
     mint:    { c: '#d0479a', d: '#86245f', l: '#ff8fd0', glow: '255,110,200' },
-    rug:     { c: '#6d4fc9', d: '#40288a', l: '#a993ff', glow: '160,120,255' }
+    node:    { c: '#1b9c8c', d: '#0d5e55', l: '#6ff5df', glow: '80,240,215' }
   };
-  var BLURB = { strike: 'Fast shots, hits flyers', privacy: 'Slows a crowd', mint: 'Splash, ground only', rug: 'Rug trap on the path' };
+  var BLURB = { strike: 'Fast shots, hits flyers', privacy: 'Slows a crowd', mint: 'Splash, ground only', node: 'Upgrade your node: it sends blocks up the path' };
   // A tower grows a little with each tier, until there's tier art.
   var TIER_SCALE = [1, 1, 1.08, 1.16];
   // The Hearing's costumes for each enemy type.
@@ -57,8 +58,7 @@
     'td.clank': [{ w: 'triangle', f: [1100, 820], d: 0.06, v: 0.09 }, { w: 'noise', d: 0.03, v: 0.06, hp: 4000 }],
     'td.thump': [{ w: 'sine', f: [170, 60], d: 0.16, v: 0.45 }, { w: 'noise', d: 0.05, v: 0.15, lp: 1200 }],
     'td.boom':  [{ w: 'sine', f: [120, 32], d: 0.38, v: 0.6 }, { w: 'noise', d: 0.32, v: 0.32, lp: [3200, 250] }],
-    'td.tug':   [{ w: 'square', f: [140, 210], d: 0.12, v: 0.05 }],
-    'td.rug':   [{ w: 'noise', d: 0.26, v: 0.3, bp: [2800, 450], q: 1.4 }, { w: 'triangle', f: [500, 180], d: 0.2, v: 0.12 }],
+    'td.block': [{ w: 'square', f: [440, 880], d: 0.07, v: 0.035, lp: 4000 }],
     'td.coin':  [{ w: 'square', f: 1760, d: 0.04, v: 0.035, lp: 6000 }, { w: 'square', f: 2640, t: 0.045, d: 0.07, v: 0.035, lp: 6000 }],
     'td.ko':    [{ w: 'square', f: [700, 90], d: 0.09, v: 0.045, lp: 3000 }, { w: 'noise', d: 0.05, v: 0.04, hp: 2500 }],
     'td.leak':  [{ w: 'sawtooth', f: [320, 110], d: 0.32, v: 0.14, lp: 2000 }, { w: 'sine', f: [110, 40], d: 0.32, v: 0.55 }],
@@ -72,8 +72,7 @@
     'td.up':    [{ w: 'square', f: 660, d: 0.06, v: 0.05, lp: 5000 }, { w: 'square', f: 880, t: 0.06, d: 0.06, v: 0.05, lp: 5000 },
       { w: 'square', f: 1320, t: 0.12, d: 0.14, v: 0.06, lp: 6000 }, { w: 'noise', t: 0.12, d: 0.12, v: 0.05, hp: 5000 }],
     'td.crit':  [{ w: 'square', f: [1800, 400], d: 0.09, v: 0.07, lp: 6000 }, { w: 'noise', d: 0.08, v: 0.12, hp: 2000 }, { w: 'sine', f: [160, 50], d: 0.14, v: 0.35 }],
-    'td.freeze':[{ w: 'triangle', f: [2400, 1200], d: 0.25, v: 0.06 }, { w: 'noise', d: 0.3, v: 0.08, bp: [6000, 2500], q: 2 }],
-    'td.trap':  [{ w: 'square', f: [900, 120], d: 0.35, v: 0.05, lp: 3000 }, { w: 'sine', f: [120, 40], t: 0.3, d: 0.2, v: 0.5 }]
+    'td.freeze':[{ w: 'triangle', f: [2400, 1200], d: 0.25, v: 0.06 }, { w: 'noise', d: 0.3, v: 0.08, bp: [6000, 2500], q: 2 }]
   });
   var lastSfx = {};
   function sfx(id, gap) {
@@ -167,7 +166,7 @@
   // in pixels is its size on the map. Each one is redrawn once per screen size onto a canvas at the exact
   // size it's stamped at, so the frame stays cheap on a phone.
   var ART = 'art/td/', PPT = 160;
-  var PIC_NAMES = ['hearing-map', 'tower-privacy', 'tower-rug', 'enemy-walker', 'enemy-swarm', 'enemy-sprinter',
+  var PIC_NAMES = ['hearing-map', 'tower-privacy', 'enemy-walker', 'enemy-swarm', 'enemy-sprinter',
     'enemy-support', 'enemy-armored', 'enemy-flyer', 'enemy-boss', 'node-toly', 'node-toly-lights'];
   var PICS = {}, picsReady = null;
   function loadPics() {
@@ -221,12 +220,12 @@
   // below it, the pedestal stays put. MUZZLE: the barrel tips, in tiles from the spot it stands on, for the
   // muzzle flash (two: a twin gun's barrels sit that far either side). Every sheet is cut so the pedestals
   // are PEDESTAL tiles across.
-  var VIEWS = { strike: ['side', 'down', 'up'], mint: ['side', 'down', 'up'], privacy: ['side'], rug: ['side'] };
+  var VIEWS = { strike: ['side', 'down', 'up'], mint: ['side', 'down', 'up'], privacy: ['side'] };
   var VIEW_ANGLE = { down: -90, downleft: -45, side: 0, upleft: 45, up: 90 };   // degrees, from facing left
   function towerPic(type, view) { return 'tower-' + type + (view === 'side' ? '' : '-' + view); }
   var TOWER_CUT = {
     strike: { side: 0.59, down: 0.55, up: 0.61 }, mint: { side: 0.7, down: 0.64, up: 0.69 },
-    privacy: { side: 1 }, rug: { side: 0.6 }
+    privacy: { side: 1 }
   };
   var MUZZLE = { side: { x: -0.36, y: -0.4 }, down: { x: 0, y: -0.3, two: 0.13 }, up: { x: 0, y: -0.84, two: 0.1 } };
   var PEDESTAL = 0.76;
@@ -381,6 +380,18 @@
       b.addEventListener('click', function () { pick(S.pick === type ? null : type); });
       shop.appendChild(b);
     });
+    // the 4th button: the node's upgrades
+    var nb = document.createElement('button');
+    nb.type = 'button';
+    nb.className = 'td-card td-nodecard';
+    nb.dataset.type = 'node';
+    nb.style.setProperty('--c', ROLE.node.c);
+    nb.style.setProperty('--d', ROLE.node.d);
+    nb.innerHTML = '<span class="td-thumb"><img alt="" src="' + ART + 'node-toly.webp"></span><span class="td-cname">Node</span>' +
+      '<span class="td-cost" id="td-node-cost"></span><kbd>' + (C.ORDER.length + 1) + '</kbd>';
+    nb.title = BLURB.node;
+    nb.addEventListener('click', function () { pick(null); select(S.sel === 'node' ? null : 'node'); });
+    shop.appendChild(nb);
     var cv = $('#td-cv');
     cv.addEventListener('pointermove', onMove);
     cv.addEventListener('pointerdown', onDown);
@@ -390,6 +401,7 @@
   // ---------- Input ----------
   function local(e) { var r = e.target.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
   function towerOn(c, r) { return S.G.towers.find(function (t) { return t.c === c && t.r === r; }); }
+  function onNode(at) { var bp = S.G.map.def.base; return Math.abs(at.c - bp[0]) <= 0 && at.r >= bp[1] - 2 && at.r <= bp[1]; }
   function pick(type) {
     S.pick = type;
     S.hover = null;
@@ -410,6 +422,7 @@
     if (!at) { select(null); return; }
     var t = towerOn(at.c, at.r);
     if (t) { pick(null); select(t.id === S.sel ? null : t.id); return; }
+    if (!S.pick && onNode(at)) { select(S.sel === 'node' ? null : 'node'); return; }
     if (!S.pick) { select(null); return; }
     // A touch shows where the tower would go first; a second tap on the same tile builds it.
     if (e.pointerType !== 'mouse' && !(S.armed && S.armed.c === at.c && S.armed.r === at.r)) {
@@ -420,7 +433,7 @@
   }
   function tryBuild(type, c, r) {
     var G = S.G, cost = C.TOWERS[type].cost;
-    if (!G.canBuild(type, c, r)) { sfx('td.no', 100); flashMsg(type === 'rug' && G.map.open(c, r) ? 'Rugs go next to the path' : "Can't build there", c, r); return null; }
+    if (!G.canBuild(type, c, r)) { sfx('td.no', 100); flashMsg("Can't build there", c, r); return null; }
     if (G.tokens < cost) { sfx('td.no', 100); flashMsg('Need ' + cost + ' tokens', c, r); bump($('#td-tok').parentNode, 'short'); return null; }
     var t = G.build(type, c, r);
     S.armed = null;
@@ -442,39 +455,69 @@
   function statLine(t) {
     var T = t.s;
     return t.type === 'privacy' ? 'Slows ' + Math.round(T.slow * 100) + '% · ' + T.dps + ' dmg/s' :
-      t.type === 'rug' ? T.dmg + ' dmg to all on it · throws them back ' + T.yank + ' tiles · new rug every ' + +(1 / T.rate).toFixed(1) + 's' :
       t.type === 'mint' ? T.dmg + ' splash · every ' + (1 / T.rate).toFixed(1) + 's' : T.dmg + ' dmg · ' + T.rate + '/s';
+  }
+  function nodeLine(n) {
+    if (!n.level) return 'Your validator node. Upgrade it and it sends blocks up the path that crash into the first enemy they meet.';
+    var s = n.s;
+    return (s.train > 1 ? s.train + ' blocks' : 'A block') + ' every ' + s.every + 's · ' + s.dmg + ' dmg' + (s.burst ? ', bursts on everyone near' : '');
+  }
+  function placePop(pop, x0, yTop, yBottom) {
+    var w = pop.offsetWidth, h = pop.offsetHeight, x = clamp(x0 - w / 2, 4, S.W - w - 4), y = yTop - h;
+    if (y < 4) y = Math.min(yBottom + 10, S.H - h - 4);
+    pop.style.left = x + 'px'; pop.style.top = y + 'px';
+  }
+  function upButtons(opts, name) {
+    var coin = '<i class="td-coin"></i>';
+    return opts.length ? '<div class="td-ups' + (opts.length > 1 ? ' two' : '') + '">' + opts.map(function (o) {
+      var t = name(o);
+      return '<button class="td-up" type="button" data-k="' + o.key + '" data-cost="' + o.cost + '">' +
+        '<b>' + esc(t[0]) + '</b><small>' + esc(t[1]) + '</small><span class="td-cost">' + coin + o.cost + '</span></button>';
+    }).join('') + '</div>' : '';
+  }
+  function wireUps(pop, buy, again) {
+    pop.querySelectorAll('.td-up').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var cost = +b.dataset.cost;
+        if (S.G.tokens < cost) { sfx('td.no', 100); bump(b, 'short'); bump($('#td-tok').parentNode, 'short'); return; }
+        if (buy(b.dataset.k)) again();
+      });
+    });
+  }
+  // The node's card: what it does now and what it can become.
+  function selectNode() {
+    var G = S.G, n = G.node, pop = $('#td-pop'), opts = G.nodeOptions();
+    var title = n.level === 3 ? C.NODE[n.path].name : 'Node';
+    pop.innerHTML = '<b style="color:' + ROLE.node.l + '">' + esc(title) + ' <span class="td-tier">' + (n.level === 3 ? 'MAX' : 'Level ' + n.level) + '</span></b>' +
+      '<small>' + esc(nodeLine(n)) + '</small>' +
+      (n.level ? '<small class="td-kills">' + n.kills + ' takedown' + (n.kills === 1 ? '' : 's') + '</small>' : '') +
+      upButtons(opts, function (o) { return [o.name, o.blurb]; });
+    pop.hidden = false;
+    wireUps(pop, function (k) { return G.upgradeNode(k); }, function () { select('node'); });
+    paintUps();
+    var bp = G.map.def.base;
+    placePop(pop, sx(bp[0] + 0.5), sy(bp[1] - 2.3, 0), sy(bp[1] + 0.6, 0));
   }
   function select(id) {
     S.sel = id;
     var pop = $('#td-pop');
+    document.querySelectorAll('.td-nodecard').forEach(function (b) { b.classList.toggle('on', id === 'node'); });
     if (!id) { pop.hidden = true; return; }
+    if (id === 'node') { selectNode(); return; }
     var t = S.G.towers.find(function (x) { return x.id === id; });
     if (!t) { pop.hidden = true; return; }
     var title = t.tier === 3 ? C.UPGRADES[t.type][t.path].name : towerName(t.type);
     var opts = S.G.upgradeOptions(t), coin = '<i class="td-coin"></i>';
     pop.innerHTML = '<b style="color:' + ROLE[t.type].l + '">' + esc(title) + ' <span class="td-tier">' + (t.tier === 3 ? 'MAX' : 'Tier ' + t.tier) + '</span></b>' +
-      '<small>' + esc(statLine(t)) + (t.type === 'rug' ? '' : ' · range ' + t.range + (t.h ? ' (+' + t.h + ' high ground)' : '')) + '</small>' +
+      '<small>' + esc(statLine(t)) + ' · range ' + t.range + (t.h ? ' (+' + t.h + ' high ground)' : '') + '</small>' +
       '<small class="td-kills">' + t.kills + ' takedown' + (t.kills === 1 ? '' : 's') + '</small>' +
-      (opts.length ? '<div class="td-ups' + (opts.length > 1 ? ' two' : '') + '">' + opts.map(function (o) {
-        return '<button class="td-up" type="button" data-k="' + o.key + '" data-cost="' + o.cost + '">' +
-          '<b>' + esc(o.tier === 2 ? 'Upgrade' : o.name) + '</b><small>' + esc(o.tier === 2 ? tier2Text(t.type) : o.blurb) + '</small>' +
-          '<span class="td-cost">' + coin + o.cost + '</span></button>';
-      }).join('') + '</div>' : '') +
+      upButtons(opts, function (o) { return o.tier === 2 ? ['Upgrade', tier2Text(t.type)] : [o.name, o.blurb]; }) +
       '<button class="btn btn-sm td-sell" type="button">Sell ' + coin + S.G.sellValue(t) + '</button>';
     pop.hidden = false;
     $('.td-sell', pop).addEventListener('click', function () { S.G.sell(t.id); select(null); });
-    pop.querySelectorAll('.td-up').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var cost = +b.dataset.cost;
-        if (S.G.tokens < cost) { sfx('td.no', 100); bump(b, 'short'); bump($('#td-tok').parentNode, 'short'); return; }
-        if (S.G.upgrade(t.id, b.dataset.k)) select(t.id);
-      });
-    });
+    wireUps(pop, function (k) { return S.G.upgrade(t.id, k); }, function () { select(t.id); });
     paintUps();
-    var w = pop.offsetWidth, h = pop.offsetHeight, x = clamp(sx(t.x) - w / 2, 4, S.W - w - 4), y = sy(t.y - 0.5, t.h) - S.T * 1.1 - h;
-    if (y < 4) y = Math.min(sy(t.y + 0.5, t.h) + 10, S.H - h - 4);
-    pop.style.left = x + 'px'; pop.style.top = y + 'px';
+    placePop(pop, sx(t.x), sy(t.y - 0.5, t.h) - S.T * 1.1, sy(t.y + 0.5, t.h));
   }
   // Grey out the upgrades you can't afford yet (kept current as tokens come in).
   function paintUps() {
@@ -483,12 +526,14 @@
   function onKey(e) {
     if (!S || e.repeat) return;
     var k = '1234'.indexOf(e.key);
-    if (k >= 0) { pick(S.pick === C.ORDER[k] ? null : C.ORDER[k]); e.preventDefault(); }
+    if (k >= 0 && k < C.ORDER.length) { pick(S.pick === C.ORDER[k] ? null : C.ORDER[k]); e.preventDefault(); }
+    else if (k === C.ORDER.length) { pick(null); select(S.sel === 'node' ? null : 'node'); e.preventDefault(); }
     else if (e.key === 'Escape') { pick(null); select(null); }
     else if (e.key === ' ' && !$('#td-next').hidden) { callWave(); e.preventDefault(); }
     else if (e.key === 'p') setPaused(!S.paused);
-    else if (S.sel && /^[uab]$/i.test(e.key)) {   // U: tier 2, A or B: a tier 3, for the selected tower
-      var b = $('#td-pop .td-up[data-k="' + (e.key.toLowerCase() === 'u' ? '2' : e.key.toLowerCase()) + '"]');
+    else if (S.sel && /^[uab]$/i.test(e.key)) {   // U: the next level, A or B: a tier 3, for what's selected
+      var ups = document.querySelectorAll('#td-pop .td-up');
+      var b = e.key.toLowerCase() === 'u' ? (ups.length === 1 ? ups[0] : null) : $('#td-pop .td-up[data-k="' + e.key.toLowerCase() + '"]');
       if (b) b.click();
     }
   }
@@ -550,15 +595,11 @@
     clearTimeout(S.bannerTimer);
     S.bannerTimer = setTimeout(function () { b.hidden = true; }, 2100);
   }
-  // Where an enemy is drawn: its lane offset across the path, its height, and a pull-back after a rug.
+  // Where an enemy is drawn: its lane offset across the path, and its height.
   function enemyScreen(e) {
     var M = S.G.map, x = e.x + -e.dy * e.lane, y = e.y + e.dx * e.lane;
     var h = M.height(Math.floor(e.x), Math.floor(e.y));
     if (e._h === undefined) e._h = h;
-    if (e._yank) {
-      var k = 1 - e._yank.t / e._yank.max, ease = 1 - Math.pow(1 - k, 3);
-      x = e._yank.x + (x - e._yank.x) * ease; y = e._yank.y + (y - e._yank.y) * ease;
-    }
     return { x: sx(x), y: sy(y, e._h), h: e._h };
   }
 
@@ -579,7 +620,6 @@
           fx({ kind: 'flash', x: mx, y: my, life: 0.07, max: 0.07, color: 'strike', size: 0.9 });
           sfx('td.pew', 45);
         } else if (ev.t.type === 'mint') sfx('td.thump', 80);
-        else if (ev.t.type === 'rug') sfx('td.rug', 80);
         break;
       case 'hit':
         p = enemyScreen(ev.e);
@@ -599,9 +639,25 @@
         spark(sx(ev.t.x), sy(ev.t.y, ev.t.h) - T * 0.6, '#d6f4ff', 10, T * 2.5, 0.5);
         sfx('td.freeze', 200);
         break;
-      case 'trap':
-        fx({ kind: 'trapdoor', x: sx(ev.x), y: sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))), life: 0.8, max: 0.8 });
-        sfx('td.trap', 120);
+      case 'node':   // the node levels up
+        var nbp = G.map.def.base, nx = sx(nbp[0] + 0.5), ny = sy(nbp[1], 0);
+        spark(nx, ny - T * 1.2, ROLE.node.l, 16, T * 3.2, 0.6);
+        spark(nx, ny - T * 1.2, '#ffd23f', 8, T * 2.4, 0.5);
+        fx({ kind: 'ring', x: nx, y: ny + T * 0.3, life: 0.5, max: 0.5, r: T * 1.3, color: ROLE.node.l });
+        fx({ kind: 'flash', x: nx, y: ny - T * 1.2, life: 0.3, max: 0.3, color: 'node', size: 2.4 });
+        floatText(ev.name.toUpperCase() + '!', nx, ny - T * 2.6, ROLE.node.l, 0.4);
+        sfx('td.up', 80);
+        break;
+      case 'block':
+        sfx('td.block', 150);
+        break;
+      case 'blockhit':
+        var hx = sx(ev.x), hy = sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y)));
+        fx({ kind: 'flash', x: hx, y: hy - T * 0.2, life: 0.16, max: 0.16, color: 'node', size: ev.burst ? 2.4 : 1.3 });
+        spark(hx, hy - T * 0.15, ROLE.node.l, ev.burst ? 12 : 6, T * (ev.burst ? 3 : 2), 0.35);
+        spark(hx, hy - T * 0.15, '#ffffff', 3, T * 1.6, 0.25);
+        if (ev.burst) { fx({ kind: 'ring', x: hx, y: hy, life: 0.3, max: 0.3, r: ev.burst * T, color: ROLE.node.l }); shake(2); }
+        sfx('td.clank', 60);
         break;
       case 'upgrade':
         var ux = sx(ev.t.x), uy = towerY(ev.t);
@@ -623,34 +679,9 @@
         if (!ev.small) shake(ev.mega ? 5 : ev.n ? 3 : 1.5);
         sfx(ev.small ? 'td.thump' : 'td.boom', ev.small ? 40 : 90);
         break;
-      case 'rug':   // one of the people on a rug when it's pulled: thrown back, flat on the floor
-        if (ev.yank) {
-          ev.e._yank = { x: ev.x + -ev.e.dy * ev.e.lane, y: ev.y + ev.e.dx * ev.e.lane, t: 0.32, max: 0.32 };
-          ev.e._downMax = ev.down;
-          p = { x: sx(ev.x), y: sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))) };
-          spark(p.x, p.y, '#e9dcc0', 4, T * 1.4, 0.35);
-        } else {
-          p = { x: sx(ev.x), y: sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))) };
-          floatText('TOO HEAVY', p.x, p.y - T * 0.9, ROLE.rug.l, 0.3);
-        }
-        break;
-      case 'pull':   // the rug comes out: one shout for the lot
-        var R = ev.t.rug, RX = sx(R.x), RY = sy(R.y, G.map.height(Math.floor(R.x), Math.floor(R.y)));
-        ev.t._pulled = S.clock;
-        if (ev.moved) floatText(ev.long ? 'LONG CON!' : 'RUG PULL!', RX, RY - T * 1.1, ROLE.rug.l, 0.36);
-        if (ev.moved > 1) floatText('×' + ev.moved, RX, RY - T * 0.7, '#fff', 0.3);
-        spark(RX, RY, ROLE.rug.l, 8 + ev.moved * 2, T * 2.4, 0.4);
-        shake(Math.min(5, 1.5 + ev.moved));
-        break;
-      case 'tug':
-        sfx('td.tug', 120);
-        break;
       case 'kill':
         p = enemyScreen(ev.e);
-        if (ev.e.trapped) {   // Exit Scam: they drop through the trapdoor instead
-          fx({ kind: 'fall', e: ev.e, x: p.x, y: p.y, life: 0.5, max: 0.5, flip: !!ev.e._flip, sp: S.spr.enemy[ev.e.type] });
-          floatText('EXIT SCAM!', p.x, p.y - T * 1.2, ROLE.rug.l, 0.32);
-        } else fx({ kind: 'ghost', e: ev.e, x: p.x, y: p.y + (ev.e.fly ? -S.T * 0.75 : 0), life: 0.42, max: 0.42, flip: !!ev.e._flip, sp: S.spr.enemy[ev.e.type] });
+        fx({ kind: 'ghost', e: ev.e, x: p.x, y: p.y + (ev.e.fly ? -S.T * 0.75 : 0), life: 0.42, max: 0.42, flip: !!ev.e._flip, sp: S.spr.enemy[ev.e.type] });
         fx({ kind: 'tok', x: p.x, y: p.y - T * 0.4, sx: p.x, sy: p.y - T * 0.4, life: 0.75, max: 0.75 });
         floatText('+' + ev.tokens, p.x + T * 0.25, p.y - T * 0.6, '#ffd23f', 0.3);
         sfx('td.ko', 50);
@@ -738,101 +769,6 @@
     }
   }
 
-  // ---------- The Rug's trap ----------
-  // The rug lies flat on its run of path. The winch's rope runs to its near edge: slack while it waits, taut
-  // and shaking on the fuse. When pulled, it whips back to the winch, rolling up as it goes.
-  var RUG_W = 0.66;
-  function rugGeom(R) {
-    var h = S.G.map.height(Math.floor(R.x), Math.floor(R.y));
-    return { X: sx(R.x), Y: sy(R.y, h), ang: Math.atan2(R.dy, R.dx) };
-  }
-  // a rug from a to b along its length (px, from its middle), w across
-  function rugShape(c, a, b, w) {
-    var T = S.T, L = b - a, o = Math.max(1.5, T * 0.035), f = T * 0.07;
-    if (L <= 1) return;
-    c.fillStyle = OL; c.fillRect(a - o, -w / 2 - o, L + o * 2, w + o * 2);
-    c.fillStyle = ROLE.rug.d; c.fillRect(a, -w / 2, L, w);
-    c.fillStyle = ROLE.rug.c; c.fillRect(a + w * 0.1, -w / 2 + w * 0.1, Math.max(0, L - w * 0.2), w * 0.8);
-    c.fillStyle = '#ffd23f';
-    c.fillRect(a + w * 0.14, -w * 0.26, Math.max(0, L - w * 0.28), Math.max(1, w * 0.07));
-    c.fillRect(a + w * 0.14, w * 0.19, Math.max(0, L - w * 0.28), Math.max(1, w * 0.07));
-    for (var i = 0; i < 2; i++) {      // a diamond in the middle of each half
-      var dx = a + L * (i ? 0.72 : 0.28), z = w * 0.13;
-      c.beginPath(); c.moveTo(dx - z, 0); c.lineTo(dx, -z); c.lineTo(dx + z, 0); c.lineTo(dx, z); c.closePath(); c.fill();
-    }
-    c.fillStyle = '#e8c25a';           // the fringe on both ends
-    for (var k = 0; k < 5; k++) {
-      var fy = -w / 2 + w * (k + 0.5) / 5 - w * 0.04;
-      c.fillRect(a - o - f, fy, f, w * 0.08);
-      c.fillRect(b + o, fy, f, w * 0.08);
-    }
-  }
-  function rugRoll(c, x, w) {          // the rolled-up rug, end on
-    var T = S.T, r = T * 0.13;
-    c.fillStyle = OL; c.fillRect(x - r - 1.5, -w / 2 - 1.5, r * 2 + 3, w + 3);
-    c.fillStyle = ROLE.rug.c; c.fillRect(x - r, -w / 2, r * 2, w);
-    c.fillStyle = ROLE.rug.l; c.fillRect(x - r * 0.4, -w / 2, r * 0.5, w);
-    c.fillStyle = '#ffd23f'; c.fillRect(x - r, -w * 0.26, r * 2, Math.max(1, w * 0.07)); c.fillRect(x - r, w * 0.19, r * 2, Math.max(1, w * 0.07));
-  }
-  function drawRug(c, t, now) {
-    var T = S.T, R = t.rug, Ts = t.s, g = rugGeom(R), L = R.len * T, w = RUG_W * T, a = -L / 2, b = L / 2;
-    var off = 0, roll = null, alpha = 1, slide = 0, taut = false;
-    if (R.state === 'lay') {
-      var q = 1 - Math.max(0, R.t) / Ts.lay; q = 1 - Math.pow(1 - q, 2);
-      b = a + L * q; roll = b;
-    } else if (R.state === 'fuse') {
-      off = Math.sin(now * 70) * T * 0.035; taut = true;
-    } else if (R.state === 'gone') {
-      var e = 1 / Ts.rate - R.t;        // seconds since the pull
-      if (e > 0.3) { drawRope(c, t, null, 0); return; }
-      var k = Math.min(1, e / 0.22);
-      slide = k; b = b - L * k * 0.85; roll = b; alpha = 1 - Math.max(0, (e - 0.18) / 0.12); taut = true;
-    }
-    // the rug's centre, slid toward the winch while it's being pulled
-    var cx = g.X + (sx(t.x) - g.X) * slide * 0.8, cy = g.Y + (towerY(t) - T * 0.2 - g.Y) * slide * 0.8;
-    c.save();
-    c.globalAlpha = alpha;
-    c.translate(cx + Math.cos(g.ang) * off, cy + Math.sin(g.ang) * off);
-    c.rotate(g.ang);
-    if (R.state === 'set' || R.state === 'fuse') {   // a faint glow so it reads as a trap, brighter on the fuse
-      c.globalCompositeOperation = 'lighter';
-      c.globalAlpha = (R.state === 'fuse' ? 0.5 : 0.16 + 0.08 * Math.sin(now * 3 + t.id)) * alpha;
-      c.drawImage(S.glow.rug, a - w * 0.5, -w, L + w, w * 2);
-      c.globalAlpha = alpha; c.globalCompositeOperation = 'source-over';
-    }
-    rugShape(c, a, b, w);
-    if (roll !== null) rugRoll(c, roll, w);
-    c.restore();
-    // the rope, from the winch to the rug's middle (its near edge)
-    var nx = -Math.sin(g.ang), ny = Math.cos(g.ang), side = (sx(t.x) - g.X) * nx + (towerY(t) - g.Y) * ny > 0 ? 1 : -1;
-    var mid = (a + b) / 2;
-    var ex = cx + Math.cos(g.ang) * (mid + off) + nx * side * w / 2, ey = cy + Math.sin(g.ang) * (mid + off) + ny * side * w / 2;
-    c.globalAlpha = alpha;
-    drawRope(c, t, { x: ex, y: ey }, taut ? 0 : 1);
-    c.globalAlpha = 1;
-  }
-  function drawRope(c, t, to, sag) {
-    if (!to) return;
-    var T = S.T, x0 = sx(t.x), y0 = towerY(t) - T * 0.45, mx = (x0 + to.x) / 2, my = (y0 + to.y) / 2 + sag * T * 0.3;
-    c.lineCap = 'round';
-    c.strokeStyle = OL; c.lineWidth = Math.max(3, T * 0.09);
-    c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(mx, my, to.x, to.y); c.stroke();
-    c.strokeStyle = '#e8c25a'; c.lineWidth = Math.max(1.5, T * 0.045);
-    c.stroke();
-    c.lineCap = 'butt';
-  }
-  // where a rug goes (placing a Rug, or the selected one)
-  function rugOutline(c, R) {
-    var T = S.T, g = rugGeom(R), L = R.len * T, w = RUG_W * T;
-    c.save();
-    c.translate(g.X, g.Y); c.rotate(g.ang);
-    c.fillStyle = 'rgba(' + ROLE.rug.glow + ',.18)';
-    c.strokeStyle = 'rgba(' + ROLE.rug.glow + ',.9)';
-    c.lineWidth = 2; c.setLineDash([6, 5]);
-    c.fillRect(-L / 2, -w / 2, L, w); c.strokeRect(-L / 2, -w / 2, L, w);
-    c.restore();
-  }
-
   function rangeCircle(c, x, y, h, range, role, strong) {
     var R = range * S.T, X = sx(x), Y = sy(y, h);
     c.save();
@@ -864,13 +800,11 @@
       }
     });
     // the selected tower's reach
-    if (S.sel) {
+    if (S.sel && S.sel !== 'node') {
       var t = G.towers.find(function (x) { return x.id === S.sel; });
-      if (t && t.rug) rugOutline(c, t.rug);
-      else if (t) rangeCircle(c, t.x, t.y, t.h, t.range, t.type, true);
+      if (t) rangeCircle(c, t.x, t.y, t.h, t.range, t.type, true);
       else select(null);
     }
-    G.towers.forEach(function (t) { if (t.rug) drawRug(c, t, now); });
     // Mega Mint's fire on the path
     G.patches.forEach(function (f) {
       var X = sx(f.x), Y = sy(f.y, G.map.height(Math.floor(f.x), Math.floor(f.y))), k = Math.min(1, f.t / 0.5), R = f.r * T;
@@ -903,12 +837,14 @@
     var G = S.G, T = S.T, list = [];
     G.towers.forEach(function (t) { list.push({ y: t.y, t: t }); });
     G.enemies.forEach(function (e) { if (!e.fly) list.push({ y: e.y + 0.01, e: e }); });
+    G.blocks.forEach(function (b) { if (b.dist < G.map.length) list.push({ y: G.map.at(b.dist).y + 0.02, b: b }); });
     var bp = G.map.def.base;
     list.push({ y: bp[1] + 0.2, base: true });
     list.sort(function (a, b) { return a.y - b.y; });
     list.forEach(function (o) {
       if (o.t) drawTower(c, o.t, now, dt);
       else if (o.e) drawEnemy(c, o.e, now, dt);
+      else if (o.b) drawBlock(c, o.b, now);
       else drawBase(c, now, dt);
     });
     G.enemies.forEach(function (e) { if (e.fly) drawEnemy(c, e, now, dt); });
@@ -939,15 +875,10 @@
       if (t.type === 'strike' && view !== 'down' && view !== 'up') c.translate(fl * t.kick * T * 0.07, 0);  // recoil away from the target
       else if (t.type === 'strike') { c.translate(X, cutY); c.scale(1 + t.kick * 0.04, 1 - t.kick * 0.09); c.translate(-X, -cutY); }  // facing you or away: it punches
       else if (t.type === 'mint') { c.translate(X, cutY); c.scale(1 + t.kick * 0.08, 1 - t.kick * 0.14); c.translate(-X, -cutY); }  // the mortar squashes
-      else if (t.type === 'rug') c.translate(fl * t.kick * T * 0.08, 0);                     // it heaves back as it pulls
       stampT(c, sp.top, X, Y, 0, fl, 1);
       c.restore();
     }
-    if (t.type === 'rug' && t.rug.state === 'fuse') {
-      c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.22 + 0.12 * Math.sin(now * 6 + t.id);
-      c.drawImage(S.glow.rug, X - T * 0.5, Y - T * 1.05, T, T);
-      c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
-    } else if (t.type === 'privacy') {
+    if (t.type === 'privacy') {
       c.globalCompositeOperation = 'lighter';
       c.globalAlpha = t.active ? 0.5 + 0.3 * Math.sin(now * 8) : 0.16 + 0.08 * Math.sin(now * 2 + t.id);
       c.drawImage(S.glow.privacy, X - T * 0.5, Y - T * 1.05, T, T);
@@ -969,9 +900,8 @@
     var T = S.T, p = enemyScreen(e), sp = S.spr.enemy[e.type], size = e.size || 1;
     var h = S.G.map.height(Math.floor(e.x), Math.floor(e.y));
     e._h += (h - e._h) * Math.min(1, dt * 7);
-    if (e._yank) { e._yank.t -= dt; if (e._yank.t <= 0) e._yank = null; }
-    var slow = e.slowT > 0, down = e.downT > 0, frozen = e.stunT > 0 && !down;
-    if (!frozen && !down) e._step = (e._step === undefined ? e.phase : e._step) + dt * (slow ? 2 : 3.5) * e.speed;
+    var slow = e.slowT > 0, frozen = e.stunT > 0;
+    if (!frozen) e._step = (e._step === undefined ? e.phase : e._step) + dt * (slow ? 2 : 3.5) * e.speed;
     var step = e._step === undefined ? e.phase : e._step, sw = Math.sin(step * Math.PI), up = Math.abs(sw);
     // One painting each, so the walk is a sway, a bob and a squash on every footfall; the subpoena flaps.
     var rot, kx, ky, bob;
@@ -994,15 +924,6 @@
     // painted facing right; going straight down keeps the way it last faced
     if (e.dx < -0.01) e._flip = true; else if (e.dx > 0.01) e._flip = false;
     var fl = e._flip ? -1 : 1, y = p.y + bob;
-    if (down) {   // flat on their back after a rug pull: topple over, lie there, get up
-      var mx = e._downMax || 0.8, fall = Math.min(1, (mx - e.downT) / 0.12) * Math.min(1, e.downT / 0.15);
-      rot = -1.45 * fall; kx = 1; ky = 1; y = p.y;
-      if (e.type !== 'armored' && e.type !== 'boss') {
-        var st = now * 9 + e.phase, hy0 = p.y - T * 0.35;
-        c.fillStyle = '#ffd23f';
-        for (var si = 0; si < 3; si++) { var sa = st + si * 2.1; c.fillRect(p.x - fl * T * 0.35 + Math.cos(sa) * T * 0.18 - 2, hy0 + Math.sin(sa) * T * 0.06 - 2, 4, 4); }
-      }
-    }
     stampT(c, sp, p.x, y, rot * fl, kx * size * fl, ky * size);
     if (slow || frozen) {   // a blue cast while the fog holds them, solid ice while frozen
       c.globalAlpha = frozen ? 0.55 : 0.18; stampT(c, S.ghost[e.type].b, p.x, y, rot * fl, kx * size * fl, ky * size);
@@ -1032,6 +953,29 @@
     }
   }
 
+  // A block runner from the node: a little glowing cube that hops up the path, with a trail.
+  function drawBlock(c, b, now) {
+    var T = S.T, M = S.G.map, z = T * 0.36, o = Math.max(1.5, T * 0.035);
+    for (var k = 3; k >= 0; k--) {
+      var q = M.at(Math.min(M.length, b.dist + k * 0.16)), h = M.height(Math.floor(q.x), Math.floor(q.y));
+      var X = sx(q.x), Y = sy(q.y, h) - (k ? 0 : Math.abs(Math.sin(now * 18 + b.id)) * T * 0.06);
+      if (k) {   // the trail: fading squares behind it
+        c.globalAlpha = 0.5 - k * 0.12; c.fillStyle = ROLE.node.l;
+        var tz = z * (1 - k * 0.18); c.fillRect(X - tz / 2, Y - tz, tz, tz);
+        c.globalAlpha = 1;
+        continue;
+      }
+      c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.7;
+      c.drawImage(S.glow.node, X - T * 0.4, Y - T * 0.55, T * 0.8, T * 0.7);
+      c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+      var top = z * 0.35;
+      c.fillStyle = OL; c.fillRect(X - z / 2 - o, Y - z - top - o, z + o * 2, z + top + o * 2);
+      c.fillStyle = ROLE.node.c; c.fillRect(X - z / 2, Y - z, z, z);                 // front
+      c.fillStyle = ROLE.node.l; c.fillRect(X - z / 2, Y - z - top, z, top);         // top
+      c.fillStyle = ROLE.node.d; c.fillRect(X + z * 0.2, Y - z, z * 0.3, z);          // shaded side
+      c.fillStyle = '#ffffff'; c.fillRect(X - z * 0.36, Y - z * 0.86, z * 0.18, z * 0.18);   // a glint
+    }
+  }
   function drawBase(c, now, dt) {
     var G = S.G, T = S.T, bp = G.map.def.base, X = sx(bp[0] + 0.5), Y = sy(bp[1], 0) + T * 0.3, B = S.spr.base;
     var hurt = 1 - G.integrity / G.maxIntegrity;
@@ -1071,6 +1015,12 @@
       fx({ kind: 'smoke', x: X + rnd(-0.3, 0.3) * T, y: mid - T * 0.4, vx: rnd(-6, 6), vy: -T * 0.8, life: 1.2, max: 1.2, size: rnd(0.25, 0.4) });
     }
     if (hurt > 0.5 && Math.random() < dt * 3) spark(X + rnd(-0.4, 0.4) * T, mid + T * rnd(-0.4, 0.5), '#ffd23f', 2, T * 1.5, 0.3);
+    var lv = G.node.level;   // the node's level, as diamonds on its pad
+    for (var i = 0; i < lv; i++) {
+      var px = X + (i - (lv - 1) / 2) * T * 0.2, py = Y + T * 0.42, z = T * 0.08;
+      c.beginPath(); c.moveTo(px, py - z); c.lineTo(px + z, py); c.lineTo(px, py + z); c.lineTo(px - z, py); c.closePath();
+      c.fillStyle = ROLE.node.l; c.fill(); c.lineWidth = Math.max(1, T * 0.03); c.strokeStyle = OL; c.stroke();
+    }
   }
 
   // Day to dusk to a red night as the waves go on, and a red pulse while the Filibuster walks.
@@ -1178,21 +1128,6 @@
         var q = 1 - k, e = q * q * (3 - 2 * q);
         var x = f.sx + (S.tokAt.x - f.sx) * e, y = f.sy + (S.tokAt.y - f.sy) * e - Math.sin(q * Math.PI) * T * 1.2;
         stamp(c, S.spr.coin, x, y, 1.1);
-      } else if (f.kind === 'trapdoor') {
-        // a black hole opens in the path and closes again
-        var o = Math.sin(Math.min(1, (1 - k) * 2.2) * Math.PI / 2) * (k < 0.25 ? k / 0.25 : 1);
-        c.fillStyle = '#0a0812';
-        c.beginPath(); c.ellipse(f.x, f.y, T * 0.38 * o, T * 0.16 * o, 0, 0, Math.PI * 2); c.fill();
-        c.strokeStyle = '#6b4a2e'; c.lineWidth = Math.max(1.5, T * 0.05); c.stroke();
-      } else if (f.kind === 'fall') {
-        // the enemy drops into the trapdoor: shrinks and sinks, clipped by the hole's rim
-        var q2 = 1 - k, s2 = f.sp, z2 = (f.e.size || 1) * (1 - q2 * 0.6);
-        c.save();
-        c.beginPath(); c.rect(f.x - T, f.y - T * 3, T * 2, T * 3); c.clip();
-        c.globalAlpha = k;
-        stampT(c, s2, f.x, f.y + q2 * s2.h * T * 1.1, 0, (f.flip ? -1 : 1) * z2, z2);
-        c.restore();
-        c.globalAlpha = 1;
       } else if (f.kind === 'ghost') {
         // the VHS break-up: red and cyan copies pull apart in slices and fade
         var s = f.sp, sw = s.cv.width, shh = s.cv.height, gh = S.ghost[f.e.type], z = f.e.size || 1;
@@ -1243,8 +1178,7 @@
     var at = S.hover;
     if (!at) return;
     var ok = G.canBuild(type, at.c, at.r) && G.tokens >= C.TOWERS[type].cost, h = M.height(at.c, at.r);
-    if (type === 'rug') { if (G.canBuild(type, at.c, at.r)) rugOutline(c, G.rugSpot(at.c, at.r, C.TOWERS.rug.rug)); }
-    else rangeCircle(c, at.c + 0.5, at.r + 0.5, h, C.TOWERS[type].range + h, type, true);
+    rangeCircle(c, at.c + 0.5, at.r + 0.5, h, C.TOWERS[type].range + h, type, true);
     c.globalAlpha = 0.65;
     var X = sx(at.c + 0.5), Y = sy(at.r + 0.5, h) + T * 0.1;
     stamp(c, S.spr.tower[type].side.whole, X, Y);
@@ -1267,7 +1201,11 @@
     $('#td-intbox').classList.toggle('low', G.integrity <= G.maxIntegrity / 4);
     $('#td-tok').textContent = G.tokens;
     $('#td-wave').textContent = Math.max(G.wave, 0) + '/' + G.waves;
-    document.querySelectorAll('.td-card').forEach(function (b) { b.classList.toggle('poor', G.tokens < C.TOWERS[b.dataset.type].cost); });
+    document.querySelectorAll('.td-card').forEach(function (b) { if (C.TOWERS[b.dataset.type]) b.classList.toggle('poor', G.tokens < C.TOWERS[b.dataset.type].cost); });
+    var nopt = G.nodeOptions(), ncost = nopt.length ? Math.min.apply(null, nopt.map(function (o) { return o.cost; })) : 0;
+    var nkey = nopt.length ? 'c' + ncost : 'max';
+    if (S.nodeKey !== nkey) { S.nodeKey = nkey; $('#td-node-cost').innerHTML = nopt.length ? '<i class="td-coin"></i>' + ncost : 'MAX'; }
+    $('.td-nodecard').classList.toggle('poor', !nopt.length || G.tokens < ncost);
     var next = $('#td-next'), show = G.phase === 'ready' || G.phase === 'break';
     next.hidden = !show;
     if (show) {
@@ -1283,7 +1221,7 @@
       if (S.goText !== go) { S.goText = go; $('#td-go').innerHTML = go; }
     }
     if (S.sel && !$('#td-pop').hidden) {
-      var t = G.towers.find(function (x) { return x.id === S.sel; });
+      var t = S.sel === 'node' ? G.node : G.towers.find(function (x) { return x.id === S.sel; });
       var kills = $('#td-pop .td-kills');
       if (t && kills) kills.textContent = t.kills + ' takedown' + (t.kills === 1 ? '' : 's');
       paintUps();

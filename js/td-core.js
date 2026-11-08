@@ -16,13 +16,9 @@
   var TOWERS = {
     strike:  { cost: 100, range: 3,   dmg: 12, rate: 2.5,     air: true,  shot: 16 },          // tracer speed, tiles/s
     privacy: { cost: 80,  range: 2.5, dps: 5,  slow: 0.4,     air: false },                    // a field, always on
-    mint:    { cost: 150, range: 4.5, dmg: 40, rate: 1 / 1.6, air: false, splash: 1, minRange: 1, flight: 0.8 },
-    rug:     { cost: 125, range: 1.5, dmg: 60, rate: 1 / 4,   air: false, yank: 1.5, rug: 1.6, lay: 0.6, fuse: 0.3, down: 0.8 }
+    mint:    { cost: 150, range: 4.5, dmg: 40, rate: 1 / 1.6, air: false, splash: 1, minRange: 1, flight: 0.8 }
   };
-  // The Rug is a trap, not a gun: it lays a rug `rug` tiles long on the path beside it (taking `lay` seconds).
-  // When someone steps on, it waits `fuse` seconds for more to follow, then yanks it: everyone on it takes dmg,
-  // is thrown back `yank` tiles and lies on the floor for `down` seconds. A new rug goes down 1/rate seconds later.
-  var ORDER = ['strike', 'privacy', 'mint', 'rug'];
+  var ORDER = ['strike', 'privacy', 'mint'];
   var SELL = 0.7;
 
   // ---------- Upgrades ----------
@@ -30,9 +26,7 @@
   // (a tier 3 sits on top of tier 2). What you pay adds to what the tower sells for.
   //   strike  crit: chance of a 2.5x hit.   privacy  freeze: seconds frozen, every freezeEvery seconds;
   //   doxx: extra damage taken inside the fog.   mint  cluster: bomblets that land along the path after
-  //   the blast; burn: damage a second in the fire it leaves, for burnT seconds.   rug  heavyYank: also
-  //   throws cabinets and the Filibuster (half as far); trap: when the rug is pulled, a trapdoor under it
-  //   takes the one furthest along (not a heavy one), at most every `trap` seconds.
+  //   the blast; burn: damage a second in the fire it leaves, for burnT seconds.
   var UPGRADES = {
     strike: {
       2: { cost: 90, name: 'Hot Rounds', set: { dmg: 21, range: 3.5 } },
@@ -48,14 +42,29 @@
       2: { cost: 120, name: 'Heavy Coins', set: { dmg: 70, splash: 1.2 } },
       a: { cost: 240, name: 'Cluster', blurb: 'Each bomb splits into 4 more', set: { cluster: 4, bomblet: 30 } },
       b: { cost: 240, name: 'Mega Mint', blurb: 'One huge blast that leaves fire', set: { dmg: 150, splash: 1.6, rate: 1 / 2.4, burn: 20, burnT: 3 } }
-    },
-    rug: {
-      2: { cost: 100, name: 'Quick Pull', set: { dmg: 80, rate: 1 / 2.5 } },
-      a: { cost: 200, name: 'Long Con', blurb: 'Longer rug, throws them back 3 tiles, even heavy ones', set: { yank: 3, heavyYank: true, rug: 2.2 } },
-      b: { cost: 200, name: 'Exit Scam', blurb: 'A trapdoor in the rug drops one enemy every 12s', set: { trap: 12 } }
     }
   };
   var BOMBLET = { splash: 0.7, flight: 0.35, spacing: 0.8 };
+
+  // ---------- The node ----------
+  // The 4th button upgrades the node itself, any time. From level 1 it sends block runners: while enemies are
+  // out, a block leaves the node every `every` seconds, races up the path at `speed` tiles a second and slams
+  // into the first enemy it meets for dmg (armor counts), then breaks. Level 3 is a choice: train (that many
+  // blocks in a row) or burst (the crash hits everyone within `burst` tiles). Flyers pass over them.
+  var NODE = {
+    1: { cost: 200, name: 'Block Runners', blurb: 'Sends a block up the path every 3s', set: { every: 3, dmg: 35, speed: 5 } },
+    2: { cost: 200, name: 'Faster Blocks', blurb: 'A block every 2s, harder and faster', set: { every: 2, dmg: 50, speed: 6.5 } },
+    a: { cost: 300, name: 'Block Train', blurb: 'Sends 3 blocks in a row', set: { train: 3 } },
+    b: { cost: 300, name: 'Block Burst', blurb: 'Each block bursts, hitting everyone near it', set: { burst: 1.1, dmg: 70 } }
+  };
+  var BLOCK_GAP = 0.5;     // tiles between the blocks of a train
+  function nodeStats(level, path) {
+    var s = { train: 1, burst: 0 };
+    if (level >= 1) Object.assign(s, NODE[1].set);
+    if (level >= 2) Object.assign(s, NODE[2].set);
+    if (level >= 3 && path) Object.assign(s, NODE[path].set);
+    return s;
+  }
   var BURN_R = 1;
   function towerStats(type, tier, path) {
     var s = Object.assign({}, TOWERS[type]);
@@ -180,7 +189,7 @@
     function height(c, r) { return +((M.heights[r] || '')[c] || 0); }
     // A tile you can build on: open ground, not the path.
     function open(c, r) { return c >= 0 && r >= 0 && c < M.cols && r < M.rows && tile(c, r) === '.' && !onPath[c + ',' + r]; }
-    // The Rug has to sit next to the path.
+    // tiles touching the path (corners too)
     var nearPath = {};
     Object.keys(onPath).forEach(function (k) {
       var p = k.split(',').map(Number);
@@ -214,7 +223,8 @@
       waves: map.def.waves.length,
       phase: 'ready',               // ready (before wave 1), wave, break (countdown), won, lost
       countdown: 0,
-      enemies: [], towers: [], shots: [], patches: [], events: [],
+      enemies: [], towers: [], shots: [], patches: [], blocks: [], events: [],
+      node: { type: 'node', level: 0, path: null, s: nodeStats(0), cool: 0, spent: 0, kills: 0, dealt: 0 },
       spawns: [], waveT: 0, nextId: 1, kills: 0, leaks: 0
     };
 
@@ -283,28 +293,9 @@
       return best;
     }
 
-    // Where a Rug at (c, r) lays its rug: on the nearest straight run of path, as close to the tower as that
-    // run allows, so it never bends round a corner. d0..d1: the stretch of path it covers.
-    function rugSpot(c, r, len) {
-      var x = c + 0.5, y = r + 0.5, best = null;
-      map.segs.forEach(function (s) {
-        var vx = s.b.x - s.a.x, vy = s.b.y - s.a.y, k = ((x - s.a.x) * vx + (y - s.a.y) * vy) / (s.len * s.len);
-        var inside = k > 0.001 && k < 0.999;
-        k = Math.max(0, Math.min(1, k));
-        var d = Math.hypot(x - s.a.x - vx * k, y - s.a.y - vy * k);
-        // on a tie (a tower by a corner), the run it sits beside wins over the one it sits at the end of
-        if (!best || d < best.d - 0.01 || (Math.abs(d - best.d) <= 0.01 && inside && !best.inside)) best = { d: d, s: s, at: s.at + k * s.len, inside: inside };
-      });
-      var S = best.s, L = Math.min(len, S.len - 0.1);
-      var mid = Math.max(S.at + L / 2 + 0.05, Math.min(S.at + S.len - L / 2 - 0.05, best.at));
-      var p = map.at(mid);
-      return { d0: mid - L / 2, d1: mid + L / 2, x: p.x, y: p.y, dx: (S.b.x - S.a.x) / S.len, dy: (S.b.y - S.a.y) / S.len, len: L };
-    }
-
     function canBuild(type, c, r) {
       if (!TOWERS[type] || !map.open(c, r)) return false;
       if (G.towers.some(function (t) { return t.c === c && t.r === r; })) return false;
-      if (type === 'rug' && !map.nearPath[c + ',' + r]) return false;
       return true;
     }
     function build(type, c, r) {
@@ -313,12 +304,7 @@
       G.tokens -= T.cost;
       var h = map.height(c, r);
       var t = { id: G.nextId++, type: type, c: c, r: r, x: c + 0.5, y: r + 0.5, h: h, tier: 1, path: null, s: towerStats(type, 1),
-        range: T.range + (type === 'rug' ? 0 : h), cool: 0, angle: Math.PI / 5, spent: T.cost, kills: 0, dealt: 0, fired: 0 };
-      if (type === 'rug') {
-        t.rug = rugSpot(c, r, t.s.rug);
-        t.rug.state = 'lay'; t.rug.t = t.s.lay;
-        t.angle = Math.atan2(t.rug.y - t.y, t.rug.x - t.x);
-      }
+        range: T.range + h, cool: 0, angle: Math.PI / 5, spent: T.cost, kills: 0, dealt: 0, fired: 0 };
       G.towers.push(t);
       emit('build', { t: t });
       return t;
@@ -340,14 +326,8 @@
       t.tier = o.tier;
       if (o.tier === 3) t.path = o.key;
       t.s = towerStats(t.type, t.tier, t.path);
-      t.range = t.s.range + (t.type === 'rug' ? 0 : t.h);
+      t.range = t.s.range + t.h;
       if (t.s.freeze) t.freezeCool = 1;
-      if (t.s.trap) t.trapCool = 0;
-      if (t.rug && t.s.rug !== t.rug.len) {   // Long Con: a longer rug (a new one, rolled out from the winch)
-        var keep = t.rug;
-        t.rug = rugSpot(t.c, t.r, t.s.rug);
-        t.rug.state = keep.state === 'gone' ? 'gone' : 'lay'; t.rug.t = keep.state === 'gone' ? keep.t : t.s.lay;
-      }
       emit('upgrade', { t: t, tier: t.tier, path: t.path, name: o.name });
       return t;
     }
@@ -387,7 +367,6 @@
           }
           return;
         }
-        if (t.type === 'rug') { stepRug(t, dt); return; }
         var e = firstTarget(t, t.range, T.air, T.minRange);
         if (!e) return;
         t.angle = Math.atan2(e.y - t.y, e.x - t.x);
@@ -409,46 +388,56 @@
       });
     }
 
-    // The Rug's trap: lay it, wait for someone to step on, give the ones behind a moment to follow, yank.
-    function stepRug(t, dt) {
-      var T = t.s, R = t.rug;
-      R.t -= dt;
-      if (T.trap) t.trapCool = Math.max(0, t.trapCool - dt);
-      if (R.state === 'gone' || R.state === 'lay') {
-        if (R.t > 0) return;
-        if (R.state === 'gone') { R.state = 'lay'; R.t = T.lay; emit('lay', { t: t }); }
-        else R.state = 'set';
-        return;
-      }
-      var on = G.enemies.filter(function (e) { return e.alive && !e.fly && e.dist >= R.d0 - 0.1 && e.dist <= R.d1 + 0.1; });
-      if (R.state === 'set') {
-        if (on.length) { R.state = 'fuse'; R.t = T.fuse; emit('tug', { t: t }); }
-        return;
-      }
-      if (R.t > 0) return;
-      // Exit Scam: the trapdoor takes the one furthest along
-      var gone = null;
-      if (T.trap && t.trapCool <= 0) on.forEach(function (e) { if (!e.heavy && (!gone || e.dist > gone.dist)) gone = e; });
-      var moved = 0;
-      t.fired++;
-      emit('fire', { t: t });
-      on.forEach(function (e) {
-        if (e === gone) return;
-        var pull = e.heavy ? (T.heavyYank ? T.yank / 2 : 0) : T.yank, x = e.x, y = e.y;
-        var down = pull ? (e.heavy ? T.down / 2 : T.down) : 0;
-        if (pull) { e.dist = Math.max(0, e.dist - pull); moved++; }
-        if (down) { e.stunT = Math.max(e.stunT || 0, down); e.downT = Math.max(e.downT || 0, down); }
-        damage(e, T.dmg, true, t);
-        emit('rug', { e: e, x: x, y: y, yank: pull > 0, pull: pull, down: down });
+
+    // ---------- The node's blocks ----------
+    // What the node can become next: [{ key, level, cost, name, blurb }].
+    function nodeOptions() {
+      var n = G.node;
+      if (n.level < 2) { var k = String(n.level + 1); return [{ key: k, level: n.level + 1, cost: NODE[k].cost, name: NODE[k].name, blurb: NODE[k].blurb }]; }
+      if (n.level === 2) return ['a', 'b'].map(function (k) { return { key: k, level: 3, cost: NODE[k].cost, name: NODE[k].name, blurb: NODE[k].blurb }; });
+      return [];
+    }
+    function upgradeNode(key) {
+      var o = nodeOptions().find(function (x) { return x.key === String(key); });
+      if (!o || G.tokens < o.cost) return null;
+      G.tokens -= o.cost;
+      var n = G.node;
+      n.spent += o.cost;
+      n.level = o.level;
+      if (o.level === 3) n.path = o.key;
+      n.s = nodeStats(n.level, n.path);
+      if (o.level === 1) n.cool = 0.6;
+      emit('node', { level: n.level, path: n.path, name: o.name });
+      return n;
+    }
+    function stepNode(dt) {
+      var n = G.node;
+      if (!n.level) return;
+      n.cool = Math.max(0, n.cool - dt);
+      if (n.cool > 0 || !G.enemies.some(function (e) { return e.alive && !e.fly; })) return;
+      n.cool = n.s.every;
+      // a train comes out one after another: the later ones start further back inside the node
+      for (var k = 0; k < n.s.train; k++) G.blocks.push({ id: G.nextId++, dist: map.length + k * BLOCK_GAP, speed: n.s.speed, dmg: n.s.dmg, burst: n.s.burst });
+      emit('block', { n: n.s.train });
+    }
+    function stepBlocks(dt) {
+      // the ground enemy closest to the node is the first one a block meets
+      var front = null;
+      G.enemies.forEach(function (e) { if (e.alive && !e.fly && (!front || e.dist > front.dist)) front = e; });
+      G.blocks = G.blocks.filter(function (b) {
+        b.dist -= b.speed * dt;
+        if (b.dist <= 0) return false;
+        if (!front || !front.alive || b.dist > front.dist + 0.25 || b.dist > map.length) return true;
+        var x = front.x, y = front.y, hit = 0;
+        if (b.burst) G.enemies.forEach(function (e) {
+          if (e.alive && !e.fly && Math.hypot(e.x - x, e.y - y) <= b.burst) { damage(e, b.dmg, false, G.node); hit++; }
+        });
+        else { damage(front, b.dmg, false, G.node); hit = 1; }
+        emit('blockhit', { x: x, y: y, n: hit, burst: b.burst, b: b });
+        front = null;
+        G.enemies.forEach(function (e) { if (e.alive && !e.fly && (!front || e.dist > front.dist)) front = e; });
+        return false;
       });
-      if (gone) {
-        t.trapCool = T.trap;
-        gone.trapped = true;
-        emit('trap', { t: t, e: gone, x: gone.x, y: gone.y });
-        damage(gone, gone.hp + 1, true, t);
-      }
-      emit('pull', { t: t, n: on.length, moved: moved, trapped: !!gone, long: !!T.heavyYank });
-      R.state = 'gone'; R.t = 1 / T.rate;
     }
 
     function stepShots(dt) {
@@ -517,7 +506,6 @@
         e.slowK = 0;                          // the fog sets it again each frame
         e.doxxT = Math.max(0, (e.doxxT || 0) - dt);
         if (e.stunT > 0) { e.stunT -= dt; slow = 0; }
-        if (e.downT > 0) e.downT -= dt;     // knocked down by a rug pull (stunT holds them still)
         e.dist += e.speed * slow * dt;
         if (e.dist >= map.length) {
           e.alive = false;
@@ -543,6 +531,8 @@
       }
       stepEnemies(dt);
       stepTowers(dt);
+      stepNode(dt);
+      stepBlocks(dt);
       stepShots(dt);
       stepPatches(dt);
       if (G.integrity <= 0) { G.phase = 'lost'; emit('lost'); return; }
@@ -570,12 +560,12 @@
     }
 
     G.step = step; G.startWave = startWave; G.build = build; G.sell = sell; G.canBuild = canBuild;
-    G.upgrade = upgrade; G.upgradeOptions = upgradeOptions; G.rugSpot = rugSpot;
+    G.upgrade = upgrade; G.upgradeOptions = upgradeOptions; G.nodeOptions = nodeOptions; G.upgradeNode = upgradeNode;
     G.stars = stars; G.preview = preview;
     G.sellValue = function (t) { return Math.floor(t.spent * SELL); };
     return G;
   }
 
-  return { TOWERS: TOWERS, ORDER: ORDER, UPGRADES: UPGRADES, ENEMIES: ENEMIES, RULES: RULES, MAPS: MAPS, GROWTH: GROWTH, SELL: SELL,
+  return { TOWERS: TOWERS, ORDER: ORDER, UPGRADES: UPGRADES, NODE: NODE, ENEMIES: ENEMIES, RULES: RULES, MAPS: MAPS, GROWTH: GROWTH, SELL: SELL,
     create: create, prepMap: prepMap, towerStats: towerStats };
 });
