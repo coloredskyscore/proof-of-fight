@@ -167,11 +167,13 @@
   // in pixels is its size on the map. Each one is redrawn once per screen size onto a canvas at the exact
   // size it's stamped at, so the frame stays cheap on a phone.
   var ART = 'art/td/', PPT = 160;
-  var PIC_NAMES = ['hearing-map', 'tower-strike', 'tower-strike-down', 'tower-strike-up', 'tower-privacy', 'tower-mint', 'tower-mint-down',
-    'tower-mint-up', 'tower-rug', 'enemy-walker', 'enemy-swarm', 'enemy-sprinter',
+  var PIC_NAMES = ['hearing-map', 'tower-privacy', 'tower-rug', 'enemy-walker', 'enemy-swarm', 'enemy-sprinter',
     'enemy-support', 'enemy-armored', 'enemy-flyer', 'enemy-boss', 'node-toly', 'node-toly-lights'];
   var PICS = {}, picsReady = null;
   function loadPics() {
+    if (!picsReady) Object.keys(VIEWS).forEach(function (type) {
+      VIEWS[type].forEach(function (v) { var n = towerPic(type, v); if (PIC_NAMES.indexOf(n) < 0) PIC_NAMES.push(n); });
+    });
     if (!picsReady) {
       picsReady = Promise.all(PIC_NAMES.map(function (n) {
         return new Promise(function (ok) {
@@ -212,12 +214,16 @@
     ctx.restore();
   }
 
-  // A tower that aims has three paintings: facing left (flipped to face right), facing down (toward you)
-  // and facing up (away from you). The guns turn to whichever is closest to their target. Above CUT (a
-  // fraction of the height) is the part that recoils when it fires; below it, the pedestal stays put.
-  // MUZZLE: the barrel tips, in tiles from the spot it stands on, for the muzzle flash (two: a twin gun's
-  // barrels sit that far either side). Every sheet is cut so the pedestals are PEDESTAL tiles across.
+  // A tower that aims has a painting for each way it can face round the left side: down (toward you),
+  // down-left, left ('side'), up-left and up (away from you). Facing right is the left one flipped, so five
+  // paintings make eight directions. VIEWS lists the ones there is art for; the guns turn to whichever is
+  // closest to their target. Above CUT (a fraction of the height) is the part that recoils when it fires;
+  // below it, the pedestal stays put. MUZZLE: the barrel tips, in tiles from the spot it stands on, for the
+  // muzzle flash (two: a twin gun's barrels sit that far either side). Every sheet is cut so the pedestals
+  // are PEDESTAL tiles across.
   var VIEWS = { strike: ['side', 'down', 'up'], mint: ['side', 'down', 'up'], privacy: ['side'], rug: ['side'] };
+  var VIEW_ANGLE = { down: -90, downleft: -45, side: 0, upleft: 45, up: 90 };   // degrees, from facing left
+  function towerPic(type, view) { return 'tower-' + type + (view === 'side' ? '' : '-' + view); }
   var TOWER_CUT = {
     strike: { side: 0.59, down: 0.55, up: 0.61 }, mint: { side: 0.7, down: 0.64, up: 0.69 },
     privacy: { side: 1 }, rug: { side: 0.6 }
@@ -229,7 +235,7 @@
     C.ORDER.forEach(function (type) {
       out[type] = {};
       VIEWS[type].forEach(function (view) {
-        var name = 'tower-' + type + (view === 'side' ? '' : '-' + view), im = PICS[name], cut = TOWER_CUT[type][view];
+        var name = towerPic(type, view), im = PICS[name], cut = TOWER_CUT[type][view];
         // it stands on the middle of its pedestal's round footprint
         var ay = im && im.naturalWidth ? 1 - 0.19 * PEDESTAL * PPT / im.naturalHeight : 0.85;
         out[type][view] = { whole: pic(name, 0.5, ay), base: pic(name, 0.5, ay, 1, cut, 1), top: cut < 1 ? pic(name, 0.5, ay, 1, 0, cut) : null, cut: cut };
@@ -237,17 +243,17 @@
     });
     return out;
   }
-  // Which way a tower shows, from its aim, with some give so it doesn't flicker near a diagonal.
+  // Which way a tower shows, from its aim: the closest painting, with some give (VIEW_GIVE degrees) so it
+  // doesn't flicker on a target right between two.
+  var VIEW_GIVE = 8;
   function towerView(t) {
-    var cx = Math.cos(t.angle), sy_ = Math.sin(t.angle), v = t._view || 'side';
-    if (VIEWS[t.type].length > 1) {
-      if (v === 'side') { if (sy_ > 0.8) v = 'down'; else if (sy_ < -0.8) v = 'up'; }
-      else if (Math.abs(sy_) < 0.6) v = 'side';
-      else v = sy_ > 0 ? 'down' : 'up';
-    }
+    var cx = Math.cos(t.angle), a = Math.atan2(-Math.sin(t.angle), Math.abs(cx)) * 180 / Math.PI;
+    var list = VIEWS[t.type], cur = list.indexOf(t._view) >= 0 ? t._view : 'side', best = cur;
+    list.forEach(function (v) { if (Math.abs(VIEW_ANGLE[v] - a) < Math.abs(VIEW_ANGLE[best] - a)) best = v; });
+    if (Math.abs(VIEW_ANGLE[best] - a) + VIEW_GIVE > Math.abs(VIEW_ANGLE[cur] - a)) best = cur;
     if (cx > 0.2) t._flip = true; else if (cx < -0.2) t._flip = false;
-    t._view = v;
-    return v;
+    t._view = best;
+    return best;
   }
   // Enemies are drawn a bit over their cut size, so the people read on a phone, and the Filibuster towers
   // over the filing cabinets. The people also get a little size variety, so a crowd doesn't look stamped.
@@ -567,9 +573,9 @@
       case 'fire':
         ev.t.kick = 1;
         if (ev.t.type === 'strike') {
-          var view = towerView(ev.t), mz = MUZZLE[view], dir = ev.t._flip ? 1 : -1, mx, my = towerY(ev.t) + mz.y * T;
-          if (view === 'side') mx = sx(ev.t.x) - dir * mz.x * T;
-          else { ev.t._barrel = !ev.t._barrel; mx = sx(ev.t.x) + (ev.t._barrel ? 1 : -1) * mz.two * T; }
+          var mz = MUZZLE[towerView(ev.t)], dir = ev.t._flip ? 1 : -1, my = towerY(ev.t) + mz.y * T;
+          ev.t._barrel = !ev.t._barrel;
+          var mx = sx(ev.t.x) - dir * mz.x * T + (mz.two ? (ev.t._barrel ? 1 : -1) * mz.two * T : 0);
           fx({ kind: 'flash', x: mx, y: my, life: 0.07, max: 0.07, color: 'strike', size: 0.9 });
           sfx('td.pew', 45);
         } else if (ev.t.type === 'mint') sfx('td.thump', 80);
@@ -921,7 +927,7 @@
       c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
       if (t.tier === 3 && Math.random() < dt * 3) spark(X + rnd(-0.4, 0.4) * T, Y - rnd(0.2, 1) * T, t.path === 'a' ? ROLE[t.type].l : '#ffd23f', 1, T * 0.6, 0.5);
     }
-    var fl = view === 'side' && t._flip ? -1 : 1;
+    var fl = view !== 'down' && view !== 'up' && t._flip ? -1 : 1;
     if (k !== 1) { c.save(); c.translate(X, Y); c.scale(k, k); c.translate(-X, -Y); }
     c.fillStyle = 'rgba(0,0,0,.3)';
     c.beginPath(); c.ellipse(X, Y + T * 0.06, T * 0.46, T * 0.17, 0, 0, Math.PI * 2); c.fill();
@@ -930,7 +936,7 @@
       stampT(c, sp.base, X, Y, 0, fl, 1);
       var cutY = Y - (sp.top.ay - sp.cut * sp.top.h) * T;   // where the turret meets the pedestal
       c.save();
-      if (t.type === 'strike' && view === 'side') c.translate(fl * t.kick * T * 0.07, 0);    // recoil away from the target
+      if (t.type === 'strike' && view !== 'down' && view !== 'up') c.translate(fl * t.kick * T * 0.07, 0);  // recoil away from the target
       else if (t.type === 'strike') { c.translate(X, cutY); c.scale(1 + t.kick * 0.04, 1 - t.kick * 0.09); c.translate(-X, -cutY); }  // facing you or away: it punches
       else if (t.type === 'mint') { c.translate(X, cutY); c.scale(1 + t.kick * 0.08, 1 - t.kick * 0.14); c.translate(-X, -cutY); }  // the mortar squashes
       else if (t.type === 'rug') c.translate(fl * t.kick * T * 0.08, 0);                     // it heaves back as it pulls
