@@ -56,6 +56,20 @@
   100% { opacity: 0; transform: scale(1.05) translateY(-10px); }
 }
 
+/* The Capitol's speech bubble: its tail sits on the roof, right of the dome (placed from js/td.js). */
+.td-say { position: absolute; z-index: 4; pointer-events: none; transform-origin: 0 100%; }
+.td-say span { position: relative; display: inline-block; padding: 5px 9px; border-radius: 10px; background: #fff; color: #15101f;
+  border: 2.5px solid #15101f; box-shadow: 0 3px 0 rgba(21, 16, 31, .55); font-weight: 800; font-size: .8rem; line-height: 1.15; }
+.td-say span::before, .td-say span::after { content: ''; position: absolute; left: 6px; border-style: solid; }
+.td-say span::before { bottom: -12px; border-width: 12px 12px 0 0; border-color: #15101f transparent transparent; }
+.td-say span::after { bottom: -7px; left: 8.5px; border-width: 8px 8px 0 0; border-color: #fff transparent transparent; }
+.td-say.loud span { background: #ffe9e6; color: #8a0f1f; font-size: .86rem; }
+.td-say.loud span::after { border-color: #ffe9e6 transparent transparent; }
+.td-say.show { animation: td-say .35s cubic-bezier(.3, 1.7, .5, 1); }
+.td-say.loud.show { animation: td-say .35s cubic-bezier(.3, 1.7, .5, 1), td-shout .5s .35s steps(2) 2; }
+@keyframes td-say { from { transform: scale(.3); opacity: 0; } }
+@keyframes td-shout { 50% { transform: translateX(2px) rotate(-1deg); } }
+
 /* Between waves: what's coming, and the button to call it. */
 .td-next { position: absolute; left: 50%; bottom: 10px; z-index: 4; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: max-content; max-width: calc(100% - 16px); }
 .td-prev { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 10px; background: rgba(7, 6, 11, .82); border: 2px solid #2a2340; font-weight: 800; font-size: .8rem; }
@@ -67,11 +81,26 @@
 @keyframes td-go { 50% { box-shadow: 0 4px 0 var(--line), 0 0 26px rgba(255, 210, 63, .8); } }
 
 /* A tower's card: name, numbers, sell. */
-.td-pop { position: absolute; z-index: 6; display: flex; flex-direction: column; gap: 2px; min-width: 150px; max-width: 220px; padding: 7px 10px; border-radius: 10px;
+.td-pop { position: absolute; z-index: 6; display: flex; flex-direction: column; gap: 2px; min-width: 150px; max-width: 230px; padding: 7px 10px; border-radius: 10px;
   background: rgba(16, 13, 26, .95); border: 2px solid #3a3058; box-shadow: 0 4px 0 var(--line); font-size: .8rem; }
 .td-pop b { font-family: var(--display); font-weight: 400; font-size: .9rem; }
 .td-pop small { color: var(--muted); font-weight: 700; }
 .td-sell { margin-top: 5px; align-self: flex-start; background: #3a3058; color: #fff; display: inline-flex; align-items: center; gap: 5px; }
+.td-tier { font-family: var(--body); font-weight: 800; font-size: .62rem; color: var(--gold); vertical-align: 1px; margin-left: 3px; letter-spacing: .04em; }
+
+/* Upgrades on the tower card: one button at tier 1, the two tier 3 paths at tier 2. */
+.td-ups { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+.td-up { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 8px; padding: 6px 8px; border-radius: 9px; cursor: pointer; text-align: left;
+  color: #1a1200; background: linear-gradient(#ffe27a, #ffc21a); border: 2px solid var(--line); box-shadow: 0 3px 0 var(--line); font: inherit; }
+.td-up:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.td-up b { grid-column: 1; font-family: var(--display); font-weight: 400; font-size: .78rem; color: #1a1200; }
+.td-up small { grid-column: 1; color: #4a3800; font-weight: 700; font-size: .68rem; line-height: 1.2; }
+.td-up .td-cost { grid-column: 2; grid-row: 1 / span 2; font-weight: 800; font-size: .85rem; }
+.td-ups.two .td-up:nth-child(2) { background: linear-gradient(#b9a3ff, #8a6cf0); }
+.td-ups.two .td-up:nth-child(2), .td-ups.two .td-up:nth-child(2) b { color: #fff; }
+.td-ups.two .td-up:nth-child(2) small { color: #ece6ff; }
+.td-up.poor { filter: grayscale(.8) brightness(.65); }
+.td-up.short { animation: td-short .35s ease-out; }
 
 .td-paused, .td-end { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: rgba(7, 6, 11, .62); }
 .td-paused { align-content: center; gap: 12px; }

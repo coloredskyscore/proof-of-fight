@@ -20,12 +20,29 @@
     rug:     { c: '#6d4fc9', d: '#40288a', l: '#a993ff', glow: '160,120,255' }
   };
   var BLURB = { strike: 'Fast shots, hits flyers', privacy: 'Slows a crowd', mint: 'Splash, ground only', rug: 'Yanks them back' };
+  // A tower grows a little with each tier, until there's tier art.
+  var TIER_SCALE = [1, 1, 1.08, 1.16];
   // The Hearing's costumes for each enemy type.
   var COSTUME = {
     walker: 'Aide', swarm: 'Intern', sprinter: 'Lobbyist', armored: 'Filing Cabinet',
     flyer: 'Subpoena', support: 'Coffee Runner', boss: 'The Filibuster'
   };
   var KIT = D.FIGHTERS[FOUNDER];            // the founder's color and move names
+  // The Capitol shouts as it sends each wave out, so you know why they're coming and what's next.
+  // Plain lines only: you should get it at a glance. It's the building talking, not a named person.
+  var SAY = {
+    intro:    ['We need to stop crypto!', 'Crypto ends today!'],
+    walker:   ['Send out the congressional aides!', 'Aides, go block that node!'],
+    swarm:    ['Send in the interns!', 'All interns, move out!'],
+    sprinter: ['Lobbyists, hurry!', 'Get the lobbyists in there, fast!'],
+    armored:  ['Roll out the filing cabinets!'],
+    flyer:    ['Serve the subpoenas!', 'Subpoena all of them!'],
+    support:  ['Get the staff some coffee!', 'Coffee runners, keep them going!'],
+    boss:     ['Begin the filibuster!', 'Filibuster time!'],
+    final:    ['Everyone out! Stop them now!'],
+    clear:    ['Regroup!', 'Draft more paperwork!', 'Drown them in red tape!', 'Send more staff!', "They're still standing!"]
+  };
+  var SAY_ANCHOR = { x: 6.9, y: 0.15 };     // the bubble's tail, in tiles: the Capitol's roof, right of the dome
 
   var S = null;                             // the running stage
   var $ = function (q, el) { return (el || document).querySelector(q); };
@@ -48,7 +65,14 @@
       { w: 'square', f: 1320, t: 0.08, d: 0.05, v: 0.05, lp: 5000 }],
     'td.sell':  [{ w: 'square', f: 1320, d: 0.05, v: 0.05, lp: 6000 }, { w: 'square', f: 990, t: 0.06, d: 0.08, v: 0.05, lp: 6000 }],
     'td.alarm': [{ w: 'square', f: [880, 660], d: 0.18, v: 0.07, lp: 3000 }, { w: 'square', f: [880, 660], t: 0.22, d: 0.18, v: 0.07, lp: 3000 }],
-    'td.no':    [{ w: 'square', f: [220, 160], d: 0.1, v: 0.08, lp: 1500 }]
+    'td.no':    [{ w: 'square', f: [220, 160], d: 0.1, v: 0.08, lp: 1500 }],
+    'td.say':   [{ w: 'square', f: 523, d: 0.05, v: 0.035, lp: 3000 }, { w: 'square', f: 392, t: 0.06, d: 0.05, v: 0.035, lp: 3000 },
+      { w: 'square', f: 466, t: 0.12, d: 0.08, v: 0.035, lp: 3000 }],
+    'td.up':    [{ w: 'square', f: 660, d: 0.06, v: 0.05, lp: 5000 }, { w: 'square', f: 880, t: 0.06, d: 0.06, v: 0.05, lp: 5000 },
+      { w: 'square', f: 1320, t: 0.12, d: 0.14, v: 0.06, lp: 6000 }, { w: 'noise', t: 0.12, d: 0.12, v: 0.05, hp: 5000 }],
+    'td.crit':  [{ w: 'square', f: [1800, 400], d: 0.09, v: 0.07, lp: 6000 }, { w: 'noise', d: 0.08, v: 0.12, hp: 2000 }, { w: 'sine', f: [160, 50], d: 0.14, v: 0.35 }],
+    'td.freeze':[{ w: 'triangle', f: [2400, 1200], d: 0.25, v: 0.06 }, { w: 'noise', d: 0.3, v: 0.08, bp: [6000, 2500], q: 2 }],
+    'td.trap':  [{ w: 'square', f: [900, 120], d: 0.35, v: 0.05, lp: 3000 }, { w: 'sine', f: [120, 40], t: 0.3, d: 0.2, v: 0.5 }]
   });
   var lastSfx = {};
   function sfx(id, gap) {
@@ -261,9 +285,10 @@
       S.ghost[k] = { r: tinted(s, '#ff2a55'), b: tinted(s, '#22e6ff') };
       S.white[k] = tinted(s, '#ffffff');
     });
-    S.glow = { white: glowSprite('255,255,255'), gold: glowSprite('255,210,63'), red: glowSprite('255,60,60'), green: glowSprite('61,220,151') };
+    S.glow = { white: glowSprite('255,255,255'), gold: glowSprite('255,210,63'), red: glowSprite('255,60,60'), green: glowSprite('61,220,151'), fire: glowSprite('255,120,60') };
     Object.keys(ROLE).forEach(function (k) { S.glow[k] = glowSprite(ROLE[k].glow); });
     drawTerrain();
+    placeSay();
     var tok = $('#td-tok').getBoundingClientRect(), fr = field.getBoundingClientRect();
     S.tokAt = { x: tok.left - fr.left + 10, y: tok.top - fr.top + tok.height / 2 };
   }
@@ -299,6 +324,7 @@
       '<div class="td-field" id="td-field">' +
         '<canvas id="td-cv"></canvas>' +
         '<div class="td-banner" id="td-banner" hidden></div>' +
+        '<div class="td-say" id="td-say" hidden><span></span></div>' +
         '<div class="td-next" id="td-next" hidden><div class="td-prev" id="td-prev"></div><button class="btn btn-gold td-go" id="td-go" type="button"></button></div>' +
         '<div class="td-pop" id="td-pop" hidden></div>' +
         '<div class="td-paused" id="td-paused" hidden><b>PAUSED</b><button class="btn btn-gold" id="td-resume" type="button">Resume</button></div>' +
@@ -371,25 +397,58 @@
     if (G.tokens < cost) pick(null);
     return t;
   }
+  // What tier 2 changes, in plain words, from the numbers.
+  function tier2Text(type) {
+    var a = C.TOWERS[type], b = C.towerStats(type, 2), out = [];
+    if (b.dmg !== a.dmg) out.push('damage ' + a.dmg + ' → ' + b.dmg);
+    if (b.dps !== a.dps) out.push('damage ' + a.dps + ' → ' + b.dps + '/s');
+    if (b.slow !== a.slow) out.push('slows ' + Math.round(b.slow * 100) + '%');
+    if (b.rate !== a.rate) out.push(type === 'strike' ? 'fires faster' : 'every ' + +(1 / b.rate).toFixed(1) + 's');
+    if (b.splash !== a.splash) out.push('bigger blast');
+    if (b.range !== a.range) out.push('range +' + +(b.range - a.range).toFixed(1));
+    var t = out.join(', ');
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function statLine(t) {
+    var T = t.s;
+    return t.type === 'privacy' ? 'Slows ' + Math.round(T.slow * 100) + '% · ' + T.dps + ' dmg/s' :
+      t.type === 'rug' ? T.dmg + ' dmg, pulls back ' + T.yank + ' tiles' :
+      t.type === 'mint' ? T.dmg + ' splash · every ' + (1 / T.rate).toFixed(1) + 's' : T.dmg + ' dmg · ' + T.rate + '/s';
+  }
   function select(id) {
     S.sel = id;
     var pop = $('#td-pop');
     if (!id) { pop.hidden = true; return; }
     var t = S.G.towers.find(function (x) { return x.id === id; });
     if (!t) { pop.hidden = true; return; }
-    var T = C.TOWERS[t.type];
-    var stat = t.type === 'privacy' ? 'Slows 40% · ' + T.dps + ' dmg/s' :
-      t.type === 'rug' ? T.dmg + ' dmg, pulls back ' + T.yank + ' tiles' :
-      t.type === 'mint' ? T.dmg + ' splash · every ' + (1 / T.rate).toFixed(1) + 's' : T.dmg + ' dmg · ' + T.rate + '/s';
-    pop.innerHTML = '<b style="color:' + ROLE[t.type].l + '">' + esc(towerName(t.type)) + '</b>' +
-      '<small>' + esc(stat) + ' · range ' + t.range + (t.h && t.type !== 'rug' ? ' (+' + t.h + ' high ground)' : '') + '</small>' +
-      '<small>' + t.kills + ' takedown' + (t.kills === 1 ? '' : 's') + '</small>' +
-      '<button class="btn btn-sm td-sell" type="button">Sell <i class="td-coin"></i>' + S.G.sellValue(t) + '</button>';
+    var title = t.tier === 3 ? C.UPGRADES[t.type][t.path].name : towerName(t.type);
+    var opts = S.G.upgradeOptions(t), coin = '<i class="td-coin"></i>';
+    pop.innerHTML = '<b style="color:' + ROLE[t.type].l + '">' + esc(title) + ' <span class="td-tier">' + (t.tier === 3 ? 'MAX' : 'Tier ' + t.tier) + '</span></b>' +
+      '<small>' + esc(statLine(t)) + ' · range ' + t.range + (t.h && t.type !== 'rug' ? ' (+' + t.h + ' high ground)' : '') + '</small>' +
+      '<small class="td-kills">' + t.kills + ' takedown' + (t.kills === 1 ? '' : 's') + '</small>' +
+      (opts.length ? '<div class="td-ups' + (opts.length > 1 ? ' two' : '') + '">' + opts.map(function (o) {
+        return '<button class="td-up" type="button" data-k="' + o.key + '" data-cost="' + o.cost + '">' +
+          '<b>' + esc(o.tier === 2 ? 'Upgrade' : o.name) + '</b><small>' + esc(o.tier === 2 ? tier2Text(t.type) : o.blurb) + '</small>' +
+          '<span class="td-cost">' + coin + o.cost + '</span></button>';
+      }).join('') + '</div>' : '') +
+      '<button class="btn btn-sm td-sell" type="button">Sell ' + coin + S.G.sellValue(t) + '</button>';
     pop.hidden = false;
     $('.td-sell', pop).addEventListener('click', function () { S.G.sell(t.id); select(null); });
-    var w = pop.offsetWidth, h = pop.offsetHeight, x = clamp(sx(t.x) - w / 2, 4, S.W - w - 4), y = sy(t.y - 0.5, t.h) - S.T * 0.9 - h;
-    if (y < 4) y = sy(t.y + 0.5, t.h) + 6;
+    pop.querySelectorAll('.td-up').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var cost = +b.dataset.cost;
+        if (S.G.tokens < cost) { sfx('td.no', 100); bump(b, 'short'); bump($('#td-tok').parentNode, 'short'); return; }
+        if (S.G.upgrade(t.id, b.dataset.k)) select(t.id);
+      });
+    });
+    paintUps();
+    var w = pop.offsetWidth, h = pop.offsetHeight, x = clamp(sx(t.x) - w / 2, 4, S.W - w - 4), y = sy(t.y - 0.5, t.h) - S.T * 1.1 - h;
+    if (y < 4) y = Math.min(sy(t.y + 0.5, t.h) + 10, S.H - h - 4);
     pop.style.left = x + 'px'; pop.style.top = y + 'px';
+  }
+  // Grey out the upgrades you can't afford yet (kept current as tokens come in).
+  function paintUps() {
+    document.querySelectorAll('#td-pop .td-up').forEach(function (b) { b.classList.toggle('poor', S.G.tokens < +b.dataset.cost); });
   }
   function onKey(e) {
     if (!S || e.repeat) return;
@@ -398,6 +457,10 @@
     else if (e.key === 'Escape') { pick(null); select(null); }
     else if (e.key === ' ' && !$('#td-next').hidden) { callWave(); e.preventDefault(); }
     else if (e.key === 'p') setPaused(!S.paused);
+    else if (S.sel && /^[uab]$/i.test(e.key)) {   // U: tier 2, A or B: a tier 3, for the selected tower
+      var b = $('#td-pop .td-up[data-k="' + (e.key.toLowerCase() === 'u' ? '2' : e.key.toLowerCase()) + '"]');
+      if (b) b.click();
+    }
   }
   function setPaused(on) {
     if (!S || S.G.phase === 'won' || S.G.phase === 'lost') return;
@@ -424,6 +487,30 @@
   function flashMsg(text, c, r) { floatText(text, sx(c + 0.5), sy(r, S.G.map.height(c, r)), '#fff', 0.34); }
   function shake(n) { S.shake = Math.max(S.shake, n); }
   function bump(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+  // The Capitol's speech bubble. It runs on the game clock, so pause and 2x apply.
+  function say(kind) {
+    var list = SAY[kind], el = $('#td-say');
+    if (!list || !el) return;
+    var line = list[Math.floor(Math.random() * list.length)];
+    if (list.length > 1 && line === S.lastLine) line = list[(list.indexOf(line) + 1) % list.length];
+    S.lastLine = line;
+    S.sayKind = kind;
+    S.sayAt = S.clock;
+    S.sayUntil = S.clock + 2.2 + line.length * 0.04;
+    $('span', el).textContent = line;
+    el.className = 'td-say' + (kind === 'boss' || kind === 'final' ? ' loud' : '');
+    el.hidden = false;
+    placeSay();
+    bump(el, 'show');
+    sfx('td.say', 400);
+  }
+  function placeSay() {
+    var el = $('#td-say');
+    if (!el || el.hidden) return;
+    el.style.left = Math.round(sx(SAY_ANCHOR.x)) + 'px';
+    el.style.bottom = Math.round(S.H - sy(SAY_ANCHOR.y, 0)) + 'px';
+    el.style.maxWidth = Math.round(Math.min(S.W - sx(SAY_ANCHOR.x) - 6, S.T * 5.6)) + 'px';
+  }
   function banner(text, sub, cls) {
     var b = $('#td-banner');
     b.className = 'td-banner ' + (cls || '');
@@ -451,6 +538,7 @@
       case 'spawn':
         ev.e.size = PEOPLE.indexOf(ev.e.type) >= 0 ? rnd(0.93, 1.07) : 1;
         ev.e.phase = Math.random() * 6;
+        if (ev.e.type === 'boss' && !(S.sayKind === 'boss' && S.clock - S.sayAt < 8)) say('boss');
         break;
       case 'fire':
         ev.t.kick = 1;
@@ -463,18 +551,45 @@
         break;
       case 'hit':
         p = enemyScreen(ev.e);
-        if (ev.armor) { spark(p.x, p.y - T * 0.35, '#d9dde6', 3, T * 2.2, 0.25); sfx('td.clank', 70); }
+        if (ev.crit) {
+          spark(p.x, p.y - T * 0.4, '#ffd23f', 12, T * 3.2, 0.4);
+          fx({ kind: 'flash', x: p.x, y: p.y - T * 0.4, life: 0.15, max: 0.15, color: 'gold', size: 1.6 });
+          floatText('CRIT!', p.x, p.y - T * 1.1, '#ffd23f', 0.38);
+          shake(2);
+          sfx('td.crit', 80);
+        } else if (ev.big) { spark(p.x, p.y - T * 0.4, ROLE.strike.l, 7, T * 2.6, 0.3); sfx('td.clank', 70); }
+        else if (ev.armor) { spark(p.x, p.y - T * 0.35, '#d9dde6', 3, T * 2.2, 0.25); sfx('td.clank', 70); }
         else spark(p.x, p.y - T * 0.35, ROLE.strike.l, 3, T * 1.8, 0.22);
-        ev.e.flash = 0.08;
+        ev.e.flash = ev.crit || ev.big ? 0.14 : 0.08;
+        break;
+      case 'freeze':
+        fx({ kind: 'ring', x: sx(ev.t.x), y: sy(ev.t.y, ev.t.h), life: 0.5, max: 0.5, r: ev.t.range * T * 1.6, color: '#d6f4ff' });
+        spark(sx(ev.t.x), sy(ev.t.y, ev.t.h) - T * 0.6, '#d6f4ff', 10, T * 2.5, 0.5);
+        sfx('td.freeze', 200);
+        break;
+      case 'trap':
+        fx({ kind: 'trapdoor', x: sx(ev.x), y: sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))), life: 0.8, max: 0.8 });
+        sfx('td.trap', 120);
+        break;
+      case 'upgrade':
+        var ux = sx(ev.t.x), uy = towerY(ev.t);
+        ev.t.pop = 0.3;
+        spark(ux, uy - T * 0.5, '#ffd23f', 14, T * 3, 0.6);
+        spark(ux, uy - T * 0.5, ROLE[ev.t.type].l, 10, T * 2.4, 0.5);
+        fx({ kind: 'ring', x: ux, y: uy, life: 0.45, max: 0.45, r: T * 1.1, color: '#ffd23f' });
+        fx({ kind: 'flash', x: ux, y: uy - T * 0.5, life: 0.25, max: 0.25, color: 'gold', size: 2 });
+        floatText(ev.tier === 3 ? ev.name.toUpperCase() + '!' : 'TIER 2', ux, uy - T * 1.4, '#ffd23f', 0.36);
+        sfx('td.up', 80);
         break;
       case 'boom':
         var bx = sx(ev.x), by = sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y)));
-        fx({ kind: 'ring', x: bx, y: by, life: 0.35, max: 0.35, r: C.TOWERS.mint.splash * T, color: ROLE.mint.l });
-        fx({ kind: 'flash', x: bx, y: by - T * 0.2, life: 0.18, max: 0.18, color: 'mint', size: 2.6 });
-        spark(bx, by - T * 0.1, ROLE.mint.l, 10, T * 3, 0.45);
-        spark(bx, by - T * 0.1, '#ffd23f', 5, T * 2.4, 0.5);
-        shake(ev.n ? 3 : 1.5);
-        sfx('td.boom', 90);
+        var big = ev.mega ? 1.6 : ev.small ? 0.5 : 1;
+        fx({ kind: 'ring', x: bx, y: by, life: 0.35, max: 0.35, r: (ev.r || C.TOWERS.mint.splash) * T, color: ev.mega ? '#ffb347' : ROLE.mint.l });
+        fx({ kind: 'flash', x: bx, y: by - T * 0.2, life: 0.18, max: 0.18, color: 'mint', size: 2.6 * big });
+        spark(bx, by - T * 0.1, ROLE.mint.l, Math.round(10 * big), T * 3 * big, 0.45);
+        spark(bx, by - T * 0.1, ev.mega ? '#ffb347' : '#ffd23f', Math.round(5 * big), T * 2.4 * big, 0.5);
+        if (!ev.small) shake(ev.mega ? 5 : ev.n ? 3 : 1.5);
+        sfx(ev.small ? 'td.thump' : 'td.boom', ev.small ? 40 : 90);
         break;
       case 'rug':
         p = { x: ev.x, y: ev.y };
@@ -482,12 +597,15 @@
           ev.e._yank = { x: ev.x + -ev.e.dy * ev.e.lane, y: ev.y + ev.e.dx * ev.e.lane, t: 0.32, max: 0.32 };
           fx({ kind: 'carpet', e: ev.e, x0: ev.x, y0: ev.y, life: 0.45, max: 0.45 });
         }
-        floatText(ev.yank ? 'RUGGED!' : 'TOO HEAVY', sx(ev.x), sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))) - T * 0.6, ROLE.rug.l, 0.34);
+        floatText(ev.yank ? (ev.pull >= 3 ? 'LONG CON!' : 'RUGGED!') : 'TOO HEAVY', sx(ev.x), sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))) - T * 0.6, ROLE.rug.l, 0.34);
         shake(2);
         break;
       case 'kill':
         p = enemyScreen(ev.e);
-        fx({ kind: 'ghost', e: ev.e, x: p.x, y: p.y + (ev.e.fly ? -S.T * 0.75 : 0), life: 0.42, max: 0.42, flip: !!ev.e._flip, sp: S.spr.enemy[ev.e.type] });
+        if (ev.e.trapped) {   // Exit Scam: they drop through the trapdoor instead
+          fx({ kind: 'fall', e: ev.e, x: p.x, y: p.y, life: 0.5, max: 0.5, flip: !!ev.e._flip, sp: S.spr.enemy[ev.e.type] });
+          floatText('EXIT SCAM!', p.x, p.y - T * 1.2, ROLE.rug.l, 0.32);
+        } else fx({ kind: 'ghost', e: ev.e, x: p.x, y: p.y + (ev.e.fly ? -S.T * 0.75 : 0), life: 0.42, max: 0.42, flip: !!ev.e._flip, sp: S.spr.enemy[ev.e.type] });
         fx({ kind: 'tok', x: p.x, y: p.y - T * 0.4, sx: p.x, sy: p.y - T * 0.4, life: 0.75, max: 0.75 });
         floatText('+' + ev.tokens, p.x + T * 0.25, p.y - T * 0.6, '#ffd23f', 0.3);
         sfx('td.ko', 50);
@@ -519,11 +637,13 @@
       case 'wave':
         var boss = ev.boss;
         banner('WAVE ' + ev.wave, boss ? 'The Filibuster is coming' : ev.wave === G.waves ? 'Final wave' : '', boss ? 'warn' : '');
+        // the shout names what leaves the building first
+        say(ev.wave === G.waves ? 'final' : G.spawns.length ? G.spawns[0].type : 'walker');
         try { AU.play('ready'); } catch (e) { /* no audio */ }
         if (ev.wave === G.waves) AU.music('warren', { fade: 1 });
         break;
       case 'clear':
-        if (ev.wave < G.waves) banner('WAVE ' + ev.wave + ' CLEAR', '+' + ev.tokens + ' tokens', 'good');
+        if (ev.wave < G.waves) { banner('WAVE ' + ev.wave + ' CLEAR', '+' + ev.tokens + ' tokens', 'good'); S.sayLater = S.clock + 2.4; }
         try { AU.play('lev.up'); } catch (e) { /* no audio */ }
         break;
       case 'won': setTimeout(function () { if (S) end(true); }, 900); break;
@@ -536,6 +656,8 @@
   // ---------- Drawing ----------
   function render(dt) {
     var c = S.ctx, G = S.G, T = S.T, now = S.clock;
+    if (S.sayUntil && now > S.sayUntil) { S.sayUntil = 0; $('#td-say').hidden = true; }
+    if (S.sayLater && now > S.sayLater) { S.sayLater = 0; if (G.phase === 'break' || G.phase === 'ready') say(S.introDone ? 'clear' : 'intro'); S.introDone = true; }
     c.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
     c.clearRect(0, 0, S.W, S.H);
     if (S.shake > 0.1) c.translate(rnd(-1, 1) * S.shake, rnd(-1, 1) * S.shake);
@@ -607,6 +729,15 @@
       if (t) rangeCircle(c, t.x, t.y, t.h, t.range, t.type, true);
       else select(null);
     }
+    // Mega Mint's fire on the path
+    G.patches.forEach(function (f) {
+      var X = sx(f.x), Y = sy(f.y, G.map.height(Math.floor(f.x), Math.floor(f.y))), k = Math.min(1, f.t / 0.5), R = f.r * T;
+      c.globalCompositeOperation = 'lighter';
+      c.globalAlpha = (0.45 + 0.15 * Math.sin(now * 14 + f.x * 3)) * k;
+      c.drawImage(S.glow.fire, X - R, Y - R * 0.55, R * 2, R * 1.1);
+      c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+      if (Math.random() < 0.5) fx({ kind: 'spark', x: X + rnd(-0.7, 0.7) * R, y: Y + rnd(-0.3, 0.3) * R, vx: rnd(-6, 6), vy: -T * rnd(0.8, 1.6), g: 0, life: 0.5, max: 0.5, color: Math.random() < 0.5 ? '#ffb347' : ROLE.mint.l, size: 0.8 });
+    });
     // shadows under flyers and coins in the air
     c.fillStyle = 'rgba(0,0,0,.25)';
     G.enemies.forEach(function (e) {
@@ -615,7 +746,7 @@
       c.beginPath(); c.ellipse(p.x, p.y, T * 0.2, T * 0.08, 0, 0, Math.PI * 2); c.fill();
     });
     G.shots.forEach(function (s) {
-      if (s.kind !== 'coin') return;
+      if (s.kind !== 'coin' || s.t < 0) return;
       var k = s.t / s.dur, x = s.x0 + (s.tx - s.x0) * k, y = s.y0 + (s.ty - s.y0) * k;
       var h = S.G.map.height(Math.floor(x), Math.floor(y));
       c.beginPath(); c.ellipse(sx(x), sy(y, h), T * 0.12 * (0.6 + k * 0.4), T * 0.05, 0, 0, Math.PI * 2); c.fill();
@@ -643,9 +774,17 @@
 
   function drawTower(c, t, now, dt) {
     var T = S.T, sp = S.spr.tower[t.type], X = sx(t.x), Y = towerY(t);
-    var k = 1;
-    if (t.pop > 0) { t.pop -= dt; var q = 1 - t.pop / 0.3; k = 0.5 + q * 0.5 + Math.sin(q * Math.PI) * 0.25; }
+    var k = TIER_SCALE[t.tier || 1];
+    if (t.pop > 0) { t.pop -= dt; var q = 1 - t.pop / 0.3; k *= 0.5 + q * 0.5 + Math.sin(q * Math.PI) * 0.25; }
     t.kick = Math.max(0, (t.kick || 0) - dt * 8);
+    if (t.tier >= 2) {   // an upgraded tower glows at its base: gold at tier 2, its own color and sparkles at tier 3
+      c.globalCompositeOperation = 'lighter';
+      c.globalAlpha = (t.tier === 3 ? 0.45 : 0.28) + 0.12 * Math.sin(now * 3 + t.id);
+      var gw = T * (t.tier === 3 ? 1.5 : 1.2);
+      c.drawImage(t.tier === 3 ? S.glow[t.type] : S.glow.gold, X - gw / 2, Y - gw * 0.3, gw, gw * 0.6);
+      c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+      if (t.tier === 3 && Math.random() < dt * 3) spark(X + rnd(-0.4, 0.4) * T, Y - rnd(0.2, 1) * T, t.path === 'a' ? ROLE[t.type].l : '#ffd23f', 1, T * 0.6, 0.5);
+    }
     // face the target, with a little give so it doesn't flicker on one straight above or below
     var cx = Math.cos(t.angle);
     if (cx > 0.2) t._flip = true; else if (cx < -0.2) t._flip = false;
@@ -677,6 +816,13 @@
       c.globalCompositeOperation = 'source-over';
     }
     if (k !== 1) c.restore();
+    if (t.tier >= 2) {   // tier pips under the pedestal
+      for (var i = 0; i < t.tier; i++) {
+        var px = X + (i - (t.tier - 1) / 2) * T * 0.17, py = Y + T * 0.3, z = T * 0.075;
+        c.beginPath(); c.moveTo(px, py - z); c.lineTo(px + z, py); c.lineTo(px, py + z); c.lineTo(px - z, py); c.closePath();
+        c.fillStyle = '#ffd23f'; c.fill(); c.lineWidth = Math.max(1, T * 0.03); c.strokeStyle = OL; c.stroke();
+      }
+    }
   }
 
   function drawEnemy(c, e, now, dt) {
@@ -684,7 +830,9 @@
     var h = S.G.map.height(Math.floor(e.x), Math.floor(e.y));
     e._h += (h - e._h) * Math.min(1, dt * 7);
     if (e._yank) { e._yank.t -= dt; if (e._yank.t <= 0) e._yank = null; }
-    var slow = e.slowT > 0, step = now * (slow ? 2 : 3.5) * e.speed + e.phase, sw = Math.sin(step * Math.PI), up = Math.abs(sw);
+    var slow = e.slowT > 0, frozen = e.stunT > 0;
+    if (!frozen) e._step = (e._step === undefined ? e.phase : e._step) + dt * (slow ? 2 : 3.5) * e.speed;
+    var step = e._step === undefined ? e.phase : e._step, sw = Math.sin(step * Math.PI), up = Math.abs(sw);
     // One painting each, so the walk is a sway, a bob and a squash on every footfall; the subpoena flaps.
     var rot, kx, ky, bob;
     if (e.fly) {
@@ -707,8 +855,18 @@
     if (e.dx < -0.01) e._flip = true; else if (e.dx > 0.01) e._flip = false;
     var fl = e._flip ? -1 : 1, y = p.y + bob;
     stampT(c, sp, p.x, y, rot * fl, kx * size * fl, ky * size);
-    if (slow) {   // a blue cast while the fog holds them
-      c.globalAlpha = 0.18; stampT(c, S.ghost[e.type].b, p.x, y, rot * fl, kx * size * fl, ky * size); c.globalAlpha = 1;
+    if (slow || frozen) {   // a blue cast while the fog holds them, solid ice while frozen
+      c.globalAlpha = frozen ? 0.55 : 0.18; stampT(c, S.ghost[e.type].b, p.x, y, rot * fl, kx * size * fl, ky * size);
+      if (frozen) { c.globalAlpha = 0.35; stampT(c, S.white[e.type], p.x, y, rot * fl, kx * size * fl, ky * size); }
+      c.globalAlpha = 1;
+    }
+    if (e.doxxT > 0) {   // Doxx: a red crosshair over their head
+      var hy = y - (sp.ay * size + 0.22) * T, hr = T * 0.12;
+      c.strokeStyle = '#ff4d6d'; c.lineWidth = Math.max(1.5, T * 0.045);
+      c.beginPath(); c.arc(p.x, hy, hr, 0, Math.PI * 2);
+      c.moveTo(p.x - hr * 1.6, hy); c.lineTo(p.x - hr * 0.5, hy); c.moveTo(p.x + hr * 0.5, hy); c.lineTo(p.x + hr * 1.6, hy);
+      c.moveTo(p.x, hy - hr * 1.6); c.lineTo(p.x, hy - hr * 0.5); c.moveTo(p.x, hy + hr * 0.5); c.lineTo(p.x, hy + hr * 1.6);
+      c.stroke();
     }
     if (e.type === 'support') {   // the coffee's heal aura
       c.globalCompositeOperation = 'lighter';
@@ -789,11 +947,13 @@
       if (s.kind === 'bullet') {
         var h = S.G.map.height(Math.floor(s.x), Math.floor(s.y)) * 0.5 + s.from.h * 0.5;
         var X = sx(s.x), Y = sy(s.y, h) - T * 0.4, dx = s.target.x - s.x, dy = s.target.y - s.y, d = Math.hypot(dx, dy) || 1;
-        var tl = T * 0.45;
-        c.strokeStyle = 'rgba(255,170,120,.9)';
-        c.lineWidth = Math.max(1.5, T * 0.07);
+        var tl = T * (s.big ? 1.1 : 0.45);
+        c.strokeStyle = s.crit ? 'rgba(255,220,120,.95)' : 'rgba(255,170,120,.9)';
+        c.lineWidth = Math.max(1.5, T * (s.big ? 0.12 : 0.07));
         c.beginPath(); c.moveTo(X - dx / d * tl, Y - dy / d * tl); c.lineTo(X, Y); c.stroke();
-        c.drawImage(S.glow.strike, X - T * 0.25, Y - T * 0.25, T * 0.5, T * 0.5);
+        if (s.big) { c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = Math.max(1, T * 0.04); c.stroke(); }
+        var gz = T * (s.big ? 0.8 : 0.5);
+        c.drawImage(s.crit ? S.glow.gold : S.glow.strike, X - gz / 2, Y - gz / 2, gz, gz);
       }
     });
     c.globalCompositeOperation = 'source-over';
@@ -813,6 +973,11 @@
         c.globalAlpha = 1;
         c.globalCompositeOperation = 'source-over';
         if (Math.random() < 0.5) fx({ kind: 'spark', x: X, y: Y, vx: rnd(-8, 8), vy: rnd(-8, 8), g: 0, life: 0.3, max: 0.3, color: ROLE.mint.l, size: 0.7 });
+      } else if (s.kind === 'bomblet' && s.t >= 0) {
+        var kb = s.t / s.dur, bx2 = s.x0 + (s.tx - s.x0) * kb, by2 = s.y0 + (s.ty - s.y0) * kb;
+        var hb = S.G.map.height(Math.floor(bx2), Math.floor(by2));
+        var BX = sx(bx2), BY = sy(by2, hb) - 4 * kb * (1 - kb) * T * 0.8;
+        c.save(); c.translate(BX, BY); c.scale(Math.cos(S.clock * 18 + s.tx * 5) * 0.9 + 0.1, 1); stamp(c, S.spr.coin, 0, 0, 0.8); c.restore();
       } else if (s.kind === 'rug') {
         // the carpet unrolls from the spool to the target
         var e = s.target, k2 = Math.min(1, s.t / s.dur);
@@ -881,6 +1046,21 @@
         var q = 1 - k, e = q * q * (3 - 2 * q);
         var x = f.sx + (S.tokAt.x - f.sx) * e, y = f.sy + (S.tokAt.y - f.sy) * e - Math.sin(q * Math.PI) * T * 1.2;
         stamp(c, S.spr.coin, x, y, 1.1);
+      } else if (f.kind === 'trapdoor') {
+        // a black hole opens in the path and closes again
+        var o = Math.sin(Math.min(1, (1 - k) * 2.2) * Math.PI / 2) * (k < 0.25 ? k / 0.25 : 1);
+        c.fillStyle = '#0a0812';
+        c.beginPath(); c.ellipse(f.x, f.y, T * 0.38 * o, T * 0.16 * o, 0, 0, Math.PI * 2); c.fill();
+        c.strokeStyle = '#6b4a2e'; c.lineWidth = Math.max(1.5, T * 0.05); c.stroke();
+      } else if (f.kind === 'fall') {
+        // the enemy drops into the trapdoor: shrinks and sinks, clipped by the hole's rim
+        var q2 = 1 - k, s2 = f.sp, z2 = (f.e.size || 1) * (1 - q2 * 0.6);
+        c.save();
+        c.beginPath(); c.rect(f.x - T, f.y - T * 3, T * 2, T * 3); c.clip();
+        c.globalAlpha = k;
+        stampT(c, s2, f.x, f.y + q2 * s2.h * T * 1.1, 0, (f.flip ? -1 : 1) * z2, z2);
+        c.restore();
+        c.globalAlpha = 1;
       } else if (f.kind === 'carpet') {
         if (!f.e.alive && !f.e.leaked) { /* draw anyway: the yank still happened */ }
         var p = f.e.alive ? enemyScreen(f.e) : null, h0 = S.G.map.height(Math.floor(f.x0), Math.floor(f.y0));
@@ -977,8 +1157,9 @@
     }
     if (S.sel && !$('#td-pop').hidden) {
       var t = G.towers.find(function (x) { return x.id === S.sel; });
-      var kills = $('#td-pop small:nth-of-type(2)');
+      var kills = $('#td-pop .td-kills');
       if (t && kills) kills.textContent = t.kills + ' takedown' + (t.kills === 1 ? '' : 's');
+      paintUps();
     }
   }
   function enemyThumbs() {
@@ -1022,6 +1203,8 @@
     AU.music('fight', { fade: 1 });
     loop();
     banner('THE HEARING', 'Build towers, then start wave 1');
+    $('#td-say').hidden = true;
+    S.sayLater = 1.6;      // the Capitol's opening line, once the title has landed
   }
   function loop() {
     if (!S) return;

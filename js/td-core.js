@@ -22,6 +22,44 @@
   var ORDER = ['strike', 'privacy', 'mint', 'rug'];
   var SELL = 0.7;
 
+  // ---------- Upgrades ----------
+  // Tier 2 is one straight upgrade; tier 3 is a choice of two paths, a or b. `set` replaces those numbers
+  // (a tier 3 sits on top of tier 2). What you pay adds to what the tower sells for.
+  //   strike  crit: chance of a 2.5x hit.   privacy  freeze: seconds frozen, every freezeEvery seconds;
+  //   doxx: extra damage taken inside the fog.   mint  cluster: bomblets that land along the path after
+  //   the blast; burn: damage a second in the fire it leaves, for burnT seconds.   rug  heavyYank: also
+  //   pulls cabinets and the Filibuster (half as far); trap: a trapdoor takes one enemy every `trap` seconds.
+  var UPGRADES = {
+    strike: {
+      2: { cost: 90, name: 'Hot Rounds', set: { dmg: 21, range: 3.5 } },
+      a: { cost: 220, name: 'Minigun', blurb: 'Fires twice as fast, shorter reach', set: { rate: 5, range: 3 } },
+      b: { cost: 220, name: 'Sniper', blurb: 'Huge hits from far away, can crit', set: { dmg: 110, rate: 0.5, range: 6, crit: 0.25, shot: 34 } }
+    },
+    privacy: {
+      2: { cost: 70, name: 'Thick Fog', set: { dps: 10, slow: 0.5, range: 3 } },
+      a: { cost: 180, name: 'Freeze', blurb: 'Freezes everyone in it for 1s, every 6s', set: { freeze: 1, freezeEvery: 6 } },
+      b: { cost: 180, name: 'Doxx', blurb: 'Enemies in the fog take 25% more damage', set: { doxx: 0.25 } }
+    },
+    mint: {
+      2: { cost: 120, name: 'Heavy Coins', set: { dmg: 70, splash: 1.2 } },
+      a: { cost: 240, name: 'Cluster', blurb: 'Each bomb splits into 4 more', set: { cluster: 4, bomblet: 30 } },
+      b: { cost: 240, name: 'Mega Mint', blurb: 'One huge blast that leaves fire', set: { dmg: 150, splash: 1.6, rate: 1 / 2.4, burn: 20, burnT: 3 } }
+    },
+    rug: {
+      2: { cost: 100, name: 'Quick Pull', set: { dmg: 100, rate: 1 / 3 } },
+      a: { cost: 200, name: 'Long Con', blurb: 'Pulls back 3 tiles, even heavy ones', set: { yank: 3, heavyYank: true } },
+      b: { cost: 200, name: 'Exit Scam', blurb: 'A trapdoor takes one enemy every 12s', set: { trap: 12 } }
+    }
+  };
+  var BOMBLET = { splash: 0.7, flight: 0.35, spacing: 0.8 };
+  var BURN_R = 1;
+  function towerStats(type, tier, path) {
+    var s = Object.assign({}, TOWERS[type]);
+    if (tier >= 2) Object.assign(s, UPGRADES[type][2].set);
+    if (tier >= 3 && path) Object.assign(s, UPGRADES[type][path].set);
+    return s;
+  }
+
   // ---------- Enemies ----------
   // hp at wave 1, speed in tiles/s, armor comes off every hit (not the fog), reward in tokens, leak = integrity lost.
   var ENEMIES = {
@@ -40,6 +78,7 @@
     integrity: 20,
     countdown: 15,          // seconds between waves, then the next one starts by itself
     earlyPay: 2,            // tokens per second left on the countdown when you call a wave early
+    release: 1.2,           // seconds between a wave's call (the Capitol's shout) and the first enemy out the door
     clearBonus: function (w) { return 20 + 4 * w; }
   };
 
@@ -171,7 +210,7 @@
       waves: map.def.waves.length,
       phase: 'ready',               // ready (before wave 1), wave, break (countdown), won, lost
       countdown: 0,
-      enemies: [], towers: [], shots: [], events: [],
+      enemies: [], towers: [], shots: [], patches: [], events: [],
       spawns: [], waveT: 0, nextId: 1, kills: 0, leaks: 0
     };
 
@@ -198,7 +237,7 @@
       }
       G.wave++;
       G.phase = 'wave';
-      G.waveT = 0;
+      G.waveT = -RULES.release;
       G.spawns = [];
       map.def.waves[G.wave - 1].forEach(function (g) {
         for (var k = 0; k < g[1]; k++) G.spawns.push({ t: g[3] + k * g[2], type: g[0] });
@@ -211,6 +250,7 @@
     function damage(e, amount, pierce, by) {
       if (!e.alive) return;
       var d = pierce ? amount : Math.max(1, amount - e.armor);
+      if (e.doxxT > 0) d *= 1 + e.doxx;
       e.hp -= d;
       if (by) by.dealt = (by.dealt || 0) + d;
       if (e.hp <= 0) {
@@ -250,10 +290,33 @@
       if (!canBuild(type, c, r) || G.tokens < T.cost) return null;
       G.tokens -= T.cost;
       var h = map.height(c, r);
-      var t = { id: G.nextId++, type: type, c: c, r: r, x: c + 0.5, y: r + 0.5, h: h,
+      var t = { id: G.nextId++, type: type, c: c, r: r, x: c + 0.5, y: r + 0.5, h: h, tier: 1, path: null, s: towerStats(type, 1),
         range: T.range + (type === 'rug' ? 0 : h), cool: 0, angle: Math.PI / 5, spent: T.cost, kills: 0, dealt: 0, fired: 0 };
       G.towers.push(t);
       emit('build', { t: t });
+      return t;
+    }
+    // What a tower can become next: [{ key, tier, cost, name, blurb }]. Tier 1 has one, tier 2 has two, tier 3 none.
+    function upgradeOptions(t) {
+      var U = UPGRADES[t.type];
+      if (t.tier === 1) return [{ key: '2', tier: 2, cost: U[2].cost, name: U[2].name }];
+      if (t.tier === 2) return ['a', 'b'].map(function (k) { return { key: k, tier: 3, cost: U[k].cost, name: U[k].name, blurb: U[k].blurb }; });
+      return [];
+    }
+    function upgrade(id, key) {
+      var t = G.towers.find(function (x) { return x.id === id; });
+      if (!t) return null;
+      var o = upgradeOptions(t).find(function (x) { return x.key === String(key); });
+      if (!o || G.tokens < o.cost) return null;
+      G.tokens -= o.cost;
+      t.spent += o.cost;
+      t.tier = o.tier;
+      if (o.tier === 3) t.path = o.key;
+      t.s = towerStats(t.type, t.tier, t.path);
+      t.range = t.s.range + (t.type === 'rug' ? 0 : t.h);
+      if (t.s.freeze) t.freezeCool = 1;
+      if (t.s.trap) t.trapCool = 2;
+      emit('upgrade', { t: t, tier: t.tier, path: t.path, name: o.name });
       return t;
     }
     function sell(id) {
@@ -268,17 +331,45 @@
 
     function stepTowers(dt) {
       G.towers.forEach(function (t) {
-        var T = TOWERS[t.type];
+        var T = t.s;
         t.cool = Math.max(0, t.cool - dt);
         if (t.type === 'privacy') {
           t.active = false;
+          var held = [];
           G.enemies.forEach(function (e) {
             if (!e.alive || e.fly || !inRange(t, e, t.range)) return;
             e.slowT = 0.15;
+            e.slowK = Math.max(e.slowK || 0, T.slow);
+            if (T.doxx) { e.doxxT = 0.15; e.doxx = T.doxx; }
             t.active = true;
+            held.push(e);
             damage(e, T.dps * dt, true, t);
           });
+          if (T.freeze) {
+            t.freezeCool = Math.max(0, t.freezeCool - dt);
+            if (held.length && t.freezeCool <= 0) {
+              held.forEach(function (e) { e.stunT = Math.max(e.stunT || 0, e.heavy ? T.freeze / 2 : T.freeze); });
+              t.freezeCool = T.freezeEvery;
+              emit('freeze', { t: t, n: held.length });
+            }
+          }
           return;
+        }
+        if (T.trap) {
+          // Exit Scam: a trapdoor opens under the enemy furthest along beside it (not a heavy one, not a flyer)
+          t.trapCool = Math.max(0, t.trapCool - dt);
+          if (t.trapCool <= 0) {
+            var v = null;
+            G.enemies.forEach(function (e) {
+              if (e.alive && !e.fly && !e.heavy && inRange(t, e, t.range) && (!v || e.dist > v.dist)) v = e;
+            });
+            if (v) {
+              t.trapCool = T.trap;
+              v.trapped = true;
+              emit('trap', { t: t, e: v, x: v.x, y: v.y });
+              damage(v, v.hp + 1, true, t);
+            }
+          }
         }
         var e = firstTarget(t, t.range, T.air, T.minRange);
         if (!e) return;
@@ -287,16 +378,18 @@
         t.cool = 1 / T.rate;
         t.fired++;
         if (t.type === 'strike') {
-          G.shots.push({ kind: 'bullet', from: t, target: e, x: t.x, y: t.y, speed: T.shot, dmg: T.dmg });
+          var crit = !!T.crit && Math.random() < T.crit;
+          G.shots.push({ kind: 'bullet', from: t, target: e, x: t.x, y: t.y, speed: T.shot, dmg: T.dmg * (crit ? 2.5 : 1), crit: crit, big: !!T.crit });
           emit('fire', { t: t, e: e });
         } else if (t.type === 'mint') {
           // Lead the target: aim where it will be when the coin lands.
-          var ahead = e.dist + e.speed * (e.slowT > 0 ? 1 - TOWERS.privacy.slow : 1) * T.flight;
+          var slow = e.stunT > 0 ? 0 : e.slowT > 0 ? 1 - (e.slowK || TOWERS.privacy.slow) : 1;
+          var ahead = e.dist + e.speed * slow * T.flight;
           var p = map.at(ahead);
-          G.shots.push({ kind: 'coin', from: t, x0: t.x, y0: t.y, tx: p.x, ty: p.y, t: 0, dur: T.flight, dmg: T.dmg });
+          G.shots.push({ kind: 'coin', from: t, x0: t.x, y0: t.y, tx: p.x, ty: p.y, ahead: ahead, t: 0, dur: T.flight, dmg: T.dmg, s: T });
           emit('fire', { t: t, tx: p.x, ty: p.y, dur: T.flight });
         } else if (t.type === 'rug') {
-          G.shots.push({ kind: 'rug', from: t, target: e, t: 0, dur: T.throwT, dmg: T.dmg });
+          G.shots.push({ kind: 'rug', from: t, target: e, t: 0, dur: T.throwT, dmg: T.dmg, s: T });
           emit('fire', { t: t, e: e, dur: T.throwT });
         }
       });
@@ -310,7 +403,7 @@
           var dx = e.x - s.x, dy = e.y - s.y, d = Math.hypot(dx, dy), step = s.speed * dt;
           if (d <= step + 0.15) {
             damage(e, s.dmg, false, s.from);
-            emit('hit', { x: e.x, y: e.y, e: e, armor: e.armor > 0 });
+            emit('hit', { x: e.x, y: e.y, e: e, armor: e.armor > 0, crit: s.crit, big: s.big });
             return false;
           }
           s.x += dx / d * step; s.y += dy / d * step;
@@ -318,23 +411,45 @@
         }
         s.t += dt;
         if (s.t < s.dur) return true;
-        if (s.kind === 'coin') {
-          var R = TOWERS.mint.splash, n = 0;
+        if (s.kind === 'coin' || s.kind === 'bomblet') {
+          var R = s.kind === 'coin' ? s.s.splash : BOMBLET.splash, n = 0;
           G.enemies.forEach(function (e) {
             if (!e.alive || e.fly) return;
             if (Math.hypot(e.x - s.tx, e.y - s.ty) <= R) { damage(e, s.dmg, false, s.from); n++; }
           });
-          emit('boom', { x: s.tx, y: s.ty, n: n });
+          emit('boom', { x: s.tx, y: s.ty, n: n, r: R, small: s.kind === 'bomblet', mega: s.kind === 'coin' && !!s.s.burn });
+          if (s.kind === 'coin' && s.s.cluster) {
+            // Cluster: bomblets scatter along the path ahead of and behind the blast
+            for (var k = 0; k < s.s.cluster; k++) {
+              var off = (k - (s.s.cluster - 1) / 2) * BOMBLET.spacing;
+              var q = map.at(s.ahead + off);
+              born.push({ kind: 'bomblet', from: s.from, x0: s.tx, y0: s.ty, tx: q.x, ty: q.y, t: -k * 0.04, dur: BOMBLET.flight, dmg: s.s.bomblet });
+            }
+          }
+          if (s.kind === 'coin' && s.s.burn) G.patches.push({ x: s.tx, y: s.ty, r: BURN_R, dps: s.s.burn, t: s.s.burnT, max: s.s.burnT, by: s.from });
         } else if (s.kind === 'rug') {
           var e = s.target;
           if (e.alive) {
-            var yank = !e.heavy;
-            if (yank) e.dist = Math.max(0, e.dist - TOWERS.rug.yank);
+            var pull = e.heavy ? (s.s.heavyYank ? s.s.yank / 2 : 0) : s.s.yank;
+            if (pull) e.dist = Math.max(0, e.dist - pull);
             damage(e, s.dmg, true, s.from);
-            emit('rug', { e: e, x: e.x, y: e.y, yank: yank });
+            emit('rug', { e: e, x: e.x, y: e.y, yank: pull > 0, pull: pull });
           }
         }
         return false;
+      });
+      if (born.length) { G.shots = G.shots.concat(born); born = []; }
+    }
+    var born = [];    // shots made by other shots this frame (Cluster's bomblets)
+
+    // Mega Mint's fire: a patch on the path that burns whoever walks through it.
+    function stepPatches(dt) {
+      G.patches = G.patches.filter(function (f) {
+        f.t -= dt;
+        G.enemies.forEach(function (e) {
+          if (e.alive && !e.fly && Math.hypot(e.x - f.x, e.y - f.y) <= f.r) damage(e, f.dps * dt, true, f.by);
+        });
+        return f.t > 0;
       });
     }
 
@@ -349,8 +464,11 @@
       });
       G.enemies.forEach(function (e) {
         if (!e.alive) return;
-        var slow = e.slowT > 0 ? 1 - TOWERS.privacy.slow : 1;
+        var slow = e.slowT > 0 ? 1 - (e.slowK || TOWERS.privacy.slow) : 1;
         e.slowT = Math.max(0, e.slowT - dt);
+        e.slowK = 0;                          // the fog sets it again each frame
+        e.doxxT = Math.max(0, (e.doxxT || 0) - dt);
+        if (e.stunT > 0) { e.stunT -= dt; slow = 0; }
         e.dist += e.speed * slow * dt;
         if (e.dist >= map.length) {
           e.alive = false;
@@ -377,6 +495,7 @@
       stepEnemies(dt);
       stepTowers(dt);
       stepShots(dt);
+      stepPatches(dt);
       if (G.integrity <= 0) { G.phase = 'lost'; emit('lost'); return; }
       if (G.phase === 'wave' && !G.spawns.length && !G.enemies.length) {
         var bonus = RULES.clearBonus(G.wave);
@@ -402,10 +521,12 @@
     }
 
     G.step = step; G.startWave = startWave; G.build = build; G.sell = sell; G.canBuild = canBuild;
+    G.upgrade = upgrade; G.upgradeOptions = upgradeOptions;
     G.stars = stars; G.preview = preview;
     G.sellValue = function (t) { return Math.floor(t.spent * SELL); };
     return G;
   }
 
-  return { TOWERS: TOWERS, ORDER: ORDER, ENEMIES: ENEMIES, RULES: RULES, MAPS: MAPS, GROWTH: GROWTH, SELL: SELL, create: create, prepMap: prepMap };
+  return { TOWERS: TOWERS, ORDER: ORDER, UPGRADES: UPGRADES, ENEMIES: ENEMIES, RULES: RULES, MAPS: MAPS, GROWTH: GROWTH, SELL: SELL,
+    create: create, prepMap: prepMap, towerStats: towerStats };
 });

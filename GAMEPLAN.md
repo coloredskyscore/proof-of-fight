@@ -11,6 +11,19 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 8, 2026: Tower Defense (?td): upgrades and the Capitol talking
+
+From Brian's first playtest.
+- **Upgrades:** tap a tower for its card. Tier 2 makes it stronger, then tier 3 is a choice of two (the card shows both, gold and purple). Keys: U for tier 2, A or B for tier 3.
+  - **Comrades:** Hot Rounds (90, harder hits, a bit more reach), then **Minigun** (twice as fast, shorter reach) or **Sniper** (huge hits from far away, 25% crits).
+  - **Seed Vault:** Thick Fog (70, wider, slows 50%, twice the damage), then **Freeze** (everyone in the fog stops for 1 second every 6, heavy ones for half that) or **Doxx** (enemies in the fog take 25% more damage).
+  - **Slop Cannon:** Heavy Coins (120, bigger hits and blast), then **Cluster** (each bomb splits into 4 more down the path) or **Mega Mint** (one huge slow blast that leaves fire on the path).
+  - **MEV Hunt:** Quick Pull (100, harder and more often), then **Long Con** (pulls back 3 tiles and can move heavy enemies) or **Exit Scam** (a trapdoor takes one enemy every 12 seconds; not cabinets, the Filibuster or flyers).
+  - A tower grows a little and gets a glow and diamonds under it for each tier. Selling still gives back 70% of everything spent on it.
+- **The Capitol talks:** a speech bubble on the Capitol says why each wave is coming ("We need to stop crypto!", "Send out the congressional aides!", "Serve the subpoenas!", "Begin the filibuster!") about a second before the first enemy walks out, and "Drown them in red tape!" style lines between waves. Lines are plain, by design.
+- **Balance:** the sim has two upgrader bots (one per tier 3 side) and sloppy upgraders; upgrading pays about the same as building more towers.
+- **Still to come:** towers facing up and sideways need new Grok sheets (prompts 6 to 8 in the project's prompt list); until then a tower facing up shows its down-facing painting.
+
 ### Nov 7, 2026: Tower Defense test (?td), step 1 of 3
 
 A hidden test mode at `proofoffight.com/?td`: a **Tower Defense** button appears on the title screen. Real time, not turns. The full design (towers, maps, enemies, base, story) is in the project's design doc; this is step 1, the core loop on one map.
