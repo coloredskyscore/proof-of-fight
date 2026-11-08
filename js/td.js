@@ -3,8 +3,9 @@
    The Hearing: aides and paper pushers pour out of the Capitol and march down the steps and across the lawn
    toward Toly's validator node. You build his four towers (the fight mode's four buttons, under his move
    names) on any open tile, earn tokens for every kill, and hold for 15 waves. Real time, with 2x speed.
-   Everything is drawn in code until the painted map and tower art exist. Sprites are drawn once per screen
-   size onto small canvases, then stamped every frame, so the frame stays cheap on a phone. */
+   The towers, enemies and node are Grok paintings (art/td/, cut by tools/td_art.py); the map is still drawn
+   in code until its painting exists. Sprites are drawn once per screen size onto small canvases, then
+   stamped every frame, so the frame stays cheap on a phone. */
 (function () {
   if (!/[?&]td\b/i.test(location.search)) return;
   var D = window.POF_DATA, AU = window.POF_AUDIO, C = window.POF_TD_CORE;
@@ -24,7 +25,6 @@
     walker: 'Aide', swarm: 'Intern', sprinter: 'Lobbyist', armored: 'Filing Cabinet',
     flyer: 'Subpoena', support: 'Coffee Runner', boss: 'The Filibuster'
   };
-  var SKIN = ['#f1c7a1', '#d9a07a', '#a8714c', '#7a4e33'];
   var KIT = D.FIGHTERS[FOUNDER];            // the founder's color and move names
 
   var S = null;                             // the running stage
@@ -137,213 +137,85 @@
     return cv;
   }
 
-  // The stone pedestal every tower stands on, with a stripe in the founder's color.
-  function pedestal(c, role) {
-    ell(c, 0, 0.12, 0.44, 0.2); c.fillStyle = 'rgba(0,0,0,.35)'; c.fill();
-    c.beginPath();
-    c.moveTo(-0.38, -0.08); c.lineTo(-0.38, 0.1);
-    c.ellipse(0, 0.1, 0.38, 0.16, 0, Math.PI, 0, true);
-    c.lineTo(0.38, -0.08);
-    c.closePath();
-    fs(c, '#55506a');
-    c.save(); c.clip();
-    c.fillStyle = KIT.color; c.fillRect(-0.5, 0.0, 1, 0.06);
-    c.restore();
-    ell(c, 0, -0.08, 0.38, 0.16); fs(c, '#8a84a3');
-    ell(c, 0, -0.08, 0.27, 0.11); c.fillStyle = role.d; c.fill();
-  }
-
-  function buildTowerSprites() {
-    var T = {};
-    // Strike: a stand plus a twin-barrel turret (drawn separately so it can turn).
-    T.strike = {
-      base: mk(1, 1.1, 0.5, 0.8, function (c) {
-        pedestal(c, ROLE.strike);
-        rr(c, -0.1, -0.3, 0.2, 0.24, 0.05); fs(c, '#3c3850');
-      }),
-      top: mk(1.1, 0.7, 0.4, 0.35, function (c) {
-        rr(c, 0.02, -0.13, 0.5, 0.09, 0.03); fs(c, '#d9d4e8');
-        rr(c, 0.02, 0.04, 0.5, 0.09, 0.03); fs(c, '#d9d4e8');
-        c.fillStyle = OL; c.fillRect(0.44, -0.12, 0.06, 0.07); c.fillRect(0.44, 0.05, 0.06, 0.07);
-        ell(c, 0, 0, 0.22, 0.2); fs(c, ROLE.strike.c);
-        ell(c, -0.05, -0.06, 0.09, 0.06); c.fillStyle = ROLE.strike.l; c.fill();
-        rr(c, -0.3, -0.07, 0.14, 0.14, 0.03); fs(c, ROLE.strike.d);
-      })
-    };
-    // Privacy: a squat glass dome with an antenna.
-    T.privacy = {
-      base: mk(1, 1.3, 0.5, 1.0, function (c) {
-        pedestal(c, ROLE.privacy);
-        c.beginPath(); c.moveTo(0.02, -0.42); c.lineTo(0.12, -0.66); c.stroke();
-        ell(c, 0.12, -0.68, 0.04, 0.04); fs(c, '#bff0ff');
-        c.beginPath(); c.ellipse(0, -0.1, 0.3, 0.34, 0, Math.PI, 0); c.closePath(); fs(c, ROLE.privacy.c);
-        c.beginPath(); c.ellipse(-0.08, -0.24, 0.1, 0.14, -0.4, 0, Math.PI * 2); c.fillStyle = 'rgba(220,248,255,.55)'; c.fill();
-        rr(c, -0.3, -0.13, 0.6, 0.07, 0.03); fs(c, ROLE.privacy.d);
-      })
-    };
-    // Mint: a stubby mortar with a coin press on its back.
-    T.mint = {
-      base: mk(1, 1.1, 0.5, 0.8, function (c) { pedestal(c, ROLE.mint); }),
-      top: mk(1, 1.1, 0.5, 0.85, function (c) {
-        rr(c, -0.2, -0.5, 0.4, 0.44, 0.08); fs(c, ROLE.mint.c);
-        ell(c, 0, -0.5, 0.2, 0.08); fs(c, ROLE.mint.d);
-        ell(c, 0, -0.5, 0.13, 0.05); c.fillStyle = OL; c.fill();
-        c.fillStyle = ROLE.mint.l; c.fillRect(-0.14, -0.42, 0.06, 0.3);
-        rr(c, -0.26, -0.16, 0.52, 0.12, 0.04); fs(c, ROLE.mint.d);
-      }),
-      press: mk(0.6, 0.6, 0.3, 0.3, function (c) {      // the press block with a coin in it
-        rr(c, -0.16, -0.12, 0.32, 0.18, 0.04); fs(c, '#5b5670');
-        ell(c, 0, -0.16, 0.1, 0.05); fs(c, '#ffd23f');
-      })
-    };
-    // Rug: a wooden spool with a purple carpet rolled on it.
-    T.rug = {
-      base: mk(1.1, 1.1, 0.55, 0.8, function (c) {
-        pedestal(c, ROLE.rug);
-        c.fillStyle = '#6b4a2e';
-        rr(c, -0.3, -0.36, 0.06, 0.32, 0.02); fs(c, '#6b4a2e');
-        rr(c, 0.24, -0.36, 0.06, 0.32, 0.02); fs(c, '#6b4a2e');
-      }),
-      top: mk(1.1, 0.9, 0.55, 0.4, function (c) {
-        // a carpet rolled on the posts, its loose end hanging down the front with a fringe
-        rr(c, -0.12, -0.02, 0.3, 0.34, 0.02); fs(c, ROLE.rug.d);
-        c.fillStyle = '#ffd23f'; c.fillRect(-0.08, 0.06, 0.22, 0.025); c.fillRect(-0.08, 0.2, 0.22, 0.025);
-        c.strokeStyle = '#ffd23f'; c.lineWidth = 0.025;
-        for (var k = -0.1; k <= 0.17; k += 0.045) { c.beginPath(); c.moveTo(k, 0.32); c.lineTo(k, 0.39); c.stroke(); }
-        c.strokeStyle = OL;
-        rr(c, -0.3, -0.14, 0.56, 0.26, 0.12); fs(c, ROLE.rug.c);
-        c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(-0.22, -0.1, 0.4, 0.04);
-        c.fillStyle = '#ffd23f'; c.fillRect(-0.2, -0.14, 0.035, 0.26); c.fillRect(0.12, -0.14, 0.035, 0.26);
-        ell(c, 0.26, -0.01, 0.075, 0.13); fs(c, ROLE.rug.l);
-        c.strokeStyle = ROLE.rug.d; c.lineWidth = 0.022;
-        c.beginPath(); c.ellipse(0.26, -0.01, 0.045, 0.08, 0, 0, Math.PI * 1.6); c.stroke();
-        c.beginPath(); c.ellipse(0.26, -0.01, 0.02, 0.04, 0, 0, Math.PI * 1.5); c.stroke();
-      })
-    };
-    return T;
-  }
-
-  // People: the aides, interns, lobbyists and coffee runners. o: colors and extras; f: the walk frame.
-  function person(c, o, f) {
-    var s = o.scale || 1;
-    c.save();
-    c.scale(s, s);
-    var lf = f ? 0.05 : -0.05;
-    c.fillStyle = o.pants;
-    rr(c, -0.1 + lf * 0.4, -0.2, 0.08, 0.2, 0.03); fs(c, o.pants);
-    rr(c, 0.02 - lf * 0.4, -0.2, 0.08, 0.2, 0.03); fs(c, o.pants);
-    rr(c, -0.12 + lf * 0.4, -0.03, 0.11, 0.05, 0.02); fs(c, '#1b1720');
-    rr(c, 0.02 - lf * 0.4, -0.03, 0.11, 0.05, 0.02); fs(c, '#1b1720');
-    if (o.pack) { rr(c, -0.2, -0.42, 0.1, 0.18, 0.04); fs(c, o.pack); }
-    rr(c, -0.15, -0.44, 0.3, 0.27, 0.07); fs(c, o.suit);
-    if (o.apron) { rr(c, -0.1, -0.36, 0.2, 0.22, 0.03); fs(c, o.apron); }
-    c.beginPath(); c.moveTo(-0.06, -0.44); c.lineTo(0.06, -0.44); c.lineTo(0, -0.35); c.closePath(); c.fillStyle = o.shirt; c.fill();
-    if (o.tie) { c.fillStyle = o.tie; c.fillRect(-0.016, -0.42, 0.032, 0.1); }
-    if (o.badge) { c.fillStyle = '#fff'; c.fillRect(0.03, -0.33, 0.07, 0.08); c.strokeRect(0.03, -0.33, 0.07, 0.08); }
-    rr(c, -0.2, -0.42 + (f ? 0.02 : 0), 0.07, 0.2, 0.03); fs(c, o.suit);
-    rr(c, 0.13, -0.42 + (f ? 0 : 0.02), 0.07, 0.2, 0.03); fs(c, o.suit);
-    if (o.case) { rr(c, 0.12, -0.25, 0.17, 0.13, 0.02); fs(c, '#6b4224'); c.fillStyle = '#d9b45a'; c.fillRect(0.19, -0.27, 0.04, 0.03); }
-    if (o.folder) { rr(c, 0.1, -0.33, 0.13, 0.16, 0.01); fs(c, '#e8d9a8'); }
-    if (o.tray) {
-      rr(c, -0.24, -0.47, 0.48, 0.05, 0.02); fs(c, '#b7b2c4');
-      [-0.15, 0, 0.15].forEach(function (x) { rr(c, x - 0.045, -0.58, 0.09, 0.11, 0.02); fs(c, '#f4efe6'); c.fillStyle = '#3ddc97'; c.fillRect(x - 0.045, -0.54, 0.09, 0.025); });
+  // ---------- The painted art ----------
+  // Grok paintings, cut apart by tools/td_art.py and saved at PPT pixels per map tile, so a picture's size
+  // in pixels is its size on the map. Each one is redrawn once per screen size onto a canvas at the exact
+  // size it's stamped at, so the frame stays cheap on a phone.
+  var ART = 'art/td/', PPT = 160;
+  var PIC_NAMES = ['tower-strike', 'tower-privacy', 'tower-mint', 'tower-rug', 'enemy-walker', 'enemy-swarm', 'enemy-sprinter',
+    'enemy-support', 'enemy-armored', 'enemy-flyer', 'enemy-boss', 'node-toly', 'node-toly-lights'];
+  var PICS = {}, picsReady = null;
+  function loadPics() {
+    if (!picsReady) {
+      picsReady = Promise.all(PIC_NAMES.map(function (n) {
+        return new Promise(function (ok) {
+          var im = new Image();
+          im.onload = im.onerror = function () { ok(); };
+          im.src = ART + n + '.webp';
+          PICS[n] = im;
+        });
+      }));
     }
-    ell(c, 0, -0.55, 0.12, 0.12); fs(c, o.skin);
-    c.beginPath(); c.arc(0, -0.57, 0.12, Math.PI * 1.05, Math.PI * 1.95); c.lineTo(0.08, -0.6); c.closePath(); fs(c, o.hair);
-    c.fillStyle = OL;
-    c.fillRect(0.035, -0.56, 0.025, 0.03);
-    c.restore();
+    return picsReady;
   }
+  // A painting as a sprite. ax, ay: the spot it stands on, as fractions of its width and height.
+  // y0..y1: only that band of rows (a tower's turret, drawn apart from its pedestal so it can recoil).
+  function pic(name, ax, ay, scale, y0, y1) {
+    var im = PICS[name], k = scale || 1, ok = im && im.naturalWidth;
+    var w = (ok ? im.naturalWidth : 1) / PPT * k, h = (ok ? im.naturalHeight : 1) / PPT * k;
+    var cv = document.createElement('canvas'), px = S.T * S.dpr;
+    cv.width = Math.max(1, Math.round(w * px));
+    cv.height = Math.max(1, Math.round(h * px));
+    var c = cv.getContext('2d');
+    c.imageSmoothingQuality = 'high';
+    if (ok) {
+      if (y0 !== undefined) { c.beginPath(); c.rect(0, y0 * cv.height, cv.width, (y1 - y0) * cv.height); c.clip(); }
+      c.drawImage(im, 0, 0, cv.width, cv.height);
+    }
+    return { cv: cv, w: w, h: h, ax: ax, ay: ay };
+  }
+  // Stamp with a turn and a stretch around the spot it stands on (the walk, the flap).
+  function stampT(ctx, s, x, y, rot, kx, ky) {
+    var T = S.T;
+    ctx.save();
+    ctx.translate(x, y);
+    if (rot) ctx.rotate(rot);
+    ctx.scale(kx, ky);
+    ctx.drawImage(s.cv, -s.ax * s.w * T, -s.ay * s.h * T, s.w * T, s.h * T);
+    ctx.restore();
+  }
+
+  // The towers face left as painted, and flip to face a target on the right. Above CUT (a fraction of the
+  // height) is the part that recoils when it fires; below it, the pedestal stays put. MUZZLE: the gun's
+  // barrel tips, in tiles from the spot it stands on, for the muzzle flash.
+  var TOWER_CUT = { strike: 0.6, privacy: 1, mint: 0.62, rug: 0.6 };
+  var MUZZLE = { x: -0.36, y: -0.4 };
+  function buildTowerSprites() {
+    var out = {};
+    C.ORDER.forEach(function (type) {
+      var name = 'tower-' + type, im = PICS[name], cut = TOWER_CUT[type];
+      // it stands on the middle of its pedestal's round footprint
+      var ay = im && im.naturalWidth ? 1 - 0.19 * im.naturalWidth / im.naturalHeight : 0.85;
+      out[type] = { whole: pic(name, 0.5, ay), base: pic(name, 0.5, ay, 1, cut, 1), top: cut < 1 ? pic(name, 0.5, ay, 1, 0, cut) : null, cut: cut };
+    });
+    return out;
+  }
+  // Enemies are drawn a bit over their cut size, so the people read on a phone, and the Filibuster towers
+  // over the filing cabinets. The people also get a little size variety, so a crowd doesn't look stamped.
+  var ENEMY_SCALE = 1.15, BOSS_SCALE = 1.15, PEOPLE = ['walker', 'swarm', 'sprinter', 'support'];
   function buildEnemySprites() {
     var E = {};
-    function frames(w, h, ax, ay, fn) { return [0, 1].map(function (f) { return mk(w, h, ax, ay, function (c) { fn(c, f); }); }); }
-    E.walker = SKIN.map(function (skin, k) {
-      return frames(0.8, 0.9, 0.4, 0.82, function (c, f) {
-        person(c, { suit: ['#35558f', '#5b4a86', '#3d6b52', '#7a5636'][k], pants: '#2b3550', shirt: '#f4f1ea', tie: ['#c8402b', '#2a6fd8', '#c8402b', '#e0a800'][k],
-          skin: skin, hair: ['#2a1d14', '#5a3a1e', '#1a1a1a', '#c9b089'][k], badge: true, folder: true }, f);
-      });
+    Object.keys(COSTUME).forEach(function (type) {
+      E[type] = pic('enemy-' + type, 0.5, type === 'flyer' ? 0.5 : 0.97, ENEMY_SCALE * (type === 'boss' ? BOSS_SCALE : 1));
     });
-    E.swarm = SKIN.map(function (skin, k) {
-      return frames(0.6, 0.7, 0.3, 0.64, function (c, f) {
-        person(c, { scale: 0.74, suit: ['#9cc7ea', '#f2f2f2', '#c7e6b5', '#f5d6a3'][k], pants: '#b9a57a', shirt: '#fff', skin: skin,
-          hair: ['#3a2a1a', '#e2c27a', '#1a1a1a', '#7a3d1e'][k], badge: true, pack: '#3d6fb8' }, f);
-      });
-    });
-    E.sprinter = SKIN.map(function (skin, k) {
-      return frames(0.85, 0.9, 0.4, 0.82, function (c, f) {
-        person(c, { suit: '#55556a', pants: '#3a3a48', shirt: '#f4f1ea', tie: '#d63a9a', skin: skin, hair: '#111', case: true }, f);
-      });
-    });
-    E.support = SKIN.map(function (skin, k) {
-      return frames(0.8, 0.95, 0.4, 0.86, function (c, f) {
-        person(c, { suit: '#f4f1ea', pants: '#3a3340', shirt: '#fff', apron: '#2f8f5b', skin: skin, hair: ['#2a1d14', '#a0522d', '#111', '#ddd'][k], tray: true }, f);
-      });
-    });
-    E.armored = [frames(0.8, 1, 0.4, 0.92, function (c, f) {     // a rolling filing cabinet, eyebrows and all
-      var lg = f ? 0.03 : -0.03;
-      c.fillStyle = '#2a2833';
-      rr(c, -0.18 + lg, -0.08, 0.08, 0.08, 0.02); fs(c, '#2a2833');
-      rr(c, 0.1 - lg, -0.08, 0.08, 0.08, 0.02); fs(c, '#2a2833');
-      rr(c, -0.24, -0.8, 0.48, 0.74, 0.04); fs(c, '#8e97a6');
-      c.fillStyle = 'rgba(255,255,255,.22)'; c.fillRect(-0.21, -0.77, 0.06, 0.68);
-      [-0.74, -0.5, -0.28].forEach(function (y) {
-        rr(c, -0.19, y, 0.38, 0.2, 0.02); fs(c, '#a7afbc');
-        rr(c, -0.07, y + 0.12, 0.14, 0.04, 0.02); fs(c, '#3b3f4a');
-      });
-      c.fillStyle = '#fff'; c.fillRect(-0.09, -0.71, 0.18, 0.07); c.strokeRect(-0.09, -0.71, 0.18, 0.07);
-      c.lineWidth = 0.045;
-      c.beginPath(); c.moveTo(-0.15, -0.6); c.lineTo(-0.04, -0.56); c.moveTo(0.15, -0.6); c.lineTo(0.04, -0.56); c.stroke();
-      c.fillStyle = OL; ell(c, -0.08, -0.53, 0.025, 0.025); c.fill(); ell(c, 0.08, -0.53, 0.025, 0.025); c.fill();
-      c.fillStyle = '#c8402b'; c.fillRect(0.1, -0.33, 0.12, 0.05);
-    })];
-    E.flyer = [frames(0.8, 0.6, 0.4, 0.3, function (c, f) {      // a subpoena flapping its corners
-      var u = f ? -0.12 : 0.04;
-      c.beginPath(); c.moveTo(-0.2, -0.1); c.lineTo(-0.36, -0.1 + u); c.lineTo(-0.2, 0.06); c.closePath(); fs(c, '#e6e1d4');
-      c.beginPath(); c.moveTo(0.2, -0.1); c.lineTo(0.36, -0.1 + u); c.lineTo(0.2, 0.06); c.closePath(); fs(c, '#e6e1d4');
-      rr(c, -0.2, -0.16, 0.4, 0.3, 0.02); fs(c, '#fbf8ef');
-      c.fillStyle = '#9a96a8';
-      [-0.1, -0.04, 0.02].forEach(function (y) { c.fillRect(-0.15, y, 0.24, 0.025); });
-      c.fillStyle = '#1a1a1a'; c.fillRect(-0.15, -0.13, 0.18, 0.035);
-      ell(c, 0.12, 0.06, 0.055, 0.055); fs(c, '#c8102e');
-    })];
-    E.boss = [frames(1.3, 1.5, 0.65, 1.36, function (c, f) {     // The Filibuster: a walking stack of bills
-      var lg = f ? 0.04 : -0.04;
-      rr(c, -0.2 + lg, -0.2, 0.1, 0.2, 0.03); fs(c, '#2a2833');
-      rr(c, 0.1 - lg, -0.2, 0.1, 0.2, 0.03); fs(c, '#2a2833');
-      rr(c, -0.26 + lg, -0.05, 0.16, 0.07, 0.03); fs(c, '#111');
-      rr(c, 0.1 - lg, -0.05, 0.16, 0.07, 0.03); fs(c, '#111');
-      var y = -0.2;
-      [[-0.42, 0.84, '#f1ecdf'], [-0.38, 0.8, '#e8e1cf'], [-0.44, 0.86, '#f6f2e7'], [-0.36, 0.78, '#ece5d3'], [-0.4, 0.82, '#f3eee2'], [-0.37, 0.76, '#e9e2d0']]
-        .forEach(function (p, k) {
-          var h = 0.17;
-          y -= h;
-          rr(c, p[0] + (k % 2 ? 0.03 : 0), y, p[1], h, 0.02); fs(c, p[2]);
-          c.fillStyle = 'rgba(0,0,0,.12)';
-          c.fillRect(p[0] + 0.05, y + 0.06, p[1] - 0.1, 0.012); c.fillRect(p[0] + 0.05, y + 0.1, p[1] - 0.1, 0.012);
-        });
-      c.fillStyle = '#c8102e'; c.fillRect(-0.44, -0.78, 0.9, 0.1); c.strokeRect(-0.44, -0.78, 0.9, 0.1);
-      ell(c, -0.14, -0.95, 0.09, 0.07); fs(c, '#fff');
-      ell(c, 0.14, -0.95, 0.09, 0.07); fs(c, '#fff');
-      c.fillStyle = OL; ell(c, -0.11, -0.94, 0.035, 0.035); c.fill(); ell(c, 0.17, -0.94, 0.035, 0.035); c.fill();
-      c.lineWidth = 0.05; c.beginPath(); c.moveTo(-0.26, -1.06); c.lineTo(-0.06, -1.0); c.moveTo(0.26, -1.06); c.lineTo(0.06, -1.0); c.stroke();
-    })];
     return E;
   }
-
-  // Toly's validator node: a server tower with a phone docked on top.
-  function buildBaseSprite() {
-    return mk(2, 2.4, 1, 2.05, function (c) {
-      ell(c, 0, 0, 0.8, 0.28); c.fillStyle = 'rgba(0,0,0,.4)'; c.fill();
-      rr(c, -0.66, -0.2, 1.32, 0.24, 0.06); fs(c, '#3b3650');
-      rr(c, -0.5, -1.45, 1.0, 1.3, 0.08); fs(c, '#22202e');
-      c.fillStyle = '#2d2a3c'; c.fillRect(-0.42, -1.37, 0.84, 1.14);
-      for (var k = 0; k < 6; k++) { rr(c, -0.38, -1.32 + k * 0.18, 0.76, 0.13, 0.02); fs(c, '#34314a'); }
-      c.fillStyle = KIT.color; c.fillRect(-0.5, -0.32, 1.0, 0.05);
-      // the phone, standing in its dock
-      rr(c, -0.2, -1.55, 0.4, 0.12, 0.03); fs(c, '#4a4560');
-      rr(c, -0.17, -2.0, 0.34, 0.5, 0.06); fs(c, '#16141e');
-      rr(c, -0.13, -1.95, 0.26, 0.4, 0.03); c.fillStyle = '#0e3b33'; c.fill();
-    });
+  // Toly's validator node, plus its glowing lights as their own layer, so they can pulse and turn red.
+  var NODE_SCALE = 0.85;
+  function buildBaseSprites() {
+    var im = PICS['node-toly'], ay = im && im.naturalWidth ? 1 - 0.2 * im.naturalWidth / im.naturalHeight : 0.9;
+    var lights = pic('node-toly-lights', 0.5, ay, NODE_SCALE);
+    return { body: pic('node-toly', 0.5, ay, NODE_SCALE), lights: lights, red: tinted(lights, '#ff3b3b') };
   }
   function buildCoinSprite() {
     return mk(0.5, 0.5, 0.25, 0.25, function (c) {
@@ -545,15 +417,17 @@
     S.oy = Math.round(H - M.rows * T - (H - (M.rows + TOP) * T) / 2) ;
     cv.width = Math.round(W * S.dpr); cv.height = Math.round(H * S.dpr);
     cv.style.width = W + 'px'; cv.style.height = H + 'px';
-    S.spr = { tower: buildTowerSprites(), enemy: buildEnemySprites(), base: buildBaseSprite(), coin: buildCoinSprite() };
+    S.spr = { tower: buildTowerSprites(), enemy: buildEnemySprites(), base: buildBaseSprites(), coin: buildCoinSprite() };
     S.ghost = {};
+    S.white = {};
     Object.keys(S.spr.enemy).forEach(function (k) {
-      S.ghost[k] = S.spr.enemy[k].map(function (v) { return v.map(function (s) { return { r: tinted(s, '#ff2a55'), b: tinted(s, '#22e6ff') }; }); });
+      var s = S.spr.enemy[k];
+      S.ghost[k] = { r: tinted(s, '#ff2a55'), b: tinted(s, '#22e6ff') };
+      S.white[k] = tinted(s, '#ffffff');
     });
     S.glow = { white: glowSprite('255,255,255'), gold: glowSprite('255,210,63'), red: glowSprite('255,60,60'), green: glowSprite('61,220,151') };
     Object.keys(ROLE).forEach(function (k) { S.glow[k] = glowSprite(ROLE[k].glow); });
     drawTerrain();
-    paintShop();
     var tok = $('#td-tok').getBoundingClientRect(), fr = field.getBoundingClientRect();
     S.tokAt = { x: tok.left - fr.left + 10, y: tok.top - fr.top + tok.height / 2 };
   }
@@ -609,7 +483,7 @@
       b.dataset.type = type;
       b.style.setProperty('--c', ROLE[type].c);
       b.style.setProperty('--d', ROLE[type].d);
-      b.innerHTML = '<span class="td-thumb"><img alt=""></span><span class="td-cname">' + esc(towerName(type)) + '</span>' +
+      b.innerHTML = '<span class="td-thumb"><img alt="" src="' + ART + 'tower-' + type + '.webp"></span><span class="td-cname">' + esc(towerName(type)) + '</span>' +
         '<span class="td-cost">' + coin + C.TOWERS[type].cost + '</span><kbd>' + (k + 1) + '</kbd>';
       b.title = towerName(type) + ': ' + BLURB[type];
       b.addEventListener('click', function () { pick(S.pick === type ? null : type); });
@@ -619,23 +493,6 @@
     cv.addEventListener('pointermove', onMove);
     cv.addEventListener('pointerdown', onDown);
     cv.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' && S) S.hover = null; });
-  }
-  function paintShop() {
-    C.ORDER.forEach(function (type) {
-      var img = $('.td-card[data-type="' + type + '"] img');
-      if (!img) return;
-      var cv = document.createElement('canvas'), n = 96;
-      cv.width = cv.height = n;
-      var c = cv.getContext('2d'), sp = S.spr.tower[type], k = n / (S.T * S.dpr) / 1.25;
-      c.setTransform(k, 0, 0, k, 0, 0);
-      var px = n / k / 2, py = n / k * 0.78;
-      c.drawImage(sp.base.cv, px - sp.base.ax * S.T * S.dpr, py - sp.base.ay * S.T * S.dpr);
-      if (sp.top) {
-        var dy = type === 'strike' ? -0.32 : type === 'rug' ? -0.42 : -0.12;
-        c.drawImage(sp.top.cv, px - sp.top.ax * S.T * S.dpr, py + dy * S.T * S.dpr - sp.top.ay * S.T * S.dpr);
-      }
-      img.src = cv.toDataURL();
-    });
   }
 
   // ---------- Input ----------
@@ -756,13 +613,13 @@
     var G = S.G, T = S.T, p;
     switch (ev.type) {
       case 'spawn':
-        ev.e.skin = Math.floor(Math.random() * 4);
+        ev.e.size = PEOPLE.indexOf(ev.e.type) >= 0 ? rnd(0.93, 1.07) : 1;
         ev.e.phase = Math.random() * 6;
         break;
       case 'fire':
         ev.t.kick = 1;
         if (ev.t.type === 'strike') {
-          var a = ev.t.angle, mx = sx(ev.t.x) + Math.cos(a) * T * 0.5, my = sy(ev.t.y, ev.t.h) - T * 0.32 + Math.sin(a) * T * 0.5;
+          var dir = Math.cos(ev.t.angle) > 0 ? 1 : -1, mx = sx(ev.t.x) - dir * MUZZLE.x * T, my = towerY(ev.t) + MUZZLE.y * T;
           fx({ kind: 'flash', x: mx, y: my, life: 0.07, max: 0.07, color: 'strike', size: 0.9 });
           sfx('td.pew', 45);
         } else if (ev.t.type === 'mint') sfx('td.thump', 80);
@@ -794,8 +651,7 @@
         break;
       case 'kill':
         p = enemyScreen(ev.e);
-        var sp = spriteFor(ev.e);
-        fx({ kind: 'ghost', e: ev.e, x: p.x, y: p.y + (ev.e.fly ? -S.T * 0.75 : 0), life: 0.42, max: 0.42, flip: ev.e.dx < 0, sp: sp });
+        fx({ kind: 'ghost', e: ev.e, x: p.x, y: p.y + (ev.e.fly ? -S.T * 0.75 : 0), life: 0.42, max: 0.42, flip: !!ev.e._flip, sp: S.spr.enemy[ev.e.type] });
         fx({ kind: 'tok', x: p.x, y: p.y - T * 0.4, sx: p.x, sy: p.y - T * 0.4, life: 0.75, max: 0.75 });
         floatText('+' + ev.tokens, p.x + T * 0.25, p.y - T * 0.6, '#ffd23f', 0.3);
         sfx('td.ko', 50);
@@ -838,10 +694,8 @@
       case 'lost': setTimeout(function () { if (S) end(false); }, 900); shake(10); break;
     }
   }
-  function spriteFor(e) {
-    var set = S.spr.enemy[e.type];
-    return set[(e.skin || 0) % set.length];
-  }
+  // Where a tower stands on screen: the middle of its tile, a touch low so the pedestal fills it.
+  function towerY(t) { return sy(t.y, t.h) + S.T * 0.1; }
 
   // ---------- Drawing ----------
   function render(dt) {
@@ -968,41 +822,37 @@
   }
 
   function drawTower(c, t, now, dt) {
-    var T = S.T, sp = S.spr.tower[t.type], X = sx(t.x), Y = sy(t.y, t.h) + T * 0.2;
+    var T = S.T, sp = S.spr.tower[t.type], X = sx(t.x), Y = towerY(t);
     var k = 1;
     if (t.pop > 0) { t.pop -= dt; var q = 1 - t.pop / 0.3; k = 0.5 + q * 0.5 + Math.sin(q * Math.PI) * 0.25; }
     t.kick = Math.max(0, (t.kick || 0) - dt * 8);
+    // face the target, with a little give so it doesn't flicker on one straight above or below
+    var cx = Math.cos(t.angle);
+    if (cx > 0.2) t._flip = true; else if (cx < -0.2) t._flip = false;
+    var fl = t._flip ? -1 : 1;
     if (k !== 1) { c.save(); c.translate(X, Y); c.scale(k, k); c.translate(-X, -Y); }
-    stamp(c, sp.base, X, Y);
-    if (t.type === 'strike') {
-      var a = t.angle, back = t.kick * T * 0.08;
+    c.fillStyle = 'rgba(0,0,0,.3)';
+    c.beginPath(); c.ellipse(X, Y + T * 0.06, T * 0.46, T * 0.17, 0, 0, Math.PI * 2); c.fill();
+    if (!sp.top) stampT(c, sp.whole, X, Y, 0, fl, 1);
+    else {
+      stampT(c, sp.base, X, Y, 0, fl, 1);
+      var cutY = Y - (sp.top.ay - sp.cut) * sp.top.h * T;   // where the turret meets the pedestal
       c.save();
-      c.translate(X - Math.cos(a) * back, Y - T * 0.52 - Math.sin(a) * back);
-      c.rotate(a);
-      stamp(c, sp.top, 0, 0);
+      if (t.type === 'strike') c.translate(fl * t.kick * T * 0.07, 0);                       // recoil away from the target
+      else if (t.type === 'mint') { c.translate(X, cutY); c.scale(1 + t.kick * 0.08, 1 - t.kick * 0.14); c.translate(-X, -cutY); }  // the mortar squashes
+      else if (t.type === 'rug') c.translate(-fl * t.kick * T * 0.06, 0);                    // the frame lunges at it
+      stampT(c, sp.top, X, Y, 0, fl, 1);
       c.restore();
-    } else if (t.type === 'mint') {
-      var lean = clamp(Math.cos(t.angle), -1, 1) * 0.22, squash = 1 - t.kick * 0.12;
-      c.save();
-      c.translate(X, Y - T * 0.28);
-      c.rotate(lean);
-      c.scale(1 + t.kick * 0.08, squash);
-      stamp(c, sp.top, 0, 0);
-      stamp(c, sp.press, 0, -T * 0.05 + t.kick * T * 0.08);
-      c.restore();
-    } else if (t.type === 'rug') {
-      var ready = t.cool <= 0.05;
-      c.save();
-      c.translate(X, Y - T * 0.52);
-      c.scale(Math.cos(t.angle) < 0 ? -1 : 1, 1);
-      stamp(c, sp.top, 0, 0);
-      c.restore();
-      if (ready) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.25 + 0.15 * Math.sin(now * 6 + t.id); c.drawImage(S.glow.rug, X - T * 0.45, Y - T * 0.95, T * 0.9, T * 0.9); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
-    } else if (t.type === 'privacy' && t.active) {
+    }
+    if (t.type === 'rug' && t.cool <= 0.05) {
+      c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.22 + 0.12 * Math.sin(now * 6 + t.id);
+      c.drawImage(S.glow.rug, X - T * 0.5, Y - T * 1.05, T, T);
+      c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+    } else if (t.type === 'privacy') {
       c.globalCompositeOperation = 'lighter';
-      c.globalAlpha = 0.5 + 0.3 * Math.sin(now * 8);
-      c.drawImage(S.glow.privacy, X - T * 0.5, Y - T * 0.9, T, T);
-      c.drawImage(S.glow.white, X + T * 0.02, Y - T * 1.0, T * 0.22, T * 0.22);
+      c.globalAlpha = t.active ? 0.5 + 0.3 * Math.sin(now * 8) : 0.16 + 0.08 * Math.sin(now * 2 + t.id);
+      c.drawImage(S.glow.privacy, X - T * 0.5, Y - T * 1.05, T, T);
+      if (t.active) c.drawImage(S.glow.white, X - T * 0.11, Y - T * 1.12, T * 0.22, T * 0.22);
       c.globalAlpha = 1;
       c.globalCompositeOperation = 'source-over';
     }
@@ -1010,21 +860,36 @@
   }
 
   function drawEnemy(c, e, now, dt) {
-    var T = S.T, p = enemyScreen(e), sp = spriteFor(e);
+    var T = S.T, p = enemyScreen(e), sp = S.spr.enemy[e.type], size = e.size || 1;
     var h = S.G.map.height(Math.floor(e.x), Math.floor(e.y));
     e._h += (h - e._h) * Math.min(1, dt * 7);
     if (e._yank) { e._yank.t -= dt; if (e._yank.t <= 0) e._yank = null; }
-    var slow = e.slowT > 0, step = (now * (slow ? 4 : 7) * e.speed + e.phase), f = Math.floor(step) % 2;
-    var bob = e.fly ? -T * 0.75 + Math.sin(now * 4 + e.phase) * T * 0.08 : -Math.abs(Math.sin(step * Math.PI)) * T * 0.04;
-    if (!e.fly) { c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.ellipse(p.x, p.y + T * 0.02, T * (e.type === 'boss' ? 0.45 : 0.2), T * 0.08, 0, 0, Math.PI * 2); c.fill(); }
+    var slow = e.slowT > 0, step = now * (slow ? 2 : 3.5) * e.speed + e.phase, sw = Math.sin(step * Math.PI), up = Math.abs(sw);
+    // One painting each, so the walk is a sway, a bob and a squash on every footfall; the subpoena flaps.
+    var rot, kx, ky, bob;
+    if (e.fly) {
+      bob = -T * 0.75 + Math.sin(now * 4 + e.phase) * T * 0.08;
+      rot = Math.sin(now * 5 + e.phase) * 0.1;
+      kx = 1; ky = 1 + Math.sin(now * 16 + e.phase) * 0.14;
+    } else if (e.type === 'boss') {
+      bob = -up * T * 0.05; rot = sw * 0.035; kx = 1 + (1 - up) * 0.035; ky = 1 - (1 - up) * 0.05;
+    } else if (e.type === 'armored') {
+      bob = -up * T * 0.025; rot = sw * 0.06; kx = 1; ky = 1;
+    } else {
+      bob = -up * T * 0.05; rot = sw * 0.07; kx = 1 + (1 - up) * 0.03; ky = 1 - (1 - up) * 0.04;
+    }
+    if (!e.fly) { c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.ellipse(p.x, p.y + T * 0.02, T * (e.type === 'boss' ? 0.48 : e.type === 'armored' ? 0.3 : 0.22), T * 0.08, 0, 0, Math.PI * 2); c.fill(); }
     if (slow) {
       c.strokeStyle = 'rgba(140,215,255,.8)'; c.lineWidth = 2;
-      c.beginPath(); c.ellipse(p.x, p.y + T * 0.02, T * 0.26, T * 0.1, 0, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.ellipse(p.x, p.y + T * 0.02, T * 0.28, T * 0.1, 0, 0, Math.PI * 2); c.stroke();
     }
-    var flip = e.dx < -0.01, y = p.y + bob;
-    if (e.type === 'armored') {
-      c.save(); c.translate(p.x, y); c.rotate(Math.sin(step * Math.PI) * 0.05); stamp(c, sp[0], 0, 0, 1, flip); c.restore();
-    } else stamp(c, sp[f], p.x, y, 1, flip);
+    // painted facing right; going straight down keeps the way it last faced
+    if (e.dx < -0.01) e._flip = true; else if (e.dx > 0.01) e._flip = false;
+    var fl = e._flip ? -1 : 1, y = p.y + bob;
+    stampT(c, sp, p.x, y, rot * fl, kx * size * fl, ky * size);
+    if (slow) {   // a blue cast while the fog holds them
+      c.globalAlpha = 0.18; stampT(c, S.ghost[e.type].b, p.x, y, rot * fl, kx * size * fl, ky * size); c.globalAlpha = 1;
+    }
     if (e.type === 'support') {   // the coffee's heal aura
       c.globalCompositeOperation = 'lighter';
       c.globalAlpha = 0.25 + 0.15 * Math.sin(now * 5 + e.phase);
@@ -1032,53 +897,53 @@
       c.drawImage(S.glow.green, p.x - R, p.y - R * 0.5, R * 2, R);
       c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
     }
-    if (e.flash > 0) {
+    if (e.flash > 0) {   // the hit flash: the whole figure goes white for a moment
       e.flash -= dt;
-      c.globalCompositeOperation = 'lighter';
-      c.globalAlpha = 0.7;
-      c.drawImage(S.glow.white, p.x - T * 0.35, y - T * 0.75, T * 0.7, T * 0.7);
-      c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+      c.globalAlpha = 0.8;
+      stampT(c, S.white[e.type], p.x, y, rot * fl, kx * size * fl, ky * size);
+      c.globalAlpha = 1;
     }
   }
 
   function drawBase(c, now, dt) {
-    var G = S.G, T = S.T, bp = G.map.def.base, X = sx(bp[0] + 0.5), Y = sy(bp[1], 0) + T * 0.3;
+    var G = S.G, T = S.T, bp = G.map.def.base, X = sx(bp[0] + 0.5), Y = sy(bp[1], 0) + T * 0.3, B = S.spr.base;
     var hurt = 1 - G.integrity / G.maxIntegrity;
     if (S.baseHit > 0) S.baseHit -= dt;
-    var jx = S.baseHit > 0 ? rnd(-1, 1) * T * 0.06 : 0;
-    stamp(c, S.spr.base, X + jx, Y);
-    // the server lights: steady teal when healthy, a red blink as it fails
-    for (var row = 0; row < 6; row++) for (var k = 0; k < 4; k++) {
-      var on = Math.sin(now * (3 + k) + row * 1.7 + k) > -0.2;
-      var red = hurt > 0.5 && (row + k) % 3 === 0 && Math.sin(now * 9) > 0;
-      c.fillStyle = red ? '#ff4d4d' : on ? KIT.color : '#1d3b36';
-      c.fillRect(X + jx - T * 0.3 + k * T * 0.12, Y - T * 1.36 + row * T * 0.18, T * 0.07, T * 0.05);
-    }
-    // the phone's screen
-    var sc = hurt > 0.75 && Math.sin(now * 8) > 0 ? '#ff4d4d' : KIT.color;
-    c.fillStyle = sc;
-    c.globalAlpha = 0.85;
-    c.fillRect(X + jx - T * 0.11, Y - T * 1.93, T * 0.22, T * 0.36);
-    c.globalAlpha = 1;
-    c.fillStyle = '#062a24';
-    c.font = 'bold ' + Math.round(T * 0.22) + 'px Bungee, sans-serif';
-    c.textAlign = 'center';
-    c.fillText('◎', X + jx, Y - T * 1.68);
+    var jx = S.baseHit > 0 ? rnd(-1, 1) * T * 0.06 : 0, top = Y - B.body.ay * B.body.h * T, foot = Y;
+    c.fillStyle = 'rgba(0,0,0,.4)';
+    c.beginPath(); c.ellipse(X, Y + T * 0.04, T * 0.62, T * 0.22, 0, 0, Math.PI * 2); c.fill();
+    stamp(c, B.body, X + jx, Y);
+    // the lights: a soft shimmer, a scan running down the rack, and a red blink as it fails
     c.globalCompositeOperation = 'lighter';
+    c.globalAlpha = 0.3 + 0.2 * Math.sin(now * 3);
+    stamp(c, B.lights, X + jx, Y);
+    var band = top + (foot - top) * ((now * 0.6) % 1.2 - 0.1);
+    c.save();
+    c.beginPath(); c.rect(X - T, band, T * 2, T * 0.3); c.clip();
+    c.globalAlpha = 0.9;
+    stamp(c, B.lights, X + jx, Y);
+    c.restore();
     c.globalAlpha = 0.35 + Math.sin(now * 2) * 0.1;
-    c.drawImage(hurt > 0.75 ? S.glow.red : S.glow.green, X - T * 0.6, Y - T * 2.35, T * 1.2, T * 1.0);
+    c.drawImage(hurt > 0.75 ? S.glow.red : S.glow.green, X - T * 0.6, top - T * 0.1, T * 1.2, T * 1.0);
     c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+    if (hurt > 0.5 && Math.sin(now * (hurt > 0.75 ? 12 : 8)) > 0) {
+      c.globalAlpha = hurt > 0.75 ? 1 : 0.75;
+      stamp(c, B.red, X + jx, Y);
+      c.globalAlpha = 1;
+    }
     // cracks, then smoke, as integrity drops
+    var mid = (top + foot) / 2;
     if (hurt > 0.25) {
-      c.strokeStyle = '#0a0910'; c.lineWidth = Math.max(1, T * 0.04);
-      c.beginPath(); c.moveTo(X - T * 0.42, Y - T * 1.2); c.lineTo(X - T * 0.25, Y - T * 1.05); c.lineTo(X - T * 0.32, Y - T * 0.9);
-      if (hurt > 0.5) { c.moveTo(X + T * 0.45, Y - T * 0.6); c.lineTo(X + T * 0.28, Y - T * 0.5); c.lineTo(X + T * 0.35, Y - T * 0.32); }
+      c.strokeStyle = '#d8e6f0'; c.globalAlpha = 0.7; c.lineWidth = Math.max(1, T * 0.035);
+      c.beginPath(); c.moveTo(X - T * 0.36, mid - T * 0.2); c.lineTo(X - T * 0.2, mid - T * 0.05); c.lineTo(X - T * 0.28, mid + T * 0.1);
+      if (hurt > 0.5) { c.moveTo(X + T * 0.05, mid + T * 0.25); c.lineTo(X - T * 0.1, mid + T * 0.38); c.lineTo(X - T * 0.02, mid + T * 0.52); }
       c.stroke();
+      c.globalAlpha = 1;
     }
     if (hurt > 0.5 && Math.random() < dt * (hurt > 0.75 ? 9 : 4)) {
-      fx({ kind: 'smoke', x: X + rnd(-0.3, 0.3) * T, y: Y - T * 1.45, vx: rnd(-6, 6), vy: -T * 0.8, life: 1.2, max: 1.2, size: rnd(0.25, 0.4) });
+      fx({ kind: 'smoke', x: X + rnd(-0.3, 0.3) * T, y: mid - T * 0.4, vx: rnd(-6, 6), vy: -T * 0.8, life: 1.2, max: 1.2, size: rnd(0.25, 0.4) });
     }
-    if (hurt > 0.5 && Math.random() < dt * 3) spark(X + rnd(-0.4, 0.4) * T, Y - T * rnd(0.5, 1.3), '#ffd23f', 2, T * 1.5, 0.3);
+    if (hurt > 0.5 && Math.random() < dt * 3) spark(X + rnd(-0.4, 0.4) * T, mid + T * rnd(-0.4, 0.5), '#ffd23f', 2, T * 1.5, 0.3);
   }
 
   // Day to dusk to a red night as the waves go on, and a red pulse while the Filibuster walks.
@@ -1132,7 +997,7 @@
         // the carpet unrolls from the spool to the target
         var e = s.target, k2 = Math.min(1, s.t / s.dur);
         if (!e.alive) return;
-        var p = enemyScreen(e), X0 = sx(s.from.x), Y0 = sy(s.from.y, s.from.h) - T * 0.35;
+        var p = enemyScreen(e), X0 = sx(s.from.x) + (s.from._flip ? 1 : -1) * T * 0.25, Y0 = sy(s.from.y, s.from.h) - T * 0.35;
         var X1 = X0 + (p.x - X0) * k2, Y1 = Y0 + (p.y - T * 0.1 - Y0) * k2;
         carpet(c, X0, Y0, X1, Y1, T * 0.3);
       }
@@ -1203,8 +1068,8 @@
         if (p) { c.globalAlpha = Math.min(1, k * 2); carpet(c, X0, Y0, p.x, p.y, T * 0.36); c.globalAlpha = 1; }
       } else if (f.kind === 'ghost') {
         // the VHS break-up: red and cyan copies pull apart in slices and fade
-        var s = f.sp[0], sw = s.cv.width, shh = s.cv.height, gh = S.ghost[f.e.type][(f.e.skin || 0) % S.ghost[f.e.type].length][0];
-        var W = s.w * T, H = s.h * T, ox = f.x - s.ax * T, oy = f.y - s.ay * T, spread = (1 - k) * T * 0.35, slices = 6;
+        var s = f.sp, sw = s.cv.width, shh = s.cv.height, gh = S.ghost[f.e.type], z = f.e.size || 1;
+        var W = s.w * T * z, H = s.h * T * z, ox = f.x - s.ax * W, oy = f.y - s.ay * H, spread = (1 - k) * T * 0.35, slices = 6;
         c.globalCompositeOperation = 'lighter';
         c.globalAlpha = k;
         for (var i = 0; i < slices; i++) {
@@ -1229,7 +1094,8 @@
     S.G.enemies.forEach(function (e) {
       if (e.hp >= e.maxHp * 0.97 && e.type !== 'boss') return;
       var p = enemyScreen(e), big = e.type === 'boss', w = T * (big ? 1.1 : 0.55), h = Math.max(3, T * (big ? 0.12 : 0.08));
-      var y = p.y - T * (big ? 1.6 : e.fly ? 1.1 : e.type === 'armored' ? 1.05 : 0.88), x = p.x - w / 2, k = clamp(e.hp / e.maxHp, 0, 1);
+      var s = S.spr.enemy[e.type], above = e.fly ? T * (0.75 + s.h * 0.6) : s.ay * s.h * T * (e.size || 1) + T * 0.08;
+      var y = p.y - above, x = p.x - w / 2, k = clamp(e.hp / e.maxHp, 0, 1);
       c.fillStyle = OL; c.fillRect(x - 1, y - 1, w + 2, h + 2);
       c.fillStyle = k > 0.5 ? '#3ddc97' : k > 0.25 ? '#ffd23f' : '#ff4d4d';
       c.fillRect(x, y, w * k, h);
@@ -1253,9 +1119,8 @@
     var range = C.TOWERS[type].range + (type === 'rug' ? 0 : h);
     rangeCircle(c, at.c + 0.5, at.r + 0.5, h, range, type, true);
     c.globalAlpha = 0.65;
-    var sp = S.spr.tower[type], X = sx(at.c + 0.5), Y = sy(at.r + 0.5, h) + T * 0.2;
-    stamp(c, sp.base, X, Y);
-    if (sp.top) stamp(c, sp.top, X, Y - T * (type === 'strike' ? 0.52 : type === 'rug' ? 0.52 : 0.28));
+    var X = sx(at.c + 0.5), Y = sy(at.r + 0.5, h) + T * 0.1;
+    stamp(c, S.spr.tower[type].whole, X, Y);
     c.globalAlpha = 1;
     c.strokeStyle = ok ? '#3ddc97' : '#ff4d4d'; c.lineWidth = 2.5;
     c.strokeRect(sx(at.c) + 1.5, sy(at.r, h) + 1.5, T - 3, T - 3);
@@ -1298,13 +1163,7 @@
   }
   function enemyThumbs() {
     var out = {};
-    Object.keys(S.spr.enemy).forEach(function (k) {
-      var s = S.spr.enemy[k][0][0], cv = document.createElement('canvas'), n = 64;
-      cv.width = cv.height = n;
-      var c = cv.getContext('2d'), sc = Math.min(n / s.cv.width, n / s.cv.height);
-      c.drawImage(s.cv, (n - s.cv.width * sc) / 2, (n - s.cv.height * sc) / 2, s.cv.width * sc, s.cv.height * sc);
-      out[k] = cv.toDataURL();
-    });
+    Object.keys(COSTUME).forEach(function (k) { out[k] = ART + 'enemy-' + k + '.webp'; });
     return out;
   }
 
@@ -1376,7 +1235,7 @@
     show('screen-td');
     document.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
-    start();
+    loadPics().then(function () { if (!$('#screen-td').hidden) start(); });
   }
   function leave() {
     if (S) { cancelAnimationFrame(S.raf); clearTimeout(S.bannerTimer); }
@@ -1400,6 +1259,7 @@
     var after = $('#btn-gtr') || $('#btn-rap') || story;
     after.insertAdjacentElement('afterend', b);
     b.addEventListener('click', function () { AU.unlock(); open(); });
+    loadPics();   // fetch the paintings now, so they're in by the time it's tapped
   }
   if (/[?&]debug\b/i.test(location.search)) {
     window.POF_TD = {

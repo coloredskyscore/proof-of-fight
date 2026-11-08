@@ -47,6 +47,7 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | `js/engine.js` | Game rules (no graphics; runs in Node too) |
 | `js/app.js` | Screens, animations, Daily Fight, sharing |
 | `js/td-core.js`, `js/td.js`, `css/td.css` | Tower Defense test (`?td`): the rules (run in Node too), then the drawing and taps |
+| `art/td/` | Tower Defense towers, enemies and node, cut from Grok sheets with `tools/td_art.py` |
 | `tools/` | Balance simulator, rules checks, art cut-out, music loop cutter, sound clip cutter, sound level meter |
 | `docs/supers/` | Fighter kits (Super concepts, button names), one per fighter, and the slots the game supports |
 | `art/` | Fighter portraits and stage sprites |
