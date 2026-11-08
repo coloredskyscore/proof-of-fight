@@ -13,6 +13,11 @@ its size in tiles from its size in pixels.
 --ppt: how many source pixels make one map tile (bigger number, smaller sprite).
 --gap x,y: a white pocket inside the art to clear (the space inside a frame), as in tools/art.py.
 
+--center-base pads each one sideways so the middle of its pedestal (its bottom rows) is the middle of
+the picture, so a tower whose barrels stick out to one side still stands on its pedestal's center.
+
+  python3 tools/td_art.py sheet SOURCE art/td --names tower-strike-down,tower-strike-up,tower-strike --ppt 553 --center-base
+
 A single picture (Toly's node) is the same with 'one'. --lights also saves the glowing teal
 pixels as their own layer (<name>-lights.webp), so the game can blink them, or turn them red.
 
@@ -51,8 +56,23 @@ def is_light(r, g, b):
     return g > 150 and b > 150 and r < 140 and g - r > 70
 
 
-def save(im, out, ppt, lights):
+def center_base(im, frac=0.12):
+    """Pad sideways so the art in the bottom rows (the pedestal) sits in the middle."""
+    w, h = im.size
+    box = im.getchannel('A').point(lambda v: 255 if v > 40 else 0).crop((0, int(h * (1 - frac)), w, h)).getbbox()
+    if not box:
+        return im
+    mid = (box[0] + box[2]) / 2
+    left, right = max(0, round(w - 2 * mid)), max(0, round(2 * mid - w))
+    out = Image.new('RGBA', (w + left + right, h), (0, 0, 0, 0))
+    out.paste(im, (left, 0))
+    return out
+
+
+def save(im, out, ppt, lights, centered=False):
     im = im.crop(im.getchannel('A').getbbox())
+    if centered:
+        im = center_base(im)
     k = OUT_PPT / ppt
     size = (max(1, round(im.size[0] * k)), max(1, round(im.size[1] * k)))
     small = im.resize(size, Image.LANCZOS)
@@ -79,6 +99,7 @@ def main():
     ap.add_argument('--ppt', type=float, required=True)
     ap.add_argument('--gap', action='append', default=[])
     ap.add_argument('--lights', action='store_true')
+    ap.add_argument('--center-base', action='store_true')
     args = ap.parse_args()
 
     im = Image.open(args.source).convert('RGBA')
@@ -99,7 +120,7 @@ def main():
         ppt = args.ppt
         if ':' in name:
             name, ppt = name.split(':')[0], float(name.split(':')[1])
-        save(im.crop((x0, 0, x1, im.size[1])), os.path.join(args.outdir, name), ppt, args.lights)
+        save(im.crop((x0, 0, x1, im.size[1])), os.path.join(args.outdir, name), ppt, args.lights, args.center_base)
 
 
 if __name__ == '__main__':
