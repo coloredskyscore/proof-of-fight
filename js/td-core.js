@@ -17,8 +17,11 @@
     strike:  { cost: 100, range: 3,   dmg: 12, rate: 2.5,     air: true,  shot: 16 },          // tracer speed, tiles/s
     privacy: { cost: 80,  range: 2.5, dps: 5,  slow: 0.4,     air: false },                    // a field, always on
     mint:    { cost: 150, range: 4.5, dmg: 40, rate: 1 / 1.6, air: false, splash: 1, minRange: 1, flight: 0.8 },
-    rug:     { cost: 125, range: 1.5, dmg: 70, rate: 1 / 4,   air: false, yank: 1.5, throwT: 0.28 }
+    rug:     { cost: 125, range: 1.5, dmg: 60, rate: 1 / 4,   air: false, yank: 1.5, rug: 1.6, lay: 0.6, fuse: 0.3, down: 0.8 }
   };
+  // The Rug is a trap, not a gun: it lays a rug `rug` tiles long on the path beside it (taking `lay` seconds).
+  // When someone steps on, it waits `fuse` seconds for more to follow, then yanks it: everyone on it takes dmg,
+  // is thrown back `yank` tiles and lies on the floor for `down` seconds. A new rug goes down 1/rate seconds later.
   var ORDER = ['strike', 'privacy', 'mint', 'rug'];
   var SELL = 0.7;
 
@@ -28,7 +31,8 @@
   //   strike  crit: chance of a 2.5x hit.   privacy  freeze: seconds frozen, every freezeEvery seconds;
   //   doxx: extra damage taken inside the fog.   mint  cluster: bomblets that land along the path after
   //   the blast; burn: damage a second in the fire it leaves, for burnT seconds.   rug  heavyYank: also
-  //   pulls cabinets and the Filibuster (half as far); trap: a trapdoor takes one enemy every `trap` seconds.
+  //   throws cabinets and the Filibuster (half as far); trap: when the rug is pulled, a trapdoor under it
+  //   takes the one furthest along (not a heavy one), at most every `trap` seconds.
   var UPGRADES = {
     strike: {
       2: { cost: 90, name: 'Hot Rounds', set: { dmg: 21, range: 3.5 } },
@@ -46,9 +50,9 @@
       b: { cost: 240, name: 'Mega Mint', blurb: 'One huge blast that leaves fire', set: { dmg: 150, splash: 1.6, rate: 1 / 2.4, burn: 20, burnT: 3 } }
     },
     rug: {
-      2: { cost: 100, name: 'Quick Pull', set: { dmg: 100, rate: 1 / 3 } },
-      a: { cost: 200, name: 'Long Con', blurb: 'Pulls back 3 tiles, even heavy ones', set: { yank: 3, heavyYank: true } },
-      b: { cost: 200, name: 'Exit Scam', blurb: 'A trapdoor takes one enemy every 12s', set: { trap: 12 } }
+      2: { cost: 100, name: 'Quick Pull', set: { dmg: 80, rate: 1 / 2.5 } },
+      a: { cost: 200, name: 'Long Con', blurb: 'Longer rug, throws them back 3 tiles, even heavy ones', set: { yank: 3, heavyYank: true, rug: 2.2 } },
+      b: { cost: 200, name: 'Exit Scam', blurb: 'A trapdoor in the rug drops one enemy every 12s', set: { trap: 12 } }
     }
   };
   var BOMBLET = { splash: 0.7, flight: 0.35, spacing: 0.8 };
@@ -279,6 +283,24 @@
       return best;
     }
 
+    // Where a Rug at (c, r) lays its rug: on the nearest straight run of path, as close to the tower as that
+    // run allows, so it never bends round a corner. d0..d1: the stretch of path it covers.
+    function rugSpot(c, r, len) {
+      var x = c + 0.5, y = r + 0.5, best = null;
+      map.segs.forEach(function (s) {
+        var vx = s.b.x - s.a.x, vy = s.b.y - s.a.y, k = ((x - s.a.x) * vx + (y - s.a.y) * vy) / (s.len * s.len);
+        var inside = k > 0.001 && k < 0.999;
+        k = Math.max(0, Math.min(1, k));
+        var d = Math.hypot(x - s.a.x - vx * k, y - s.a.y - vy * k);
+        // on a tie (a tower by a corner), the run it sits beside wins over the one it sits at the end of
+        if (!best || d < best.d - 0.01 || (Math.abs(d - best.d) <= 0.01 && inside && !best.inside)) best = { d: d, s: s, at: s.at + k * s.len, inside: inside };
+      });
+      var S = best.s, L = Math.min(len, S.len - 0.1);
+      var mid = Math.max(S.at + L / 2 + 0.05, Math.min(S.at + S.len - L / 2 - 0.05, best.at));
+      var p = map.at(mid);
+      return { d0: mid - L / 2, d1: mid + L / 2, x: p.x, y: p.y, dx: (S.b.x - S.a.x) / S.len, dy: (S.b.y - S.a.y) / S.len, len: L };
+    }
+
     function canBuild(type, c, r) {
       if (!TOWERS[type] || !map.open(c, r)) return false;
       if (G.towers.some(function (t) { return t.c === c && t.r === r; })) return false;
@@ -292,6 +314,11 @@
       var h = map.height(c, r);
       var t = { id: G.nextId++, type: type, c: c, r: r, x: c + 0.5, y: r + 0.5, h: h, tier: 1, path: null, s: towerStats(type, 1),
         range: T.range + (type === 'rug' ? 0 : h), cool: 0, angle: Math.PI / 5, spent: T.cost, kills: 0, dealt: 0, fired: 0 };
+      if (type === 'rug') {
+        t.rug = rugSpot(c, r, t.s.rug);
+        t.rug.state = 'lay'; t.rug.t = t.s.lay;
+        t.angle = Math.atan2(t.rug.y - t.y, t.rug.x - t.x);
+      }
       G.towers.push(t);
       emit('build', { t: t });
       return t;
@@ -315,7 +342,12 @@
       t.s = towerStats(t.type, t.tier, t.path);
       t.range = t.s.range + (t.type === 'rug' ? 0 : t.h);
       if (t.s.freeze) t.freezeCool = 1;
-      if (t.s.trap) t.trapCool = 2;
+      if (t.s.trap) t.trapCool = 0;
+      if (t.rug && t.s.rug !== t.rug.len) {   // Long Con: a longer rug (a new one, rolled out from the winch)
+        var keep = t.rug;
+        t.rug = rugSpot(t.c, t.r, t.s.rug);
+        t.rug.state = keep.state === 'gone' ? 'gone' : 'lay'; t.rug.t = keep.state === 'gone' ? keep.t : t.s.lay;
+      }
       emit('upgrade', { t: t, tier: t.tier, path: t.path, name: o.name });
       return t;
     }
@@ -355,22 +387,7 @@
           }
           return;
         }
-        if (T.trap) {
-          // Exit Scam: a trapdoor opens under the enemy furthest along beside it (not a heavy one, not a flyer)
-          t.trapCool = Math.max(0, t.trapCool - dt);
-          if (t.trapCool <= 0) {
-            var v = null;
-            G.enemies.forEach(function (e) {
-              if (e.alive && !e.fly && !e.heavy && inRange(t, e, t.range) && (!v || e.dist > v.dist)) v = e;
-            });
-            if (v) {
-              t.trapCool = T.trap;
-              v.trapped = true;
-              emit('trap', { t: t, e: v, x: v.x, y: v.y });
-              damage(v, v.hp + 1, true, t);
-            }
-          }
-        }
+        if (t.type === 'rug') { stepRug(t, dt); return; }
         var e = firstTarget(t, t.range, T.air, T.minRange);
         if (!e) return;
         t.angle = Math.atan2(e.y - t.y, e.x - t.x);
@@ -388,11 +405,50 @@
           var p = map.at(ahead);
           G.shots.push({ kind: 'coin', from: t, x0: t.x, y0: t.y, tx: p.x, ty: p.y, ahead: ahead, t: 0, dur: T.flight, dmg: T.dmg, s: T });
           emit('fire', { t: t, tx: p.x, ty: p.y, dur: T.flight });
-        } else if (t.type === 'rug') {
-          G.shots.push({ kind: 'rug', from: t, target: e, t: 0, dur: T.throwT, dmg: T.dmg, s: T });
-          emit('fire', { t: t, e: e, dur: T.throwT });
         }
       });
+    }
+
+    // The Rug's trap: lay it, wait for someone to step on, give the ones behind a moment to follow, yank.
+    function stepRug(t, dt) {
+      var T = t.s, R = t.rug;
+      R.t -= dt;
+      if (T.trap) t.trapCool = Math.max(0, t.trapCool - dt);
+      if (R.state === 'gone' || R.state === 'lay') {
+        if (R.t > 0) return;
+        if (R.state === 'gone') { R.state = 'lay'; R.t = T.lay; emit('lay', { t: t }); }
+        else R.state = 'set';
+        return;
+      }
+      var on = G.enemies.filter(function (e) { return e.alive && !e.fly && e.dist >= R.d0 - 0.1 && e.dist <= R.d1 + 0.1; });
+      if (R.state === 'set') {
+        if (on.length) { R.state = 'fuse'; R.t = T.fuse; emit('tug', { t: t }); }
+        return;
+      }
+      if (R.t > 0) return;
+      // Exit Scam: the trapdoor takes the one furthest along
+      var gone = null;
+      if (T.trap && t.trapCool <= 0) on.forEach(function (e) { if (!e.heavy && (!gone || e.dist > gone.dist)) gone = e; });
+      var moved = 0;
+      t.fired++;
+      emit('fire', { t: t });
+      on.forEach(function (e) {
+        if (e === gone) return;
+        var pull = e.heavy ? (T.heavyYank ? T.yank / 2 : 0) : T.yank, x = e.x, y = e.y;
+        var down = pull ? (e.heavy ? T.down / 2 : T.down) : 0;
+        if (pull) { e.dist = Math.max(0, e.dist - pull); moved++; }
+        if (down) { e.stunT = Math.max(e.stunT || 0, down); e.downT = Math.max(e.downT || 0, down); }
+        damage(e, T.dmg, true, t);
+        emit('rug', { e: e, x: x, y: y, yank: pull > 0, pull: pull, down: down });
+      });
+      if (gone) {
+        t.trapCool = T.trap;
+        gone.trapped = true;
+        emit('trap', { t: t, e: gone, x: gone.x, y: gone.y });
+        damage(gone, gone.hp + 1, true, t);
+      }
+      emit('pull', { t: t, n: on.length, moved: moved, trapped: !!gone, long: !!T.heavyYank });
+      R.state = 'gone'; R.t = 1 / T.rate;
     }
 
     function stepShots(dt) {
@@ -427,14 +483,6 @@
             }
           }
           if (s.kind === 'coin' && s.s.burn) G.patches.push({ x: s.tx, y: s.ty, r: BURN_R, dps: s.s.burn, t: s.s.burnT, max: s.s.burnT, by: s.from });
-        } else if (s.kind === 'rug') {
-          var e = s.target;
-          if (e.alive) {
-            var pull = e.heavy ? (s.s.heavyYank ? s.s.yank / 2 : 0) : s.s.yank;
-            if (pull) e.dist = Math.max(0, e.dist - pull);
-            damage(e, s.dmg, true, s.from);
-            emit('rug', { e: e, x: e.x, y: e.y, yank: pull > 0, pull: pull });
-          }
         }
         return false;
       });
@@ -469,6 +517,7 @@
         e.slowK = 0;                          // the fog sets it again each frame
         e.doxxT = Math.max(0, (e.doxxT || 0) - dt);
         if (e.stunT > 0) { e.stunT -= dt; slow = 0; }
+        if (e.downT > 0) e.downT -= dt;     // knocked down by a rug pull (stunT holds them still)
         e.dist += e.speed * slow * dt;
         if (e.dist >= map.length) {
           e.alive = false;
@@ -521,7 +570,7 @@
     }
 
     G.step = step; G.startWave = startWave; G.build = build; G.sell = sell; G.canBuild = canBuild;
-    G.upgrade = upgrade; G.upgradeOptions = upgradeOptions;
+    G.upgrade = upgrade; G.upgradeOptions = upgradeOptions; G.rugSpot = rugSpot;
     G.stars = stars; G.preview = preview;
     G.sellValue = function (t) { return Math.floor(t.spent * SELL); };
     return G;

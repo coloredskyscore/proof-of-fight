@@ -19,7 +19,7 @@
     mint:    { c: '#d0479a', d: '#86245f', l: '#ff8fd0', glow: '255,110,200' },
     rug:     { c: '#6d4fc9', d: '#40288a', l: '#a993ff', glow: '160,120,255' }
   };
-  var BLURB = { strike: 'Fast shots, hits flyers', privacy: 'Slows a crowd', mint: 'Splash, ground only', rug: 'Yanks them back' };
+  var BLURB = { strike: 'Fast shots, hits flyers', privacy: 'Slows a crowd', mint: 'Splash, ground only', rug: 'Rug trap on the path' };
   // A tower grows a little with each tier, until there's tier art.
   var TIER_SCALE = [1, 1, 1.08, 1.16];
   // The Hearing's costumes for each enemy type.
@@ -57,6 +57,7 @@
     'td.clank': [{ w: 'triangle', f: [1100, 820], d: 0.06, v: 0.09 }, { w: 'noise', d: 0.03, v: 0.06, hp: 4000 }],
     'td.thump': [{ w: 'sine', f: [170, 60], d: 0.16, v: 0.45 }, { w: 'noise', d: 0.05, v: 0.15, lp: 1200 }],
     'td.boom':  [{ w: 'sine', f: [120, 32], d: 0.38, v: 0.6 }, { w: 'noise', d: 0.32, v: 0.32, lp: [3200, 250] }],
+    'td.tug':   [{ w: 'square', f: [140, 210], d: 0.12, v: 0.05 }],
     'td.rug':   [{ w: 'noise', d: 0.26, v: 0.3, bp: [2800, 450], q: 1.4 }, { w: 'triangle', f: [500, 180], d: 0.2, v: 0.12 }],
     'td.coin':  [{ w: 'square', f: 1760, d: 0.04, v: 0.035, lp: 6000 }, { w: 'square', f: 2640, t: 0.045, d: 0.07, v: 0.035, lp: 6000 }],
     'td.ko':    [{ w: 'square', f: [700, 90], d: 0.09, v: 0.045, lp: 3000 }, { w: 'noise', d: 0.05, v: 0.04, hp: 2500 }],
@@ -435,7 +436,7 @@
   function statLine(t) {
     var T = t.s;
     return t.type === 'privacy' ? 'Slows ' + Math.round(T.slow * 100) + '% · ' + T.dps + ' dmg/s' :
-      t.type === 'rug' ? T.dmg + ' dmg, pulls back ' + T.yank + ' tiles' :
+      t.type === 'rug' ? T.dmg + ' dmg to all on it · throws them back ' + T.yank + ' tiles · new rug every ' + +(1 / T.rate).toFixed(1) + 's' :
       t.type === 'mint' ? T.dmg + ' splash · every ' + (1 / T.rate).toFixed(1) + 's' : T.dmg + ' dmg · ' + T.rate + '/s';
   }
   function select(id) {
@@ -447,7 +448,7 @@
     var title = t.tier === 3 ? C.UPGRADES[t.type][t.path].name : towerName(t.type);
     var opts = S.G.upgradeOptions(t), coin = '<i class="td-coin"></i>';
     pop.innerHTML = '<b style="color:' + ROLE[t.type].l + '">' + esc(title) + ' <span class="td-tier">' + (t.tier === 3 ? 'MAX' : 'Tier ' + t.tier) + '</span></b>' +
-      '<small>' + esc(statLine(t)) + ' · range ' + t.range + (t.h && t.type !== 'rug' ? ' (+' + t.h + ' high ground)' : '') + '</small>' +
+      '<small>' + esc(statLine(t)) + (t.type === 'rug' ? '' : ' · range ' + t.range + (t.h ? ' (+' + t.h + ' high ground)' : '')) + '</small>' +
       '<small class="td-kills">' + t.kills + ' takedown' + (t.kills === 1 ? '' : 's') + '</small>' +
       (opts.length ? '<div class="td-ups' + (opts.length > 1 ? ' two' : '') + '">' + opts.map(function (o) {
         return '<button class="td-up" type="button" data-k="' + o.key + '" data-cost="' + o.cost + '">' +
@@ -616,14 +617,27 @@
         if (!ev.small) shake(ev.mega ? 5 : ev.n ? 3 : 1.5);
         sfx(ev.small ? 'td.thump' : 'td.boom', ev.small ? 40 : 90);
         break;
-      case 'rug':
-        p = { x: ev.x, y: ev.y };
+      case 'rug':   // one of the people on a rug when it's pulled: thrown back, flat on the floor
         if (ev.yank) {
           ev.e._yank = { x: ev.x + -ev.e.dy * ev.e.lane, y: ev.y + ev.e.dx * ev.e.lane, t: 0.32, max: 0.32 };
-          fx({ kind: 'carpet', e: ev.e, x0: ev.x, y0: ev.y, life: 0.45, max: 0.45 });
+          ev.e._downMax = ev.down;
+          p = { x: sx(ev.x), y: sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))) };
+          spark(p.x, p.y, '#e9dcc0', 4, T * 1.4, 0.35);
+        } else {
+          p = { x: sx(ev.x), y: sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))) };
+          floatText('TOO HEAVY', p.x, p.y - T * 0.9, ROLE.rug.l, 0.3);
         }
-        floatText(ev.yank ? (ev.pull >= 3 ? 'LONG CON!' : 'RUGGED!') : 'TOO HEAVY', sx(ev.x), sy(ev.y, G.map.height(Math.floor(ev.x), Math.floor(ev.y))) - T * 0.6, ROLE.rug.l, 0.34);
-        shake(2);
+        break;
+      case 'pull':   // the rug comes out: one shout for the lot
+        var R = ev.t.rug, RX = sx(R.x), RY = sy(R.y, G.map.height(Math.floor(R.x), Math.floor(R.y)));
+        ev.t._pulled = S.clock;
+        if (ev.moved) floatText(ev.long ? 'LONG CON!' : 'RUG PULL!', RX, RY - T * 1.1, ROLE.rug.l, 0.36);
+        if (ev.moved > 1) floatText('×' + ev.moved, RX, RY - T * 0.7, '#fff', 0.3);
+        spark(RX, RY, ROLE.rug.l, 8 + ev.moved * 2, T * 2.4, 0.4);
+        shake(Math.min(5, 1.5 + ev.moved));
+        break;
+      case 'tug':
+        sfx('td.tug', 120);
         break;
       case 'kill':
         p = enemyScreen(ev.e);
@@ -718,6 +732,101 @@
     }
   }
 
+  // ---------- The Rug's trap ----------
+  // The rug lies flat on its run of path. The winch's rope runs to its near edge: slack while it waits, taut
+  // and shaking on the fuse. When pulled, it whips back to the winch, rolling up as it goes.
+  var RUG_W = 0.66;
+  function rugGeom(R) {
+    var h = S.G.map.height(Math.floor(R.x), Math.floor(R.y));
+    return { X: sx(R.x), Y: sy(R.y, h), ang: Math.atan2(R.dy, R.dx) };
+  }
+  // a rug from a to b along its length (px, from its middle), w across
+  function rugShape(c, a, b, w) {
+    var T = S.T, L = b - a, o = Math.max(1.5, T * 0.035), f = T * 0.07;
+    if (L <= 1) return;
+    c.fillStyle = OL; c.fillRect(a - o, -w / 2 - o, L + o * 2, w + o * 2);
+    c.fillStyle = ROLE.rug.d; c.fillRect(a, -w / 2, L, w);
+    c.fillStyle = ROLE.rug.c; c.fillRect(a + w * 0.1, -w / 2 + w * 0.1, Math.max(0, L - w * 0.2), w * 0.8);
+    c.fillStyle = '#ffd23f';
+    c.fillRect(a + w * 0.14, -w * 0.26, Math.max(0, L - w * 0.28), Math.max(1, w * 0.07));
+    c.fillRect(a + w * 0.14, w * 0.19, Math.max(0, L - w * 0.28), Math.max(1, w * 0.07));
+    for (var i = 0; i < 2; i++) {      // a diamond in the middle of each half
+      var dx = a + L * (i ? 0.72 : 0.28), z = w * 0.13;
+      c.beginPath(); c.moveTo(dx - z, 0); c.lineTo(dx, -z); c.lineTo(dx + z, 0); c.lineTo(dx, z); c.closePath(); c.fill();
+    }
+    c.fillStyle = '#e8c25a';           // the fringe on both ends
+    for (var k = 0; k < 5; k++) {
+      var fy = -w / 2 + w * (k + 0.5) / 5 - w * 0.04;
+      c.fillRect(a - o - f, fy, f, w * 0.08);
+      c.fillRect(b + o, fy, f, w * 0.08);
+    }
+  }
+  function rugRoll(c, x, w) {          // the rolled-up rug, end on
+    var T = S.T, r = T * 0.13;
+    c.fillStyle = OL; c.fillRect(x - r - 1.5, -w / 2 - 1.5, r * 2 + 3, w + 3);
+    c.fillStyle = ROLE.rug.c; c.fillRect(x - r, -w / 2, r * 2, w);
+    c.fillStyle = ROLE.rug.l; c.fillRect(x - r * 0.4, -w / 2, r * 0.5, w);
+    c.fillStyle = '#ffd23f'; c.fillRect(x - r, -w * 0.26, r * 2, Math.max(1, w * 0.07)); c.fillRect(x - r, w * 0.19, r * 2, Math.max(1, w * 0.07));
+  }
+  function drawRug(c, t, now) {
+    var T = S.T, R = t.rug, Ts = t.s, g = rugGeom(R), L = R.len * T, w = RUG_W * T, a = -L / 2, b = L / 2;
+    var off = 0, roll = null, alpha = 1, slide = 0, taut = false;
+    if (R.state === 'lay') {
+      var q = 1 - Math.max(0, R.t) / Ts.lay; q = 1 - Math.pow(1 - q, 2);
+      b = a + L * q; roll = b;
+    } else if (R.state === 'fuse') {
+      off = Math.sin(now * 70) * T * 0.035; taut = true;
+    } else if (R.state === 'gone') {
+      var e = 1 / Ts.rate - R.t;        // seconds since the pull
+      if (e > 0.3) { drawRope(c, t, null, 0); return; }
+      var k = Math.min(1, e / 0.22);
+      slide = k; b = b - L * k * 0.85; roll = b; alpha = 1 - Math.max(0, (e - 0.18) / 0.12); taut = true;
+    }
+    // the rug's centre, slid toward the winch while it's being pulled
+    var cx = g.X + (sx(t.x) - g.X) * slide * 0.8, cy = g.Y + (towerY(t) - T * 0.2 - g.Y) * slide * 0.8;
+    c.save();
+    c.globalAlpha = alpha;
+    c.translate(cx + Math.cos(g.ang) * off, cy + Math.sin(g.ang) * off);
+    c.rotate(g.ang);
+    if (R.state === 'set' || R.state === 'fuse') {   // a faint glow so it reads as a trap, brighter on the fuse
+      c.globalCompositeOperation = 'lighter';
+      c.globalAlpha = (R.state === 'fuse' ? 0.5 : 0.16 + 0.08 * Math.sin(now * 3 + t.id)) * alpha;
+      c.drawImage(S.glow.rug, a - w * 0.5, -w, L + w, w * 2);
+      c.globalAlpha = alpha; c.globalCompositeOperation = 'source-over';
+    }
+    rugShape(c, a, b, w);
+    if (roll !== null) rugRoll(c, roll, w);
+    c.restore();
+    // the rope, from the winch to the rug's middle (its near edge)
+    var nx = -Math.sin(g.ang), ny = Math.cos(g.ang), side = (sx(t.x) - g.X) * nx + (towerY(t) - g.Y) * ny > 0 ? 1 : -1;
+    var mid = (a + b) / 2;
+    var ex = cx + Math.cos(g.ang) * (mid + off) + nx * side * w / 2, ey = cy + Math.sin(g.ang) * (mid + off) + ny * side * w / 2;
+    c.globalAlpha = alpha;
+    drawRope(c, t, { x: ex, y: ey }, taut ? 0 : 1);
+    c.globalAlpha = 1;
+  }
+  function drawRope(c, t, to, sag) {
+    if (!to) return;
+    var T = S.T, x0 = sx(t.x), y0 = towerY(t) - T * 0.45, mx = (x0 + to.x) / 2, my = (y0 + to.y) / 2 + sag * T * 0.3;
+    c.lineCap = 'round';
+    c.strokeStyle = OL; c.lineWidth = Math.max(3, T * 0.09);
+    c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(mx, my, to.x, to.y); c.stroke();
+    c.strokeStyle = '#e8c25a'; c.lineWidth = Math.max(1.5, T * 0.045);
+    c.stroke();
+    c.lineCap = 'butt';
+  }
+  // where a rug goes (placing a Rug, or the selected one)
+  function rugOutline(c, R) {
+    var T = S.T, g = rugGeom(R), L = R.len * T, w = RUG_W * T;
+    c.save();
+    c.translate(g.X, g.Y); c.rotate(g.ang);
+    c.fillStyle = 'rgba(' + ROLE.rug.glow + ',.18)';
+    c.strokeStyle = 'rgba(' + ROLE.rug.glow + ',.9)';
+    c.lineWidth = 2; c.setLineDash([6, 5]);
+    c.fillRect(-L / 2, -w / 2, L, w); c.strokeRect(-L / 2, -w / 2, L, w);
+    c.restore();
+  }
+
   function rangeCircle(c, x, y, h, range, role, strong) {
     var R = range * S.T, X = sx(x), Y = sy(y, h);
     c.save();
@@ -751,9 +860,11 @@
     // the selected tower's reach
     if (S.sel) {
       var t = G.towers.find(function (x) { return x.id === S.sel; });
-      if (t) rangeCircle(c, t.x, t.y, t.h, t.range, t.type, true);
+      if (t && t.rug) rugOutline(c, t.rug);
+      else if (t) rangeCircle(c, t.x, t.y, t.h, t.range, t.type, true);
       else select(null);
     }
+    G.towers.forEach(function (t) { if (t.rug) drawRug(c, t, now); });
     // Mega Mint's fire on the path
     G.patches.forEach(function (f) {
       var X = sx(f.x), Y = sy(f.y, G.map.height(Math.floor(f.x), Math.floor(f.y))), k = Math.min(1, f.t / 0.5), R = f.r * T;
@@ -822,11 +933,11 @@
       if (t.type === 'strike' && view === 'side') c.translate(fl * t.kick * T * 0.07, 0);    // recoil away from the target
       else if (t.type === 'strike') { c.translate(X, cutY); c.scale(1 + t.kick * 0.04, 1 - t.kick * 0.09); c.translate(-X, -cutY); }  // facing you or away: it punches
       else if (t.type === 'mint') { c.translate(X, cutY); c.scale(1 + t.kick * 0.08, 1 - t.kick * 0.14); c.translate(-X, -cutY); }  // the mortar squashes
-      else if (t.type === 'rug') c.translate(-fl * t.kick * T * 0.06, 0);                    // the frame lunges at it
+      else if (t.type === 'rug') c.translate(fl * t.kick * T * 0.08, 0);                     // it heaves back as it pulls
       stampT(c, sp.top, X, Y, 0, fl, 1);
       c.restore();
     }
-    if (t.type === 'rug' && t.cool <= 0.05) {
+    if (t.type === 'rug' && t.rug.state === 'fuse') {
       c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.22 + 0.12 * Math.sin(now * 6 + t.id);
       c.drawImage(S.glow.rug, X - T * 0.5, Y - T * 1.05, T, T);
       c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
@@ -853,8 +964,8 @@
     var h = S.G.map.height(Math.floor(e.x), Math.floor(e.y));
     e._h += (h - e._h) * Math.min(1, dt * 7);
     if (e._yank) { e._yank.t -= dt; if (e._yank.t <= 0) e._yank = null; }
-    var slow = e.slowT > 0, frozen = e.stunT > 0;
-    if (!frozen) e._step = (e._step === undefined ? e.phase : e._step) + dt * (slow ? 2 : 3.5) * e.speed;
+    var slow = e.slowT > 0, down = e.downT > 0, frozen = e.stunT > 0 && !down;
+    if (!frozen && !down) e._step = (e._step === undefined ? e.phase : e._step) + dt * (slow ? 2 : 3.5) * e.speed;
     var step = e._step === undefined ? e.phase : e._step, sw = Math.sin(step * Math.PI), up = Math.abs(sw);
     // One painting each, so the walk is a sway, a bob and a squash on every footfall; the subpoena flaps.
     var rot, kx, ky, bob;
@@ -877,6 +988,15 @@
     // painted facing right; going straight down keeps the way it last faced
     if (e.dx < -0.01) e._flip = true; else if (e.dx > 0.01) e._flip = false;
     var fl = e._flip ? -1 : 1, y = p.y + bob;
+    if (down) {   // flat on their back after a rug pull: topple over, lie there, get up
+      var mx = e._downMax || 0.8, fall = Math.min(1, (mx - e.downT) / 0.12) * Math.min(1, e.downT / 0.15);
+      rot = -1.45 * fall; kx = 1; ky = 1; y = p.y;
+      if (e.type !== 'armored' && e.type !== 'boss') {
+        var st = now * 9 + e.phase, hy0 = p.y - T * 0.35;
+        c.fillStyle = '#ffd23f';
+        for (var si = 0; si < 3; si++) { var sa = st + si * 2.1; c.fillRect(p.x - fl * T * 0.35 + Math.cos(sa) * T * 0.18 - 2, hy0 + Math.sin(sa) * T * 0.06 - 2, 4, 4); }
+      }
+    }
     stampT(c, sp, p.x, y, rot * fl, kx * size * fl, ky * size);
     if (slow || frozen) {   // a blue cast while the fog holds them, solid ice while frozen
       c.globalAlpha = frozen ? 0.55 : 0.18; stampT(c, S.ghost[e.type].b, p.x, y, rot * fl, kx * size * fl, ky * size);
@@ -1001,26 +1121,9 @@
         var hb = S.G.map.height(Math.floor(bx2), Math.floor(by2));
         var BX = sx(bx2), BY = sy(by2, hb) - 4 * kb * (1 - kb) * T * 0.8;
         c.save(); c.translate(BX, BY); c.scale(Math.cos(S.clock * 18 + s.tx * 5) * 0.9 + 0.1, 1); stamp(c, S.spr.coin, 0, 0, 0.8); c.restore();
-      } else if (s.kind === 'rug') {
-        // the carpet unrolls from the spool to the target
-        var e = s.target, k2 = Math.min(1, s.t / s.dur);
-        if (!e.alive) return;
-        var p = enemyScreen(e), X0 = sx(s.from.x) + (s.from._flip ? 1 : -1) * T * 0.25, Y0 = sy(s.from.y, s.from.h) - T * 0.35;
-        var X1 = X0 + (p.x - X0) * k2, Y1 = Y0 + (p.y - T * 0.1 - Y0) * k2;
-        carpet(c, X0, Y0, X1, Y1, T * 0.3);
       }
     });
   }
-  function carpet(c, x0, y0, x1, y1, w) {
-    var dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy) || 1, nx = -dy / d * w / 2, ny = dx / d * w / 2;
-    c.fillStyle = ROLE.rug.c;
-    c.strokeStyle = OL; c.lineWidth = 2;
-    c.beginPath(); c.moveTo(x0 + nx, y0 + ny); c.lineTo(x1 + nx, y1 + ny); c.lineTo(x1 - nx, y1 - ny); c.lineTo(x0 - nx, y0 - ny); c.closePath();
-    c.fill(); c.stroke();
-    c.strokeStyle = '#ffd23f'; c.lineWidth = 1.5;
-    c.beginPath(); c.moveTo(x0 + nx * 0.6, y0 + ny * 0.6); c.lineTo(x1 + nx * 0.6, y1 + ny * 0.6); c.moveTo(x0 - nx * 0.6, y0 - ny * 0.6); c.lineTo(x1 - nx * 0.6, y1 - ny * 0.6); c.stroke();
-  }
-
   function drawFx(c, dt) {
     var T = S.T;
     S.fx = S.fx.filter(function (f) {
@@ -1084,11 +1187,6 @@
         stampT(c, s2, f.x, f.y + q2 * s2.h * T * 1.1, 0, (f.flip ? -1 : 1) * z2, z2);
         c.restore();
         c.globalAlpha = 1;
-      } else if (f.kind === 'carpet') {
-        if (!f.e.alive && !f.e.leaked) { /* draw anyway: the yank still happened */ }
-        var p = f.e.alive ? enemyScreen(f.e) : null, h0 = S.G.map.height(Math.floor(f.x0), Math.floor(f.y0));
-        var X0 = sx(f.x0), Y0 = sy(f.y0, h0);
-        if (p) { c.globalAlpha = Math.min(1, k * 2); carpet(c, X0, Y0, p.x, p.y, T * 0.36); c.globalAlpha = 1; }
       } else if (f.kind === 'ghost') {
         // the VHS break-up: red and cyan copies pull apart in slices and fade
         var s = f.sp, sw = s.cv.width, shh = s.cv.height, gh = S.ghost[f.e.type], z = f.e.size || 1;
@@ -1139,8 +1237,8 @@
     var at = S.hover;
     if (!at) return;
     var ok = G.canBuild(type, at.c, at.r) && G.tokens >= C.TOWERS[type].cost, h = M.height(at.c, at.r);
-    var range = C.TOWERS[type].range + (type === 'rug' ? 0 : h);
-    rangeCircle(c, at.c + 0.5, at.r + 0.5, h, range, type, true);
+    if (type === 'rug') { if (G.canBuild(type, at.c, at.r)) rugOutline(c, G.rugSpot(at.c, at.r, C.TOWERS.rug.rug)); }
+    else rangeCircle(c, at.c + 0.5, at.r + 0.5, h, C.TOWERS[type].range + h, type, true);
     c.globalAlpha = 0.65;
     var X = sx(at.c + 0.5), Y = sy(at.r + 0.5, h) + T * 0.1;
     stamp(c, S.spr.tower[type].side.whole, X, Y);

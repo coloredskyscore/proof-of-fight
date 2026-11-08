@@ -72,6 +72,11 @@ function run(name, order, quiet, path) {
     }
   }
   if (!quiet) log.forEach(function (l) { console.log('  ' + l); });
+  if (!quiet) {   // what each kind of tower did for its tokens
+    var per = {};
+    G.towers.forEach(function (t) { var q = per[t.type] = per[t.type] || { d: 0, s: 0 }; q.d += t.dealt; q.s += t.spent; });
+    console.log('  damage per token: ' + Object.keys(per).map(function (k) { return k + ' ' + (per[k].d / per[k].s).toFixed(1); }).join(', '));
+  }
   var tiers = G.towers.map(function (t) { return t.tier; }), up = tiers.filter(function (x) { return x > 1; }).length;
   console.log(name + ': ' + G.phase + ' at wave ' + G.wave + ', integrity ' + G.integrity + '/' + G.maxIntegrity +
     ', ' + G.towers.length + ' towers' + (up ? ' (' + up + ' upgraded)' : '') + ', ' + Math.round(G.time) + 's');

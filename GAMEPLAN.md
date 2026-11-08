@@ -11,18 +11,20 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
-### Nov 8, 2026: Tower Defense (?td): upgrades and the Capitol talking
+### Nov 8, 2026: Tower Defense (?td): upgrades, the Capitol talking, guns that turn, the rug trap
 
 From Brian's first playtest.
+- **MEV Hunt is now a rug trap** (Brian's pick: the old one threw a rug at one enemy and pulled it back 1.5 tiles, which was too small to notice). Built beside the path, it lays a purple rug on the nearest straight run, with a rope back to the winch. When someone steps on, it waits a beat for the ones behind, then yanks: everyone on the rug takes 60 damage (through armor), is thrown back 1.5 tiles and lies flat for 0.8 seconds, with "RUG PULL!" over them. A new rug rolls out 4 seconds later. Cabinets and the Filibuster are too heavy to throw. Placing one or tapping it shows where its rug goes. The rug is drawn in code until Brian's Grok winch and rug art (prompt 9) arrive.
+- **Comrades and Slop Cannon turn** to face up, down or sideways, from Brian's three-view Grok sheets. Facing you or away, the twin gun punches instead of sliding, and its muzzle flash alternates barrels.
 - **Upgrades:** tap a tower for its card. Tier 2 makes it stronger, then tier 3 is a choice of two (the card shows both, gold and purple). Keys: U for tier 2, A or B for tier 3.
   - **Comrades:** Hot Rounds (90, harder hits, a bit more reach), then **Minigun** (twice as fast, shorter reach) or **Sniper** (huge hits from far away, 25% crits).
   - **Seed Vault:** Thick Fog (70, wider, slows 50%, twice the damage), then **Freeze** (everyone in the fog stops for 1 second every 6, heavy ones for half that) or **Doxx** (enemies in the fog take 25% more damage).
   - **Slop Cannon:** Heavy Coins (120, bigger hits and blast), then **Cluster** (each bomb splits into 4 more down the path) or **Mega Mint** (one huge slow blast that leaves fire on the path).
-  - **MEV Hunt:** Quick Pull (100, harder and more often), then **Long Con** (pulls back 3 tiles and can move heavy enemies) or **Exit Scam** (a trapdoor takes one enemy every 12 seconds; not cabinets, the Filibuster or flyers).
+  - **MEV Hunt:** Quick Pull (100, 80 damage, a new rug every 2.5 seconds), then **Long Con** (a longer rug that throws them back 3 tiles, heavy ones too, half as far) or **Exit Scam** (when the rug is pulled, a trapdoor under it takes the one furthest along, at most every 12 seconds; not cabinets or the Filibuster).
   - A tower grows a little and gets a glow and diamonds under it for each tier. Selling still gives back 70% of everything spent on it.
 - **The Capitol talks:** a speech bubble on the Capitol says why each wave is coming ("We need to stop crypto!", "Send out the congressional aides!", "Serve the subpoenas!", "Begin the filibuster!") about a second before the first enemy walks out, and "Drown them in red tape!" style lines between waves. Lines are plain, by design.
-- **Balance:** the sim has two upgrader bots (one per tier 3 side) and sloppy upgraders; upgrading pays about the same as building more towers.
-- **Still to come:** towers facing up and sideways need new Grok sheets (prompts 6 to 8 in the project's prompt list); until then a tower facing up shows its down-facing painting.
+- **Balance:** the sim has two upgrader bots (one per tier 3 side) and sloppy upgraders; upgrading pays about the same as building more towers. It also prints each tower kind's damage per token (the rug's real worth is the time it buys, which that doesn't count).
+- **Still to come:** the Grok winch and rugs (prompt 9).
 
 ### Nov 7, 2026: Tower Defense test (?td), step 1 of 3
 
