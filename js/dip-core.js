@@ -40,13 +40,13 @@
   }
 
   // A made-up run of daily log10 prices: bull, bear and sideways stretches, with the odd one-day shock.
-  function synth(r, n, start, drift, vol, shock) {
+  function synth(r, n, start, drift, vol, shock, wild) {
     var out = new Float64Array(n), v = start, left = 0, d = 0;
     for (var i = 0; i < n; i++) {
       if (left <= 0) {
         var pick = r();
         left = 40 + Math.floor(r() * 180);
-        d = pick < 0.42 ? drift + 0.0035 + r() * 0.004 : pick < 0.78 ? drift - 0.004 - r() * 0.003 : drift;
+        d = pick < 0.42 ? drift + wild * (0.0035 + r() * 0.004) : pick < 0.78 ? drift - wild * (0.004 + r() * 0.003) : drift;
       }
       left--;
       v += d + vol * gaussRand(r);
@@ -91,13 +91,13 @@
     if (opts.mode === 'daily') {
       var r = rng(hashStr('dip-' + opts.seed));
       name = '$' + TICK_A[Math.floor(r() * TICK_A.length)] + TICK_B[Math.floor(r() * TICK_B.length)];
-      logs = synth(r, 6000, -3.5 + r() * 2.5, 0.0004, 0.022, 0.012);
+      logs = synth(r, 6000, -3.5 + r() * 2.5, 0.0004, 0.022, 0.012, 1);
       real = 0; day0 = 0;
     } else {
       var base = decode(opts.data);
       real = base.length; day0 = dayNum(opts.data.start);
       var drift = (base[real - 1] - base[real - 900]) / 900;
-      var fut = synth(rng(20260523), 4000, base[real - 1], Math.max(0.0001, drift * 0.5), 0.012, 0);
+      var fut = synth(rng(42), 4000, base[real - 1], Math.max(0.0001, drift * 0.5), 0.011, 0, 0.5);
       logs = new Float64Array(real + fut.length);
       logs.set(base); logs.set(fut, real);
       name = 'BTC';

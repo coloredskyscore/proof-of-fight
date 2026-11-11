@@ -221,7 +221,7 @@
     if (AUTO) start(/[?&]daily\b/.test(location.search) ? 'daily' : 'btc');
     last = performance.now();
     requestAnimationFrame(frame);
-    if (DEBUG) window.POF_DIP = { get S() { return S; }, get T() { return T; }, start: start, menu: menu, core: C, card: shareCard, frame: tick, cam: cam, set auto(v) { AUTO = v; } };
+    if (DEBUG) window.POF_DIP = { get S() { return S; }, get T() { return T; }, start: start, menu: menu, core: C, card: shareCard, frame: tick, cam: cam, set auto(v) { AUTO = v; }, set manual(v) { paused = v; } };
   }
   function press(on) { if (!attract && !over) hold = on; else hold = false; }
   function resize() {
