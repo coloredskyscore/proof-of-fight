@@ -30,6 +30,7 @@ node tools/sim.js            # win rates per fighter, balanced rules
 node tools/sim.js original   # same, with the original draft numbers
 node tools/check.js          # rules still behave (Supers can't be dodged, Blind skips a turn, ...)
 node tools/td-sim.js         # Tower Defense (?td): bots play the Hearing
+node tools/dip-sim.js        # Buy the Dip (?dip): bots ride the chart, how far each gets
 ```
 
 Add `?speed=0.3` to the URL to play animations faster while testing.
@@ -47,6 +48,7 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | `js/engine.js` | Game rules (no graphics; runs in Node too) |
 | `js/app.js` | Screens, animations, Daily Fight, sharing |
 | `js/td-core.js`, `js/td.js`, `css/td.css` | Tower Defense test (`?td`): the rules (run in Node too), then the drawing and taps |
+| `js/dip-core.js`, `js/dip.js`, `css/dip.css`, `js/dip-data.js` | Buy the Dip test (`?dip`): the rules (run in Node too), the drawing and sound (all made in code, no image or audio files), and Bitcoin's daily closing prices |
 | `art/td/` | Tower Defense map, towers, enemies and node: the map fitted to the grid with `tools/td_map.py`, the rest cut from Grok sheets with `tools/td_art.py` |
 | `tools/` | Balance simulator, rules checks, art cut-out, music loop cutter, sound clip cutter, sound level meter |
 | `docs/supers/` | Fighter kits (Super concepts, button names), one per fighter, and the slots the game supports |

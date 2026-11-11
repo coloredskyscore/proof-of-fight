@@ -11,6 +11,18 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 11, 2026: Buy the Dip test (?dip)
+
+A hidden test mode at `proofoffight.com/?dip`, on its own screen with its own look (no 16-bit art, no roster): a one-button arcade ride.
+
+- **The idea:** the ground is Bitcoin's real price chart, 2010 to May 2026, day by day. A ball rolls and flies along it, left to right, through time. Down slopes are red and up slopes are green. Hold the button on red to get heavy and dive for speed; let go on green to launch. A liquidation wall chases from behind and speeds up as the years pass. A run lasts from 20 seconds to about two minutes.
+- **Scoring:** sats for distance, for the gold sats in the air and on the dips, and for every perfect landing (a smooth landing on a down slope). Three perfect landings in a row start a Bull Run: faster, sats count double. The end screen says which month and year you reached, and Share draws a picture of the chart with the spot you were liquidated.
+- **Two charts:** Ride Bitcoin (the real one, then a made-up future past the end of the data), and Daily Coin (a made-up coin seeded by the date, the same for everybody that day).
+- **The chart as ground:** the long climb is flattened out so the ground rolls (otherwise it is one sixteen-year uphill); the weeks and months are the hills. The real price, the date and the landmarks (halvings, tops, collapses) are shown as you pass them, and the whole real chart is the progress bar.
+- **All made in code:** one canvas, no image or audio files. The sky's color follows the market's mood, the music adds drums as you speed up and an arpeggio during a Bull Run.
+- **Balance:** `node tools/dip-sim.js`. A player who never presses dies in late 2012; pressing a little late every time reaches 2021; the look-ahead bot never dies.
+- `?dip&debug` exposes `window.POF_DIP`; `?dip&auto` lets the bot play.
+
 ### Nov 7, 2026: Tower Defense test (?td), step 1 of 3
 
 A hidden test mode at `proofoffight.com/?td`: a **Tower Defense** button appears on the title screen. Real time, not turns. The full design (towers, maps, enemies, base, story) is in the project's design doc; this is step 1, the core loop on one map.
