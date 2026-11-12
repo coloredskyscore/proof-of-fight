@@ -1,10 +1,10 @@
-/* Ride the Chart (proofoffight.com/ride, which opens ?ride; ?dip from its Buy the Dip days still works). The rules live in js/dip-core.js; this file draws them, plays the sound and
+/* Ride the Chart (proofoffight.com/ride/, its own page; old ?ride and ?dip links on the home page forward there). The rules live in js/dip-core.js; this file draws them, plays the sound and
    takes the one button. Everything on screen is drawn here in code on one canvas: no image files.
    The ground is a real price chart (Bitcoin or Solana, or a made-up daily coin). Down slopes are red or purple, up slopes are green:
    hold on red to dive, let go on green to fly, and stay ahead of the liquidation wall.
    ?dip&debug exposes window.POF_DIP; ?dip&auto lets the look-ahead bot play (for recording clips). */
 (function () {
-  if (!/[?&](ride|dip)\b/i.test(location.search)) return;
+  if (!window.POF_RIDE_PAGE && !/[?&](ride|dip)\b/i.test(location.search)) return;
   document.title = 'Ride the Chart · Proof of Fight';
   var C = window.POF_DIP_CORE, CHAINS = window.POF_DIP_CHAINS;
   var AUTO = /[?&]auto\b/i.test(location.search), DEBUG = /[?&]debug\b/i.test(location.search);
@@ -864,7 +864,7 @@
   }
   function raceUrl() {
     if (shortUrl) return shortUrl;
-    return 'https://proofoffight.com/' + (REC && REC.end ? '?ride&race=' + encodeURIComponent(C.encode(REC)) : 'ride/');
+    return 'https://proofoffight.com/ride/' + (REC && REC.end ? '?race=' + encodeURIComponent(C.encode(REC)) : '');
   }
   // Text and link only, no picture: messaging apps (iMessage, WhatsApp) drop the text when a picture rides along.
   // The short link is made as the run ends (see finish), so the share sheet still opens straight from the tap;

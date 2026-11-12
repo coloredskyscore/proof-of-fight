@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- The game lives at proofoffight.com/fight/, but its files (css/, js/, art/, audio/) stay at the site root. -->
+  <base href="../">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Proof of Fight</title>
+  <meta name="description" content="A turn-based crypto founder brawl in your browser. Parody. No wallet. New daily fight every day.">
+  <meta name="theme-color" content="#0b0a12">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Proof of Fight">
+  <meta property="og:description" content="A turn-based crypto founder brawl. New daily fight every day. No wallet.">
+  <!-- Link previews (X, Discord, iMessage...). These must be full URLs. -->
+  <meta property="og:url" content="https://proofoffight.com/fight/">
+  <meta property="og:image" content="https://proofoffight.com/art/social/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Proof of Fight: ten crypto founders as pixel-art fighters facing off on a candlestick-chart stage">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@ProofOfFight">
+  <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/rap.css">
+  <link rel="stylesheet" href="css/guitar.css">
+  <link rel="stylesheet" href="css/td.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- TITLE -->
+    <section id="screen-title" class="screen">
+      <!-- First visit: browsers only allow sound after a tap, so the game opens on PRESS START.
+           The tap starts the menu song; the logo slams in on its drop. -->
+      <div class="press-start" id="press-start" hidden>
+        <button class="press-btn" id="press-btn" type="button">PRESS START</button>
+        <p class="press-hint" id="press-hint">Sound on</p>
+      </div>
+      <div class="title-wrap">
+        <div class="title-roster" aria-hidden="true"></div>
+        <h1 class="logo"><span>PROOF</span><span class="logo-of">OF</span><span>FIGHT</span></h1>
+        <p class="tagline">Crypto founders. Five buttons. One bad decision per turn.</p>
+
+        <button id="btn-daily" class="btn btn-big btn-arcade btn-gold" type="button"></button>
+        <button id="btn-free" class="btn btn-big btn-arcade btn-red" type="button"><svg class="ico" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M10 0L2 9.5h5L5 16l9-10H9z"/></svg>Free play</button>
+        <button id="btn-story" class="btn btn-big btn-arcade btn-story" type="button">Story</button>
+        <button id="btn-help" class="btn btn-ghost" type="button">How to play</button>
+
+        <p id="title-stats" class="title-stats"></p>
+
+        <div class="sound-row">
+          <button id="btn-music" class="btn btn-ghost btn-sm" type="button" aria-pressed="true">Music on</button>
+          <button id="btn-sfx" class="btn btn-ghost btn-sm" type="button" aria-pressed="true">Sounds on</button>
+        </div>
+
+        <p class="disclaimer">Parody. Caricatures of public figures, not affiliated with or endorsed by any of them. No wallet, no tokens, no sign-up. Not financial advice.</p>
+        <p class="made-by"><a href="./">More games</a> · Game developed by <a href="https://x.com/ProofOfFight" target="_blank" rel="noopener">@ProofOfFight</a> on X</p>
+      </div>
+    </section>
+
+    <!-- PICK -->
+    <section id="screen-pick" class="screen" hidden>
+      <header class="pick-head">
+        <button id="pick-back" class="btn btn-ghost btn-sm" type="button">← Back</button>
+        <h2 id="pick-title">Pick your fighter</h2>
+      </header>
+      <button id="pick-suggest" class="btn btn-suggest" type="button">⭐ First fight: <b>Saylor vs Mert</b></button>
+      <div id="pick-grid" class="pick-grid"></div>
+    </section>
+
+    <!-- STORY: the boss ladder -->
+    <section id="screen-story" class="screen" hidden>
+      <header class="pick-head">
+        <button id="story-back" class="btn btn-ghost btn-sm" type="button">← Menu</button>
+        <h2>Story</h2>
+      </header>
+      <div class="story-you" id="story-you"></div>
+      <ol class="ladder" id="ladder"></ol>
+      <button id="story-fight" class="btn btn-big btn-gold" type="button"></button>
+      <p class="story-note" id="story-note"></p>
+      <button id="story-quit" class="btn btn-ghost btn-sm" type="button">Abandon this run</button>
+    </section>
+
+    <!-- FIGHT -->
+    <section id="screen-fight" class="screen" hidden>
+      <header class="hud">
+        <div class="hud-side" id="hud-p">
+          <div class="hud-name"><span class="you-tag">YOU</span><span class="hud-fname"></span></div>
+          <div class="hp"><div class="hp-lag"></div><div class="hp-fill"></div><span class="hp-num"></span></div>
+          <div class="blocks" aria-label="Blocks"></div>
+          <div class="chips"></div>
+        </div>
+        <div class="hud-mid">
+          <div class="hud-turn">TURN <b id="turn-num">1</b></div>
+          <div class="hud-mode" id="hud-mode"></div>
+          <div class="hud-buttons">
+            <button id="btn-mute" class="icon-btn" type="button" aria-label="Sound on or off">🔊</button>
+            <button id="btn-fight-help" class="icon-btn" type="button" aria-label="How to play">?</button>
+            <button id="btn-quit" class="icon-btn" type="button" aria-label="Leave fight">✕</button>
+          </div>
+        </div>
+        <div class="hud-side" id="hud-c">
+          <div class="hud-name"><span class="hud-fname"></span><span class="cpu-tag">CPU</span></div>
+          <div class="hp"><div class="hp-lag"></div><div class="hp-fill"></div><span class="hp-num"></span></div>
+          <div class="blocks" aria-label="Blocks"></div>
+          <div class="chips"></div>
+        </div>
+      </header>
+
+      <div class="stage" id="stage">
+        <div class="sky"></div>
+        <div class="skyline" id="skyline" aria-hidden="true"></div>
+        <div class="ground"></div>
+        <div class="fighter side-p" id="fighter-p"></div>
+        <div class="fighter side-c" id="fighter-c"></div>
+        <div class="popups" id="popups" aria-hidden="true"></div>
+        <div class="banner" id="banner" aria-hidden="true"><div class="banner-text"></div><div class="banner-sub"></div></div>
+      </div>
+
+      <p class="log" id="log" aria-live="polite"></p>
+
+      <div class="controls" id="controls">
+        <p class="turn-note" id="turn-note"></p>
+        <div class="super-row">
+          <!-- Story: the ally waits here until you're low enough to call them in -->
+          <button class="assist-btn" id="btn-assist" type="button" hidden aria-label="Call in your ally"></button>
+          <button class="move move-super" data-move="super" type="button">
+            <span class="move-icon">⚡</span><span class="move-label">SUPER</span><span class="move-sub"></span>
+          </button>
+        </div>
+        <div class="move-grid">
+          <button class="move move-strike" data-move="strike" type="button"><span class="move-icon">👊</span><span class="move-label">Strike</span><span class="move-sub"></span></button>
+          <button class="move move-privacy" data-move="privacy" type="button"><span class="move-icon">🥷</span><span class="move-label">Privacy</span><span class="move-sub"></span></button>
+          <button class="move move-mint" data-move="mint" type="button"><span class="move-icon">🖼️</span><span class="move-label">Mint</span><span class="move-sub"></span></button>
+          <button class="move move-rug" data-move="rug" type="button"><span class="move-icon">🪤</span><span class="move-label">Rug</span><span class="move-sub"></span></button>
+        </div>
+        <button class="btn btn-big btn-gold btn-continue" id="btn-continue" type="button" hidden>Continue ▶</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- SUPER CUT-IN -->
+  <div class="cutin" id="cutin" hidden aria-live="assertive">
+    <div class="cutin-stripes"></div>
+    <div class="cutin-deco"></div>
+    <div class="cutin-portrait"><span class="cutin-head"></span><span class="cutin-prop"></span><div class="cutin-pdeco"></div></div>
+    <div class="cutin-card">
+      <small>SUPER</small>
+      <div class="cutin-name"></div>
+      <div class="cutin-who"></div>
+    </div>
+    <div class="cutin-line"></div>
+    <div class="cutin-flash"></div>
+  </div>
+
+  <!-- KO SCENE (Saylor's Super KO: the astronaut DJ) -->
+  <div class="koscene" id="koscene" hidden aria-live="assertive">
+    <div class="ks-art"></div>
+    <div class="ks-small">FIAT AS A STORE OF VALUE</div>
+    <div class="ks-big">WE CALL THEM POOR</div>
+  </div>
+
+  <!-- STORY: an ally jumps in -->
+  <div class="assistin" id="assistin" hidden aria-live="assertive">
+    <div class="ai-face"></div>
+    <div class="ai-card"><small>ASSIST</small><div class="ai-name"></div></div>
+    <div class="ai-line"></div>
+  </div>
+
+  <!-- STORY: the credits, at the very end, after Satoshi -->
+  <div class="credits" id="credits" hidden aria-live="polite">
+    <h2 class="cr-title">PROOF OF FIGHT</h2>
+    <p class="cr-sub">Thanks for playing</p>
+    <div class="cr-cast" aria-hidden="true"></div>
+    <p class="cr-made">Game developed by <a href="https://x.com/ProofOfFight" target="_blank" rel="noopener">@ProofOfFight</a> on X</p>
+    <button class="btn btn-big btn-gold cr-next" type="button">Continue ▶</button>
+  </div>
+
+  <!-- STORY: the face-off before each boss: your line, theirs, then FIGHT -->
+  <div class="versus" id="versus" hidden aria-live="polite">
+    <div class="vs-kicker"></div>
+    <div class="vs-row vs-p"><span class="face"></span><div class="vs-bubble"><b class="vs-name"></b><p class="vs-say"></p></div></div>
+    <div class="vs-mark" aria-hidden="true">VS</div>
+    <div class="vs-row vs-b"><span class="face"></span><div class="vs-bubble"><b class="vs-name"></b><p class="vs-say"></p></div></div>
+    <button class="btn btn-big btn-gold vs-fight" type="button">FIGHT ▶</button>
+    <p class="vs-hint">Tap to continue</p>
+  </div>
+
+  <!-- STORY: after WICK, why you made it this far, one card at a time -->
+  <div class="endcards" id="reveal" hidden aria-live="polite">
+    <div class="rv-card"><h2 class="rv-big"></h2><p class="rv-small"></p></div>
+    <div class="rv-dots" aria-hidden="true"></div>
+    <p class="rv-hint">Tap for the next one</p>
+    <button class="rv-skip" type="button">Skip ▸▸</button>
+  </div>
+
+  <!-- STORY: a boss's comeback (Dimon's bailout): cut to his portrait and his line, then back to the fight -->
+  <div class="bossline" id="bossline" hidden aria-live="assertive">
+    <div class="bl-stripes"></div>
+    <div class="bl-face"></div>
+    <div class="bl-small"></div>
+    <div class="bl-big"></div>
+    <div class="bl-paper"><small></small><b></b></div>
+    <div class="bl-stamp"></div>
+  </div>
+
+  <!-- STORY: Satoshi (revive and ending) -->
+  <div class="satoshi" id="satoshi" hidden aria-live="assertive">
+    <div class="sat-glow"></div>
+    <div class="sat-fig"></div>
+    <div class="sat-small"></div>
+    <div class="sat-big"></div>
+    <div class="sat-vanish"></div>
+  </div>
+
+  <!-- STORY: pick an ally before a boss -->
+  <div class="modal" id="modal-assist" hidden>
+    <div class="modal-card assist-card" role="dialog" aria-modal="true" aria-labelledby="assist-title">
+      <div class="res-kicker" id="assist-kicker"></div>
+      <h2 id="assist-title">Pick your ally</h2>
+      <p class="assist-how">Once this fight, when you're at 35% HP or lower, they jump in for 20 damage that can't be dodged. It doesn't use your turn.</p>
+      <div class="ally-grid" id="ally-grid"></div>
+      <button class="btn btn-ghost" id="assist-cancel" type="button">Back</button>
+    </div>
+  </div>
+
+  <!-- STORY: after a boss fight (next boss, CONTINUE?, or the end of the run) -->
+  <div class="modal" id="modal-story" hidden>
+    <div class="modal-card result-card story-card" role="dialog" aria-modal="true" aria-labelledby="st-title">
+      <div class="res-kicker" id="st-kicker"></div>
+      <h2 class="res-title" id="st-title"></h2>
+      <div class="res-faces" id="st-faces"></div>
+      <p class="res-line" id="st-line"></p>
+      <div class="res-finish" id="st-finish"></div>
+      <p class="res-quote" id="st-quote" hidden></p>
+      <div class="st-count" id="st-count" hidden></div>
+      <p class="res-meta" id="st-meta"></p>
+      <div class="res-actions" id="st-actions"></div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="modal" id="modal-result" hidden>
+    <div class="modal-card result-card" role="dialog" aria-modal="true" aria-labelledby="res-title">
+      <div class="res-kicker" id="res-kicker"></div>
+      <h2 class="res-title" id="res-title"></h2>
+      <div class="res-faces" id="res-faces"></div>
+      <p class="res-line" id="res-line"></p>
+      <div class="res-finish" id="res-finish"></div>
+      <p class="res-quote" id="res-quote" hidden></p>
+      <div class="res-grid" id="res-grid"></div>
+      <p class="res-legend">🟩 hit · 🟦 hid · 🟨 super · 🟥 whiff · ⬛ skipped · 🌀 self-rekt</p>
+      <p class="res-meta" id="res-meta"></p>
+      <div class="res-actions">
+        <button class="btn btn-gold" id="res-share" type="button">Copy result</button>
+        <a class="btn btn-x" id="res-x" target="_blank" rel="noopener">Post on X</a>
+        <button class="btn" id="res-again" type="button">Rematch</button>
+        <button class="btn btn-ghost" id="res-menu" type="button">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP -->
+  <div class="modal" id="modal-help" hidden>
+    <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <h2 id="help-title">How to play</h2>
+      <div id="help-body"></div>
+      <button class="btn btn-gold" id="help-close" type="button">Got it</button>
+    </div>
+  </div>
+
+  <!-- SOUND TEST (?sounds): every sound effect and both songs, for listening on a phone -->
+  <div class="modal" id="modal-sounds" hidden>
+    <div class="modal-card sounds-card" role="dialog" aria-modal="true" aria-labelledby="sounds-title">
+      <h2 id="sounds-title">Sound test</h2>
+      <div id="sounds-body"></div>
+      <button class="btn btn-gold" id="sounds-close" type="button">Done</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/rap-lyrics.js"></script>
+  <script src="js/rap-crowd.js"></script>
+  <script src="js/rap.js"></script>
+  <script src="js/guitar-songs.js"></script>
+  <script src="js/guitar.js"></script>
+  <script src="js/td-core.js"></script>
+  <script src="js/td.js"></script>
+  <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "18725511f80d4503841c5fb7c4b7895b"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
