@@ -56,6 +56,30 @@
     return out;
   }
 
+  // The made-up future past the end of the real data, to a script: it holds above $68,000, the next bull market
+  // tops near $200,000, pulls back, runs to about $600,000, pulls back, and ends the game at $1,000,000. The
+  // waypoints are [days after the last real day, price]; the daily wobble around them is seeded, so it is
+  // the same for everybody.
+  var FUTURE = [[0, 74015], [60, 70500], [130, 79000], [210, 69500], [330, 96000], [450, 150000], [540, 200000],
+    [620, 155000], [720, 114000], [820, 108000], [1000, 200000], [1250, 380000], [1500, 600000], [1580, 490000],
+    [1720, 355000], [1820, 345000], [2100, 560000], [2500, 800000], [2900, 1000000], [3040, 1000000]];
+  function scriptedFuture(r, startLog) {
+    var n = FUTURE[FUTURE.length - 1][0] + 1, out = new Float64Array(n), k = 0, noise = 0, floor = Math.log10(68000);
+    var off = startLog - Math.log10(FUTURE[0][1]);
+    for (var i = 0; i < n; i++) {
+      while (k < FUTURE.length - 2 && i > FUTURE[k + 1][0]) k++;
+      var a = FUTURE[k], b = FUTURE[k + 1], t = (i - a[0]) / (b[0] - a[0] || 1);
+      var base = Math.log10(a[1]) + (Math.log10(b[1]) - Math.log10(a[1])) * (t < 0 ? 0 : t > 1 ? 1 : t) + off * (1 - i / n);
+      noise += -noise / 22 + 0.0078 * gaussRand(r);
+      var v = base + (i < 30 ? noise * i / 30 : noise);
+      if (i > n - 260) v = lerp(v, base, Math.min(1, (i - (n - 260)) / 200));   // land on the final price
+      if (v < floor) v = floor + (floor - v) * 0.4;
+      out[i] = v;
+    }
+    return out;
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
   var EVENTS = [
     ['2010-07-18', 'BITCOIN GETS A PRICE', '9 cents'],
     ['2011-06-08', 'FIRST BUBBLE', '$30, then down 93%'],
@@ -96,8 +120,7 @@
     } else {
       var base = decode(opts.data);
       real = base.length; day0 = dayNum(opts.data.start);
-      var drift = (base[real - 1] - base[real - 900]) / 900;
-      var fut = synth(rng(42), 4000, base[real - 1], Math.max(0.0001, drift * 0.5), 0.011, 0, 0.5);
+      var fut = scriptedFuture(rng(42), base[real - 1]);
       logs = new Float64Array(real + fut.length);
       logs.set(base); logs.set(fut, real);
       name = 'BTC';
