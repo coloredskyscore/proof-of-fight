@@ -1,4 +1,4 @@
-/* Buy the Dip test mode (?dip). The game itself is one canvas; this styles the menu and the end card over it. */
+/* Ride the Chart (?ride, formerly Buy the Dip at ?dip). The game itself is one canvas; this styles the menu and the end card over it. */
 html.dip-on, html.dip-on body { overflow: hidden; overscroll-behavior: none; }
 #dip {
   position: fixed; inset: 0; z-index: 9999; background: #03040a; color: #fff; overflow: hidden;
@@ -18,7 +18,7 @@ html.dip-on, html.dip-on body { overflow: hidden; overscroll-behavior: none; }
 @keyframes dip-in { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
 
 .dip-logo {
-  display: flex; gap: 0.28em; font: 800 clamp(40px, 11vw, 104px)/0.95 "JetBrains Mono", ui-monospace, Menlo, monospace;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.08em 0.28em; font: 800 clamp(38px, 10vw, 104px)/0.95 "JetBrains Mono", ui-monospace, Menlo, monospace;
   letter-spacing: -0.04em; color: #fff;
 }
 .dip-logo-dip { color: var(--down); text-shadow: 0 0 34px rgba(var(--down-rgb), 0.65); transform: translateY(0.14em) rotate(4deg); display: inline-block; }

@@ -11,9 +11,9 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
-### Nov 11, 2026: Buy the Dip test (?dip)
+### Nov 11, 2026: Ride the Chart (proofoffight.com/ride; was Buy the Dip at ?dip)
 
-A hidden test mode at `proofoffight.com/?dip`, on its own screen with its own look (no 16-bit art, no roster): a one-button arcade ride.
+Renamed from Buy the Dip on Nov 12 ("Buy the dip" is now the tagline). At `proofoffight.com/ride` (a small page with its own link preview that opens `/?ride`; old `?dip` links still work), on its own screen with its own look (no 16-bit art, no roster): a one-button arcade ride.
 
 - **The idea:** the ground is Bitcoin's real price chart, 2010 to 11 Nov 2026, day by day. A ball rolls and flies along it, left to right, through time. Down slopes are red and up slopes are green. Hold the button on red to get heavy and dive for speed; let go on green to launch. A liquidation wall chases from behind and speeds up as the years pass. A run lasts from 20 seconds to about two minutes.
 - **Scoring:** sats for distance, for the gold sats in the air and on the dips, and for every perfect landing (a smooth landing on a down slope). Three perfect landings in a row start a Bull Run: faster, sats count double. The end screen says which month and year you reached, and Share draws a picture of the chart with the spot you were liquidated.

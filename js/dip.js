@@ -1,10 +1,11 @@
-/* Buy the Dip test mode (?dip). The rules live in js/dip-core.js; this file draws them, plays the sound and
+/* Ride the Chart (proofoffight.com/ride, which opens ?ride; ?dip from its Buy the Dip days still works). The rules live in js/dip-core.js; this file draws them, plays the sound and
    takes the one button. Everything on screen is drawn here in code on one canvas: no image files.
    The ground is a real price chart (Bitcoin or Solana, or a made-up daily coin). Down slopes are red or purple, up slopes are green:
    hold on red to dive, let go on green to fly, and stay ahead of the liquidation wall.
    ?dip&debug exposes window.POF_DIP; ?dip&auto lets the look-ahead bot play (for recording clips). */
 (function () {
-  if (!/[?&]dip\b/i.test(location.search)) return;
+  if (!/[?&](ride|dip)\b/i.test(location.search)) return;
+  document.title = 'Ride the Chart · Proof of Fight';
   var C = window.POF_DIP_CORE, CHAINS = window.POF_DIP_CHAINS;
   var AUTO = /[?&]auto\b/i.test(location.search), DEBUG = /[?&]debug\b/i.test(location.search);
   var DAY = C.DAY;
@@ -34,7 +35,7 @@
   // Ghosts: REC records the run being played; GH replays another run as a see-through orb (your best, or a
   // friend's run from a race link); CHALLENGE is the run from the link this page was opened with.
   var REC = null, GH = null, ghostWho = '', ghostTrail = [], ghostPassed = false, racing = false, CHALLENGE = null;
-  // The Buy the Dip server (worker/ in the repo): short race links and the leaderboards. ?dip&debug&api=<url> points
+  // The Ride the Chart server (worker/ in the repo): short race links and the leaderboards. ?dip&debug&api=<url> points
   // the page at another copy (a local one, say).
   var API = (DEBUG && (/[?&]api=([^&#]+)/.exec(location.search) || [])[1]) ? decodeURIComponent(/[?&]api=([^&#]+)/.exec(location.search)[1]) : 'https://pof-dip.brianboode.workers.dev';
   var posted = false, lbBoard = null, shortUrl = '', played = chainIds[0];
@@ -203,8 +204,8 @@
     root.innerHTML =
       '<canvas id="dip-cv"></canvas>' +
       '<div class="dip-menu" id="dip-menu">' +
-        '<div class="dip-logo"><span>BUY</span><span>THE</span><span class="dip-logo-dip">DIP</span></div>' +
-        '<p class="dip-tag">Ride every pump and crash in crypto\'s history.<br>One button. Don\'t get liquidated.</p>' +
+        '<div class="dip-logo"><span>RIDE</span><span>THE</span><span class="dip-logo-dip">CHART</span></div>' +
+        '<p class="dip-tag">Ride every pump and crash in crypto\'s history.<br>One button. Buy the dip. Don\'t get liquidated.</p>' +
         '<div class="dip-how"><span><i class="dip-dot dip-red"></i><b>HOLD</b> going down to dive</span><span><i class="dip-dot dip-green"></i><b>LET GO</b> going up to fly</span></div>' +
         '<div class="dip-challenge" id="dip-challenge" hidden><p id="dip-challenge-text"></p>' +
           '<button class="dip-btn dip-btn-race" id="dip-race" type="button"><b>RACE THEIR GHOST</b><small>their run plays next to yours</small></button></div>' +
@@ -418,7 +419,7 @@
     $('#dip-end-best').textContent = isBest && old ? 'NEW BEST' : isBest ? '' : 'BEST ' + fmt(old);
     $('#dip-note').textContent = '';
     posted = false; $('#dip-post-btn').disabled = false; shortUrl = '';
-    if (REC && REC.end) { var mine = REC; api('/runs', { code: C.encode(REC) }).then(function (j) { if (REC === mine) shortUrl = 'https://proofoffight.com/?dip&r=' + j.id; }, function () { /* offline: long link */ }); }
+    if (REC && REC.end) { var mine = REC; api('/runs', { code: C.encode(REC) }).then(function (j) { if (REC === mine) shortUrl = 'https://proofoffight.com/ride/?r=' + j.id; }, function () { /* offline: long link */ }); }
     $('#dip-post').hidden = !(REC && REC.end && sc > 0);
     $('#dip-initials').value = store('pof-dip-initials') || '';
     $('#dip-end').hidden = false; $('#dip-quit').hidden = true;
@@ -849,12 +850,12 @@
     g.font = '800 20px ' + MONO; g.fillStyle = RED; g.textAlign = dx > 900 ? 'right' : 'left';
     g.fillText('LIQUIDATED', dx + (dx > 900 ? -14 : 14), 352);
     g.textAlign = 'left';
-    g.font = '800 30px ' + MONO; g.fillStyle = GREEN; g.fillText('BUY THE DIP', 60, 78);
+    g.font = '800 30px ' + MONO; g.fillStyle = GREEN; g.fillText('RIDE THE CHART', 60, 78);
     g.font = '700 64px ' + SANS; g.fillStyle = '#fff';
     g.fillText(T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear : 'I rode ' + T.name, 60, 168);
     g.fillText(T.mode === 'chain' ? 'to ' + when(S.x) + '.' : 'for ' + fmt(T.dayAt(S.x)) + ' days.', 60, 244);
     g.font = '800 44px ' + MONO; g.fillStyle = GOLD; g.fillText(fmt(C.score(S)) + ' ' + UNIT, 60, 310);
-    g.textAlign = 'right'; g.font = '700 24px ' + SANS; g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillText('proofoffight.com/?dip', 1140, 78);
+    g.textAlign = 'right'; g.font = '700 24px ' + SANS; g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillText('proofoffight.com/ride', 1140, 78);
     return c;
   }
   function shareText() {
@@ -863,7 +864,7 @@
   }
   function raceUrl() {
     if (shortUrl) return shortUrl;
-    return 'https://proofoffight.com/?dip' + (REC && REC.end ? '&race=' + encodeURIComponent(C.encode(REC)) : '');
+    return 'https://proofoffight.com/' + (REC && REC.end ? '?ride&race=' + encodeURIComponent(C.encode(REC)) : 'ride/');
   }
   // Text and link only, no picture: messaging apps (iMessage, WhatsApp) drop the text when a picture rides along.
   // The short link is made as the run ends (see finish), so the share sheet still opens straight from the tap;
@@ -882,7 +883,7 @@
     var text = shareText(), url = raceUrl(), note = $('#dip-note');
     shareCard().toBlob(function (blob) {
       var file = null;
-      try { file = new File([blob], 'buy-the-dip.png', { type: 'image/png' }); } catch (e) { /* old browser */ }
+      try { file = new File([blob], 'ride-the-chart.png', { type: 'image/png' }); } catch (e) { /* old browser */ }
       if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({ files: [file], text: text + ' ' + url }).catch(function () { /* closed */ });
         return;
@@ -891,7 +892,7 @@
         note.textContent = copied ? 'Picture copied. Paste it into your post.' : 'Picture saved. Attach it to your post.';
         window.open('https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank', 'noopener');
       };
-      var save = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'buy-the-dip.png'; a.click(); done(false); };
+      var save = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ride-the-chart.png'; a.click(); done(false); };
       if (navigator.clipboard && window.ClipboardItem) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function () { done(true); }, save);
       else save();
     }, 'image/png');
