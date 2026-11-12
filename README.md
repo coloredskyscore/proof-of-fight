@@ -7,7 +7,7 @@ Proof of Fight is an arcade of crypto games at **https://proofoffight.com**. The
 | `/` (`index.html`) | The arcade: today's Daily Fight and Mystery Chart, a cabinet per game, and what's in the lab |
 | `/fight/` | **Proof of Fight**, the fighting game (below) |
 | `/ride/` | **Ride the Chart**, the one-button ride over a real price chart |
-| `/51/` | **51% Attack**, the network-defense game (in the lab: linked from the arcade, kept out of search) |
+| `/51/` | **51% Attack**, the network-defense game |
 
 The game pages keep their files (`css/`, `js/`, `art/`, `audio/`) at the site root and reach them through `<base href="../">`. Old links that put a game behind `?something` on the home page (`?dip`, `?ride&race=`, `?daily`, `?51`, ...) are forwarded to the right game's page by a script at the top of `index.html`. To add a game: a new folder with its own `index.html` (with `<base href="../">` and its own link preview), plus a cabinet in `index.html`.
 

@@ -68,6 +68,9 @@
     $('best-ride').innerHTML = 'Your best: ' + (day ? '<b>' + day.replace(/[<&]/g, '') + '</b> · ' : '') + ride.score.toLocaleString('en-US') + ' ' + ride.unit;
   }
 
+  var unl = +get('pof.a51.unlocked') || 0, won51 = get('pof.a51.best.vault');
+  if (unl > 1 || won51) $('best-51').innerHTML = 'Story: <b>stage ' + Math.max(1, Math.min(5, unl || 1)) + ' of 5</b> unlocked';
+
   // ---------- Previews ----------
   function fit(c) {
     var r = c.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1);
@@ -121,6 +124,7 @@
   function terAt(x) { var a = Math.max(0, Math.min(ter.length - 2, Math.floor(x))), f = x - Math.floor(x); return ter[a] + (ter[a + 1] - ter[a]) * f; }
   function drawRide(now) {
     raf = 0;
+    drawNet(now);
     if (!ter.length) return;
     if (!R) R = fit(rideCv);
     var g = R.g, w = R.w, h = R.h, sec = (now - t0) / 1000;
@@ -162,7 +166,60 @@
   var raf = 0;
   function run() { if (!reduce && !raf) raf = requestAnimationFrame(drawRide); }
 
-  function redraw() { drawStage(); R = null; if (reduce) drawRide(t0 + 300000); }
+
+  // 51% Attack: a neon network. Red attackers run down the links and take nodes; the defense retakes them.
+  // The consensus meter at the top shows how much of the network they hold (51% loses).
+  var netCv = $('net'), N = null, consFill = $('cons-fill'), consPct = $('cons-pct');
+  var NODES = [[.5, .86, 1], [.22, .7], [.78, .7], [.36, .52], [.64, .52], [.1, .44], [.9, .44], [.5, .36], [.24, .26], [.76, .26], [.5, .16]];
+  var LINKS = [[0, 1], [0, 2], [1, 3], [2, 4], [3, 4], [1, 5], [2, 6], [3, 7], [4, 7], [5, 8], [6, 9], [7, 8], [7, 9], [8, 10], [9, 10], [3, 5], [4, 6]];
+  // Each outer node is taken at one moment of a 12 s loop and retaken a few seconds later.
+  var TAKE = [null, [6.2, 9.6], [7.4, 10.4], [4.6, 8.8], [5.4, 11], [3.2, 7.6], [2.6, 8.2], [3.8, 9.2], [1.6, 6.8], [1.2, 7], [0.4, 5.6]];
+  function hex(g, x, y, r) { g.beginPath(); for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; if (i) g.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); else g.moveTo(x + r * Math.cos(a), y + r * Math.sin(a)); } g.closePath(); }
+  function drawNet(now) {
+    if (!netCv) return;
+    if (!N) N = fit(netCv);
+    var g = N.g, w = N.w, h = N.h, sec = (now - t0) / 1000, loop = sec % 12, i, k;
+    g.fillStyle = '#05040a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(155,140,255,.10)';
+    for (var gx = 8; gx < w; gx += 16) for (var gy = 8; gy < h; gy += 16) g.fillRect(gx, gy, 1, 1);
+    var top = 30, P = NODES.map(function (n) { return [n[0] * w, top + n[1] * (h - top - 8)]; });
+    var bad = NODES.map(function (n, j) { var T = TAKE[j]; return !!T && loop >= T[0] && loop < T[1]; });
+    // links
+    g.lineWidth = 1.5;
+    LINKS.forEach(function (L) {
+      var a = P[L[0]], b = P[L[1]], red = bad[L[0]] || bad[L[1]];
+      g.strokeStyle = red ? 'rgba(255,61,90,.35)' : 'rgba(155,92,255,.35)';
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    });
+    // packets: tokens flow out from home in teal, attackers run toward a node about to fall in red
+    LINKS.forEach(function (L, j) {
+      var a = P[L[0]], b = P[L[1]], f = (sec * 0.45 + j * 0.37) % 1;
+      g.fillStyle = 'rgba(25,230,176,.9)'; g.beginPath(); g.arc(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, 1.8, 0, 7); g.fill();
+    });
+    for (i = 1; i < NODES.length; i++) {
+      var T = TAKE[i], lead = T[0] - loop;
+      if (lead > 0 && lead < 1.2) {
+        var from = [P[i][0] + (P[i][0] - w / 2) * 0.35, Math.max(4, P[i][1] - h * 0.22)], f2 = 1 - lead / 1.2;
+        g.fillStyle = '#ff3d5a'; g.shadowColor = '#ff3d5a'; g.shadowBlur = 8;
+        g.beginPath(); g.arc(from[0] + (P[i][0] - from[0]) * f2, from[1] + (P[i][1] - from[1]) * f2, 3, 0, 7); g.fill(); g.shadowBlur = 0;
+      }
+    }
+    // nodes
+    var r = Math.max(7, Math.min(w, h) * 0.045);
+    for (i = 0; i < NODES.length; i++) {
+      var x = P[i][0], y = P[i][1], home = NODES[i][2], rr = home ? r * 1.6 : r, T2 = TAKE[i];
+      var flash = T2 && Math.abs(loop - T2[1]) < 0.35 ? 1 - Math.abs(loop - T2[1]) / 0.35 : 0;
+      g.shadowBlur = 12; g.shadowColor = bad[i] ? '#ff3d5a' : '#19e6b0';
+      hex(g, x, y, rr); g.fillStyle = bad[i] ? 'rgba(255,61,90,.35)' : 'rgba(25,230,176,' + (0.12 + flash * 0.6) + ')'; g.fill();
+      g.lineWidth = home ? 2.5 : 1.8; g.strokeStyle = bad[i] ? '#ff3d5a' : '#19e6b0'; g.stroke(); g.shadowBlur = 0;
+      g.fillStyle = bad[i] ? '#ff9aa9' : '#bfffe9'; g.beginPath(); g.arc(x, y, home ? 3.5 : 2, 0, 7); g.fill();
+    }
+    var held = 0; for (k = 1; k < bad.length; k++) if (bad[k]) held++;
+    var pct = Math.round(held / NODES.length * 100);
+    consFill.style.width = pct + '%'; consPct.textContent = pct + '%';
+  }
+
+  function redraw() { drawStage(); R = null; N = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); } }
   redraw();
   run();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) run(); });
