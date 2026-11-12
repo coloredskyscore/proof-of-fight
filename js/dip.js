@@ -217,7 +217,9 @@
         '<div class="dip-end-best" id="dip-end-best"></div>' +
         '<div class="dip-end-race" id="dip-end-race" hidden></div>' +
         '<button class="dip-btn dip-btn-main" id="dip-again" type="button"><b>RIDE AGAIN</b></button>' +
-        '<div class="dip-row"><button class="dip-btn dip-btn-sm" id="dip-share" type="button"><b>SHARE</b></button>' +
+        '<div class="dip-row"><button class="dip-btn dip-btn-sm" id="dip-link" type="button"><b>SEND RACE LINK</b></button>' +
+        '<button class="dip-btn dip-btn-sm" id="dip-share" type="button"><b>SHARE PICTURE</b></button></div>' +
+        '<div class="dip-row">' +
         '<button class="dip-btn dip-btn-sm" id="dip-tomenu" type="button"><b>MENU</b></button></div>' +
         '<div class="dip-note" id="dip-note"></div>' +
       '</div>' +
@@ -236,6 +238,7 @@
     $('#dip-tomenu').addEventListener('click', menu);
     $('#dip-quit').addEventListener('click', menu);
     $('#dip-share').addEventListener('click', share);
+    $('#dip-link').addEventListener('click', shareLink);
     $('#dip-mute').addEventListener('click', function () { audio(); setMuted(!muted); });
     setMuted(muted);
 
@@ -777,10 +780,24 @@
     g.textAlign = 'right'; g.font = '700 24px ' + SANS; g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillText('proofoffight.com/?dip', 1140, 78);
     return c;
   }
-  function share() {
-    var text = (T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear + ' to ' + when(S.x) : 'I rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days') +
+  function shareText() {
+    return (T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear + ' to ' + when(S.x) : 'I rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days') +
       ' before getting liquidated. ' + fmt(C.score(S)) + ' ' + UNIT + '. Race my ghost:';
-    var url = 'https://proofoffight.com/?dip' + (REC && REC.end ? '&race=' + encodeURIComponent(C.encode(REC)) : ''), note = $('#dip-note');
+  }
+  function raceUrl() { return 'https://proofoffight.com/?dip' + (REC && REC.end ? '&race=' + encodeURIComponent(C.encode(REC)) : ''); }
+  // Text and link only, no picture: messaging apps (iMessage, WhatsApp) drop the text when a picture rides along.
+  function shareLink() {
+    var text = shareText(), url = raceUrl(), note = $('#dip-note');
+    var copy = function () {
+      var all = text + ' ' + url;
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(all).then(function () { note.textContent = 'Race link copied. Paste it in a text.'; }, function () { window.prompt('Copy this link:', all); });
+      else window.prompt('Copy this link:', all);
+    };
+    if (navigator.share) navigator.share({ text: text, url: url }).catch(function (e) { if (e && e.name !== 'AbortError') copy(); });
+    else copy();
+  }
+  function share() {
+    var text = shareText(), url = raceUrl(), note = $('#dip-note');
     shareCard().toBlob(function (blob) {
       var file = null;
       try { file = new File([blob], 'buy-the-dip.png', { type: 'image/png' }); } catch (e) { /* old browser */ }
