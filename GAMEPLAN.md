@@ -11,6 +11,14 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 12, 2026: proofoffight.com becomes an arcade
+
+Proof of Fight is now the brand for a set of games. The home page is an arcade, and each game has its own address:
+- **`proofoffight.com`:** the arcade. The Proof of Fight logo, a **Today** strip (today's Daily Fight matchup with the countdown to the next one, and today's Daily Coin), then one cabinet per game, each in that game's own look: the fight with today's two daily fighters on a night skyline, and Ride the Chart with an orb riding Bitcoin's real chart. Each cabinet shows your best from this browser (story boss, daily streak, best month ridden). **In the Lab** teases Tower Defense (coming soon) and the next game. Guitar Battle and Rap Battle are not shown.
+- **`/fight/`:** the fighting game, unchanged, with a **More games** link back to the arcade. Its test modes still work (`/fight/?td`, `?rap`, `?guitar`).
+- **`/ride/`:** Ride the Chart on its own page (it no longer loads the fight's files). Race links now read `proofoffight.com/ride/?race=...`.
+- **Old links still work:** anything with `?` on the home page is forwarded: `?ride`, `?dip` and `?race=` to `/ride/`, everything else to `/fight/`.
+
 ### Nov 11, 2026: Ride the Chart (proofoffight.com/ride; was Buy the Dip at ?dip)
 
 Renamed from Buy the Dip on Nov 12 ("Buy the dip" is now the tagline). At `proofoffight.com/ride` (a small page with its own link preview that opens `/?ride`; old `?dip` links still work), on its own screen with its own look (no 16-bit art, no roster): a one-button arcade ride.
