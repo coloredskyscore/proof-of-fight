@@ -1,4 +1,4 @@
-/* Buy the Dip test mode (?dip). The game itself is one canvas; this styles the menu and the end card over it. */
+/* Ride the Chart (?ride, formerly Buy the Dip at ?dip). The game itself is one canvas; this styles the menu and the end card over it. */
 html.dip-on, html.dip-on body { overflow: hidden; overscroll-behavior: none; }
 #dip {
   position: fixed; inset: 0; z-index: 9999; background: #03040a; color: #fff; overflow: hidden;
@@ -18,7 +18,7 @@ html.dip-on, html.dip-on body { overflow: hidden; overscroll-behavior: none; }
 @keyframes dip-in { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
 
 .dip-logo {
-  display: flex; gap: 0.28em; font: 800 clamp(40px, 11vw, 104px)/0.95 "JetBrains Mono", ui-monospace, Menlo, monospace;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.08em 0.28em; font: 800 clamp(38px, 10vw, 104px)/0.95 "JetBrains Mono", ui-monospace, Menlo, monospace;
   letter-spacing: -0.04em; color: #fff;
 }
 .dip-logo-dip { color: var(--down); text-shadow: 0 0 34px rgba(var(--down-rgb), 0.65); transform: translateY(0.14em) rotate(4deg); display: inline-block; }
@@ -84,3 +84,43 @@ html.dip-on, html.dip-on body { overflow: hidden; overscroll-behavior: none; }
 }
 .dip-pause:hover { color: #fff; border-color: rgba(255, 255, 255, 0.5); }
 @media (prefers-reduced-motion: reduce) { .dip-end { animation: none; } }
+
+/* Posting a score (end screen) and the leaderboard (from the menu). */
+.dip-post { display: flex; gap: 10px; width: min(360px, 100%); }
+.dip-post input {
+  width: 92px; flex: none; text-align: center; padding: 10px 8px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08); color: #fff; font: 800 20px "JetBrains Mono", ui-monospace, Menlo, monospace; letter-spacing: 0.18em;
+  text-transform: uppercase; -webkit-user-select: text; user-select: text;
+}
+.dip-post input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.dip-post input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dip-post .dip-btn { flex: 1; }
+.dip-btn:disabled { opacity: 0.5; cursor: default; }
+.dip-lb {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); background: rgba(3, 4, 10, 0.86); overflow-y: auto;
+}
+.dip-lb-title { font: 800 clamp(28px, 7vw, 48px)/1 "JetBrains Mono", ui-monospace, Menlo, monospace; color: var(--coin); letter-spacing: 0.02em; }
+.dip-lb-tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.dip-lb-tab {
+  appearance: none; cursor: pointer; padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.25); background: none;
+  color: rgba(255, 255, 255, 0.7); font: 800 12px "JetBrains Mono", ui-monospace, Menlo, monospace; letter-spacing: 0.06em;
+}
+.dip-lb-tab.on { background: var(--btn-bg); color: var(--btn-ink); border-color: transparent; }
+.dip-lb-list { list-style: none; margin: 0; padding: 0; width: min(440px, 100%); counter-reset: lb; display: grid; gap: 6px; }
+.dip-lb-list li {
+  counter-increment: lb; display: grid; grid-template-columns: 26px 48px 1fr auto auto; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); font: 500 13px "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+.dip-lb-list li::before { content: counter(lb); color: rgba(255, 255, 255, 0.45); font-weight: 800; }
+.dip-lb-list li:first-child { background: rgba(255, 197, 61, 0.14); }
+.dip-lb-list b { font-weight: 800; letter-spacing: 0.08em; }
+.dip-lb-list span { color: rgba(255, 255, 255, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dip-lb-list em { font-style: normal; font-weight: 800; color: var(--coin); white-space: nowrap; }
+.dip-lb-race {
+  appearance: none; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.35); background: none; color: #fff; border-radius: 8px;
+  padding: 5px 8px; font: 800 11px "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+.dip-lb-race:hover { background: rgba(255, 255, 255, 0.12); }
+.dip-lb .dip-btn-sm { width: min(200px, 100%); }
+@media (max-width: 380px) { .dip-lb-list li { grid-template-columns: 20px 42px 1fr auto; } .dip-lb-list span { display: none; } }
