@@ -61,12 +61,20 @@ html.dip-on, html.dip-on body { overflow: hidden; overscroll-behavior: none; }
   font: 800 clamp(38px, 10vw, 88px)/1 "JetBrains Mono", ui-monospace, Menlo, monospace; letter-spacing: -0.03em;
   color: var(--down); text-shadow: 0 0 40px rgba(var(--down-rgb), 0.7);
 }
-.dip-end-where { font-size: clamp(19px, 3.6vw, 30px); font-weight: 700; }
+.dip-end-where { font-size: clamp(22px, 4.6vw, 38px); font-weight: 700; line-height: 1.15; }
 .dip-end-sub { font-size: clamp(13px, 2vw, 16px); color: rgba(255, 255, 255, 0.65); margin-top: -8px; }
 .dip-end-score { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; }
 .dip-end-score b { font: 800 clamp(34px, 7vw, 56px)/1 "JetBrains Mono", ui-monospace, Menlo, monospace; color: var(--coin); }
 .dip-end-score small { font: 800 13px "JetBrains Mono", ui-monospace, Menlo, monospace; color: rgba(255, 255, 255, 0.6); }
 .dip-end-best { font: 800 12px "JetBrains Mono", ui-monospace, Menlo, monospace; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.6); min-height: 14px; margin-top: -6px; }
+.dip-end-break { font: 500 12px "JetBrains Mono", ui-monospace, Menlo, monospace; color: rgba(255, 255, 255, 0.6); margin-top: -8px; }
+.dip-end-race { font: 800 14px "JetBrains Mono", ui-monospace, Menlo, monospace; color: rgba(255, 255, 255, 0.85); padding: 8px 14px; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 10px; }
+.dip-end-race.won { color: var(--up); border-color: var(--up); }
+.dip-challenge { width: min(360px, 100%); display: grid; gap: 8px; padding: 12px; border-radius: 16px; border: 1px dashed rgba(255, 255, 255, 0.45); background: rgba(255, 255, 255, 0.05); }
+.dip-challenge p { margin: 0; font-size: 14px; line-height: 1.4; color: #fff; }
+.dip-btn-race { width: 100%; background: #fff; color: #05060c; border-color: #fff; }
+.dip-btn-race small { color: rgba(5, 6, 12, 0.65); }
+.dip-btn-race:hover { background: #e8e8f0; }
 .dip-note { font-size: 13px; color: rgba(255, 255, 255, 0.7); min-height: 16px; }
 
 .dip-pause {

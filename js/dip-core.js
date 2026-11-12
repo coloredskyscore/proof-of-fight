@@ -175,11 +175,14 @@
     var x = 8 * DAY;
     return {
       T: T, x: x, y: T.height(x), vx: 720, vy: 0, s: 720, air: false, airT: 0, t: 0,
-      wall: x - 1500, hold: false, streak: 0, fever: 0, perfects: 0, coins: 0, bonus: 0, best: 0, maxAlt: 0,
+      wall: x - 1500, hold: false, streak: 0, fever: 0, perfects: 0, coins: 0, bonus: 0, coinPts: 0, landPts: 0, best: 0, maxAlt: 0,
       ci: 0, ei: 0, dead: false, lastEvent: null, ev: []
     };
   }
-  function score(S) { return Math.max(0, Math.floor((S.x / DAY - 8) * 10)) + S.bonus; }
+  function distPts(S) { return Math.max(0, Math.floor((S.x / DAY - 8) * 10)); }
+  function score(S) { return distPts(S) + S.bonus; }
+  // Where the points came from, for the end screen: 10 a day ridden, the pickups, the perfect landings.
+  function breakdown(S) { return { distance: distPts(S), pickups: S.coinPts, landings: S.landPts, total: score(S) }; }
 
   /* Advance the run by dt seconds (keep dt small, 1/120). Things that happened are pushed onto S.ev. */
   function step(S, hold, dt) {
@@ -202,7 +205,7 @@
         S.y = gh; S.air = false; S.s = Math.max(along, minS * 0.6);
         if (S.airT > 0.32) {
           if (ang < 0.34 && m < 0.05) {
-            S.streak++; S.perfects++; S.s += 190; S.bonus += 100 * Math.min(S.streak, 5);
+            S.streak++; S.perfects++; S.s += 190; S.bonus += 100 * Math.min(S.streak, 5); S.landPts += 100 * Math.min(S.streak, 5);
             S.ev.push({ type: 'perfect', streak: S.streak });
             if (S.streak >= 3) { if (!S.fever) S.ev.push({ type: 'fever' }); S.fever = 6; }
           } else if (ang > 0.8) {
@@ -235,7 +238,7 @@
     for (var i = S.ci; i < cs.length && cs[i].x < S.x + 80; i++) {
       var c = cs[i];
       if (!c.got && Math.abs(c.x - S.x) < 62 && Math.abs(c.y - S.y) < 62) {
-        c.got = true; S.coins++; S.bonus += fever ? 50 : 25; S.ev.push({ type: 'coin', x: c.x, y: c.y });
+        c.got = true; S.coins++; S.bonus += fever ? 50 : 25; S.coinPts += fever ? 50 : 25; S.ev.push({ type: 'coin', x: c.x, y: c.y });
       }
     }
     // landmarks
@@ -268,7 +271,63 @@
     return best;
   }
 
+  /* Ghosts: a run recorded as the moments the button went down or up, plus a snapshot of the ball every five
+     seconds. Replaying the presses re-creates the run; the snapshots pull it back on line, since two phones
+     can round the math a hair differently. The whole thing fits in a link (see encode). */
+  var KF = 600, B36 = 36;
+  function recorder(mode, seed) { return { mode: mode, seed: seed || '', n: 0, last: false, tog: [], kf: [], end: 0, score: 0, day: 0 }; }
+  function snap(S) {
+    return [Math.round(S.x * 10), Math.round(S.y * 10), Math.round(S.vx), Math.round(S.vy), Math.round(S.s), S.air ? 1 : 0,
+      Math.round(S.airT * 100), Math.round(S.fever * 100), S.streak];
+  }
+  // Call once per step, before step(), with the hold that step will use.
+  function record(R, S, hold) {
+    if (hold !== R.last) { R.tog.push(R.n); R.last = hold; }
+    if (R.n % KF === 0) R.kf.push(snap(S));
+    R.n++;
+  }
+  function finishRecord(R, S, T) { R.end = R.n; R.score = score(S); R.day = T.dayAt(S.x); return R; }
+  function encode(R) {
+    var t = [], prev = 0, i;
+    for (i = 0; i < R.tog.length; i++) { t.push((R.tog[i] - prev).toString(B36)); prev = R.tog[i]; }
+    return ['g1', R.mode, R.seed, R.end.toString(B36), R.score.toString(B36), R.day.toString(B36), t.join('.'),
+      R.kf.map(function (k) { return k.map(function (v) { return v.toString(B36); }).join('_'); }).join('.')].join('~');
+  }
+  function decodeGhost(code) {
+    try {
+      var p = String(code).split('~');
+      if (p[0] !== 'g1' || p.length !== 8) return null;
+      var R = recorder(p[1], p[2]), prev = 0;
+      R.end = parseInt(p[3], B36); R.score = parseInt(p[4], B36); R.day = parseInt(p[5], B36);
+      R.tog = p[6] ? p[6].split('.').map(function (v) { prev += parseInt(v, B36); return prev; }) : [];
+      R.kf = p[7] ? p[7].split('.').map(function (k) { return k.split('_').map(function (v) { return parseInt(v, B36); }); }) : [];
+      if (!(R.end > 0) || R.kf.some(function (k) { return k.length !== 9 || k.some(isNaN); }) || R.tog.some(isNaN)) return null;
+      return R;
+    } catch (e) { return null; }
+  }
+  function ghost(T, R) {
+    var G = newRun(T);
+    G.ghost = true; G.noWall = true;
+    return { R: R, S: G, n: 0, ti: 0, ki: 0, hold: false, done: false };
+  }
+  function ghostStep(Gh, dt) {
+    if (Gh.done) return;
+    var R = Gh.R, G = Gh.S;
+    if (Gh.n >= R.end) { Gh.done = true; return; }
+    while (Gh.ti < R.tog.length && R.tog[Gh.ti] <= Gh.n) { Gh.hold = !Gh.hold; Gh.ti++; }
+    if (Gh.n % KF === 0 && Gh.ki < R.kf.length) {
+      var k = R.kf[Gh.ki++];
+      G.x = k[0] / 10; G.y = k[1] / 10; G.vx = k[2]; G.vy = k[3]; G.s = k[4]; G.air = k[5] === 1;
+      G.airT = k[6] / 100; G.fever = k[7] / 100; G.streak = k[8];
+    }
+    step(G, Gh.hold, dt);
+    G.ev.length = 0;
+    Gh.n++;
+  }
+
   var api = {
+    recorder: recorder, record: record, finishRecord: finishRecord, encode: encode, decodeGhost: decodeGhost, ghost: ghost, ghostStep: ghostStep,
+    breakdown: breakdown,
     bot: bot,
     DAY: DAY, VS: VS, R: R, G: G, G_HOLD: G_HOLD,
     makeTerrain: makeTerrain, newRun: newRun, step: step, score: score, wallSpeed: wallSpeed, hashStr: hashStr, rng: rng
