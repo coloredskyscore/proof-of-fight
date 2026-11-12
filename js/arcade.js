@@ -1,4 +1,4 @@
-/* The arcade at proofoffight.com: fills in today's Daily Fight and Daily Coin, your bests from this browser, and draws
+/* The arcade at proofoffight.com: fills in today's Daily Fight and Mystery Chart, your bests from this browser, and draws
    the two live previews (the fight stage behind today's two fighters, and an orb riding Bitcoin's real chart).
    Nothing here is needed to play: every card is a plain link to the game's own page (fight/, ride/). */
 (function () {
@@ -44,9 +44,8 @@
     $('n-fighters').textContent = D.ROSTER.length + ' fighters';
     if (D.STORY) $('n-bosses').textContent = 'Story: ' + D.STORY.ladder.length + ' bosses';
   }
-  try { $('daily-coin').textContent = 'Daily Coin: ' + C.makeTerrain({ mode: 'daily', seed: new Date().toISOString().slice(0, 10) }).name; } catch (e) { /* keep the plain label */ }
 
-  // The Daily Fight turns over at local midnight (the Daily Coin at midnight UTC).
+  // The Daily Fight turns over at local midnight (the Mystery Chart at midnight UTC).
   function tick() {
     var now = new Date(), s = Math.max(0, Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now) / 1000));
     $('reset').textContent = 'New fight in ' + pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60);

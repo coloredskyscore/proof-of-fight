@@ -25,7 +25,8 @@ function run(T, bot) {
     '  sats ' + S.coins + '  perfect ' + ev.perfect + '  bad ' + ev.bad + '  fever ' + ev.fever + '  launches ' + ev.launch + '  maxAlt ' + S.maxAlt.toFixed(0);
 }
 var charts = CH.ORDER.concat(['2026-11-11', '2026-11-12', '2026-11-13']);
-function terrainOf(id) { return CH.CHAINS[id] ? chainTerrain(id) : C.makeTerrain({ mode: 'daily', seed: id }); }
+function pool() { return CH.ORDER.map(function (id) { return { chain: CH.CHAINS[id], data: window[CH.CHAINS[id].dataVar] }; }); }
+function terrainOf(id) { return CH.CHAINS[id] ? chainTerrain(id) : C.makeTerrain({ mode: 'daily', seed: id, pool: pool() }); }
 charts.forEach(function (id) {
   var T0 = terrainOf(id);
   console.log(id + ' (' + T0.name + ', ' + T0.coins.length + ' sats)');
