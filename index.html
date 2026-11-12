@@ -9,6 +9,7 @@
       var q = location.search, h = location.hash;
       if (!q && !h) return;
       var ride = /[?&](ride|dip|race)\b/i.test(q);
+      if (/[?&]51\b/.test(q)) { location.replace('51/' + h); return; }   // 51% Attack, still in the lab
       location.replace((ride ? 'ride/' : 'fight/') + q + h);
     })();
   </script>
