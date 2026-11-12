@@ -5,14 +5,22 @@
   'use strict';
   if (!window.POF_A51_PAGE) return;
   var C = window.POF_A51_CORE, R = C.RULES;
-  var TEAL = '#19e6b0', VIO = '#9b5cff', RED = '#ff3d5a', GOLD = '#ffc53d', INK = '#05040a';
-  var FOE_COL = { aide: '#ff5d73', lobbyist: '#ffa53d', subpoena: '#ff3d5a', rogue: '#e040a0', boss: RED };
+  var TEAL = '#19e6b0', VIO = '#9b5cff', GOLD = '#ffc53d';
+  // The other side's colour changes with the boss: RED and its shades are set per stage in paint().
+  var RED = '#ff3d5a', FRGB = '255,61,90', DARK = '#1c040b', DIM = '#6d0a20', LIGHT = '#ff9fb0', FOE_COL = {};
+  function rgbOf(hex) { return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]; }
+  function mix(a, b, t) { var x = rgbOf(a), y = rgbOf(b); return '#' + [0, 1, 2].map(function (i) { var v = Math.round(x[i] + (y[i] - x[i]) * t); return (v < 16 ? '0' : '') + v.toString(16); }).join(''); }
+  function paint(stage) {
+    RED = stage.color; FRGB = rgbOf(RED).join(','); DARK = mix(RED, '#000000', 0.88); DIM = mix(RED, '#000000', 0.58); LIGHT = mix(RED, '#ffffff', 0.5);
+    FOE_COL = { aide: RED, lobbyist: mix(RED, '#ffe27a', 0.5), subpoena: RED, rogue: mix(RED, '#7a2cff', 0.45), boss: RED };
+  }
   var BW = 720, BH = 960;                         // the board, in its own units
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   function $(s, el) { return (el || document).querySelector(s); }
   function store(k, v) { try { if (v === undefined) return localStorage.getItem('pof.a51.' + k); localStorage.setItem('pof.a51.' + k, v); } catch (e) { /* private mode */ } return null; }
   function img(src) { var i = new Image(); i.src = src; return i; }
-  var HEAD = { toly: img('art/toly-head.webp'), warren: img('art/warren-head.webp') };
+  var HEAD = { toly: img('art/toly-head.webp') };
+  C.STAGES.forEach(function (st) { HEAD[st.boss] = img('art/' + st.boss + '-head.webp'); });
 
   // ---------- Page ----------
   var root = document.createElement('div');
@@ -27,12 +35,6 @@
       '<button class="a51-ic" id="a51-snd" type="button" aria-label="Sound"></button>' +
     '</div>' +
     '<aside class="a51-side a51-left" id="a51-left" hidden>' +
-      '<h4>STAGE 3 · THE HEARING</h4>' +
-      '<p><b>Hold the chain.</b> Every node you hold pays each block.</p>' +
-      '<p><b>Tap a node</b> to stake a validator. Tap again to upgrade it.</p>' +
-      '<p><b>Red nodes</b> are theirs. They pay nothing and send rogues. Tap one to win it back.</p>' +
-      '<p><b>Lose 51%</b> of the network, or your home node, and it\'s over.</p>' +
-      '<ul><li><i class="k-aide"></i>Aides: plain</li><li><i class="k-lob"></i>Lobbyists: fast</li><li><i class="k-sub"></i>Subpoenas: heavy, hit for 3</li><li><i class="k-rog"></i>Rogues: from taken nodes</li></ul>' +
     '</aside>' +
     '<aside class="a51-side a51-right" id="a51-right" hidden><h4>CHAIN LOG</h4><ol id="a51-log"></ol></aside>' +
     '<div class="a51-bar" id="a51-bar" hidden>' +
@@ -101,6 +103,12 @@
     poor: function () { tone(150, 0.1, { type: 'square', vol: 0.07 }); },
     won: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, 0.3, { at: i * 0.12, vol: 0.16 }); }); },
     lost: function () { [392, 330, 262, 196].forEach(function (f, i) { tone(f, 0.4, { type: 'sawtooth', at: i * 0.2, vol: 0.12 }); }); },
+    bid: function () { tone(1320, 0.07, { vol: 0.12 }); tone(1760, 0.12, { at: 0.07, vol: 0.12 }); tone(1320, 0.07, { at: 0.2, vol: 0.1 }); },
+    skim: function () { tone(520, 0.18, { to: 260, type: 'square', vol: 0.05 }); },
+    fake: function () { tone(1900, 0.04, { type: 'square', vol: 0.03 }); },
+    fog: function () { noise(1.2, 0.07, 350); },
+    crash: function () { tone(520, 0.7, { type: 'sawtooth', to: 45, vol: 0.2 }); noise(0.5, 0.16, 260); },
+    pump: function () { [392, 523, 659, 784].forEach(function (f, i) { tone(f, 0.12, { at: i * 0.05, vol: 0.11 }); }); },
     tap: function () { tone(700, 0.04, { vol: 0.08 }); }
   };
   function sfx(k, a) { if (S.mode === 'play' || k === 'tap') SFX[k](a); }
@@ -110,12 +118,23 @@
   // ---------- State ----------
   // mode: 'title' (a bot plays behind the logo), 'intro', 'play', 'end'.
   var S = { mode: 'title', G: null, speed: 1, fx: [], bolts: [], motes: [], shake: 0, flash: 0, pulseT: -9, banner: null, hover: null,
-    line: null, wasReady: false, botT: 0, endT: 0, sweep: null, view: { s: 1, ox: 0, oy: 0, w: 0, h: 0 }, vis: {}, t: 0 };
+    line: null, wasReady: false, botT: 0, endT: 0, sweep: null, stage: C.STAGES[0], candles: [], crash: null, fogA: 0, fogZone: 0, view: { s: 1, ox: 0, oy: 0, w: 0, h: 0 }, vis: {}, t: 0 };
   function vis(id) { return S.vis[id] || (S.vis[id] = { aim: -Math.PI / 2, kick: 0, pop: 0, flash: 0, capT: 0, nope: 0 }); }
-  function newGame(mode) {
-    S.G = C.create(); S.mode = mode; S.fx = []; S.bolts = []; S.vis = {}; S.banner = null; S.line = null; S.shake = 0; S.flash = 0; S.pulseT = -9; S.sweep = null; S.wasReady = false;
+  var ALL = /[?&]all\b/.test(location.search);                     // ?all opens every stage, for testing
+  function unlocked() { return ALL ? C.STAGES.length : Math.max(1, Math.min(C.STAGES.length, +store('unlocked') || 1)); }
+  function newGame(mode, stage) {
+    S.stage = stage || S.stage; paint(S.stage);
+    S.candles = []; S.crash = null; S.fogA = 0;
+    S.G = C.create({ stage: S.stage }); S.mode = mode; S.fx = []; S.bolts = []; S.vis = {}; S.banner = null; S.line = null; S.shake = 0; S.flash = 0; S.pulseT = -9; S.sweep = null; S.wasReady = false;
     S.G.block = 284301112;   // looks like a real slot number; only ever shown
     el.log.innerHTML = '';
+    var st = S.stage, nm = st.names;
+    el.left.innerHTML = '<h4>STAGE ' + st.stageNo + ' · ' + st.name.toUpperCase() + '</h4>' +
+      '<p><b>Tap a node</b> to stake a validator. Tap again to upgrade. Every node you hold pays each block.</p>' +
+      '<p><b>' + 'Their nodes</b> pay nothing and send rogues. Tap one to win it back.</p>' +
+      st.tips.map(function (t) { return '<p class="tw">' + t + '</p>'; }).join('') +
+      '<ul><li><i class="k-aide"></i>' + nm.aide + ': plain</li><li><i class="k-lob"></i>' + nm.lobbyist + ': fast</li><li><i class="k-sub"></i>' + nm.subpoena + ': heavy, hit for 3</li><li><i class="k-rog"></i>Rogues: from taken nodes</li></ul>';
+    root.style.setProperty('--foe', st.color);
     var play = mode === 'play';
     el.hud.hidden = el.bar.hidden = el.left.hidden = el.right.hidden = !play;
     if (mode === 'title') { for (var i = 0; i < 6; i++) C.bot(S.G, 'active'); S.G.wait = 0.5; }
@@ -149,18 +168,49 @@
     for (var y = -r; y < v.h + r; y += r * 1.5, row++) for (var x = (row % 2 ? hx / 2 : 0) - hx; x < v.w + hx; x += hx) {
       b.beginPath(); for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; b.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); } b.closePath(); b.stroke();
     }
-    // the Capitol, in board units
-    b.save(); b.translate(v.ox, v.oy); b.scale(v.s, v.s); b.translate(0, 30); b.scale(1, 0.8);   // squashed to sit under the meters
-    var cg = b.createLinearGradient(0, -40, 0, 150); cg.addColorStop(0, 'rgba(255,61,90,0.20)'); cg.addColorStop(1, 'rgba(255,61,90,0.02)');
-    b.fillStyle = cg; b.strokeStyle = 'rgba(255,90,115,0.34)'; b.lineWidth = 1.5;
-    b.beginPath();
-    b.moveTo(20, 150); b.lineTo(20, 62); b.lineTo(236, 62); b.lineTo(236, 40); b.lineTo(290, 40); b.lineTo(290, 20);
-    b.bezierCurveTo(290, -42, 430, -42, 430, 20); b.lineTo(430, 40); b.lineTo(484, 40); b.lineTo(484, 62); b.lineTo(700, 62); b.lineTo(700, 150);
-    b.closePath(); b.fill(); b.stroke();
-    b.strokeStyle = 'rgba(255,90,115,0.16)';
-    for (var c = 40; c <= 680; c += 22) { if (Math.abs(c - 110) < 34 || Math.abs(c - 360) < 34 || Math.abs(c - 610) < 34) continue; b.beginPath(); b.moveTo(c, 70); b.lineTo(c, 146); b.stroke(); }
-    b.beginPath(); b.moveTo(360, -27); b.lineTo(360, -40); b.stroke();
-    for (var k = 0; k < 3; k++) { b.beginPath(); b.moveTo(300 + k * 3, 14 - k * 12); b.lineTo(420 - k * 3, 14 - k * 12); b.stroke(); }
+    // what stands behind the gates, in board units, squashed to sit under the meters
+    b.save(); b.translate(v.ox, v.oy); b.scale(v.s, v.s); b.translate(0, 30); b.scale(1, 0.8);
+    var cg = b.createLinearGradient(0, -40, 0, 150); cg.addColorStop(0, 'rgba(' + FRGB + ',0.20)'); cg.addColorStop(1, 'rgba(' + FRGB + ',0.02)');
+    var line = 'rgba(' + FRGB + ',0.36)', faint = 'rgba(' + FRGB + ',0.17)', gx = S.G ? S.G.GATES.map(function (k) { return S.G.N[k].x; }) : [];
+    function nearGate(x, d) { return gx.some(function (q) { return Math.abs(q - x) < d; }); }
+    b.fillStyle = cg; b.strokeStyle = line; b.lineWidth = 1.5;
+    var sid = S.stage.id, c, k;
+    if (sid === 'hearing') {                    // the Capitol
+      b.beginPath();
+      b.moveTo(20, 150); b.lineTo(20, 62); b.lineTo(236, 62); b.lineTo(236, 40); b.lineTo(290, 40); b.lineTo(290, 20);
+      b.bezierCurveTo(290, -42, 430, -42, 430, 20); b.lineTo(430, 40); b.lineTo(484, 40); b.lineTo(484, 62); b.lineTo(700, 62); b.lineTo(700, 150);
+      b.closePath(); b.fill(); b.stroke();
+      b.strokeStyle = faint;
+      for (c = 40; c <= 680; c += 22) { if (nearGate(c, 34)) continue; b.beginPath(); b.moveTo(c, 70); b.lineTo(c, 146); b.stroke(); }
+      b.beginPath(); b.moveTo(360, -27); b.lineTo(360, -40); b.stroke();
+      for (k = 0; k < 3; k++) { b.beginPath(); b.moveTo(300 + k * 3, 14 - k * 12); b.lineTo(420 - k * 3, 14 - k * 12); b.stroke(); }
+    } else if (sid === 'bank') {                // a bank: pediment, columns, steps
+      b.beginPath(); b.moveTo(20, 150); b.lineTo(20, 84); b.lineTo(130, 84); b.lineTo(130, 62); b.lineTo(360, -30); b.lineTo(590, 62); b.lineTo(590, 84); b.lineTo(700, 84); b.lineTo(700, 150); b.closePath(); b.fill(); b.stroke();
+      b.beginPath(); b.moveTo(130, 62); b.lineTo(590, 62); b.moveTo(130, 78); b.lineTo(590, 78); b.stroke();
+      b.strokeStyle = faint; b.lineWidth = 7;
+      for (c = 156; c <= 566; c += 41) { if (nearGate(c, 30)) continue; b.beginPath(); b.moveTo(c, 84); b.lineTo(c, 146); b.stroke(); }
+      b.lineWidth = 1.5;
+      for (c = 40; c <= 110; c += 24) { [c, 720 - c].forEach(function (x) { if (!nearGate(x, 26)) b.strokeRect(x - 7, 98, 14, 22); }); }
+      b.beginPath(); b.arc(360, 30, 15, 0, 6.3); b.stroke(); b.font = '700 20px "Chakra Petch", sans-serif'; b.textAlign = 'center'; b.textBaseline = 'middle'; b.fillStyle = faint; b.fillText('$', 360, 31);
+    } else if (sid === 'vault') {               // a vault door between stacks of bars
+      b.beginPath(); b.rect(20, 40, 680, 110); b.fill(); b.stroke();
+      b.beginPath(); b.arc(360, 78, 62, 0, 6.3); b.stroke(); b.beginPath(); b.arc(360, 78, 50, 0, 6.3); b.stroke(); b.beginPath(); b.arc(360, 78, 12, 0, 6.3); b.stroke();
+      for (k = 0; k < 8; k++) { var an = k * Math.PI / 4; b.beginPath(); b.moveTo(360 + Math.cos(an) * 12, 78 + Math.sin(an) * 12); b.lineTo(360 + Math.cos(an) * 50, 78 + Math.sin(an) * 50); b.stroke(); }
+      b.strokeStyle = faint;
+      for (k = 0; k < 4; k++) for (c = 0; c < 5 - k; c++) { [44 + c * 40 + k * 20, 720 - 44 - 36 - c * 40 - k * 20].forEach(function (x) { if (!nearGate(x + 18, 30) || k > 1) b.strokeRect(x, 130 - k * 17, 36, 15); }); }
+    } else if (sid === 'yard') {                // a fence, wire and two towers
+      b.beginPath(); b.rect(20, 52, 680, 98); b.fill();
+      b.save(); b.beginPath(); b.rect(20, 52, 680, 98); b.clip(); b.strokeStyle = faint; b.lineWidth = 1;
+      for (c = -120; c < 720; c += 16) { b.beginPath(); b.moveTo(c, 150); b.lineTo(c + 98, 52); b.moveTo(c + 98, 150); b.lineTo(c, 52); b.stroke(); }
+      b.restore();
+      b.strokeStyle = line; b.lineWidth = 1.5; b.beginPath(); b.moveTo(20, 52); b.lineTo(700, 52); b.stroke();
+      b.beginPath(); for (c = 20; c <= 700; c += 6) b.lineTo(c, 44 + Math.sin(c * 0.5) * 4); b.stroke();
+      for (c = 20; c <= 700; c += 68) { b.beginPath(); b.moveTo(c, 40); b.lineTo(c, 150); b.stroke(); }
+      [150, 570].forEach(function (x) { b.fillStyle = cg; b.beginPath(); b.rect(x - 18, -6, 36, 30); b.fill(); b.stroke(); b.beginPath(); b.moveTo(x - 24, -6); b.lineTo(x, -24); b.lineTo(x + 24, -6); b.closePath(); b.stroke(); b.beginPath(); b.moveTo(x - 10, 24); b.lineTo(x - 14, 52); b.moveTo(x + 10, 24); b.lineTo(x + 14, 52); b.stroke(); });
+    } else {                                    // the chart: just the frame; the candles are drawn live
+      b.beginPath(); b.rect(20, -20, 680, 170); b.fill(); b.stroke();
+      b.strokeStyle = faint; for (k = 1; k < 4; k++) { b.beginPath(); b.moveTo(20, -20 + k * 42.5); b.lineTo(700, -20 + k * 42.5); b.stroke(); }
+    }
     b.restore();
     // vignette
     var vg = b.createRadialGradient(v.w / 2, v.h / 2, Math.min(v.w, v.h) * 0.35, v.w / 2, v.h / 2, Math.max(v.w, v.h) * 0.75);
@@ -209,7 +259,22 @@
       case 'stake': v.pop = 1; ring(n.x, n.y, TEAL, 60, 0.45); text('STAKED', n.x, n.y - 36, TEAL, 15); sfx('stake'); break;
       case 'upgrade': v.pop = 1; ring(n.x, n.y, TEAL, 80, 0.5); sparks(n.x, n.y, TEAL, 10, 160); text('LEVEL ' + ev.lvl, n.x, n.y - 36, TEAL, 16); sfx('upgrade'); break;
       case 'retake': v.pop = 1; ring(n.x, n.y, TEAL, 130, 0.6, 5); ring(n.x, n.y, '#fff', 70, 0.35); sparks(n.x, n.y, TEAL, 22, 260); text('RETAKEN', n.x, n.y - 38, TEAL, 19); sfx('retake'); if (play) log(label(ev.id) + ' retaken', 'good'); break;
-      case 'taken': v.capT = 1; ring(n.x, n.y, RED, 120, 0.6, 5); sparks(n.x, n.y, RED, 20, 240); shake(7); text(ev.how === 'slashed' ? 'SLASHED' : 'TAKEN', n.x, n.y - 38, RED, 19); sfx('taken'); if (play) log(label(ev.id) + (ev.how === 'slashed' ? ' slashed' : ' taken'), 'bad'); break;
+      case 'taken': v.capT = 1; ring(n.x, n.y, RED, 120, 0.6, 5); sparks(n.x, n.y, RED, 20, 240); shake(7); text(ev.how === 'slashed' ? 'SLASHED' : ev.how === 'bought' ? 'BOUGHT OUT' : 'TAKEN', n.x, n.y - 38, RED, 19); sfx('taken'); if (play) log(label(ev.id) + (ev.how === 'slashed' ? ' slashed' : ev.how === 'bought' ? ' bought out' : ' taken'), 'bad'); break;
+      case 'repair': v.pop = 1; ring(n.x, n.y, TEAL, 60, 0.45); text('RESTAKED', n.x, n.y - 36, TEAL, 15); sfx('stake'); break;
+      case 'bid': v.flash = 1; ring(n.x, n.y, GOLD, 70, 0.5); text('BID! COUNTER ' + ev.cost, n.x, n.y - 40, GOLD, 15, 1.4); sfx('bid'); if (play) log(S.stage.short + ' bids for ' + label(ev.id), 'warn'); break;
+      case 'counter': ring(n.x, n.y, GOLD, 60, 0.4); sparks(n.x, n.y, GOLD, 10, 160); text('OFFER BEATEN', n.x, n.y - 38, TEAL, 15); sfx('stake'); break;
+      case 'skim': text('-' + ev.n + ' COMMINGLED', N[G.HOME].x, N[G.HOME].y - 84, RED, 15, 1.3); sfx('skim'); if (play) log(S.stage.short + ' spent ' + ev.n + ' of your tokens', 'bad'); break;
+      case 'fake': sparks(ev.x, ev.y, '#ffffff', 4, 90); text('FAKE', ev.x, ev.y - 12, 'rgba(255,255,255,0.7)', 11, 0.6); sfx('fake'); break;
+      case 'withdraw': ring(ev.x, ev.y, RED, 90, 0.5, 4); text('-' + ev.n + ' OF YOUR TOKENS', ev.x, ev.y + 62, RED, 15, 1.3); sfx('skim'); if (play) log(S.stage.short + ' withdrew ' + ev.n + ' to patch himself up', 'bad'); break;
+      case 'rush': ring(ev.x, ev.y, RED, 80, 0.5, 4); text('GOLD RUSH', ev.x, ev.y + 62, RED, 15, 1.1); break;
+      case 'fog': if (ev.on) { S.fogZone = ev.zone; sfx('fog'); if (play) log('FUD fog rolls in', 'warn'); } break;
+      case 'liq': ring(n.x, n.y, RED, 90, 0.5, 4); sparks(n.x, n.y, RED, 14, 200); text('LIQUIDATED', n.x, n.y - 38, RED, 16); if (play) log(label(ev.id) + ' liquidated', 'bad'); break;
+      case 'wick': v.flash = 1; S.fx.push({ k: 'tape', x: ev.x, y: ev.y, id: ev.id, t: 0, life: 0.55 }); text('SCAM WICK', n.x, n.y - 40, RED, 17); sfx('tape'); break;
+      case 'candle':
+        S.candles.push({ pct: ev.pct, price: ev.price }); if (S.candles.length > 40) S.candles.shift();
+        if (ev.crash) { S.crash = { t: 0, up: false }; shake(ev.pct <= -20 ? 16 : 8); S.flash = 0.8; banner(ev.pct + '% WEEK', ev.pct <= -20 ? 'LIQUIDATION CASCADE' : 'EVERY VALIDATOR LOSES STAKE', RED); sfx('crash'); if (play) log('BTC ' + ev.pct + '% this week: stake lost', 'bad'); }
+        else if (ev.pump) { S.crash = { t: 0, up: true }; text('+' + ev.pct + '% WEEK · DOUBLE PAY', BW / 2, 190, TEAL, 20, 1.6); sfx('pump'); if (play) log('BTC +' + ev.pct + '% this week: double pay', 'good'); }
+        break;
       case 'chip': v.flash = 1; sparks(n.x, n.y, '#ff9fb0', 5, 120); text('-' + ev.pow, n.x + 22, n.y - 24, '#ff9fb0', 14, 0.8); sfx('chip'); break;
       case 'home': vis(G.HOME).flash = 1; shake(12); S.flash = 1; text('-' + ev.dmg, N[G.HOME].x, N[G.HOME].y - 66, RED, 24); sparks(N[G.HOME].x, N[G.HOME].y, RED, 18, 280); sfx('home'); if (play) log('Home node hit for ' + ev.dmg, 'bad'); break;
       case 'shot':
@@ -219,7 +284,7 @@
         sfx('shot', ev.lvl); break;
       case 'kill':
         var col = ev.how === 'convert' ? TEAL : FOE_COL[ev.type];
-        if (ev.type === 'boss') { sparks(ev.x, ev.y, RED, 70, 420); sparks(ev.x, ev.y, '#fff', 30, 300); ring(ev.x, ev.y, RED, 260, 0.9, 8); ring(ev.x, ev.y, '#fff', 160, 0.6, 4); shake(16); banner('HEARING ADJOURNED', 'THE SENATOR HAS LEFT THE BUILDING', TEAL); if (play) log('The Senator is out', 'good'); }
+        if (ev.type === 'boss') { sparks(ev.x, ev.y, RED, 70, 420); sparks(ev.x, ev.y, '#fff', 30, 300); ring(ev.x, ev.y, RED, 260, 0.9, 8); ring(ev.x, ev.y, '#fff', 160, 0.6, 4); shake(16); banner(S.stage.short.toUpperCase() + ' IS OUT', 'FINISH THE WAVE', TEAL); if (play) log(S.stage.short + ' is out', 'good'); }
         else { sparks(ev.x, ev.y, col, ev.how === 'convert' ? 9 : 7, 190, ev.how === 'convert'); ring(ev.x, ev.y, col, 26, 0.3, 2); }
         text('+' + ev.pay, ev.x, ev.y - 14, GOLD, ev.type === 'boss' ? 24 : 13, 0.8); sfx('kill'); break;
       case 'bosshit': ring(ev.x, ev.y, TEAL, 120, 0.5, 5); text('-20%', ev.x, ev.y - 60, TEAL, 24); break;
@@ -227,8 +292,8 @@
         S.pulseT = S.t; G.block++; text('+' + ev.pay, N[G.HOME].x, N[G.HOME].y + 66, GOLD, 15, 1); sfx('block');
         if (play) log('Block ' + G.block.toLocaleString('en-US') + ' · +' + ev.pay); break;
       case 'wave':
-        if (ev.boss) { banner('SEN. WARREN', 'THE SENATOR WALKS THE NETWORK HERSELF', RED); shake(10); S.flash = 0.7; sfx('boss'); }
-        else { banner('WAVE ' + ev.n, 'INCOMING FROM THE HEARING', '#fff'); sfx('wave'); }
+        if (ev.boss) { banner(S.stage.bossName, { fog: 'GOLD BARS POUR OUT AHEAD OF HIM', bid: 'THE BIDS COME TWICE AS FAST', tape: 'SHE WALKS THE NETWORK HERSELF', commingle: 'HE HEALS WITH YOUR TOKENS', candles: 'THE MARKET ITSELF' }[S.stage.mech], RED); shake(10); S.flash = 0.7; sfx('boss'); }
+        else { banner('WAVE ' + ev.n, 'INCOMING FROM ' + S.stage.name.toUpperCase(), '#fff'); sfx('wave'); }
         if (play) log('Wave ' + ev.n + ' incoming', 'warn'); break;
       case 'clear':
         if (ev.halving) { banner('HALVING', 'BLOCK REWARDS CUT IN HALF', GOLD); sfx('halving'); if (play) log('Halving: rewards cut in half', 'warn'); }
@@ -276,39 +341,68 @@
   // ---------- Cards ----------
   function card(html, cls) { ov.className = 'a51-ov ' + (cls || ''); ov.innerHTML = html; ov.hidden = false; }
   function showTitle() {
-    newGame('title');
-    var best = store('best');
+    var un = unlocked();
+    newGame('title', C.STAGES[un - 1]);
     card('<div class="a51-logo"><span>51%</span><span class="a51-logo-b">ATTACK</span></div>' +
       '<p class="a51-tag">Defend your chain. Every node you hold pays you. Every node they take turns on you.</p>' +
-      '<button class="a51-btn" id="a51-play" type="button">PLAY<small>Stage 3 · The Hearing</small></button>' +
-      '<p class="a51-best">' + (best ? 'Your best: ' + best + '% consensus held' : 'Lose 51% of the network and the chain is theirs.') + '</p>' +
+      '<button class="a51-btn" id="a51-play" type="button">PLAY<small>Story · five bosses</small></button>' +
+      '<p class="a51-best">' + (un > 1 || store('best.vault') ? 'Stage ' + un + ' of ' + C.STAGES.length + ' unlocked' : 'Lose 51% of the network and the chain is theirs.') + '</p>' +
       '<a class="a51-link" href="./">More games at Proof of Fight</a>', 'title');
-    $('#a51-play').addEventListener('click', function () { unlock(); SFX.tap(); showIntro(); });
+    $('#a51-play').addEventListener('click', function () { unlock(); SFX.tap(); showStages(); });
   }
-  function showIntro() {
-    card('<div class="a51-vs"><img src="art/toly-head.webp" alt="Toly"><b>VS</b><img class="foe" src="art/warren-head.webp" alt="Sen. Warren"></div>' +
-      '<h2>THE HEARING</h2>' +
-      '<p class="a51-say">Toly: “Senator, we\'re building the future of finance.”</p>' +
-      '<p class="a51-say foe">Warren: “Crypto isn\'t modern finance; it\'s a vehicle for illicit finance and scams!”</p>' +
-      '<ul class="a51-how"><li><b>Tap a node</b> to stake a validator. Tap again to upgrade.</li><li><b>Red nodes</b> are theirs. Tap one to win it back.</li><li>Seven waves. She comes last, with <b>red tape</b>.</li></ul>' +
-      '<button class="a51-btn" id="a51-go" type="button">START THE CHAIN</button>', 'intro');
-    $('#a51-go').addEventListener('click', function () { unlock(); SFX.tap(); ov.hidden = true; newGame('play'); });
+  // The ladder: five bosses, one unlocked at a time.
+  function showStages() {
+    var un = unlocked();
+    if (S.mode !== 'title') newGame('title', C.STAGES[un - 1]);
+    card('<h2 class="sm">THE STORY</h2>' +
+      '<div class="a51-ladder">' + C.STAGES.map(function (st, k) {
+        var open = k < un, best = store('best.' + st.id);
+        return '<button class="a51-rung' + (open ? '' : ' locked') + (best ? ' done' : '') + '" type="button" data-k="' + k + '" style="--foe:' + st.color + '"' + (open ? '' : ' disabled') + '>' +
+          '<img src="art/' + st.boss + '-head.webp" alt="">' +
+          '<span><b>' + st.stageNo + ' · ' + st.name.toUpperCase() + '</b><small>' + (open ? st.short + ': ' + st.twist.charAt(0).toLowerCase() + st.twist.slice(1) : 'Beat ' + C.STAGES[k - 1].short + ' to unlock') + '</small></span>' +
+          '<em>' + (best ? best + '%' : open ? 'PLAY' : 'LOCKED') + '</em></button>';
+      }).join('') + '</div>' +
+      '<button class="a51-btn ghost" id="a51-home" type="button">BACK</button>', 'stages');
+    Array.prototype.forEach.call(ov.querySelectorAll('.a51-rung'), function (b) {
+      b.addEventListener('click', function () { unlock(); SFX.tap(); showIntro(C.STAGES[+b.getAttribute('data-k')]); });
+    });
+    $('#a51-home').addEventListener('click', function () { SFX.tap(); showTitle(); });
+  }
+  function showIntro(st) {
+    if (S.stage !== st || S.mode !== 'title') newGame('title', st);
+    var first = !store('best.vault') && st.stageNo === 1;
+    card('<div class="a51-vs"><img src="art/toly-head.webp" alt="Toly"><b>VS</b><img class="foe" src="art/' + st.boss + '-head.webp" alt="' + st.short + '"></div>' +
+      '<h2>' + st.name.toUpperCase() + '</h2>' +
+      '<p class="a51-say">Toly: “' + st.scene.you + '”</p>' +
+      '<p class="a51-say foe">' + st.short + ': “' + st.scene.boss + '”</p>' +
+      '<ul class="a51-how">' + (first ? '<li><b>Tap a node</b> to stake a validator. Tap again to upgrade.</li><li><b>Their nodes</b> pay nothing. Tap one to win it back.</li>' : '') +
+        st.tips.slice(0, first ? 1 : 3).map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' +
+      '<button class="a51-btn" id="a51-go" type="button">START THE CHAIN</button>' +
+      '<button class="a51-btn ghost" id="a51-stages" type="button">ALL STAGES</button>', 'intro');
+    ov.style.setProperty('--foe', st.color);
+    $('#a51-go').addEventListener('click', function () { unlock(); SFX.tap(); ov.hidden = true; newGame('play', st); });
+    $('#a51-stages').addEventListener('click', function () { SFX.tap(); showStages(); });
   }
   function showEnd() {
-    var G = S.G, win = G.state === 'won', pct = G.consensus(), mins = Math.floor(G.t / 60), secs = Math.floor(G.t % 60);
+    var G = S.G, st = S.stage, win = G.state === 'won', pct = G.consensus(), mins = Math.floor(G.t / 60), secs = Math.floor(G.t % 60);
     S.mode = 'end'; el.cut.hidden = true;
-    var best = +store('best') || 0, isBest = win && pct > best;
-    if (isBest) store('best', String(pct));
-    var share = win ? 'I held ' + pct + '% consensus against Sen. Warren in 51% Attack. proofoffight.com/51'
-      : 'Sen. Warren took my chain on wave ' + G.wave + ' of ' + G.waves + ' in 51% Attack. proofoffight.com/51';
+    var best = +store('best.' + st.id) || 0, isBest = win && pct > best, next = C.STAGES[st.stageNo], last = !next;
+    if (isBest) store('best.' + st.id, String(pct));
+    if (win && next && unlocked() < st.stageNo + 1) store('unlocked', String(st.stageNo + 1));
+    var share = win ? 'I held ' + pct + '% consensus against ' + st.short + ' in 51% Attack. proofoffight.com/51'
+      : st.short + ' took my chain on wave ' + G.wave + ' of ' + G.waves + ' in 51% Attack. proofoffight.com/51';
     card((win
-      ? '<div class="a51-vs"><img src="art/toly-head.webp" alt="Toly"></div><h2 class="win">BLOCK FINALIZED</h2><div class="a51-big">' + pct + '%<small>consensus held' + (isBest ? ' · new best' : '') + '</small></div>'
-      : '<div class="a51-vs"><img class="foe" src="art/warren-head.webp" alt="Sen. Warren"></div><h2 class="lose">' + (S.endWhy === 'home' ? 'HOME NODE DOWN' : '51% ATTACK') + '</h2><div class="a51-big lose">WAVE ' + G.wave + '/' + G.waves + '<small>' + (S.endWhy === 'home' ? 'they reached your home node' : 'they own the majority of your chain') + '</small></div>') +
+      ? '<div class="a51-vs"><img src="art/toly-head.webp" alt="Toly"></div><h2 class="win">' + (last ? 'CHAIN SECURED' : 'BLOCK FINALIZED') + '</h2><div class="a51-big">' + pct + '%<small>consensus held' + (isBest ? ' · new best' : '') + (last ? ' · all five bosses down' : '') + '</small></div>'
+      : '<div class="a51-vs"><img class="foe" src="art/' + st.boss + '-head.webp" alt="' + st.short + '"></div><h2 class="lose">' + (S.endWhy === 'home' ? 'HOME NODE DOWN' : '51% ATTACK') + '</h2><div class="a51-big lose">WAVE ' + G.wave + '/' + G.waves + '<small>' + (S.endWhy === 'home' ? 'they reached your home node' : 'they own the majority of your chain') + '</small></div>') +
       '<div class="a51-stats"><span><b>' + G.kills + '</b>stopped</span><span><b>' + G.lost + '</b>nodes lost</span><span><b>' + G.retaken + '</b>won back</span><span><b>' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</b>time</span></div>' +
-      '<button class="a51-btn" id="a51-again" type="button">' + (win ? 'PLAY AGAIN' : 'TRY AGAIN') + '</button>' +
+      (win && next ? '<button class="a51-btn" id="a51-nextst" type="button">NEXT: ' + next.short.toUpperCase() + '<small>Stage ' + next.stageNo + ' · ' + next.name + '</small></button>' : '') +
+      '<button class="a51-btn' + (win && next ? ' ghost' : '') + '" id="a51-again" type="button">' + (win ? 'PLAY AGAIN' : 'TRY AGAIN') + '</button>' +
       '<button class="a51-btn ghost" id="a51-share" type="button">COPY RESULT</button>' +
-      '<a class="a51-link" href="./">More games at Proof of Fight</a>', 'end');
-    $('#a51-again').addEventListener('click', function () { SFX.tap(); ov.hidden = true; newGame('play'); });
+      '<button class="a51-btn ghost" id="a51-stages" type="button">ALL STAGES</button>', 'end');
+    ov.style.setProperty('--foe', st.color);
+    if (win && next) $('#a51-nextst').addEventListener('click', function () { SFX.tap(); showIntro(next); });
+    $('#a51-again').addEventListener('click', function () { SFX.tap(); ov.hidden = true; newGame('play', st); });
+    $('#a51-stages').addEventListener('click', function () { SFX.tap(); showStages(); });
     $('#a51-share').addEventListener('click', function () {
       var b = this;
       function done() { b.textContent = 'COPIED'; setTimeout(function () { b.textContent = 'COPY RESULT'; }, 1600); }
@@ -343,9 +437,11 @@
     if (S.banner) { S.banner.t += dt; if (S.banner.t > 2.3) S.banner = null; }
     if (S.line) { S.line.t -= dt; if (S.line.t <= 0) S.line = null; }
     if (S.sweep) { S.sweep.t += dt; if (S.sweep.t > 0.9) S.sweep = null; }
+    if (S.crash) { S.crash.t += dt; if (S.crash.t > 0.7) S.crash = null; }
+    S.fogA += ((G.fog.on ? 1 : 0) - S.fogA) * Math.min(1, dt * 2.5);
     if (G.state !== 'play' && S.endT > 0) {
       S.endT -= dt;
-      if (S.endT <= 0) { if (S.mode === 'play') showEnd(); else if (S.mode === 'title') newGame('title'); }
+      if (S.endT <= 0) { if (S.mode === 'play') showEnd(); else if (S.mode === 'title') newGame('title', S.stage); }
     }
   }
 
@@ -367,6 +463,8 @@
     cx.setTransform(DPR * v.s, 0, 0, DPR * v.s, DPR * (v.ox + sx), DPR * (v.oy + sy));
     cx.lineCap = 'round'; cx.lineJoin = 'round';
 
+    if (S.stage.candles) drawChart();
+
     // ----- edges -----
     G.EDGES.forEach(function (p) {
       var a = N[p[0]], b = N[p[1]];
@@ -375,7 +473,7 @@
       var pu = Math.max(pulse(a), pulse(b));
       cx.strokeStyle = '#0d0b1c'; cx.lineWidth = 7; cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke();
       if (bad) {
-        cx.strokeStyle = both ? 'rgba(255,61,90,0.75)' : 'rgba(255,61,90,0.38)'; cx.lineWidth = 2.2;
+        cx.strokeStyle = both ? 'rgba(' + FRGB + ',0.75)' : 'rgba(' + FRGB + ',0.38)'; cx.lineWidth = 2.2;
         cx.setLineDash([3, 9]); cx.lineDashOffset = (t * 26) % 12;      // creeping toward home (b is the far end)
         cx.beginPath(); cx.moveTo(b.x, b.y); cx.lineTo(a.x, a.y); cx.stroke(); cx.setLineDash([]);
       } else {
@@ -399,9 +497,9 @@
     G.GATES.forEach(function (k) {
       var n = N[k], th = 0.6 + 0.4 * Math.sin(t * 3 + n.x);
       glow(n.x, n.y, 62, RED, 0.35 + 0.25 * th);
-      cx.fillStyle = '#1c040b'; cx.strokeStyle = RED; cx.lineWidth = 2.5;
+      cx.fillStyle = DARK; cx.strokeStyle = RED; cx.lineWidth = 2.5;
       cx.beginPath(); cx.moveTo(n.x - 22, n.y + 22); cx.lineTo(n.x - 22, n.y - 6); cx.arc(n.x, n.y - 6, 22, Math.PI, 0); cx.lineTo(n.x + 22, n.y + 22); cx.closePath(); cx.fill(); cx.stroke();
-      var dg = cx.createLinearGradient(0, n.y - 26, 0, n.y + 22); dg.addColorStop(0, 'rgba(255,61,90,' + (0.75 * th) + ')'); dg.addColorStop(1, 'rgba(255,61,90,0.05)');
+      var dg = cx.createLinearGradient(0, n.y - 26, 0, n.y + 22); dg.addColorStop(0, 'rgba(' + FRGB + ',' + (0.75 * th) + ')'); dg.addColorStop(1, 'rgba(' + FRGB + ',0.05)');
       cx.fillStyle = dg; cx.beginPath(); cx.moveTo(n.x - 14, n.y + 22); cx.lineTo(n.x - 14, n.y - 5); cx.arc(n.x, n.y - 5, 14, Math.PI, 0); cx.lineTo(n.x + 14, n.y + 22); cx.closePath(); cx.fill();
     });
 
@@ -424,6 +522,30 @@
     var boss = null;
     G.foes.forEach(function (o) { if (o.type === 'boss') boss = o; else drawFoe(o); });
     if (boss) drawBoss(boss);
+
+    // ----- Schiff's fog -----
+    if (S.fogA > 0.01 && S.stage.fogZones) {
+      var fz = S.stage.fogZones[S.fogZone];
+      for (var fi = 0; fi < 9; fi++) {
+        var fa = fi * 0.7 + t * 0.12, fr = fz[2] * (0.25 + 0.5 * ((fi * 37) % 10) / 10);
+        cx.globalAlpha = S.fogA * 0.34;
+        cx.drawImage(fogSprite(), fz[0] + Math.cos(fa) * fr - fz[2] * 0.75, fz[1] + Math.sin(fa * 1.3) * fr - fz[2] * 0.75, fz[2] * 1.5, fz[2] * 1.5);
+      }
+      cx.globalAlpha = S.fogA * 0.5; cx.strokeStyle = '#d8c9a8'; cx.lineWidth = 1.5; cx.setLineDash([4, 10]); cx.lineDashOffset = t * 10;
+      cx.beginPath(); cx.arc(fz[0], fz[1], fz[2], 0, 6.3); cx.stroke(); cx.setLineDash([]);
+      cx.globalAlpha = S.fogA; cx.font = '800 13px "JetBrains Mono", ui-monospace, monospace'; cx.textAlign = 'center'; cx.fillStyle = '#efe3c8';
+      cx.fillText('FUD FOG · HALF RANGE', fz[0], fz[1] - fz[2] + 18); cx.globalAlpha = 1;
+    }
+
+    // ----- a market week sweeping the board -----
+    if (S.crash) {
+      var cu = S.crash.t / 0.7, cy = S.crash.up ? BH * (1 - cu) : BH * cu, cc = S.crash.up ? TEAL : RED;
+      cx.globalCompositeOperation = 'lighter'; cx.globalAlpha = 1 - cu * 0.6;
+      var cgd = cx.createLinearGradient(0, cy - 90, 0, cy + 90); cgd.addColorStop(0, 'rgba(0,0,0,0)'); cgd.addColorStop(0.5, cc); cgd.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.fillStyle = cgd; cx.globalAlpha = (1 - cu * 0.6) * 0.35; cx.fillRect(-40, cy - 90, BW + 80, 180);
+      cx.globalAlpha = 1 - cu * 0.6; cx.fillStyle = cc; cx.fillRect(-40, cy - 2, BW + 80, 4);
+      cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
+    }
 
     // ----- the Super's sweep -----
     if (S.sweep) {
@@ -475,9 +597,49 @@
     cx.setTransform(DPR, 0, 0, DPR, 0, 0);
     if (S.flash > 0) {
       var fg = cx.createRadialGradient(v.w / 2, v.h / 2, Math.min(v.w, v.h) * 0.25, v.w / 2, v.h / 2, Math.max(v.w, v.h) * 0.7);
-      fg.addColorStop(0, 'rgba(255,61,90,0)'); fg.addColorStop(1, 'rgba(255,61,90,' + 0.5 * S.flash + ')');
+      fg.addColorStop(0, 'rgba(' + FRGB + ',0)'); fg.addColorStop(1, 'rgba(' + FRGB + ',' + 0.5 * S.flash + ')');
       cx.fillStyle = fg; cx.fillRect(0, 0, v.w, v.h);
     }
+  }
+
+  var fogS = null;
+  function fogSprite() {
+    if (fogS) return fogS;
+    fogS = document.createElement('canvas'); fogS.width = fogS.height = 128;
+    var g = fogS.getContext('2d'), rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    rg.addColorStop(0, 'rgba(216,201,168,0.95)'); rg.addColorStop(0.5, 'rgba(180,165,140,0.5)'); rg.addColorStop(1, 'rgba(160,150,130,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+    return fogS;
+  }
+
+  // The Chart: the weeks played so far as candles behind the gates, with the week to come as a hollow one.
+  function drawChart() {
+    var G = S.G, st = S.stage, cs = S.candles, n = 26, x0 = 34, x1 = 686, y0 = 22, y1 = 142, w = (x1 - x0) / (n + 1);
+    var list = cs.slice(-n), nextPct = G.nextCandle(), start = list.length ? list[0].price / (1 + list[0].pct / 100) : G.btc;
+    var lo = start, hi = start, i;
+    for (i = 0; i < list.length; i++) { lo = Math.min(lo, list[i].price); hi = Math.max(hi, list[i].price); }
+    var nextPrice = G.btc * (1 + nextPct / 100); lo = Math.min(lo, nextPrice) * 0.97; hi = Math.max(hi, nextPrice) * 1.03;
+    function Y(p) { return y1 - (p - lo) / (hi - lo) * (y1 - y0); }
+    var prev = start;
+    for (i = 0; i < list.length; i++) {
+      var c = list[i], up = c.pct >= 0, col = up ? TEAL : RED, x = x0 + i * w + w / 2, a = Y(prev), b = Y(c.price), big = c.pct <= st.crashAt || c.pct >= st.pumpAt;
+      cx.globalAlpha = big ? 0.95 : 0.5; cx.strokeStyle = col; cx.fillStyle = col; cx.lineWidth = 1.5;
+      var ext = Math.abs(a - b) * 0.35 + 3;
+      cx.beginPath(); cx.moveTo(x, Math.min(a, b) - ext); cx.lineTo(x, Math.max(a, b) + ext); cx.stroke();
+      cx.fillRect(x - w * 0.32, Math.min(a, b), w * 0.64, Math.max(2, Math.abs(a - b)));
+      if (big && i === list.length - 1) glow(x, (a + b) / 2, 34, col, 0.6);
+      prev = c.price;
+    }
+    // the week to come
+    var nx = x0 + list.length * w + w / 2, na = Y(G.btc), nb = Y(nextPrice), ncol = nextPct >= 0 ? TEAL : RED, danger = nextPct <= st.crashAt;
+    cx.globalAlpha = danger ? 0.55 + 0.45 * Math.abs(Math.sin(S.t * 6)) : 0.6; cx.strokeStyle = ncol; cx.lineWidth = 1.5; cx.setLineDash([3, 3]);
+    cx.strokeRect(nx - w * 0.32, Math.min(na, nb), w * 0.64, Math.max(3, Math.abs(na - nb))); cx.setLineDash([]);
+    cx.font = '800 12px "JetBrains Mono", ui-monospace, monospace'; cx.textBaseline = 'middle';
+    cx.textAlign = nx > BW - 150 ? 'right' : 'left'; cx.fillStyle = ncol;
+    cx.fillText('NEXT ' + (nextPct > 0 ? '+' : '') + nextPct + '%', nx + (nx > BW - 150 ? -w * 0.5 : w * 0.5), Math.min(na, nb) - 8);
+    cx.globalAlpha = 0.9; cx.textAlign = 'left'; cx.fillStyle = '#e9e6f5';
+    cx.fillText('BTC $' + Math.round(G.btc).toLocaleString('en-US'), 30, 12);
+    cx.globalAlpha = 1;
   }
 
   function tag(n, txt, ok) {
@@ -495,19 +657,19 @@
     if (n.cap) {
       var th = 0.5 + 0.5 * Math.sin(t * 5 + n.x), jx = Math.random() < 0.06 && !reduce ? (Math.random() - 0.5) * 5 : 0;
       glow(x, y, 58 + th * 10 + v.capT * 40, RED, 0.5 + 0.3 * th);
-      hex(x + jx, y, r + 2); var cg = cx.createRadialGradient(x, y, 2, x, y, r + 2); cg.addColorStop(0, '#6d0a20'); cg.addColorStop(1, '#22030b'); cx.fillStyle = cg; cx.fill();
+      hex(x + jx, y, r + 2); var cg = cx.createRadialGradient(x, y, 2, x, y, r + 2); cg.addColorStop(0, DIM); cg.addColorStop(1, DARK); cx.fillStyle = cg; cx.fill();
       cx.lineWidth = 2.5; cx.strokeStyle = RED; cx.stroke();
       // cracks
-      cx.strokeStyle = 'rgba(255,170,185,0.9)'; cx.lineWidth = 1.5; cx.beginPath();
+      cx.strokeStyle = LIGHT; cx.lineWidth = 1.5; cx.beginPath();
       cx.moveTo(x - 10 + jx, y - 12); cx.lineTo(x - 2 + jx, y - 3); cx.lineTo(x - 8 + jx, y + 4); cx.lineTo(x + 1 + jx, y + 13);
       cx.moveTo(x - 2 + jx, y - 3); cx.lineTo(x + 9 + jx, y - 7); cx.lineTo(x + 12 + jx, y + 2); cx.stroke();
       // embers rising
-      for (var i = 0; i < 3; i++) { var eu = (t * 0.7 + i / 3 + n.x * 0.01) % 1; cx.globalAlpha = 1 - eu; cx.fillStyle = '#ff8fa3'; cx.fillRect(x - 12 + i * 12 + Math.sin(t * 3 + i) * 3, y - 18 - eu * 26, 2.2, 2.2); }
+      for (var i = 0; i < 3; i++) { var eu = (t * 0.7 + i / 3 + n.x * 0.01) % 1; cx.globalAlpha = 1 - eu; cx.fillStyle = LIGHT; cx.fillRect(x - 12 + i * 12 + Math.sin(t * 3 + i) * 3, y - 18 - eu * 26, 2.2, 2.2); }
       cx.globalAlpha = 1;
       if (play) tag(n, 'RETAKE ' + p.cost, G.tokens >= p.cost);
     } else if (n.lvl) {
       var L = C.LVL[n.lvl], frozen = n.frozen > 0;
-      glow(x, y, 46 + n.lvl * 8 + pu * 26, TEAL, 0.32 + pu * 0.5 + v.kick * 0.15);
+      glow(x, y, 46 + n.lvl * 8 + pu * 26, TEAL, (0.32 + pu * 0.5 + v.kick * 0.15) * (n.fog ? 0.4 : 1));
       // stake: a ring of segments
       var segs = L.stake, gap = 0.09, arc = (6.283 - segs * gap) / segs;
       cx.lineWidth = 3;
@@ -540,7 +702,14 @@
         cx.restore();
         cx.strokeStyle = RED; cx.lineWidth = 2; cx.beginPath(); cx.arc(x, y, r + 13, -Math.PI / 2, -Math.PI / 2 + 6.283 * n.frozen / S.G.stage.tapeFor); cx.stroke();
       }
-      if (play && p && G.tokens >= p.cost) tag(n, 'UP ' + p.cost, true);
+      if (n.bid > 0) {
+        var bu = n.bid / S.stage.bidFor, by = y - r - 24 - Math.abs(Math.sin(t * 6)) * 6;
+        cx.strokeStyle = GOLD; cx.lineWidth = 4; cx.beginPath(); cx.arc(x, y, r + 15, -Math.PI / 2, -Math.PI / 2 + 6.283 * bu); cx.stroke();
+        glow(x, by, 26, GOLD, 0.8);
+        cx.fillStyle = GOLD; cx.beginPath(); cx.arc(x, by, 11, 0, 6.3); cx.fill();
+        cx.fillStyle = '#3a2600'; cx.font = '800 15px "JetBrains Mono", ui-monospace, monospace'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('$', x, by + 1);
+        if (play) tag(n, 'COUNTER ' + n.bidCost, G.tokens >= n.bidCost);
+      } else if (play && p && G.tokens >= p.cost) tag(n, (p.what === 'repair' ? 'FIX ' : 'UP ') + p.cost, true);
     } else {
       glow(x, y, 30 + pu * 30, VIO, 0.22 + pu * 0.6);
       hex(x, y, r - 2); var eg = cx.createRadialGradient(x, y - 4, 2, x, y, r); eg.addColorStop(0, '#241d4a'); eg.addColorStop(1, '#0e0b1f'); cx.fillStyle = eg; cx.fill();
@@ -575,15 +744,34 @@
     cx.globalCompositeOperation = 'lighter'; cx.strokeStyle = col; cx.lineWidth = o.type === 'subpoena' ? 5 : 3;
     for (var i = 2; i < tr.length; i += 2) { cx.globalAlpha = 0.5 * i / tr.length; cx.beginPath(); cx.moveTo(tr[i - 2], tr[i - 1]); cx.lineTo(tr[i], tr[i + 1]); cx.stroke(); }
     cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
-    glow(o.x, o.y, o.type === 'subpoena' ? 30 : 20, col, 0.6);
+    var hidden = S.fogA > 0.3 && S.G.inFog(o.x, o.y);
+    glow(o.x, o.y, o.type === 'subpoena' ? 30 : 20, col, hidden ? 0.15 : 0.6);
     var hit = o._hit > 0; if (hit) o._hit -= 1 / 60;
     cx.save(); cx.translate(o.x, o.y);
+    if (hidden) cx.globalAlpha = 0.28;
     if (o.type === 'subpoena') {
-      cx.rotate(Math.sin(t * 3 + o.id) * 0.18);
-      cx.fillStyle = hit ? '#fff' : '#ffe9ec'; cx.strokeStyle = col; cx.lineWidth = 2;
-      cx.beginPath(); cx.rect(-9, -12, 18, 24); cx.fill(); cx.stroke();
-      cx.fillStyle = col; cx.fillRect(-6, -8, 12, 2); cx.fillRect(-6, -4, 12, 2); cx.fillRect(-6, 0, 8, 2);
-      cx.beginPath(); cx.arc(3, 7, 3.4, 0, 6.3); cx.fill();
+      var skin = S.stage.heavy;
+      cx.rotate(Math.sin(t * 3 + o.id) * (skin === 'paper' ? 0.18 : 0.08));
+      cx.strokeStyle = col; cx.lineWidth = 2;
+      if (skin === 'bar') {                       // a gold bar
+        cx.fillStyle = hit ? '#fff' : '#ffd66b';
+        cx.beginPath(); cx.moveTo(-14, 8); cx.lineTo(-9, -8); cx.lineTo(9, -8); cx.lineTo(14, 8); cx.closePath(); cx.fill(); cx.stroke();
+        cx.fillStyle = 'rgba(255,255,255,0.65)'; cx.fillRect(-7, -5, 14, 3);
+      } else if (skin === 'vault') {              // a vault door
+        cx.fillStyle = hit ? '#fff' : '#dfe9ff';
+        cx.beginPath(); cx.arc(0, 0, 13, 0, 6.3); cx.fill(); cx.stroke();
+        cx.beginPath(); cx.arc(0, 0, 5, 0, 6.3); cx.stroke();
+        for (var sp = 0; sp < 4; sp++) { var sa = t * 1.5 + sp * Math.PI / 2; cx.beginPath(); cx.moveTo(Math.cos(sa) * 5, Math.sin(sa) * 5); cx.lineTo(Math.cos(sa) * 11, Math.sin(sa) * 11); cx.stroke(); }
+      } else if (skin === 'candle') {             // a fat red candle
+        cx.beginPath(); cx.moveTo(0, -19); cx.lineTo(0, 19); cx.stroke();
+        cx.fillStyle = hit ? '#fff' : col; cx.fillRect(-8, -11, 16, 22);
+        cx.fillStyle = 'rgba(255,255,255,0.35)'; cx.fillRect(-8, -11, 4, 22);
+      } else {                                    // paperwork
+        cx.fillStyle = hit ? '#fff' : '#ffe9ec';
+        cx.beginPath(); cx.rect(-9, -12, 18, 24); cx.fill(); cx.stroke();
+        cx.fillStyle = col; cx.fillRect(-6, -8, 12, 2); cx.fillRect(-6, -4, 12, 2); cx.fillRect(-6, 0, 8, 2);
+        cx.beginPath(); cx.arc(3, 7, 3.4, 0, 6.3); cx.fill();
+      }
     } else if (o.type === 'lobbyist') {
       cx.rotate(ang); cx.fillStyle = hit ? '#fff' : col;
       cx.beginPath(); cx.moveTo(11, 0); cx.lineTo(-7, -7); cx.lineTo(-2, 0); cx.lineTo(-7, 7); cx.closePath(); cx.fill();
@@ -594,7 +782,7 @@
     } else {
       cx.rotate(ang); var s = 9 + Math.sin(t * 8 + o.id) * 0.8; cx.fillStyle = hit ? '#fff' : col;
       cx.beginPath(); cx.moveTo(s + 2, 0); cx.lineTo(0, -s); cx.lineTo(-s, 0); cx.lineTo(0, s); cx.closePath(); cx.fill();
-      cx.fillStyle = '#ffe1e6'; cx.beginPath(); cx.moveTo(4, 0); cx.lineTo(0, -3.5); cx.lineTo(-3.5, 0); cx.lineTo(0, 3.5); cx.closePath(); cx.fill();
+      cx.fillStyle = 'rgba(255,255,255,0.8)'; cx.beginPath(); cx.moveTo(4, 0); cx.lineTo(0, -3.5); cx.lineTo(-3.5, 0); cx.lineTo(0, 3.5); cx.closePath(); cx.fill();
     }
     cx.restore();
     if (o.hp < o.max) { var w = o.type === 'subpoena' ? 26 : 18, y = o.y - (o.type === 'subpoena' ? 20 : 15); cx.fillStyle = 'rgba(5,4,10,0.75)'; cx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 5); cx.fillStyle = col; cx.fillRect(o.x - w / 2, y, w * Math.max(0, o.hp / o.max), 3); }
@@ -609,9 +797,10 @@
       if (!back) continue;
       paper(px, py, a, 0.6);
     }
-    cx.beginPath(); cx.arc(x, y, r + 3, 0, 6.3); cx.fillStyle = '#2a0710'; cx.fill();
+    cx.beginPath(); cx.arc(x, y, r + 3, 0, 6.3); cx.fillStyle = DARK; cx.fill();
     cx.save(); cx.beginPath(); cx.arc(x, y, r, 0, 6.3); cx.clip();
-    if (HEAD.warren.complete && HEAD.warren.naturalWidth) cx.drawImage(HEAD.warren, x - r - 5, y - r - 7, (r + 5) * 2, (r + 5) * 2);
+    var bh = HEAD[S.stage.boss];
+    if (bh.complete && bh.naturalWidth) cx.drawImage(bh, x - r - 5, y - r - 7, (r + 5) * 2, (r + 5) * 2);
     if (o._hit > 0) { cx.fillStyle = 'rgba(255,255,255,0.35)'; cx.fillRect(x - r, y - r, r * 2, r * 2); o._hit -= 1 / 60; }
     cx.restore();
     cx.lineWidth = 6; cx.strokeStyle = 'rgba(5,4,10,0.7)'; cx.beginPath(); cx.arc(x, y, r + 7, 0, 6.3); cx.stroke();
@@ -632,7 +821,11 @@
   }
   function paper(px, py, a, alpha) {
     cx.save(); cx.translate(px, py); cx.rotate(Math.sin(a * 2) * 0.5); cx.globalAlpha = alpha;
-    cx.fillStyle = '#ffe9ec'; cx.fillRect(-5, -7, 10, 14); cx.fillStyle = RED; cx.fillRect(-3, -4, 6, 1.5); cx.fillRect(-3, -1, 6, 1.5); cx.fillRect(-3, 2, 4, 1.5);
+    var skin = S.stage.heavy;
+    if (skin === 'bar') { cx.fillStyle = '#ffd66b'; cx.beginPath(); cx.moveTo(-8, 4); cx.lineTo(-5, -4); cx.lineTo(5, -4); cx.lineTo(8, 4); cx.closePath(); cx.fill(); }
+    else if (skin === 'vault') { cx.fillStyle = GOLD; cx.beginPath(); cx.arc(0, 0, 6, 0, 6.3); cx.fill(); cx.fillStyle = '#3a2600'; cx.font = '800 9px "JetBrains Mono", monospace'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('$', 0, 0.5); }
+    else if (skin === 'candle') { cx.strokeStyle = RED; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(0, -10); cx.lineTo(0, 10); cx.stroke(); cx.fillStyle = RED; cx.fillRect(-4, -6, 8, 12); }
+    else { cx.fillStyle = '#ffe9ec'; cx.fillRect(-5, -7, 10, 14); cx.fillStyle = RED; cx.fillRect(-3, -4, 6, 1.5); cx.fillRect(-3, -1, 6, 1.5); cx.fillRect(-3, 2, 4, 1.5); }
     cx.restore(); cx.globalAlpha = 1;
   }
 
@@ -656,10 +849,13 @@
     el.next.disabled = !waiting;
     if (waiting) {
       set(el.nextT, 'nt', 'CALL WAVE +' + Math.round(G.wait * R.earlyPay));
-      set(el.nextSub, 'ns', 'In ' + Math.ceil(G.wait) + 's: ' + nw.map(function (g) { return g[0] === 'boss' ? 'The Senator' : g[1] + ' ' + C.FOE[g[0]].name.toLowerCase(); }).join(', '));
+      set(el.nextSub, 'ns', 'In ' + Math.ceil(G.wait) + 's: ' + nw.map(function (g) { return g[0] === 'boss' ? S.stage.short : g[1] + ' ' + S.stage.names[g[0]].toLowerCase(); }).join(', '));
     } else {
       set(el.nextT, 'nt', G.wave >= G.waves ? 'FINAL WAVE' : 'WAVE ' + Math.max(1, G.wave));
-      set(el.nextSub, 'ns', G.halved ? 'Rewards halved: 0.5 a node' : 'Each held node pays 1 a block');
+      var st = S.stage, nc = G.nextCandle();
+      set(el.nextSub, 'ns', st.candles ? 'Next week: ' + (nc > 0 ? '+' : '') + nc + '%' + (nc <= st.crashAt ? '. Stake will be lost.' : nc >= st.pumpAt ? '. Double pay.' : '')
+        : st.skim ? 'He skims ' + Math.round(st.skim * 100) + '% of your tokens a block'
+        : G.halved ? 'Rewards halved: 0.5 a node' : 'Each held node pays 1 a block');
     }
   }
 
@@ -677,5 +873,5 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { /* canvas text picks the fonts up on its next frame */ });
 
   // For the test scripts: ?debug exposes the game.
-  if (/[?&]debug\b/.test(location.search)) window.POF_A51 = { S: S, play: function () { ov.hidden = true; newGame('play'); }, step: function (secs) { for (var i = 0; i < secs * 30; i++) step(1 / 30); }, bot: function () { C.bot(S.G, 'active'); }, end: showEnd, intro: showIntro };
+  if (/[?&]debug\b/.test(location.search)) window.POF_A51 = { S: S, play: function (k) { ov.hidden = true; newGame('play', C.STAGES[k == null ? 2 : k]); }, stages: showStages, step: function (secs) { for (var i = 0; i < secs * 30; i++) step(1 / 30); }, bot: function () { C.bot(S.G, 'active'); }, end: showEnd, intro: function (k) { showIntro(C.STAGES[k == null ? 2 : k]); } };
 })();

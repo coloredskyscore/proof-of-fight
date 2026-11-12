@@ -83,7 +83,7 @@ html.a51-on, html.a51-on body { margin: 0; overflow: hidden; overscroll-behavior
 .a51-side b { color: #fff; }
 .a51-side ul, .a51-side ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 7px; }
 .a51-side li i { display: inline-block; width: 10px; height: 10px; margin-right: 9px; transform: rotate(45deg); }
-.k-aide { background: #ff5d73; } .k-lob { background: #ffa53d; } .k-sub { background: #ffe9ec; box-shadow: inset 0 0 0 2px #ff3d5a; transform: none !important; } .k-rog { background: #e040a0; border-radius: 50%; }
+.k-aide { background: var(--foe); } .k-lob { background: color-mix(in srgb, var(--foe) 50%, #ffe27a); } .k-sub { background: #ffe9ec; box-shadow: inset 0 0 0 2px var(--foe); transform: none !important; } .k-rog { background: color-mix(in srgb, var(--foe) 55%, #7a2cff); border-radius: 50%; }
 .a51-left { right: calc(50% + var(--board-w, 520px) / 2 + 24px); }
 .a51-right { left: calc(50% + var(--board-w, 520px) / 2 + 24px); }
 #a51-log { margin: 0; font: 500 12px/1.35 var(--mono); }
@@ -118,13 +118,13 @@ html.a51-on, html.a51-on body { margin: 0; overflow: hidden; overscroll-behavior
 .a51-link { font-size: 13px; color: var(--mute); }
 .a51-vs { display: flex; align-items: center; gap: 16px; }
 .a51-vs img { width: clamp(72px, 20vw, 116px); height: clamp(72px, 20vw, 116px); border-radius: 50%; border: 3px solid var(--teal); background: #0b2a26; object-fit: cover; box-shadow: 0 0 26px rgba(25, 230, 176, 0.45); }
-.a51-vs img.foe { border-color: var(--red); background: #2a0710; box-shadow: 0 0 26px rgba(255, 61, 90, 0.5); }
+.a51-vs img.foe { border-color: var(--foe, var(--red)); background: #14101f; box-shadow: 0 0 26px color-mix(in srgb, var(--foe, #ff3d5a) 50%, transparent); }
 .a51-vs b { font: 700 30px var(--display); color: var(--mute); }
 .a51-ov h2 { margin: 0; font: 700 clamp(30px, 8vw, 52px)/1 var(--display); letter-spacing: 0.03em; }
 .a51-ov h2.win { color: var(--teal); text-shadow: 0 0 30px rgba(25, 230, 176, 0.6); }
-.a51-ov h2.lose { color: var(--red); text-shadow: 0 0 30px rgba(255, 61, 90, 0.7); }
+.a51-ov h2.lose { color: var(--foe, var(--red)); text-shadow: 0 0 30px rgba(255, 61, 90, 0.7); }
 .a51-say { margin: 0; width: 100%; max-width: 40ch; font-size: 15.5px; line-height: 1.45; }
-.a51-say.foe { color: #ffb3bf; }
+.a51-say.foe { color: color-mix(in srgb, var(--foe, #ff3d5a) 45%, #fff); }
 .a51-how { list-style: none; margin: 4px 0; padding: 12px 16px; width: 100%; max-width: 380px; box-sizing: border-box; display: grid; gap: 7px; text-align: left; font-size: 14px; line-height: 1.4; color: #cfcae6; border: 1px solid var(--line); border-radius: 12px; background: rgba(17, 15, 29, 0.7); }
 .a51-how b { color: #fff; }
 .a51-big { font: 800 clamp(48px, 14vw, 84px)/1 var(--mono); color: #fff; display: grid; gap: 6px; font-variant-numeric: tabular-nums; }
@@ -133,6 +133,21 @@ html.a51-on, html.a51-on body { margin: 0; overflow: hidden; overscroll-behavior
 .a51-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: 12px; color: var(--mute); }
 .a51-stats span { display: grid; gap: 2px; }
 .a51-stats b { font: 800 18px var(--mono); color: #fff; }
+
+/* the story ladder */
+.a51-ov h2.sm { font-size: clamp(22px, 6vw, 34px); letter-spacing: 0.1em; }
+.a51-ladder { display: grid; gap: 8px; width: min(420px, 100%); }
+.a51-rung { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 12px; padding: 9px 14px 9px 9px; text-align: left; border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--foe) 55%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--foe) 20%, #0c0a18), rgba(12, 10, 24, 0.86) 70%); }
+.a51-rung img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid var(--foe); background: #0c0a18; }
+.a51-rung span { display: grid; gap: 2px; min-width: 0; }
+.a51-rung b { font: 700 16px/1.15 var(--display); letter-spacing: 0.05em; color: #fff; }
+.a51-rung small { font-size: 12.5px; line-height: 1.3; color: var(--mute); }
+.a51-rung em { font: 800 13px var(--mono); font-style: normal; color: var(--foe); }
+.a51-rung.done em { color: var(--teal); font-size: 16px; }
+.a51-rung.locked { filter: grayscale(1); opacity: 0.5; cursor: default; }
+.a51-rung:not(.locked):hover { border-color: var(--foe); box-shadow: 0 0 18px color-mix(in srgb, var(--foe) 45%, transparent); }
+.a51-side p.tw b { color: var(--foe, #ff3d5a); }
 
 /* a phone on its side is too short for the board */
 .a51-turn { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: #05040a; text-align: center; z-index: 5; }
