@@ -63,8 +63,28 @@
       AC = new K(); master = AC.createGain(); master.gain.value = soundOn ? 0.5 : 0; master.connect(AC.destination);
     }
     if (AC.state === 'suspended') AC.resume();
-    if (M.want && !M.name) { var w = M.want; M.want = null; music(w); }
+    musicOn();
   }
+  // Music (js/a51-music.js): one song that follows the game. The heat is set every frame in frame().
+  var MP = null;
+  function musicOn() {
+    if (!AC || !soundOn || document.hidden || !window.POF_A51_MUSIC) return;
+    if (!MP) { var mg = AC.createGain(); mg.gain.value = 0.5; mg.connect(AC.destination); MP = POF_A51_MUSIC.player(AC, mg); }
+    MP.start();
+  }
+  function musicHeat() {
+    var G = S.G;
+    if (S.mode !== 'play' || !G) return 0.1;
+    if (G.state === 'won') return 0.1;
+    if (G.state === 'lost') return 0.22;
+    if (G.wait > 0) return 0.1;                                  // between waves: breathe
+    var hp = G.N[G.HOME].hp;
+    var danger = Math.max(Math.min(1, Math.max(0, (85 - G.consensus()) / 30)), Math.min(1, Math.max(0, (12 - hp) / 10)));
+    var h = 0.35 + 0.65 * danger;
+    if (G.boss && G.boss()) h = Math.max(h, 0.62);
+    return h;
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { if (MP) MP.stop(); } else musicOn(); });
   function tone(f, dur, o) {
     if (!AC || !soundOn || AC.state !== 'running') return;
     o = o || {};
@@ -83,56 +103,6 @@
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur);
   }
-  // ---------- Music: the fighting game's songs, one per boss ----------
-  // Same files and loop points as js/audio.js MUSIC. The song loops between loopStart and loopEnd. Between
-  // waves it drops back behind a low-pass filter, and opens up again when the next wave comes in.
-  var SONGS = {
-    menu: { src: 'audio/menu.mp3', loopStart: 3.3674, loopEnd: 43.7774, vol: 0.5 },
-    schiff: { src: 'audio/schiff.mp3', loopStart: 3.233, loopEnd: 34.557, vol: 0.34 },
-    dimon: { src: 'audio/dimon.mp3', loopStart: 3.363, loopEnd: 53.319, vol: 0.45 },
-    warren: { src: 'audio/warren.mp3', loopStart: 6.432, loopEnd: 57.632, vol: 0.42 },
-    sbf: { src: 'audio/sbf.mp3', loopStart: 2.771, loopEnd: 49.083, vol: 0.45 },
-    wick: { src: 'audio/wick.mp3', loopStart: 1.625, loopEnd: 40.02, vol: 0.31 },
-    ending: { src: 'audio/ending.mp3', loopStart: 120.2, loopEnd: 172.84, vol: 0.5 }
-  };
-  var M = { want: null, name: null, src: null, gain: null, filter: null, bufs: {}, loading: {}, muffled: false };
-  function loadSong(name) {
-    if (M.bufs[name] || M.loading[name]) return M.loading[name] || Promise.resolve(M.bufs[name]);
-    return (M.loading[name] = fetch(SONGS[name].src).then(function (r) { return r.arrayBuffer(); }).then(function (ab) {
-      return new Promise(function (ok, no) { AC.decodeAudioData(ab, ok, no); });
-    }).then(function (buf) { M.bufs[name] = buf; return buf; }).catch(function () { delete M.loading[name]; return null; }));
-  }
-  function stopSong(fade) {
-    if (!M.src) return;
-    var g = M.gain, src = M.src, t = AC.currentTime;
-    g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0.0001, t + fade);
-    try { src.stop(t + fade + 0.05); } catch (e) { /* already stopped */ }
-    M.src = M.gain = M.filter = M.name = null;
-  }
-  // Play this song (or none), from its top or from the start of its loop. Asking again for the one that's playing does nothing.
-  function music(name, fromLoop) {
-    M.want = name;
-    if (!AC || !soundOn) return;
-    if (M.name === name) return;
-    stopSong(0.6);
-    if (!name) return;
-    loadSong(name).then(function (buf) {
-      if (!buf || M.want !== name || M.name === name || !soundOn) return;
-      var m = SONGS[name], src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(), t = AC.currentTime;
-      src.buffer = buf; src.loop = true; src.loopStart = m.loopStart; src.loopEnd = Math.min(m.loopEnd, buf.duration);
-      f.type = 'lowpass'; f.frequency.value = M.muffled ? 600 : 20000; f.Q.value = 0.7;
-      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(m.vol, t + 0.5);
-      src.connect(f); f.connect(g); g.connect(AC.destination);
-      src.start(t, fromLoop ? m.loopStart : 0);
-      M.src = src; M.gain = g; M.filter = f; M.name = name;
-    });
-  }
-  function muffle(on) {
-    M.muffled = on;
-    if (M.filter) { var t = AC.currentTime; M.filter.frequency.cancelScheduledValues(t); M.filter.frequency.setValueAtTime(M.filter.frequency.value, t); M.filter.frequency.exponentialRampToValueAtTime(on ? 600 : 20000, t + (on ? 1.2 : 0.35)); }
-  }
-  function duck(to, secs) { if (M.gain) { var t = AC.currentTime; M.gain.gain.cancelScheduledValues(t); M.gain.gain.setValueAtTime(M.gain.gain.value, t); M.gain.gain.linearRampToValueAtTime(to * SONGS[M.name].vol, t + secs); } }
-
   var lastShot = 0;
   var SFX = {
     stake: function () { tone(440, 0.09, { vol: 0.16 }); tone(660, 0.14, { at: 0.07, vol: 0.16 }); },
@@ -163,7 +133,7 @@
     tap: function () { tone(700, 0.04, { vol: 0.08 }); }
   };
   function sfx(k, a) { if (S.mode === 'play' || k === 'tap') SFX[k](a); }
-  el.snd.addEventListener('click', function () { soundOn = !soundOn; store('sound', soundOn ? '1' : '0'); unlock(); if (master) master.gain.value = soundOn ? 0.5 : 0; if (soundOn) { var w = M.want; M.want = null; music(w, true); } else if (AC) stopSong(0.2); sndIcon(); });
+  el.snd.addEventListener('click', function () { soundOn = !soundOn; store('sound', soundOn ? '1' : '0'); unlock(); if (master) master.gain.value = soundOn ? 0.5 : 0; if (soundOn) musicOn(); else if (MP) MP.stop(); sndIcon(); });
   sndIcon();
 
   // ---------- State ----------
@@ -176,9 +146,7 @@
   function newGame(mode, stage) {
     S.stage = stage || S.stage; paint(S.stage);
     S.candles = []; S.crash = null; S.fogA = 0;
-    S.G = C.create({ stage: S.stage }); S.mode = mode;
-    if (mode === 'play') { muffle(true); music(S.stage.boss); } else { muffle(false); music('menu'); }
-    if (M.name && M.name === M.want) duck(1, 0.4);        // the same song carrying on: back to full after a result S.fx = []; S.bolts = []; S.vis = {}; S.banner = null; S.line = null; S.shake = 0; S.flash = 0; S.pulseT = -9; S.sweep = null; S.wasReady = false;
+    S.G = C.create({ stage: S.stage }); S.mode = mode; S.fx = []; S.bolts = []; S.vis = {}; S.banner = null; S.line = null; S.shake = 0; S.flash = 0; S.pulseT = -9; S.sweep = null; S.wasReady = false;
     S.G.block = 284301112;   // looks like a real slot number; only ever shown
     el.log.innerHTML = '';
     var st = S.stage, nm = st.names;
@@ -347,11 +315,10 @@
       case 'wave':
         if (ev.boss) { banner(S.stage.bossName, { fog: 'GOLD BARS POUR OUT AHEAD OF HIM', bid: 'THE BIDS COME TWICE AS FAST', tape: 'SHE WALKS THE NETWORK HERSELF', commingle: 'HE HEALS WITH YOUR TOKENS', candles: 'THE MARKET ITSELF' }[S.stage.mech], RED); shake(10); S.flash = 0.7; sfx('boss'); }
         else { banner('WAVE ' + ev.n, 'INCOMING FROM ' + S.stage.name.toUpperCase(), '#fff'); sfx('wave'); }
-        if (play) { muffle(false); log('Wave ' + ev.n + ' incoming', 'warn'); } break;
+        if (play) log('Wave ' + ev.n + ' incoming', 'warn'); break;
       case 'clear':
         if (ev.halving) { banner('HALVING', 'BLOCK REWARDS CUT IN HALF', GOLD); sfx('halving'); if (play) log('Halving: rewards cut in half', 'warn'); }
         else { banner('WAVE ' + ev.n + ' CLEAR', '+' + ev.bonus + ' TOKENS', TEAL); sfx('clear'); }
-        if (play) muffle(true);
         break;
       case 'early': text('+' + ev.bonus + ' EARLY', N[G.HOME].x, N[G.HOME].y - 70, GOLD, 17); break;
       case 'tape': v.flash = 1; S.fx.push({ k: 'tape', x: ev.x, y: ev.y, id: ev.id, t: 0, life: 0.55 }); text('RED TAPE', n.x, n.y - 40, RED, 17); sfx('tape'); if (play) log(label(ev.id) + ' tied up in red tape', 'bad'); break;
@@ -363,7 +330,7 @@
         el.cut.hidden = false; el.cut.classList.remove('go'); void el.cut.offsetWidth; el.cut.classList.add('go');
         setTimeout(function () { el.cut.hidden = true; }, 1600);
         if (play) log('Super: ' + ev.n + ' converted', 'good'); break;
-      case 'won': case 'lost': S.endT = ev.e === 'won' ? 1.6 : 1.3; S.endWhy = ev.why; if (play) { sfx(ev.e); if (ev.e === 'lost') { shake(14); S.flash = 1; muffle(true); duck(0.35, 1); } else { muffle(false); duck(0.6, 0.8); } } break;
+      case 'won': case 'lost': S.endT = ev.e === 'won' ? 1.6 : 1.3; S.endWhy = ev.why; if (play) { sfx(ev.e); if (ev.e === 'lost') { shake(14); S.flash = 1; } } break;
     }
   }
 
@@ -440,7 +407,6 @@
   function showEnd() {
     var G = S.G, st = S.stage, win = G.state === 'won', pct = G.consensus(), mins = Math.floor(G.t / 60), secs = Math.floor(G.t % 60);
     S.mode = 'end'; el.cut.hidden = true;
-    if (G.state === 'won' && !C.STAGES[S.stage.stageNo]) { muffle(false); music('ending', true); }
     var best = +store('best.' + st.id) || 0, isBest = win && pct > best, next = C.STAGES[st.stageNo], last = !next;
     if (isBest) store('best.' + st.id, String(pct));
     if (win && next && unlocked() < st.stageNo + 1) store('unlocked', String(st.stageNo + 1));
@@ -921,6 +887,7 @@
     var n = S.mode === 'play' ? S.speed : 1;
     for (var i = 0; i < n; i++) step(dt);
     draw(); hud();
+    if (MP) { MP.key((S.mode === 'play' || S.mode === 'end') && S.stage ? S.stage.id : 'menu'); MP.heat(musicHeat()); }
     requestAnimationFrame(frame);
   }
   showTitle();
@@ -928,5 +895,5 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { /* canvas text picks the fonts up on its next frame */ });
 
   // For the test scripts: ?debug exposes the game.
-  if (/[?&]debug\b/.test(location.search)) window.POF_A51 = { S: S, M: M, play: function (k) { ov.hidden = true; newGame('play', C.STAGES[k == null ? 2 : k]); }, stages: showStages, step: function (secs) { for (var i = 0; i < secs * 30; i++) step(1 / 30); }, bot: function () { C.bot(S.G, 'active'); }, end: showEnd, intro: function (k) { showIntro(C.STAGES[k == null ? 2 : k]); } };
+  if (/[?&]debug\b/.test(location.search)) window.POF_A51 = { S: S, play: function (k) { ov.hidden = true; newGame('play', C.STAGES[k == null ? 2 : k]); }, stages: showStages, step: function (secs) { for (var i = 0; i < secs * 30; i++) step(1 / 30); }, bot: function () { C.bot(S.G, 'active'); }, end: showEnd, music: function () { return MP; }, intro: function (k) { showIntro(C.STAGES[k == null ? 2 : k]); } };
 })();
