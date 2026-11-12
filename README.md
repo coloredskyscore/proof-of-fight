@@ -1,6 +1,16 @@
 # Proof of Fight
 
-A turn-based crypto founder brawl that runs in any browser. It looks like a 2D arcade fighter and plays like a card game: pick one of five buttons, the CPU picks at the same time, a short scene plays, repeat until someone hits 0 HP.
+Proof of Fight is an arcade of crypto games at **https://proofoffight.com**. The home page is the arcade; each game has its own folder and address:
+
+| Address | Game |
+|---|---|
+| `/` (`index.html`) | The arcade: today's Daily Fight and Daily Coin, a cabinet per game, and what's in the lab |
+| `/fight/` | **Proof of Fight**, the fighting game (below) |
+| `/ride/` | **Ride the Chart**, the one-button ride over a real price chart |
+
+The game pages keep their files (`css/`, `js/`, `art/`, `audio/`) at the site root and reach them through `<base href="../">`. Old links that put a game behind `?something` on the home page (`?dip`, `?ride&race=`, `?daily`, `?td`, ...) are forwarded to the right game's page by a script at the top of `index.html`. To add a game: a new folder with its own `index.html` (with `<base href="../">` and its own link preview), plus a cabinet in `index.html`.
+
+The fighting game: a turn-based crypto founder brawl that runs in any browser. It looks like a 2D arcade fighter and plays like a card game: pick one of five buttons, the CPU picks at the same time, a short scene plays, repeat until someone hits 0 HP.
 
 - **Daily Fight:** the same matchup and luck for everyone each day. One try, then share your emoji grid.
 - **Free Play:** any fighter against any CPU.
@@ -11,7 +21,7 @@ The full design is in **[GAMEPLAN.md](GAMEPLAN.md)**.
 
 ## Play it
 
-**On your computer:** download the repo and double-click `index.html`.
+**On your computer:** download the repo, run `python3 -m http.server` in it, and open `http://localhost:8000`. (Double-clicking `fight/index.html` also works for the fight.)
 
 **On your phone (GitHub Pages, free):**
 1. On GitHub, open the repo → **Settings** → **Pages**.
@@ -41,7 +51,9 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 
 | Path | What |
 |---|---|
-| `index.html` | The page |
+| `index.html`, `css/arcade.css`, `js/arcade.js` | The arcade home page: cabinets, today's dailies, your bests from this browser, live previews drawn in code |
+| `fight/index.html` | The fighting game's page (`?td`, `?rap`, `?guitar` test modes still open from here) |
+| `ride/index.html` | Ride the Chart's page |
 | `404.html` | Shown for any URL that doesn't exist (GitHub Pages serves it automatically) |
 | `css/style.css` | The look |
 | `js/data.js` | Fighters, odds, damage, Supers, banners |
