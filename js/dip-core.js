@@ -271,37 +271,74 @@
     return best;
   }
 
-  /* Ghosts: a run recorded as the moments the button went down or up, plus a snapshot of the ball every five
-     seconds. Replaying the presses re-creates the run; the snapshots pull it back on line, since two phones
+  /* Ghosts: a run recorded as the moments the button went down or up, plus a snapshot of the ball every 10
+     seconds (see KF). Replaying the presses re-creates the run; the snapshots pull it back on line, since two phones
      can round the math a hair differently. The whole thing fits in a link (see encode). */
-  var KF = 600, B36 = 36;
-  function recorder(mode, seed) { return { mode: mode, seed: seed || '', n: 0, last: false, tog: [], kf: [], end: 0, score: 0, day: 0 }; }
+  // g2 links carry a snapshot every 10 seconds (g1 links, already sent around, had one every 5). The live run is
+  // rounded to the snapshot at that moment too, so the ghost restarts from exactly the same numbers.
+  var KF1 = 600, KF = 1200, B36 = 36;
+  var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  function recorder(mode, seed) { return { mode: mode, seed: seed || '', n: 0, last: false, tog: [], kf: [], end: 0, score: 0, day: 0, kfEvery: KF }; }
   function snap(S) {
     return [Math.round(S.x * 10), Math.round(S.y * 10), Math.round(S.vx), Math.round(S.vy), Math.round(S.s), S.air ? 1 : 0,
       Math.round(S.airT * 100), Math.round(S.fever * 100), S.streak];
   }
+  function unsnap(G, k) {
+    G.x = k[0] / 10; G.y = k[1] / 10; G.vx = k[2]; G.vy = k[3]; G.s = k[4]; G.air = k[5] === 1;
+    G.airT = k[6] / 100; G.fever = k[7] / 100; G.streak = k[8];
+  }
   // Call once per step, before step(), with the hold that step will use.
   function record(R, S, hold) {
     if (hold !== R.last) { R.tog.push(R.n); R.last = hold; }
-    if (R.n % KF === 0) R.kf.push(snap(S));
+    if (R.n % R.kfEvery === 0) { var k = snap(S); R.kf.push(k); unsnap(S, k); }
     R.n++;
   }
   function finishRecord(R, S, T) { R.end = R.n; R.score = score(S); R.day = T.dayAt(S.x); return R; }
+  // Packed as small numbers (7 bits a byte, signed ones zigzagged), then written in URL-safe base64.
   function encode(R) {
-    var t = [], prev = 0, i;
-    for (i = 0; i < R.tog.length; i++) { t.push((R.tog[i] - prev).toString(B36)); prev = R.tog[i]; }
-    return ['g1', R.mode, R.seed, R.end.toString(B36), R.score.toString(B36), R.day.toString(B36), t.join('.'),
-      R.kf.map(function (k) { return k.map(function (v) { return v.toString(B36); }).join('_'); }).join('.')].join('~');
+    var b = [], prev = 0, i;
+    function u(v) { v = Math.max(0, Math.round(v)); while (v >= 128) { b.push((v % 128) | 128); v = Math.floor(v / 128); } b.push(v); }
+    function z(v) { v = Math.round(v); u(v < 0 ? -2 * v - 1 : 2 * v); }
+    u(R.end); u(R.score); u(R.day); u(R.tog.length);
+    for (i = 0; i < R.tog.length; i++) { u(R.tog[i] - prev); prev = R.tog[i]; }
+    u(R.kf.length);
+    R.kf.forEach(function (k) { k.forEach(z); });
+    var out = '';
+    for (i = 0; i < b.length; i += 3) {
+      var n = (b[i] << 16) | ((b[i + 1] || 0) << 8) | (b[i + 2] || 0);
+      out += B64[(n >> 18) & 63] + B64[(n >> 12) & 63] + (i + 1 < b.length ? B64[(n >> 6) & 63] : '') + (i + 2 < b.length ? B64[n & 63] : '');
+    }
+    return ['g2', R.mode, R.seed, out].join('~');
+  }
+  function decodeV2(p) {
+    var s = p[3], b = [], i, j, n, pos = 0;
+    for (i = 0; i < s.length; i += 4) {
+      n = 0;
+      for (j = 0; j < 4; j++) { var c = i + j < s.length ? B64.indexOf(s[i + j]) : 0; if (c < 0) return null; n = n * 64 + c; }
+      b.push((n >> 16) & 255); if (i + 2 < s.length) b.push((n >> 8) & 255); if (i + 3 < s.length) b.push(n & 255);
+    }
+    function u() { var v = 0, m = 1, c; do { if (pos >= b.length) throw 0; c = b[pos++]; v += (c & 127) * m; m *= 128; } while (c & 128); return v; }
+    function z() { var v = u(); return v % 2 ? -(v + 1) / 2 : v / 2; }
+    var R = recorder(p[1], p[2]), prev = 0, t, k;
+    R.end = u(); R.score = u(); R.day = u();
+    t = u(); if (t > 100000) return null;
+    for (i = 0; i < t; i++) { prev += u(); R.tog.push(prev); }
+    k = u(); if (k > 10000) return null;
+    for (i = 0; i < k; i++) { var f = []; for (j = 0; j < 9; j++) f.push(z()); R.kf.push(f); }
+    return R;
   }
   function decodeGhost(code) {
     try {
-      var p = String(code).split('~');
-      if (p[0] !== 'g1' || p.length !== 8) return null;
-      var R = recorder(p[1], p[2]), prev = 0;
-      R.end = parseInt(p[3], B36); R.score = parseInt(p[4], B36); R.day = parseInt(p[5], B36);
-      R.tog = p[6] ? p[6].split('.').map(function (v) { prev += parseInt(v, B36); return prev; }) : [];
-      R.kf = p[7] ? p[7].split('.').map(function (k) { return k.split('_').map(function (v) { return parseInt(v, B36); }); }) : [];
-      if (!(R.end > 0) || R.kf.some(function (k) { return k.length !== 9 || k.some(isNaN); }) || R.tog.some(isNaN)) return null;
+      var p = String(code).split('~'), R;
+      if (p[0] === 'g2' && p.length === 4) R = decodeV2(p);
+      else if (p[0] === 'g1' && p.length === 8) {
+        var prev = 0;
+        R = recorder(p[1], p[2]); R.kfEvery = KF1;
+        R.end = parseInt(p[3], B36); R.score = parseInt(p[4], B36); R.day = parseInt(p[5], B36);
+        R.tog = p[6] ? p[6].split('.').map(function (v) { prev += parseInt(v, B36); return prev; }) : [];
+        R.kf = p[7] ? p[7].split('.').map(function (k) { return k.split('_').map(function (v) { return parseInt(v, B36); }); }) : [];
+      }
+      if (!R || !(R.end > 0) || R.kf.some(function (k) { return k.length !== 9 || k.some(isNaN); }) || R.tog.some(isNaN)) return null;
       return R;
     } catch (e) { return null; }
   }
@@ -315,10 +352,8 @@
     var R = Gh.R, G = Gh.S;
     if (Gh.n >= R.end) { Gh.done = true; return; }
     while (Gh.ti < R.tog.length && R.tog[Gh.ti] <= Gh.n) { Gh.hold = !Gh.hold; Gh.ti++; }
-    if (Gh.n % KF === 0 && Gh.ki < R.kf.length) {
-      var k = R.kf[Gh.ki++];
-      G.x = k[0] / 10; G.y = k[1] / 10; G.vx = k[2]; G.vy = k[3]; G.s = k[4]; G.air = k[5] === 1;
-      G.airT = k[6] / 100; G.fever = k[7] / 100; G.streak = k[8];
+    if (Gh.n % (R.kfEvery || KF) === 0 && Gh.ki < R.kf.length) {
+      unsnap(G, R.kf[Gh.ki++]);
     }
     step(G, Gh.hold, dt);
     G.ev.length = 0;
