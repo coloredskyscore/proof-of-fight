@@ -10,4 +10,4 @@ VERIFY = "1"
 [[d1_databases]]
 binding = "DB"
 database_name = "pof-dip"
-database_id = "00000000-0000-0000-0000-000000000000"  # replaced with the real id once the database exists
+database_id = "6d1dc213-f8f3-47d6-868a-0128c4a83e63"

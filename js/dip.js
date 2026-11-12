@@ -36,7 +36,7 @@
   var REC = null, GH = null, ghostWho = '', ghostTrail = [], ghostPassed = false, racing = false, CHALLENGE = null;
   // The Buy the Dip server (worker/ in the repo): short race links and the leaderboards. ?dip&debug&api=<url> points
   // the page at another copy (a local one, say).
-  var API = (DEBUG && (/[?&]api=([^&#]+)/.exec(location.search) || [])[1]) ? decodeURIComponent(/[?&]api=([^&#]+)/.exec(location.search)[1]) : 'https://pof-dip.WORKERS_SUBDOMAIN.workers.dev';
+  var API = (DEBUG && (/[?&]api=([^&#]+)/.exec(location.search) || [])[1]) ? decodeURIComponent(/[?&]api=([^&#]+)/.exec(location.search)[1]) : 'https://pof-dip.brianboode.workers.dev';
   var posted = false, lbBoard = null, shortUrl = '', played = chainIds[0];
   function api(path, body) {
     return fetch(API + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {})

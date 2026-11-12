@@ -49,6 +49,7 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | `js/app.js` | Screens, animations, Daily Fight, sharing |
 | `js/td-core.js`, `js/td.js`, `css/td.css` | Tower Defense test (`?td`): the rules (run in Node too), then the drawing and taps |
 | `js/dip-core.js`, `js/dip.js`, `js/dip-chains.js`, `css/dip.css` | Buy the Dip test (`?dip`): the rules (run in Node too), the drawing and sound (all made in code, no image or audio files), and the chains you can ride (landmarks, made-up future and colors for each) |
+| `worker/`, `tools/build-worker.js` | Buy the Dip server: a Cloudflare Worker (`pof-dip.brianboode.workers.dev`) with a D1 database for short race links and the leaderboards. It replays every run before storing it. `node tools/build-worker.js` bundles the game rules with `worker/src/index.js` into `worker/dist/worker.js`; tables are in `worker/schema.sql` |
 | `js/dip-data.js`, `js/dip-data-sol.js` | Buy the Dip price files: Bitcoin and Solana daily closing prices (see the header of each file for the source) |
 | `art/td/` | Tower Defense map, towers, enemies and node: the map fitted to the grid with `tools/td_map.py`, the rest cut from Grok sheets with `tools/td_art.py` |
 | `tools/` | Balance simulator, rules checks, art cut-out, music loop cutter, sound clip cutter, sound level meter |
