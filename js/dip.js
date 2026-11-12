@@ -31,12 +31,17 @@
   var stars = [], sprites = {}, mini = null, runs = 0;
   var today = new Date().toISOString().slice(0, 10);
   var terrains = {};
+  // Ghosts: REC records the run being played; GH replays another run as a see-through orb (your best, or a
+  // friend's run from a race link); CHALLENGE is the run from the link this page was opened with.
+  var REC = null, GH = null, ghostWho = '', ghostTrail = [], ghostPassed = false, racing = false, CHALLENGE = null;
 
   function $(q) { return root.querySelector(q); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { /* private mode */ } return null; }
   function bestKey(m) { return m === 'daily' ? 'pof-dip-best-' + today : 'pof-dip-best-' + m; }
+  function ghostKey(m) { return 'pof-dip-ghost-' + (m === 'daily' ? today : m); }
+  function dayKey(m) { return 'pof-dip-bestday-' + (m === 'daily' ? today : m); }
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
   function price(p) {
     if (p >= 1e9) return '$' + (p / 1e9).toFixed(2) + 'B';
@@ -45,6 +50,7 @@
     if (p >= 1) return '$' + p.toFixed(2);
     return '$' + p.toPrecision(3);
   }
+  function whenOf(TT, x) { var iso = TT.dateAt(x); return iso ? MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' + iso.slice(0, 4) : 'DAY ' + fmt(TT.dayAt(x)); }
   function when(x, long) {
     var iso = T.dateAt(x);
     if (!iso) return 'DAY ' + fmt(T.dayAt(x));
@@ -192,6 +198,8 @@
         '<div class="dip-logo"><span>BUY</span><span>THE</span><span class="dip-logo-dip">DIP</span></div>' +
         '<p class="dip-tag">Ride every pump and crash in crypto\'s history.<br>One button. Don\'t get liquidated.</p>' +
         '<div class="dip-how"><span><i class="dip-dot dip-red"></i><b>HOLD</b> going down to dive</span><span><i class="dip-dot dip-green"></i><b>LET GO</b> going up to fly</span></div>' +
+        '<div class="dip-challenge" id="dip-challenge" hidden><p id="dip-challenge-text"></p>' +
+          '<button class="dip-btn dip-btn-race" id="dip-race" type="button"><b>RACE THEIR GHOST</b><small>their run plays next to yours</small></button></div>' +
         chainIds.map(function (id) {
           var c = CHAINS.CHAINS[id];
           return '<button class="dip-btn dip-btn-main dip-chain" id="dip-' + id + '" type="button" style="--btn-bg:' + c.theme.btnBg + ';--btn-ink:' + c.theme.btnInk + '">' +
@@ -205,7 +213,9 @@
         '<div class="dip-end-where" id="dip-end-where"></div>' +
         '<div class="dip-end-sub" id="dip-end-sub"></div>' +
         '<div class="dip-end-score"><b id="dip-end-score"></b><small id="dip-end-unit">SATS</small></div>' +
+        '<div class="dip-end-break" id="dip-end-break"></div>' +
         '<div class="dip-end-best" id="dip-end-best"></div>' +
+        '<div class="dip-end-race" id="dip-end-race" hidden></div>' +
         '<button class="dip-btn dip-btn-main" id="dip-again" type="button"><b>RIDE AGAIN</b></button>' +
         '<div class="dip-row"><button class="dip-btn dip-btn-sm" id="dip-share" type="button"><b>SHARE</b></button>' +
         '<button class="dip-btn dip-btn-sm" id="dip-tomenu" type="button"><b>MENU</b></button></div>' +
@@ -220,7 +230,9 @@
 
     chainIds.forEach(function (id) { $('#dip-' + id).addEventListener('click', function () { start(id); }); });
     $('#dip-daily').addEventListener('click', function () { start('daily'); });
-    $('#dip-again').addEventListener('click', function () { start(mode); });
+    $('#dip-again').addEventListener('click', function () { start(mode, racing); });
+    $('#dip-race').addEventListener('click', function () { if (CHALLENGE) start(CHALLENGE.mode, true); });
+    readChallenge();
     $('#dip-tomenu').addEventListener('click', menu);
     $('#dip-quit').addEventListener('click', menu);
     $('#dip-share').addEventListener('click', share);
@@ -249,7 +261,7 @@
     if (AUTO) start(/[?&]daily\b/.test(location.search) ? 'daily' : /[?&]sol\b/.test(location.search) ? 'sol' : 'btc');
     last = performance.now();
     requestAnimationFrame(frame);
-    if (DEBUG) window.POF_DIP = { get S() { return S; }, get T() { return T; }, start: start, menu: menu, core: C, card: shareCard, frame: tick, cam: cam, set auto(v) { AUTO = v; }, set manual(v) { paused = v; } };
+    if (DEBUG) window.POF_DIP = { get S() { return S; }, get T() { return T; }, get GH() { return GH; }, get REC() { return REC; }, encode: function () { return C.encode(REC); }, start: start, menu: menu, core: C, card: shareCard, frame: tick, cam: cam, set auto(v) { AUTO = v; }, set manual(v) { paused = v; } };
   }
   function press(on) { if (!attract && !over) hold = on; else hold = false; }
   function resize() {
@@ -275,26 +287,58 @@
     attract = true; reset(chainIds[Math.floor(Math.random() * chainIds.length)], true);
     stopMusic(0.4);
     $('#dip-menu').hidden = false; $('#dip-end').hidden = true; $('#dip-quit').hidden = true;
-    var d = store(bestKey('daily'));
-    chainIds.forEach(function (id) { var b = store(bestKey(id)); $('#dip-best-' + id).textContent = b ? 'BEST ' + fmt(b) : ''; });
-    $('#dip-best-daily').textContent = d ? 'BEST ' + fmt(d) : '';
+    chainIds.concat(['daily']).forEach(function (id) {
+      var b = store(bestKey(id)), d = store(dayKey(id));
+      $('#dip-best-' + id).textContent = b ? 'BEST ' + (d ? d + ' · ' : '') + fmt(b) : '';
+    });
+    $('#dip-challenge').hidden = !CHALLENGE;
+    if (CHALLENGE) {
+      var CT = terrain(CHALLENGE.mode), cname = CHALLENGE.mode === 'daily' ? CT.name : CHAINS.CHAINS[CHALLENGE.mode].name;
+      var cunit = CHALLENGE.mode === 'daily' ? 'sats' : CHAINS.CHAINS[CHALLENGE.mode].unit;
+      $('#dip-challenge-text').textContent = CHALLENGE.mode === 'daily'
+        ? 'You were sent a run: ' + fmt(CHALLENGE.day) + ' days on today\'s ' + cname + ', ' + fmt(CHALLENGE.score) + ' ' + cunit + '. Can you beat it?'
+        : 'You were sent a run: ' + cname + ' to ' + whenOf(CT, CHALLENGE.day * DAY) + ', ' + fmt(CHALLENGE.score) + ' ' + cunit + '. Can you beat it?';
+    }
     $('#dip-daily-name').textContent = C.makeTerrain({ mode: 'daily', seed: today }).name + ', a new made-up coin every day';
   }
-  function start(m) {
+  function start(m, race) {
     attract = false; reset(m, false); runs++;
+    racing = !!(race && CHALLENGE && CHALLENGE.mode === m);
+    REC = C.recorder(m, m === 'daily' ? today : '');
+    var R = racing ? CHALLENGE : C.decodeGhost(store(ghostKey(m)) || '');
+    GH = R && R.mode === m ? C.ghost(T, R) : null;
+    ghostWho = racing ? 'THEIR RUN' : 'YOUR BEST'; ghostTrail = []; ghostPassed = false;
     hintT = runs <= 2 ? 9 : 0;
     $('#dip-menu').hidden = true; $('#dip-end').hidden = true; $('#dip-quit').hidden = false;
     if (audio()) { stopMusic(0.05); music.on = false; startMusic(); play('tap'); }
   }
+  // A race link: ?dip&race=<a recorded run>. Today's Daily Coin only, since another day's coin is a different chart.
+  function readChallenge() {
+    var m = /[?&]race=([^&#]+)/.exec(location.search);
+    if (!m) return;
+    var R = C.decodeGhost(decodeURIComponent(m[1]));
+    if (!R) return;
+    if (R.mode === 'daily' ? R.seed !== today : !CHAINS.CHAINS[R.mode]) return;
+    CHALLENGE = R;
+  }
   function finish() {
     var sc = C.score(S), key = bestKey(mode), old = Number(store(key) || 0), isBest = sc > old;
-    if (isBest) store(key, String(sc));
+    if (isBest) { store(key, String(sc)); store(ghostKey(mode), C.encode(REC)); store(dayKey(mode), T.mode === 'chain' ? when(S.x) : fmt(T.dayAt(S.x)) + ' DAYS'); }
     $('#dip-end-title').textContent = S.won ? 'UNLIQUIDATABLE' : 'LIQUIDATED';
     $('#dip-end-where').textContent = T.mode === 'chain' ? 'You made it to ' + when(S.x) : 'You rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days';
     var e = S.lastEvent, sub = price(T.priceAt(S.x)) + ' a coin';
     if (T.mode === 'chain' && e && T.dayAt(S.x) - e.day < 400) sub = 'Past ' + e.title + '. ' + sub + '.';
     $('#dip-end-sub').textContent = sub;
     $('#dip-end-score').textContent = fmt(sc);
+    var bd = C.breakdown(S);
+    $('#dip-end-break').textContent = 'Distance ' + fmt(bd.distance) + '  ·  Pickups ' + fmt(bd.pickups) + '  ·  Landings ' + fmt(bd.landings);
+    var rr = $('#dip-end-race');
+    rr.hidden = !racing;
+    if (racing) {
+      var won = sc > CHALLENGE.score;
+      rr.textContent = won ? 'You beat their run (' + fmt(CHALLENGE.score) + ')' : 'Their run wins: ' + fmt(CHALLENGE.score) + '. Ride again to race it.';
+      rr.className = 'dip-end-race' + (won ? ' won' : '');
+    }
     $('#dip-end-best').textContent = isBest && old ? 'NEW BEST' : isBest ? '' : 'BEST ' + fmt(old);
     $('#dip-note').textContent = '';
     $('#dip-end').hidden = false; $('#dip-quit').hidden = true;
@@ -316,7 +360,9 @@
         acc -= 1 / 120;
         var h = hold;
         if (attract || AUTO) { if (botK++ % 4 === 0) botHold = C.bot(S); h = botHold; }
+        if (!attract && REC) C.record(REC, S, h);
         C.step(S, h, 1 / 120);
+        if (GH && !attract) C.ghostStep(GH, 1 / 120);
         if (S.dead) break;
       }
       events();
@@ -350,6 +396,7 @@
       else if (e.type === 'event') { play('event'); }
       else if (e.type === 'dead') {
         over = true; overT = 0; hold = false; shake = 22; flash = 0.5;
+        if (REC && !attract) C.finishRecord(REC, S, T);
         burst(S.x, S.y, 60, 'red', 700, 1.1); burst(S.x, S.y, 30, 'white', 500, 0.9);
         play('dead'); buzz([40, 50, 120]); stopMusic(1.2);
       }
@@ -517,6 +564,7 @@
       ctx.lineWidth = Math.max(1.5, C.R * 1.4 * z * f);
       ctx.beginPath(); ctx.moveTo(sx(a.x), sy(a.y)); ctx.lineTo(sx(b.x), sy(b.y)); ctx.stroke();
     }
+    drawGhost(z);
     var bxs = sx(S.x), bys = sy(S.y + C.R), br = Math.max(7, C.R * z);
     if (!over) {
       stamp(fever ? 'gold' : S.hold ? 'hot' : 'cyan', bxs, bys, br * (S.hold ? 4.2 : 3.4), 0.95);
@@ -558,6 +606,49 @@
     if (flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, flash) + ')'; ctx.fillRect(0, 0, W, H); }
     if (attract) { ctx.fillStyle = 'rgba(3,4,10,0.55)'; ctx.fillRect(0, 0, W, H); return; }
     hud();
+  }
+
+  // The ghost: a see-through orb with its own faint trail and a name tag. Off screen, a tag on the edge says how
+  // many days ahead or behind it is. When its run ended, a dashed line marks the spot until you pass it.
+  function drawGhost(z) {
+    if (!GH || attract) return;
+    var G = GH.S, gx = sx(G.x), gy = sy(G.y + C.R), r = Math.max(7, C.R * z), i;
+    var lab = Math.round(clamp(W / 70, 10, 13));
+    if (GH.done) {
+      if (S.x < G.x) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(gx + 0.5, 0); ctx.lineTo(gx + 0.5, H); ctx.stroke(); ctx.setLineDash([]);
+        ctx.font = '800 ' + lab + 'px ' + MONO; ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+        if (gx > 0 && gx < W + 200) ctx.fillText(ghostWho + ' ENDED HERE', Math.min(gx - 6, W - 8), H * 0.42);
+      } else if (!ghostPassed && !over) {
+        ghostPassed = true;
+        banner = { text: racing ? 'YOU PASSED THEM' : 'PAST YOUR BEST', sub: racing ? 'their run ended here' : 'further than your best run', t: 0, color: '#ffffff' };
+        play('fever');
+      }
+      return;
+    }
+    ghostTrail.push({ x: G.x, y: G.y }); if (ghostTrail.length > 26) ghostTrail.shift();
+    var onScreen = gx > -r * 3 && gx < W + r * 3;
+    if (onScreen) {
+      ctx.lineCap = 'round';
+      for (i = 1; i < ghostTrail.length; i++) {
+        var a = ghostTrail[i - 1], b = ghostTrail[i], f = i / ghostTrail.length;
+        ctx.strokeStyle = 'rgba(255,255,255,' + f * 0.25 + ')'; ctx.lineWidth = Math.max(1, C.R * 1.1 * z * f);
+        ctx.beginPath(); ctx.moveTo(sx(a.x), sy(a.y + C.R)); ctx.lineTo(sx(b.x), sy(b.y + C.R)); ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(gx, gy, r, 0, 6.283); ctx.fill(); ctx.stroke();
+      ctx.font = '800 ' + lab + 'px ' + MONO; ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(ghostWho, gx, gy - r - 8);
+    } else {
+      var ahead = G.x > S.x, days = Math.abs(Math.round((G.x - S.x) / DAY));
+      var ty = clamp(gy, 120, H - 60), txt = ahead ? ghostWho + ' +' + days + 'd ▶' : '◀ ' + ghostWho + ' -' + days + 'd';
+      ctx.font = '800 ' + lab + 'px ' + MONO; ctx.textBaseline = 'middle';
+      var tw = ctx.measureText(txt).width + 16, tx = ahead ? W - tw - 8 : 26;
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(tx, ty - 12, tw, 24);
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.strokeRect(tx + 0.5, ty - 11.5, tw - 1, 23);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(txt, tx + 8, ty);
+    }
   }
 
   function drawWall(z) {
@@ -688,8 +779,8 @@
   }
   function share() {
     var text = (T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear + ' to ' + when(S.x) : 'I rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days') +
-      ' before getting liquidated. ' + fmt(C.score(S)) + ' ' + UNIT + '. Beat that:';
-    var url = 'https://proofoffight.com/?dip', note = $('#dip-note');
+      ' before getting liquidated. ' + fmt(C.score(S)) + ' ' + UNIT + '. Race my ghost:';
+    var url = 'https://proofoffight.com/?dip' + (REC && REC.end ? '&race=' + encodeURIComponent(C.encode(REC)) : ''), note = $('#dip-note');
     shareCard().toBlob(function (blob) {
       var file = null;
       try { file = new File([blob], 'buy-the-dip.png', { type: 'image/png' }); } catch (e) { /* old browser */ }
