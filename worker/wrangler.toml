@@ -1,0 +1,13 @@
+# Buy the Dip server. Built file: node tools/build-worker.js (from the repo root).
+name = "pof-dip"
+main = "dist/worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+VERIFY = "1"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pof-dip"
+database_id = "00000000-0000-0000-0000-000000000000"  # replaced with the real id once the database exists
