@@ -1,20 +1,30 @@
 /* Buy the Dip test mode (?dip). The rules live in js/dip-core.js; this file draws them, plays the sound and
    takes the one button. Everything on screen is drawn here in code on one canvas: no image files.
-   The ground is Bitcoin's real price chart (or a made-up daily coin). Red slopes go down, green go up:
+   The ground is a real price chart (Bitcoin or Solana, or a made-up daily coin). Down slopes are red or purple, up slopes are green:
    hold on red to dive, let go on green to fly, and stay ahead of the liquidation wall.
    ?dip&debug exposes window.POF_DIP; ?dip&auto lets the look-ahead bot play (for recording clips). */
 (function () {
   if (!/[?&]dip\b/i.test(location.search)) return;
-  var C = window.POF_DIP_CORE, DATA = window.POF_DIP_DATA;
+  var C = window.POF_DIP_CORE, CHAINS = window.POF_DIP_CHAINS;
   var AUTO = /[?&]auto\b/i.test(location.search), DEBUG = /[?&]debug\b/i.test(location.search);
   var DAY = C.DAY;
-  var GREEN = '#1ff2a0', RED = '#ff3d71', GOLD = '#ffc53d', INK = '#05060c';
+  // The colors of the chain being ridden (set by applyTheme): GREEN and RED are the up and down slopes.
+  var GREEN = '#1ff2a0', RED = '#ff3d71', GOLD = '#ffc53d', TH = null;
+  var DAILY_THEME = {
+    up: '#1ff2a0', upRGB: '31,242,160', upLine: '#7dffd0', upWord: 'green',
+    down: '#ff3d71', downRGB: '255,61,113', downLine: '#ff7a9c', downWord: 'red',
+    coin: '#ffc53d', coinRGB: '255,197,61', coinCore: '#fff3c4',
+    ballRGB: '90,220,255', holdRGB: '255,120,40', trail: '120,225,255', hue: 40,
+    sky: { neutral: [70, 84, 230], bull: [20, 220, 170], bear: [240, 40, 120] },
+    wallRGB: '255,61,113', btnBg: '#1ff2a0', btnInk: '#04140d', accent: '#1ff2a0'
+  };
+  var UNIT = 'sats';
   var MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
   var SANS = '"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
   var MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
   var root, cv, ctx, W = 0, H = 0, DPR = 1;
-  var T = null, S = null, mode = 'btc', attract = true, over = false, overT = 0, paused = false;
+  var T = null, S = null, mode = 'btc', chainIds = CHAINS.ORDER, attract = true, over = false, overT = 0, paused = false;
   var hold = false, botHold = false, botK = 0;
   var cam = { x: 0, y: 0, z: 1 }, shake = 0, flash = 0, mood = 0, clock = 0, timeScale = 1;
   var trail = [], parts = [], pops = [], rings = [], banner = null, hintT = 0;
@@ -26,7 +36,7 @@
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { /* private mode */ } return null; }
-  function bestKey(m) { return m === 'btc' ? 'pof-dip-best-btc' : 'pof-dip-best-' + today; }
+  function bestKey(m) { return m === 'daily' ? 'pof-dip-best-' + today : 'pof-dip-best-' + m; }
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
   function price(p) {
     if (p >= 1e9) return '$' + (p / 1e9).toFixed(2) + 'B';
@@ -41,10 +51,25 @@
     return (long ? MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' : MONTHS[Number(iso.slice(5, 7)) - 1] + ' ') + iso.slice(0, 4);
   }
   function terrain(m) {
-    if (!terrains[m]) terrains[m] = m === 'btc' ? C.makeTerrain({ mode: 'btc', data: DATA }) : C.makeTerrain({ mode: 'daily', seed: today });
+    if (!terrains[m]) terrains[m] = m === 'daily' ? C.makeTerrain({ mode: 'daily', seed: today }) :
+      C.makeTerrain({ mode: 'chain', chain: CHAINS.CHAINS[m], data: window[CHAINS.CHAINS[m].dataVar] });
     terrains[m].coins.forEach(function (c) { c.got = false; });
     return terrains[m];
   }
+
+  function applyTheme(m) {
+    TH = m === 'daily' ? DAILY_THEME : CHAINS.CHAINS[m].theme;
+    UNIT = m === 'daily' ? 'sats' : CHAINS.CHAINS[m].unit;
+    GREEN = TH.up; RED = TH.down; GOLD = TH.coin;
+    var st = root.style;
+    st.setProperty('--up', TH.up); st.setProperty('--down', TH.down); st.setProperty('--down-rgb', TH.downRGB);
+    st.setProperty('--coin', TH.coin); st.setProperty('--btn-bg', TH.btnBg); st.setProperty('--btn-ink', TH.btnInk);
+    st.setProperty('--accent', TH.accent);
+    sprites.gold = glow(TH.coinRGB, 128); sprites.cyan = glow(TH.ballRGB, 128); sprites.hot = glow(TH.holdRGB, 128);
+    sprites.red = glow(TH.downRGB, 128); sprites.green = glow(TH.upRGB, 128);
+    var u = $('#dip-end-unit'); if (u) u.textContent = UNIT.toUpperCase();
+  }
+  function wallC(a) { return 'rgba(' + TH.wallRGB + ',' + a + ')'; }
 
   // ---------- Sound: all of it made here with oscillators and noise ----------
   var AC = null, master = null, musicG = null, windG = null, windF = null, noiseBuf = null, muted = store('pof-dip-mute') === '1';
@@ -165,9 +190,13 @@
       '<canvas id="dip-cv"></canvas>' +
       '<div class="dip-menu" id="dip-menu">' +
         '<div class="dip-logo"><span>BUY</span><span>THE</span><span class="dip-logo-dip">DIP</span></div>' +
-        '<p class="dip-tag">Ride every pump and crash in Bitcoin\'s history.<br>One button. Don\'t get liquidated.</p>' +
-        '<div class="dip-how"><span><i class="dip-dot dip-red"></i><b>HOLD</b> on red to dive</span><span><i class="dip-dot dip-green"></i><b>LET GO</b> on green to fly</span></div>' +
-        '<button class="dip-btn dip-btn-main" id="dip-btc" type="button"><b>RIDE BITCOIN</b><small>2010 to today, the real chart</small><em id="dip-best-btc"></em></button>' +
+        '<p class="dip-tag">Ride every pump and crash in crypto\'s history.<br>One button. Don\'t get liquidated.</p>' +
+        '<div class="dip-how"><span><i class="dip-dot dip-red"></i><b>HOLD</b> going down to dive</span><span><i class="dip-dot dip-green"></i><b>LET GO</b> going up to fly</span></div>' +
+        chainIds.map(function (id) {
+          var c = CHAINS.CHAINS[id];
+          return '<button class="dip-btn dip-btn-main dip-chain" id="dip-' + id + '" type="button" style="--btn-bg:' + c.theme.btnBg + ';--btn-ink:' + c.theme.btnInk + '">' +
+            '<b>RIDE ' + c.name.toUpperCase() + '</b><small>' + c.pitch + '</small><em id="dip-best-' + id + '"></em></button>';
+        }).join('') +
         '<button class="dip-btn" id="dip-daily" type="button"><b>DAILY COIN</b><small id="dip-daily-name"></small><em id="dip-best-daily"></em></button>' +
         '<div class="dip-foot"><button class="dip-link" id="dip-mute" type="button"></button><a class="dip-link" href="./">PROOF OF FIGHT</a></div>' +
       '</div>' +
@@ -175,7 +204,7 @@
         '<div class="dip-end-title" id="dip-end-title">LIQUIDATED</div>' +
         '<div class="dip-end-where" id="dip-end-where"></div>' +
         '<div class="dip-end-sub" id="dip-end-sub"></div>' +
-        '<div class="dip-end-score"><b id="dip-end-score"></b><small>SATS</small></div>' +
+        '<div class="dip-end-score"><b id="dip-end-score"></b><small id="dip-end-unit">SATS</small></div>' +
         '<div class="dip-end-best" id="dip-end-best"></div>' +
         '<button class="dip-btn dip-btn-main" id="dip-again" type="button"><b>RIDE AGAIN</b></button>' +
         '<div class="dip-row"><button class="dip-btn dip-btn-sm" id="dip-share" type="button"><b>SHARE</b></button>' +
@@ -186,11 +215,10 @@
     document.body.appendChild(root);
     document.documentElement.classList.add('dip-on');
     cv = $('#dip-cv'); ctx = cv.getContext('2d');
-    sprites.white = glow('255,255,255', 128); sprites.gold = glow('255,197,61', 128); sprites.cyan = glow('90,220,255', 128);
-    sprites.hot = glow('255,120,40', 128); sprites.red = glow('255,61,113', 128); sprites.green = glow('31,242,160', 128);
+    sprites.white = glow('255,255,255', 128);
     for (var i = 0; i < 140; i++) stars.push({ x: Math.random(), y: Math.random() * 0.75, r: Math.random() * 1.3 + 0.3, p: Math.random() * 6.28, d: 0.02 + Math.random() * 0.06 });
 
-    $('#dip-btc').addEventListener('click', function () { start('btc'); });
+    chainIds.forEach(function (id) { $('#dip-' + id).addEventListener('click', function () { start(id); }); });
     $('#dip-daily').addEventListener('click', function () { start('daily'); });
     $('#dip-again').addEventListener('click', function () { start(mode); });
     $('#dip-tomenu').addEventListener('click', menu);
@@ -218,7 +246,7 @@
     document.addEventListener('visibilitychange', function () { paused = document.hidden; press(false); if (AC) { if (document.hidden) AC.suspend(); else AC.resume(); } });
     resize();
     menu();
-    if (AUTO) start(/[?&]daily\b/.test(location.search) ? 'daily' : 'btc');
+    if (AUTO) start(/[?&]daily\b/.test(location.search) ? 'daily' : /[?&]sol\b/.test(location.search) ? 'sol' : 'btc');
     last = performance.now();
     requestAnimationFrame(frame);
     if (DEBUG) window.POF_DIP = { get S() { return S; }, get T() { return T; }, start: start, menu: menu, core: C, card: shareCard, frame: tick, cam: cam, set auto(v) { AUTO = v; }, set manual(v) { paused = v; } };
@@ -233,10 +261,9 @@
   function baseZoom() { return clamp(Math.min(W / (W < H ? 600 : 760), H / 520), 0.5, 1.5); }
 
   function reset(m, demo) {
-    mode = m; T = terrain(m); S = C.newRun(T);
+    mode = m; T = terrain(m); S = C.newRun(T); applyTheme(m);
     if (demo) {
-      var spots = ['2013-03-01', '2017-03-01', '2019-01-01', '2020-10-01', '2023-06-01'];
-      var d = Math.round((Date.parse(spots[Math.floor(Math.random() * spots.length)]) - Date.parse(DATA.start)) / 86400000);
+      var d = Math.round(T.real * (0.25 + 0.55 * Math.random()));
       S.x = d * DAY; S.y = T.height(S.x); S.noWall = true; S.s = 900;
       while (S.ei < T.events.length && T.events[S.ei].day * DAY <= S.x) S.ei++;
       while (S.ci < T.coins.length && T.coins[S.ci].x < S.x) S.ci++;
@@ -245,11 +272,11 @@
     cam.x = S.x; cam.y = S.y; cam.z = baseZoom(); mood = T.moodAt(S.x); mini = null; shake = 0; flash = 0;
   }
   function menu() {
-    attract = true; reset('btc', true);
+    attract = true; reset(chainIds[Math.floor(Math.random() * chainIds.length)], true);
     stopMusic(0.4);
     $('#dip-menu').hidden = false; $('#dip-end').hidden = true; $('#dip-quit').hidden = true;
-    var b = store('pof-dip-best-btc'), d = store(bestKey('daily'));
-    $('#dip-best-btc').textContent = b ? 'BEST ' + fmt(b) : '';
+    var d = store(bestKey('daily'));
+    chainIds.forEach(function (id) { var b = store(bestKey(id)); $('#dip-best-' + id).textContent = b ? 'BEST ' + fmt(b) : ''; });
     $('#dip-best-daily').textContent = d ? 'BEST ' + fmt(d) : '';
     $('#dip-daily-name').textContent = C.makeTerrain({ mode: 'daily', seed: today }).name + ', a new made-up coin every day';
   }
@@ -263,9 +290,9 @@
     var sc = C.score(S), key = bestKey(mode), old = Number(store(key) || 0), isBest = sc > old;
     if (isBest) store(key, String(sc));
     $('#dip-end-title').textContent = S.won ? 'UNLIQUIDATABLE' : 'LIQUIDATED';
-    $('#dip-end-where').textContent = mode === 'btc' ? 'You made it to ' + when(S.x) : 'You rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days';
+    $('#dip-end-where').textContent = T.mode === 'chain' ? 'You made it to ' + when(S.x) : 'You rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days';
     var e = S.lastEvent, sub = price(T.priceAt(S.x)) + ' a coin';
-    if (mode === 'btc' && e && T.dayAt(S.x) - e.day < 400) sub = 'Past ' + e.title + '. ' + sub + '.';
+    if (T.mode === 'chain' && e && T.dayAt(S.x) - e.day < 400) sub = 'Past ' + e.title + '. ' + sub + '.';
     $('#dip-end-sub').textContent = sub;
     $('#dip-end-score').textContent = fmt(sc);
     $('#dip-end-best').textContent = isBest && old ? 'NEW BEST' : isBest ? '' : 'BEST ' + fmt(old);
@@ -314,12 +341,12 @@
       if (e.type === 'coin') { burst(e.x, e.y, 5, 'gold', 160, 0.4); play('coin'); }
       else if (e.type === 'perfect') {
         pop(e.streak > 1 ? 'PERFECT ×' + e.streak : 'PERFECT', S.x, S.y + 70, GREEN, 1 + Math.min(e.streak, 5) * 0.12);
-        rings.push({ x: S.x, y: S.y, t: 0, color: '31,242,160' }); burst(S.x, S.y, 14, 'green', 320, 0.6);
+        rings.push({ x: S.x, y: S.y, t: 0, color: TH.upRGB }); burst(S.x, S.y, 14, 'green', 320, 0.6);
         flash = 0.12; play('perfect', e.streak); buzz(8);
       } else if (e.type === 'bad') {
         pop('REKT', S.x, S.y + 60, RED, 1); burst(S.x, S.y, 12, 'red', 260, 0.5); shake = Math.max(shake, 9); play('bad'); buzz(25);
       } else if (e.type === 'launch') play('launch');
-      else if (e.type === 'fever') { banner = { text: 'BULL RUN', sub: 'speed up, sats ×2', t: 0, color: GOLD }; play('fever'); rings.push({ x: S.x, y: S.y, t: 0, color: '255,197,61' }); }
+      else if (e.type === 'fever') { banner = { text: 'BULL RUN', sub: 'speed up, ' + UNIT + ' ×2', t: 0, color: GOLD }; play('fever'); rings.push({ x: S.x, y: S.y, t: 0, color: TH.coinRGB }); }
       else if (e.type === 'event') { play('event'); }
       else if (e.type === 'dead') {
         over = true; overT = 0; hold = false; shake = 22; flash = 0.5;
@@ -376,9 +403,9 @@
     var fever = S.fever > 0 && !over;
 
     // sky: the horizon glows with the market's mood (teal in a bull run, magenta in a winter, gold on a streak)
-    var neutral = [70, 84, 230], bull = [20, 220, 170], bear = [240, 40, 120];
+    var neutral = TH.sky.neutral, bull = TH.sky.bull, bear = TH.sky.bear;
     var hc = mood >= 0 ? mix(neutral, bull, mood) : mix(neutral, bear, -mood);
-    if (fever) hc = mix(hc, [255, 190, 50], 0.7);
+    if (fever) hc = mix(hc, TH.coinRGB.split(',').map(Number), 0.7);
     var g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, '#03040a'); g.addColorStop(0.55, '#070a18');
     g.addColorStop(1, 'rgb(' + mix([7, 10, 24], hc, 0.42).join(',') + ')');
@@ -400,8 +427,8 @@
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = '800 ' + Math.round(Math.min(W * 0.36, H * 0.42)) + 'px ' + MONO;
     ctx.fillStyle = 'rgba(255,255,255,0.045)';
-    if (mode === 'btc') {
-      var y0 = Number(DATA.start.slice(0, 4)), d0 = Date.parse(DATA.start);
+    if (T.mode === 'chain') {
+      var d0 = Date.parse(T.dateAt(0)), y0 = Number(T.dateAt(0).slice(0, 4));
       var yr = Number((T.dateAt(cam.x) || '2010').slice(0, 4));
       for (k = yr - 1; k <= yr + 1; k++) {
         if (k < y0) continue;
@@ -436,8 +463,8 @@
       var xa = k * BW, ha = T.height(xa), hm = T.height(xa + BW / 2), hb = T.height(xa + BW), rising = hb >= ha;
       var ax = sx(xa), bx = sx(xa + BW) - gap, ay = sy(ha), my = sy(hm), by = sy(hb), top = Math.min(ay, by, my);
       var bg = ctx.createLinearGradient(0, top, 0, top + 380 * z + 60);
-      bg.addColorStop(0, rising ? 'rgba(31,242,160,0.5)' : 'rgba(255,61,113,0.55)');
-      bg.addColorStop(1, rising ? 'rgba(31,242,160,0)' : 'rgba(255,61,113,0)');
+      bg.addColorStop(0, rising ? 'rgba(' + TH.upRGB + ',0.5)' : 'rgba(' + TH.downRGB + ',0.55)');
+      bg.addColorStop(1, rising ? 'rgba(' + TH.upRGB + ',0)' : 'rgba(' + TH.downRGB + ',0)');
       ctx.fillStyle = bg;
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo((ax + bx) / 2, my); ctx.lineTo(bx, by); ctx.lineTo(bx, H); ctx.lineTo(ax, H); ctx.closePath(); ctx.fill();
       var path = rising ? up : dn;
@@ -445,10 +472,10 @@
     }
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     ctx.globalCompositeOperation = 'lighter';
-    ctx.lineWidth = Math.max(7, 12 * z); ctx.strokeStyle = 'rgba(31,242,160,0.22)'; ctx.stroke(up);
-    ctx.strokeStyle = 'rgba(255,61,113,0.26)'; ctx.stroke(dn);
+    ctx.lineWidth = Math.max(7, 12 * z); ctx.strokeStyle = 'rgba(' + TH.upRGB + ',0.22)'; ctx.stroke(up);
+    ctx.strokeStyle = 'rgba(' + TH.downRGB + ',0.26)'; ctx.stroke(dn);
     ctx.globalCompositeOperation = 'source-over';
-    ctx.lineWidth = Math.max(2, 3.2 * z); ctx.strokeStyle = '#7dffd0'; ctx.stroke(up); ctx.strokeStyle = '#ff7a9c'; ctx.stroke(dn);
+    ctx.lineWidth = Math.max(2, 3.2 * z); ctx.strokeStyle = TH.upLine; ctx.stroke(up); ctx.strokeStyle = TH.downLine; ctx.stroke(dn);
 
     // landmarks
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
@@ -473,7 +500,7 @@
       stamp('gold', cx, cy, Math.max(9, 20 * z), 0.9);
     }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = '#fff3c4';
+    ctx.fillStyle = TH.coinCore;
     for (i = S.ci; i < cs.length && cs[i].x < x1; i++) {
       if (cs[i].got) continue;
       var qx = sx(cs[i].x), qy = sy(cs[i].y + Math.sin(clock * 4 + cs[i].x * 0.01) * 5), qr = Math.max(2.2, 4.5 * z);
@@ -486,7 +513,7 @@
     ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'butt';
     for (i = 1; i < trail.length; i++) {
       var a = trail[i - 1], b = trail[i], f = i / trail.length;
-      ctx.strokeStyle = b.f ? 'hsla(' + (40 + 20 * Math.sin(clock * 9 + i * 0.3)) + ',100%,60%,' + f * 0.75 + ')' : b.h ? 'rgba(255,130,50,' + f * 0.75 + ')' : 'rgba(120,225,255,' + f * 0.6 + ')';
+      ctx.strokeStyle = b.f ? 'hsla(' + (TH.hue + 20 * Math.sin(clock * 9 + i * 0.3)) + ',100%,60%,' + f * 0.75 + ')' : b.h ? 'rgba(' + TH.holdRGB + ',' + f * 0.75 + ')' : 'rgba(' + TH.trail + ',' + f * 0.6 + ')';
       ctx.lineWidth = Math.max(1.5, C.R * 1.4 * z * f);
       ctx.beginPath(); ctx.moveTo(sx(a.x), sy(a.y)); ctx.lineTo(sx(b.x), sy(b.y)); ctx.stroke();
     }
@@ -525,7 +552,7 @@
     var gapT = clamp(1 - (S.x - S.wall) / 1500, 0, 1);
     if (gapT > 0 && !attract) {
       var vg = ctx.createLinearGradient(0, 0, W * 0.6, 0);
-      vg.addColorStop(0, 'rgba(255,30,80,' + (0.32 * gapT * (0.75 + 0.25 * Math.sin(clock * 12))) + ')'); vg.addColorStop(1, 'rgba(255,30,80,0)');
+      vg.addColorStop(0, wallC(0.32 * gapT * (0.75 + 0.25 * Math.sin(clock * 12)))); vg.addColorStop(1, wallC(0));
       ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     }
     if (flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, flash) + ')'; ctx.fillRect(0, 0, W, H); }
@@ -540,21 +567,21 @@
       // off screen: a tag on the left edge says how close it is
       var secs = (S.x - S.wall) / Math.max(1, C.wallSpeed(T, S.x, S.t));
       var a = clamp(1.4 - secs / 3, 0.25, 1);
-      ctx.fillStyle = 'rgba(255,61,113,' + a + ')'; ctx.fillRect(0, H * 0.3, 3, H * 0.4);
+      ctx.fillStyle = wallC(a); ctx.fillRect(0, H * 0.3, 3, H * 0.4);
       ctx.save(); ctx.translate(16, H * 0.5); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.font = '800 ' + Math.round(clamp(W / 70, 10, 13)) + 'px ' + MONO; ctx.fillText('LIQUIDATION ' + secs.toFixed(1) + 's', 0, 0); ctx.restore();
       return;
     }
     var g = ctx.createLinearGradient(wx - 520 * z - 200, 0, wx, 0);
-    g.addColorStop(0, 'rgba(120,0,30,0.92)'); g.addColorStop(0.7, 'rgba(210,10,60,0.8)'); g.addColorStop(1, 'rgba(255,61,113,0.95)');
+    g.addColorStop(0, 'rgba(' + TH.wallRGB.split(',').map(function (v) { return Math.round(v * 0.4); }).join(',') + ',0.92)'); g.addColorStop(0.7, wallC(0.8)); g.addColorStop(1, wallC(0.95));
     ctx.fillStyle = g; ctx.fillRect(0, 0, wx, H);
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     for (i = 0; i < H; i += 4) ctx.fillRect(0, i, wx, 1.5);
     ctx.globalCompositeOperation = 'lighter';
     for (i = 0; i < H; i += 22) {
       var j = (Math.sin(i * 12.9898 + Math.floor(clock * 24) * 78.233) * 43758.5453 % 1) * 14;
-      ctx.fillStyle = 'rgba(255,90,130,0.9)'; ctx.fillRect(wx - 3 + j, i, 6, 22);
-      ctx.fillStyle = 'rgba(255,61,113,0.25)'; ctx.fillRect(wx + j, i, 26, 22);
+      ctx.fillStyle = 'rgba(' + TH.wallRGB.split(',').map(function (v) { return Math.min(255, Math.round(v * 0.5 + 128)); }).join(',') + ',0.9)'; ctx.fillRect(wx - 3 + j, i, 6, 22);
+      ctx.fillStyle = wallC(0.25); ctx.fillRect(wx + j, i, 26, 22);
     }
     ctx.globalCompositeOperation = 'source-over';
     ctx.save(); ctx.translate(wx - 20, 0); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
@@ -565,7 +592,7 @@
   }
 
   function miniChart() {
-    var mw = Math.round(Math.min(W - 32, 520)), mh = 36, n = mode === 'btc' ? T.real : Math.min(T.n, 2400), lo = 1e9, hi = -1e9, i;
+    var mw = Math.round(Math.min(W - 32, 520)), mh = 36, n = T.mode === 'chain' ? T.real : Math.min(T.n, 2400), lo = 1e9, hi = -1e9, i;
     for (i = 0; i < n; i += 4) { lo = Math.min(lo, T.logs[i]); hi = Math.max(hi, T.logs[i]); }
     function make(color) {
       var c = document.createElement('canvas'); c.width = mw * DPR; c.height = mh * DPR;
@@ -586,7 +613,7 @@
     ctx.fillText(price(p), pad, top + 18 * u);
     ctx.textAlign = 'right';
     ctx.font = '700 ' + Math.round(13 * u) + 'px ' + SANS; ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText(fever ? 'SATS ×2' : 'SATS', W - pad - 40, top);
+    ctx.fillText(fever ? UNIT.toUpperCase() + ' ×2' : UNIT.toUpperCase(), W - pad - 40, top);
     ctx.font = '800 ' + Math.round(30 * u) + 'px ' + MONO; ctx.fillStyle = fever ? GOLD : '#fff';
     ctx.fillText(fmt(C.score(S)), W - pad - 40, top + 18 * u);
 
@@ -595,14 +622,14 @@
     var my = top + 60 * u, mx = Math.round((W - mini.w) / 2), f = clamp(S.x / (mini.n * DAY), 0, 1), wf = clamp(S.wall / (mini.n * DAY), 0, 1);
     ctx.drawImage(mini.dim, mx, my, mini.w, mini.h);
     ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mini.w * f, mini.h); ctx.clip(); ctx.drawImage(mini.lit, mx, my, mini.w, mini.h); ctx.restore();
-    ctx.fillStyle = 'rgba(255,61,113,0.35)'; ctx.fillRect(mx, my, mini.w * wf, mini.h);
+    ctx.fillStyle = wallC(0.35); ctx.fillRect(mx, my, mini.w * wf, mini.h);
     ctx.fillStyle = RED; ctx.fillRect(mx + mini.w * wf - 1, my, 2, mini.h);
     ctx.fillStyle = '#fff'; ctx.fillRect(mx + mini.w * f - 1, my - 3, 2, mini.h + 6);
 
     // streak pips and the bull-run bar
     var cxm = W / 2, sy0 = my + mini.h + 14 * u, i;
     if (fever) {
-      ctx.fillStyle = 'rgba(255,197,61,0.2)'; ctx.fillRect(cxm - 80, sy0, 160, 5);
+      ctx.fillStyle = 'rgba(' + TH.coinRGB + ',0.2)'; ctx.fillRect(cxm - 80, sy0, 160, 5);
       ctx.fillStyle = GOLD; ctx.fillRect(cxm - 80, sy0, 160 * S.fever / 6, 5);
     } else for (i = 0; i < 3; i++) {
       ctx.fillStyle = i < S.streak ? GREEN : 'rgba(255,255,255,0.18)';
@@ -621,7 +648,7 @@
     }
     if (hintT > 0 && !over) {
       ctx.globalAlpha = Math.min(1, hintT);
-      var onRed = m < -0.03, txt = S.air ? (S.vy < 0 ? 'HOLD to dive' : 'let go and fly') : onRed ? 'HOLD on red' : 'LET GO on green';
+      var onRed = m < -0.03, txt = S.air ? (S.vy < 0 ? 'HOLD to dive' : 'let go and fly') : onRed ? 'HOLD on ' + TH.downWord : 'LET GO on ' + TH.upWord;
       ctx.font = '800 ' + Math.round(clamp(W / 22, 18, 30)) + 'px ' + MONO;
       ctx.fillStyle = (S.air ? S.vy < 0 : onRed) ? RED : GREEN;
       ctx.fillText(txt, W / 2, H - Math.max(54, H * 0.12));
@@ -634,7 +661,7 @@
   // ---------- Share: a picture of your run, drawn here ----------
   function shareCard() {
     var c = document.createElement('canvas'); c.width = 1200; c.height = 675;
-    var g = c.getContext('2d'), n = mode === 'btc' ? T.real : Math.min(T.n, Math.max(900, Math.round(T.dayAt(S.x) * 1.5))), lo = 1e9, hi = -1e9, i;
+    var g = c.getContext('2d'), n = T.mode === 'chain' ? T.real : Math.min(T.n, Math.max(900, Math.round(T.dayAt(S.x) * 1.5))), lo = 1e9, hi = -1e9, i;
     var bgr = g.createLinearGradient(0, 0, 0, 675); bgr.addColorStop(0, '#03040a'); bgr.addColorStop(1, '#14102e');
     g.fillStyle = bgr; g.fillRect(0, 0, 1200, 675);
     for (i = 0; i < n; i++) { lo = Math.min(lo, T.logs[i]); hi = Math.max(hi, T.logs[i]); }
@@ -645,7 +672,7 @@
     line(died, n - 1, 'rgba(255,255,255,0.22)', 2);
     g.shadowColor = GREEN; g.shadowBlur = 18; line(0, died, GREEN, 3.5); g.shadowBlur = 0;
     var dx = X(died), dy = Y(T.logs[died]);
-    g.fillStyle = 'rgba(255,61,113,0.16)'; g.fillRect(60, 330, dx - 60, 290);
+    g.fillStyle = 'rgba(' + TH.downRGB + ',0.16)'; g.fillRect(60, 330, dx - 60, 290);
     g.fillStyle = RED; g.fillRect(dx - 1.5, 330, 3, 290);
     g.shadowColor = RED; g.shadowBlur = 24; g.beginPath(); g.arc(dx, dy, 9, 0, 6.283); g.fillStyle = '#fff'; g.fill(); g.shadowBlur = 0;
     g.font = '800 20px ' + MONO; g.fillStyle = RED; g.textAlign = dx > 900 ? 'right' : 'left';
@@ -653,15 +680,15 @@
     g.textAlign = 'left';
     g.font = '800 30px ' + MONO; g.fillStyle = GREEN; g.fillText('BUY THE DIP', 60, 78);
     g.font = '700 64px ' + SANS; g.fillStyle = '#fff';
-    g.fillText(mode === 'btc' ? 'I rode Bitcoin from 2010' : 'I rode ' + T.name, 60, 168);
-    g.fillText(mode === 'btc' ? 'to ' + when(S.x) + '.' : 'for ' + fmt(T.dayAt(S.x)) + ' days.', 60, 244);
-    g.font = '800 44px ' + MONO; g.fillStyle = GOLD; g.fillText(fmt(C.score(S)) + ' sats', 60, 310);
+    g.fillText(T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear : 'I rode ' + T.name, 60, 168);
+    g.fillText(T.mode === 'chain' ? 'to ' + when(S.x) + '.' : 'for ' + fmt(T.dayAt(S.x)) + ' days.', 60, 244);
+    g.font = '800 44px ' + MONO; g.fillStyle = GOLD; g.fillText(fmt(C.score(S)) + ' ' + UNIT, 60, 310);
     g.textAlign = 'right'; g.font = '700 24px ' + SANS; g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillText('proofoffight.com/?dip', 1140, 78);
     return c;
   }
   function share() {
-    var text = (mode === 'btc' ? 'I rode Bitcoin from 2010 to ' + when(S.x) : 'I rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days') +
-      ' before getting liquidated. ' + fmt(C.score(S)) + ' sats. Beat that:';
+    var text = (T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear + ' to ' + when(S.x) : 'I rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days') +
+      ' before getting liquidated. ' + fmt(C.score(S)) + ' ' + UNIT + '. Beat that:';
     var url = 'https://proofoffight.com/?dip', note = $('#dip-note');
     shareCard().toBlob(function (blob) {
       var file = null;
