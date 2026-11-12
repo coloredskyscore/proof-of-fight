@@ -56,21 +56,17 @@
     return out;
   }
 
-  // The made-up future past the end of the real data, to a script: it holds above $68,000, the next bull market
-  // tops near $200,000, pulls back, runs to about $600,000, pulls back, and ends the game at $1,000,000. The
-  // waypoints are [days after the last real day, price]; the daily wobble around them is seeded, so it is
-  // the same for everybody.
-  var FUTURE = [[0, 74015], [60, 70500], [130, 79000], [210, 69500], [330, 96000], [450, 150000], [540, 200000],
-    [620, 155000], [720, 114000], [820, 108000], [1000, 200000], [1250, 380000], [1500, 600000], [1580, 490000],
-    [1720, 355000], [1820, 345000], [2100, 560000], [2500, 800000], [2900, 1000000], [3040, 1000000]];
-  function scriptedFuture(r, startLog) {
-    var n = FUTURE[FUTURE.length - 1][0] + 1, out = new Float64Array(n), k = 0, noise = 0, floor = Math.log10(68000);
+  // The made-up future past the end of the real data follows a script set by the chain (js/dip-chains.js): a
+  // list of [days after the last real day, price] waypoints and a floor it never drops under. The daily wobble
+  // around the path is seeded, so it is the same for everybody.
+  function scriptedFuture(r, startLog, F) {
+    var FUTURE = F.pts, n = FUTURE[FUTURE.length - 1][0] + 1, out = new Float64Array(n), k = 0, noise = 0, floor = Math.log10(F.floor);
     var off = startLog - Math.log10(FUTURE[0][1]);
     for (var i = 0; i < n; i++) {
       while (k < FUTURE.length - 2 && i > FUTURE[k + 1][0]) k++;
       var a = FUTURE[k], b = FUTURE[k + 1], t = (i - a[0]) / (b[0] - a[0] || 1);
       var base = Math.log10(a[1]) + (Math.log10(b[1]) - Math.log10(a[1])) * (t < 0 ? 0 : t > 1 ? 1 : t) + off * (1 - i / n);
-      noise += -noise / 22 + 0.0078 * gaussRand(r);
+      noise += -noise / 22 + (F.vol || 0.0078) * gaussRand(r);
       var v = base + (i < 30 ? noise * i / 30 : noise);
       if (i > n - 260) v = lerp(v, base, Math.min(1, (i - (n - 260)) / 200));   // land on the final price
       if (v < floor) v = floor + (floor - v) * 0.4;
@@ -80,28 +76,6 @@
   }
   function lerp(a, b, t) { return a + (b - a) * t; }
 
-  var EVENTS = [
-    ['2010-07-18', 'BITCOIN GETS A PRICE', '9 cents'],
-    ['2011-06-08', 'FIRST BUBBLE', '$30, then down 93%'],
-    ['2012-11-28', 'HALVING #1', ''],
-    ['2013-11-29', '$1,000', 'for the first time'],
-    ['2014-02-24', 'MT. GOX COLLAPSES', ''],
-    ['2015-01-14', 'CAPITULATION', 'down 85% from the top'],
-    ['2016-07-09', 'HALVING #2', ''],
-    ['2017-12-17', '$19,000', 'the 2017 top'],
-    ['2018-12-15', 'CRYPTO WINTER', 'down 84%'],
-    ['2020-03-12', 'COVID CRASH', 'down 40% in a day'],
-    ['2020-05-11', 'HALVING #3', ''],
-    ['2021-04-14', '$64,000', ''],
-    ['2021-07-20', 'CHINA BANS MINING', ''],
-    ['2021-11-10', '$69,000', 'the 2021 top'],
-    ['2022-05-09', 'LUNA COLLAPSES', ''],
-    ['2022-11-08', 'FTX COLLAPSES', ''],
-    ['2024-01-10', 'SPOT ETFS APPROVED', ''],
-    ['2024-04-20', 'HALVING #4', ''],
-    ['2024-12-05', '$100,000', ''],
-    ['2025-10-06', '$124,000', 'the all-time high']
-  ];
   var TICK_A = ['GIGA', 'TURBO', 'BABY', 'SAFE', 'MEGA', 'HYPER', 'ULTRA', 'SUPER', 'MICRO', 'DARK'];
   var TICK_B = ['MOON', 'FROG', 'CAT', 'ROCKET', 'CANDLE', 'WAGMI', 'HODL', 'DIP', 'YACHT', 'LAMBO'];
 
@@ -109,7 +83,8 @@
   function dayNum(iso) { return Math.round(Date.parse(iso + 'T00:00:00Z') / 86400000); }
   function isoOf(n) { return new Date(n * 86400000).toISOString().slice(0, 10); }
 
-  /* The chart as ground. opts.mode 'btc' needs opts.data (js/dip-data.js); 'daily' needs opts.seed (a string). */
+  /* The chart as ground. opts.mode 'chain' needs opts.chain (a definition from js/dip-chains.js) and opts.data (its
+     price file); 'daily' needs opts.seed (a string). */
   function makeTerrain(opts) {
     var logs, real, day0, events = [], name, i;
     if (opts.mode === 'daily') {
@@ -120,11 +95,11 @@
     } else {
       var base = decode(opts.data);
       real = base.length; day0 = dayNum(opts.data.start);
-      var fut = scriptedFuture(rng(42), base[real - 1]);
+      var ch = opts.chain, fut = scriptedFuture(rng(ch.future.seed || 42), base[real - 1], ch.future);
       logs = new Float64Array(real + fut.length);
       logs.set(base); logs.set(fut, real);
-      name = 'BTC';
-      EVENTS.forEach(function (e) { events.push({ day: dayNum(e[0]) - day0, title: e[1], sub: e[2] }); });
+      name = ch.short;
+      ch.events.forEach(function (e) { events.push({ day: dayNum(e[0]) - day0, title: e[1], sub: e[2] }); });
       events.push({ day: real, title: 'UNCHARTED', sub: 'nobody knows what comes next' });
     }
     var n = logs.length;
@@ -185,13 +160,13 @@
     coins.sort(function (p, q) { return p.x - q.x; });
 
     return {
-      mode: opts.mode, name: name, n: n, real: real, len: n * DAY, h: h, raw: raw, logs: logs, events: events, coins: coins,
+      mode: opts.mode, chain: opts.chain || null, wallDays: opts.mode === 'daily' ? 5800 : (opts.chain.wallDays || Math.round(n * 0.644)), name: name, n: n, real: real, len: n * DAY, h: h, raw: raw, logs: logs, events: events, coins: coins,
       height: height, slope: slope, curve: curve, dayAt: dayAt, priceAt: priceAt, dateAt: dateAt, moodAt: moodAt
     };
   }
 
   function wallSpeed(T, x, t) {
-    var prog = x / (5800 * DAY);
+    var prog = x / (T.wallDays * DAY);
     var ease = Math.min(1, 0.6 + t / 30);                 // a gentle first few seconds
     return ease * (T.mode === 'daily' ? 740 + 1500 * prog : 740 + 760 * Math.min(1, prog) + Math.max(0, prog - 1) * 900);
   }
@@ -295,7 +270,7 @@
 
   var api = {
     bot: bot,
-    DAY: DAY, VS: VS, R: R, G: G, G_HOLD: G_HOLD, EVENTS: EVENTS,
+    DAY: DAY, VS: VS, R: R, G: G, G_HOLD: G_HOLD,
     makeTerrain: makeTerrain, newRun: newRun, step: step, score: score, wallSpeed: wallSpeed, hashStr: hashStr, rng: rng
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

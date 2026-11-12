@@ -1,9 +1,12 @@
 /* Buy the Dip balance check: node tools/dip-sim.js
-   Runs three bots over Bitcoin's chart and a few daily charts and prints how far each gets.
+   Runs bots over each chain's chart and a few daily charts and prints how far each gets.
    never = never presses; random = presses at random; human = holds on the way down and lets go on the way up, 0.18 s late; smart = the look-ahead bot from js/dip-core.js. */
 global.window = {};
 require('../js/dip-data.js');
+require('../js/dip-data-sol.js');
 var C = require('../js/dip-core.js');
+var CH = require('../js/dip-chains.js');
+function chainTerrain(id) { var c = CH.CHAINS[id]; return C.makeTerrain({ mode: 'chain', chain: c, data: window[c.dataVar] }); }
 var DT = 1 / 120;
 var bots = {
   never: function () { return false; },
@@ -21,14 +24,15 @@ function run(T, bot) {
   return (T.dateAt(S.x) || 'day ' + T.dayAt(S.x)) + '  t=' + S.t.toFixed(0) + 's  avg ' + (vs / n).toFixed(0) + ' u/s  score ' + C.score(S) +
     '  sats ' + S.coins + '  perfect ' + ev.perfect + '  bad ' + ev.bad + '  fever ' + ev.fever + '  launches ' + ev.launch + '  maxAlt ' + S.maxAlt.toFixed(0);
 }
-var charts = [['btc', C.makeTerrain({ mode: 'btc', data: window.POF_DIP_DATA })]];
-['2026-11-11', '2026-11-12', '2026-11-13'].forEach(function (d) { charts.push([d, C.makeTerrain({ mode: 'daily', seed: d })]); });
-charts.forEach(function (c) {
-  console.log(c[0] + ' (' + c[1].name + ', ' + c[1].coins.length + ' sats)');
-  Object.keys(bots).forEach(function (b) { console.log('  ' + b.padEnd(7) + run(C.makeTerrain(c[0] === 'btc' ? { mode: 'btc', data: window.POF_DIP_DATA } : { mode: 'daily', seed: c[0] }), bots[b])); });
+var charts = CH.ORDER.concat(['2026-11-11', '2026-11-12', '2026-11-13']);
+function terrainOf(id) { return CH.CHAINS[id] ? chainTerrain(id) : C.makeTerrain({ mode: 'daily', seed: id }); }
+charts.forEach(function (id) {
+  var T0 = terrainOf(id);
+  console.log(id + ' (' + T0.name + ', ' + T0.coins.length + ' sats)');
+  Object.keys(bots).forEach(function (b) { console.log('  ' + b.padEnd(7) + run(terrainOf(id), bots[b])); });
 });
 (function () {
-  var T = charts[0][1], a = [];
+  var T = chainTerrain('btc'), a = [];
   for (var x = 0; x < T.real * C.DAY; x += 11) a.push(Math.abs(T.slope(x)));
   a.sort(function (p, q) { return p - q; });
   console.log('btc slope 50/90/99/max', [0.5, 0.9, 0.99, 1].map(function (q) { return a[Math.min(a.length - 1, Math.floor(q * a.length))].toFixed(2); }).join(' '));
