@@ -11,11 +11,16 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 12, 2026: 51% Attack replaces Tower Defense in the arcade
+
+- The old Tower Defense test (`?td`) is gone: its code, its Grok art (`art/td/`) and its tools. 51% Attack (`/51/`) replaced it.
+- The arcade's In the Lab row now has a **51% Attack** tile (a little network drawn in code) that opens `/51/` to play. The page stays out of search until it launches.
+
 ### Nov 12, 2026: proofoffight.com becomes an arcade
 
 Proof of Fight is now the brand for a set of games. The home page is an arcade, and each game has its own address:
 - **`proofoffight.com`:** the arcade. The Proof of Fight logo, a **Today** strip (today's Daily Fight matchup with the countdown to the next one, and today's Daily Coin), then one cabinet per game, each in that game's own look: the fight with today's two daily fighters on a night skyline, and Ride the Chart with an orb riding Bitcoin's real chart. Each cabinet shows your best from this browser (story boss, daily streak, best month ridden). **In the Lab** teases Tower Defense (coming soon) and the next game. Guitar Battle and Rap Battle are not shown.
-- **`/fight/`:** the fighting game, unchanged, with a **More games** link back to the arcade. Its test modes still work (`/fight/?td`, `?rap`, `?guitar`).
+- **`/fight/`:** the fighting game, unchanged, with a **More games** link back to the arcade. Its test modes still work (`/fight/?rap`, `?guitar`).
 - **`/ride/`:** Ride the Chart on its own page (it no longer loads the fight's files). Race links now read `proofoffight.com/ride/?race=...`.
 - **Old links still work:** anything with `?` on the home page is forwarded: `?ride`, `?dip` and `?race=` to `/ride/`, everything else to `/fight/`.
 

@@ -135,7 +135,13 @@ a { color: inherit; }
 .lab-wrap { display: grid; gap: 12px; }
 .lab { grid-template-columns: 56px 1fr; }
 .lab-ic { width: 56px; height: 56px; border-radius: 10px; background: var(--panel-2); display: grid; place-items: center; }
-.lab-td { background: #2f5a3a url("../art/td/node-toly.webp") center / 80% no-repeat; }
+.lab-51 { background: #05040a; box-shadow: 0 0 0 1px rgba(155,140,255,.35) inset; }
+.lab-51 svg { width: 100%; height: 100%; }
+a.lab { text-decoration: none; }
+.lab-play { border-style: solid; border-color: #3d2f66; cursor: pointer; }
+.lab-play:hover { background: var(--panel-2); }
+.lab-play:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.lab-play .tag { color: #19e6b0; }
 .lab .lab-next { font: 400 30px var(--display); color: var(--gold); }
 .lab .tag { font-style: normal; }
 .lab-head a { color: var(--ink); }
