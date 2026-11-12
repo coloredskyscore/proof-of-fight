@@ -11,6 +11,13 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 12, 2026: 51% Attack gets its own arcade cabinet
+
+- The arcade's game grid now fits as many cabinets per row as the screen allows (three on a laptop, two on a tablet, one on a phone), so more games can join.
+- **51% Attack** moves out of the lab into a full cabinet: a live network drawn in code where red attackers take nodes and the meter climbs toward 51%, its own logo, and a DEFEND button. Your unlocked story stage shows on it.
+- `/51/` is now public: no more `noindex`, plus its own link preview (`art/social/a51-og.jpg`).
+- The In the Lab row is gone for now; a line under the games asks for ideas on X.
+
 ### Nov 12, 2026: 51% Attack replaces Tower Defense in the arcade
 
 - The old Tower Defense test (`?td`) is gone: its code, its Grok art (`art/td/`) and its tools. 51% Attack (`/51/`) replaced it.
