@@ -84,13 +84,28 @@
   function isoOf(n) { return new Date(n * 86400000).toISOString().slice(0, 10); }
 
   /* The chart as ground. opts.mode 'chain' needs opts.chain (a definition from js/dip-chains.js) and opts.data (its
-     price file); 'daily' needs opts.seed (a string). */
+     price file). 'daily' is the Mystery Chart: opts.seed (the date) picks one of opts.pool ([{ chain, data }], in
+     the menu's order) and a real starting day, leaving at least MYSTERY_ROOM real days ahead, then the ride runs
+     on through the rest of that coin's history and its made-up future. The coin and the dates stay hidden until
+     the end screen (T.mystery). */
+  var MYSTERY_ROOM = 1200;
   function makeTerrain(opts) {
-    var logs, real, day0, events = [], name, i;
-    if (opts.mode === 'daily') {
-      var r = rng(hashStr('dip-' + opts.seed));
-      name = '$' + TICK_A[Math.floor(r() * TICK_A.length)] + TICK_B[Math.floor(r() * TICK_B.length)];
-      logs = synth(r, 6000, -3.5 + r() * 2.5, 0.0004, 0.022, 0.012, 1);
+    var logs, real, day0, events = [], name, i, mystery = null;
+    if (opts.mode === 'daily' && opts.pool) {
+      var r = rng(hashStr('mystery-' + opts.seed)); r(); r(); r();   // the first few draws of nearby seeds are alike
+      var pk = opts.pool[Math.floor(r() * opts.pool.length)];
+      var full = decode(pk.data), from = Math.floor(r() * Math.max(1, full.length - MYSTERY_ROOM));
+      var part = full.subarray(from), mch = pk.chain, mfut = scriptedFuture(rng(mch.future.seed || 42), full[full.length - 1], mch.future);
+      real = part.length; day0 = dayNum(pk.data.start) + from;
+      logs = new Float64Array(real + mfut.length);
+      logs.set(part); logs.set(mfut, real);
+      name = 'Mystery Chart';
+      mystery = { chain: mch, from: isoOf(day0), price0: Math.pow(10, part[0]) };
+    } else if (opts.mode === 'daily') {
+      // The old made-up coin, kept for runs recorded before the Mystery Chart.
+      var r0 = rng(hashStr('dip-' + opts.seed));
+      name = '$' + TICK_A[Math.floor(r0() * TICK_A.length)] + TICK_B[Math.floor(r0() * TICK_B.length)];
+      logs = synth(r0, 6000, -3.5 + r0() * 2.5, 0.0004, 0.022, 0.012, 1);
       real = 0; day0 = 0;
     } else {
       var base = decode(opts.data);
@@ -135,6 +150,8 @@
     function dayAt(x) { var k = Math.floor(x / DAY); return k < 0 ? 0 : k >= n ? n - 1 : k; }
     function priceAt(x) { return Math.pow(10, logs[dayAt(x)]); }
     function dateAt(x) { return opts.mode === 'daily' ? null : isoOf(day0 + dayAt(x)); }
+    // The Mystery Chart's real date, for the reveal (in-game it shows days only).
+    function realDateAt(x) { return mystery && dayAt(x) < real ? isoOf(day0 + dayAt(x)) : null; }
     // Market mood, -1 (winter) to 1 (mania): how fast the 90-day trend is moving.
     function moodAt(x) {
       var k = dayAt(x), k2 = Math.min(n - 1, k + 30), k1 = Math.max(0, k - 30);
@@ -161,7 +178,8 @@
 
     return {
       mode: opts.mode, chain: opts.chain || null, wallDays: opts.mode === 'daily' ? 5800 : (opts.chain.wallDays || Math.round(n * 0.644)), name: name, n: n, real: real, len: n * DAY, h: h, raw: raw, logs: logs, events: events, coins: coins,
-      height: height, slope: slope, curve: curve, dayAt: dayAt, priceAt: priceAt, dateAt: dateAt, moodAt: moodAt
+      height: height, slope: slope, curve: curve, dayAt: dayAt, priceAt: priceAt, dateAt: dateAt, moodAt: moodAt,
+      mystery: mystery, realDateAt: realDateAt
     };
   }
 

@@ -1,6 +1,6 @@
 /* Ride the Chart (proofoffight.com/ride/, its own page; old ?ride and ?dip links on the home page forward there). The rules live in js/dip-core.js; this file draws them, plays the sound and
    takes the one button. Everything on screen is drawn here in code on one canvas: no image files.
-   The ground is a real price chart (Bitcoin or Solana, or a made-up daily coin). Down slopes are red or purple, up slopes are green:
+   The ground is a real price chart (Bitcoin or Solana, or the daily Mystery Chart: a real coin and era, hidden until the end). Down slopes are red or purple, up slopes are green:
    hold on red to dive, let go on green to fly, and stay ahead of the liquidation wall.
    ?dip&debug exposes window.POF_DIP; ?dip&auto lets the look-ahead bot play (for recording clips). */
 (function () {
@@ -65,8 +65,12 @@
     if (!iso) return 'DAY ' + fmt(T.dayAt(x));
     return (long ? MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' : MONTHS[Number(iso.slice(5, 7)) - 1] + ' ') + iso.slice(0, 4);
   }
+  function mysteryPool() { return chainIds.map(function (id) { return { chain: CHAINS.CHAINS[id], data: window[CHAINS.CHAINS[id].dataVar] }; }); }
+  function monthOf(iso) { return MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' + iso.slice(0, 4); }
+  // The Mystery Chart shows the move since the start instead of the price, which would give the coin away.
+  function moveOf(p) { var v = (p / T.mystery.price0 - 1) * 100; return (v >= 0 ? '+' : '−') + fmt(Math.abs(Math.round(v))) + '%'; }
   function terrain(m) {
-    if (!terrains[m]) terrains[m] = m === 'daily' ? C.makeTerrain({ mode: 'daily', seed: today }) :
+    if (!terrains[m]) terrains[m] = m === 'daily' ? C.makeTerrain({ mode: 'daily', seed: today, pool: mysteryPool() }) :
       C.makeTerrain({ mode: 'chain', chain: CHAINS.CHAINS[m], data: window[CHAINS.CHAINS[m].dataVar] });
     terrains[m].coins.forEach(function (c) { c.got = false; });
     return terrains[m];
@@ -74,7 +78,7 @@
 
   function applyTheme(m) {
     TH = m === 'daily' ? DAILY_THEME : CHAINS.CHAINS[m].theme;
-    UNIT = m === 'daily' ? 'sats' : CHAINS.CHAINS[m].unit;
+    UNIT = m === 'daily' ? 'points' : CHAINS.CHAINS[m].unit;
     GREEN = TH.up; RED = TH.down; GOLD = TH.coin;
     var st = root.style;
     st.setProperty('--up', TH.up); st.setProperty('--down', TH.down); st.setProperty('--down-rgb', TH.downRGB);
@@ -214,14 +218,14 @@
           return '<button class="dip-btn dip-btn-main dip-chain" id="dip-' + id + '" type="button" style="--btn-bg:' + c.theme.btnBg + ';--btn-ink:' + c.theme.btnInk + '">' +
             '<b>RIDE ' + c.name.toUpperCase() + '</b><small>' + c.pitch + '</small><em id="dip-best-' + id + '"></em></button>';
         }).join('') +
-        '<button class="dip-btn" id="dip-daily" type="button"><b>DAILY COIN</b><small id="dip-daily-name"></small><em id="dip-best-daily"></em></button>' +
+        '<button class="dip-btn" id="dip-daily" type="button"><b>MYSTERY CHART</b><small id="dip-daily-name">A real coin and era, new every day. Revealed when you\'re liquidated.</small><em id="dip-best-daily"></em></button>' +
         '<div class="dip-foot"><button class="dip-link" id="dip-lb-open" type="button">LEADERBOARD</button><button class="dip-link" id="dip-mute" type="button"></button><a class="dip-link" href="./">PROOF OF FIGHT</a></div>' +
       '</div>' +
       '<div class="dip-lb" id="dip-lb" hidden>' +
         '<div class="dip-lb-title">LEADERBOARD</div>' +
         '<div class="dip-lb-tabs" id="dip-lb-tabs">' +
           chainIds.map(function (id) { return '<button class="dip-lb-tab" type="button" data-board="' + id + '">' + CHAINS.CHAINS[id].name.toUpperCase() + '</button>'; }).join('') +
-          '<button class="dip-lb-tab" type="button" data-board="daily">TODAY\'S COIN</button>' +
+          '<button class="dip-lb-tab" type="button" data-board="daily">MYSTERY CHART</button>' +
         '</div>' +
         '<ol class="dip-lb-list" id="dip-lb-list"></ol>' +
         '<div class="dip-note" id="dip-lb-note"></div>' +
@@ -325,12 +329,11 @@
     $('#dip-challenge').hidden = !CHALLENGE;
     if (CHALLENGE) {
       var CT = terrain(CHALLENGE.mode), cname = CHALLENGE.mode === 'daily' ? CT.name : CHAINS.CHAINS[CHALLENGE.mode].name;
-      var cunit = CHALLENGE.mode === 'daily' ? 'sats' : CHAINS.CHAINS[CHALLENGE.mode].unit;
+      var cunit = CHALLENGE.mode === 'daily' ? 'points' : CHAINS.CHAINS[CHALLENGE.mode].unit;
       $('#dip-challenge-text').textContent = CHALLENGE.mode === 'daily'
         ? 'You were sent a run: ' + fmt(CHALLENGE.day) + ' days on today\'s ' + cname + ', ' + fmt(CHALLENGE.score) + ' ' + cunit + '. Can you beat it?'
         : 'You were sent a run: ' + cname + ' to ' + whenOf(CT, CHALLENGE.day * DAY) + ', ' + fmt(CHALLENGE.score) + ' ' + cunit + '. Can you beat it?';
     }
-    $('#dip-daily-name').textContent = C.makeTerrain({ mode: 'daily', seed: today }).name + ', a new made-up coin every day';
   }
   function start(m, race) {
     attract = false; reset(m, false); runs++; played = m;
@@ -363,7 +366,7 @@
     lbBoard = m;
     $('#dip-menu').hidden = true; $('#dip-lb').hidden = false;
     root.querySelectorAll('.dip-lb-tab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-board') === m); });
-    var list = $('#dip-lb-list'), note = $('#dip-lb-note'), LT = terrain(m), unit = m === 'daily' ? 'sats' : CHAINS.CHAINS[m].unit;
+    var list = $('#dip-lb-list'), note = $('#dip-lb-note'), LT = terrain(m), unit = m === 'daily' ? 'points' : CHAINS.CHAINS[m].unit;
     list.innerHTML = ''; note.textContent = 'Loading…';
     api('/scores?board=' + boardId(m) + '&limit=10').then(function (j) {
       if (lbBoard !== m) return;
@@ -392,7 +395,7 @@
     $('#dip-post-btn').disabled = true; note.textContent = 'Posting…';
     api('/scores', { code: C.encode(REC), initials: ini }).then(function (j) {
       $('#dip-post').hidden = true;
-      note.textContent = 'You\'re #' + fmt(j.rank) + ' on the ' + (mode === 'daily' ? 'Daily Coin' : CHAINS.CHAINS[mode].name) + ' board.';
+      note.textContent = 'You\'re #' + fmt(j.rank) + ' on the ' + (mode === 'daily' ? 'Mystery Chart' : CHAINS.CHAINS[mode].name) + ' board.';
     }, function (e) {
       posted = /does not replay|bad run|old daily/.test(e.message); $('#dip-post-btn').disabled = false;
       note.textContent = e.message === 'pick other initials' ? 'Pick other initials.' : posted ? 'This run could not be checked, so it was not posted.' : 'Could not post right now. Try again.';
@@ -402,9 +405,13 @@
     var sc = C.score(S), key = bestKey(mode), old = Number(store(key) || 0), isBest = sc > old;
     if (isBest) { store(key, String(sc)); store(ghostKey(mode), C.encode(REC)); store(dayKey(mode), T.mode === 'chain' ? when(S.x) : fmt(T.dayAt(S.x)) + ' DAYS'); }
     $('#dip-end-title').textContent = S.won ? 'UNLIQUIDATABLE' : 'LIQUIDATED';
-    $('#dip-end-where').textContent = T.mode === 'chain' ? 'You made it to ' + when(S.x) : 'You rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days';
+    $('#dip-end-where').textContent = T.mode === 'chain' ? 'You made it to ' + when(S.x) : T.mystery ? 'It was ' + T.mystery.chain.name + '!' : 'You rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days';
     var e = S.lastEvent, sub = price(T.priceAt(S.x)) + ' a coin';
     if (T.mode === 'chain' && e && T.dayAt(S.x) - e.day < 400) sub = 'Past ' + e.title + '. ' + sub + '.';
+    if (T.mystery) {
+      var upto = T.realDateAt(S.x);
+      sub = fmt(T.dayAt(S.x)) + ' days, ' + monthOf(T.mystery.from) + (upto ? ' to ' + monthOf(upto) : ' into the made-up future') + '. ' + price(T.priceAt(S.x)) + ' a coin.';
+    }
     $('#dip-end-sub').textContent = sub;
     $('#dip-end-score').textContent = fmt(sc);
     var bd = C.breakdown(S);
@@ -450,6 +457,10 @@
     } else {
       overT += dt;
       S.wall = Math.min(S.wall + 1400 * dt, S.x + 380);
+    }
+    // The title screen's ride starts over somewhere new before it can run off the end of the chart.
+    if (attract && (over || S.dead || S.t > 40 || S.x > T.len - 80 * DAY)) reset(chainIds[Math.floor(Math.random() * chainIds.length)], true);
+    if (over) {
       if (overT > 0.9 && $('#dip-end').hidden && !attract) finish();
     }
     update(dt);
@@ -567,7 +578,7 @@
     } else {
       ctx.font = '800 ' + Math.round(Math.min(W * 0.16, H * 0.3)) + 'px ' + MONO;
       var span = 9000, kk = Math.round(cam.x / span);
-      for (k = kk - 1; k <= kk + 1; k++) ctx.fillText(T.name, (k * span - cam.x) * z * 0.5 + W * 0.5, H * 0.36);
+      for (k = kk - 1; k <= kk + 1; k++) ctx.fillText(T.mystery ? '???' : T.name, (k * span - cam.x) * z * 0.5 + W * 0.5, H * 0.36);
     }
 
     // grid
@@ -780,9 +791,9 @@
     var m = T.slope(S.x), p = T.priceAt(S.x), fever = S.fever > 0;
     ctx.textBaseline = 'top'; ctx.textAlign = 'left';
     ctx.font = '700 ' + Math.round(13 * u) + 'px ' + SANS; ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText(T.name + '  ·  ' + when(S.x), pad, top);
+    ctx.fillText((T.mystery ? 'MYSTERY CHART' : T.name) + '  ·  ' + when(S.x), pad, top);
     ctx.font = '800 ' + Math.round(30 * u) + 'px ' + MONO; ctx.fillStyle = m >= 0 ? GREEN : RED;
-    ctx.fillText(price(p), pad, top + 18 * u);
+    ctx.fillText(T.mystery ? moveOf(p) : price(p), pad, top + 18 * u);
     ctx.textAlign = 'right';
     ctx.font = '700 ' + Math.round(13 * u) + 'px ' + SANS; ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.fillText(fever ? UNIT.toUpperCase() + ' ×2' : UNIT.toUpperCase(), W - pad - 40, top);
@@ -852,13 +863,14 @@
     g.textAlign = 'left';
     g.font = '800 30px ' + MONO; g.fillStyle = GREEN; g.fillText('RIDE THE CHART', 60, 78);
     g.font = '700 64px ' + SANS; g.fillStyle = '#fff';
-    g.fillText(T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear : 'I rode ' + T.name, 60, 168);
+    g.fillText(T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear : T.mystery ? 'I rode today\'s Mystery Chart' : 'I rode ' + T.name, 60, 168);
     g.fillText(T.mode === 'chain' ? 'to ' + when(S.x) + '.' : 'for ' + fmt(T.dayAt(S.x)) + ' days.', 60, 244);
     g.font = '800 44px ' + MONO; g.fillStyle = GOLD; g.fillText(fmt(C.score(S)) + ' ' + UNIT, 60, 310);
     g.textAlign = 'right'; g.font = '700 24px ' + SANS; g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillText('proofoffight.com/ride', 1140, 78);
     return c;
   }
   function shareText() {
+    if (T.mystery) return 'I rode today\'s Mystery Chart for ' + fmt(T.dayAt(S.x)) + ' days before getting liquidated. ' + fmt(C.score(S)) + ' points. Can you guess the coin? Race my ghost:';
     return (T.mode === 'chain' ? 'I rode ' + T.chain.name + ' from ' + T.chain.startYear + ' to ' + when(S.x) : 'I rode ' + T.name + ' for ' + fmt(T.dayAt(S.x)) + ' days') +
       ' before getting liquidated. ' + fmt(C.score(S)) + ' ' + UNIT + '. Race my ghost:';
   }
