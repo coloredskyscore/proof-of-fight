@@ -63,7 +63,28 @@
       AC = new K(); master = AC.createGain(); master.gain.value = soundOn ? 0.5 : 0; master.connect(AC.destination);
     }
     if (AC.state === 'suspended') AC.resume();
+    musicOn();
   }
+  // Music (js/a51-music.js): one song that follows the game. The heat is set every frame in frame().
+  var MP = null;
+  function musicOn() {
+    if (!AC || !soundOn || document.hidden || !window.POF_A51_MUSIC) return;
+    if (!MP) { var mg = AC.createGain(); mg.gain.value = 0.5; mg.connect(AC.destination); MP = POF_A51_MUSIC.player(AC, mg); }
+    MP.start();
+  }
+  function musicHeat() {
+    var G = S.G;
+    if (S.mode !== 'play' || !G) return 0.1;
+    if (G.state === 'won') return 0.1;
+    if (G.state === 'lost') return 0.22;
+    if (G.wait > 0) return 0.1;                                  // between waves: breathe
+    var hp = G.N[G.HOME].hp;
+    var danger = Math.max(Math.min(1, Math.max(0, (85 - G.consensus()) / 30)), Math.min(1, Math.max(0, (12 - hp) / 10)));
+    var h = 0.35 + 0.65 * danger;
+    if (G.boss && G.boss()) h = Math.max(h, 0.62);
+    return h;
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { if (MP) MP.stop(); } else musicOn(); });
   function tone(f, dur, o) {
     if (!AC || !soundOn || AC.state !== 'running') return;
     o = o || {};
@@ -112,7 +133,7 @@
     tap: function () { tone(700, 0.04, { vol: 0.08 }); }
   };
   function sfx(k, a) { if (S.mode === 'play' || k === 'tap') SFX[k](a); }
-  el.snd.addEventListener('click', function () { soundOn = !soundOn; store('sound', soundOn ? '1' : '0'); unlock(); if (master) master.gain.value = soundOn ? 0.5 : 0; sndIcon(); });
+  el.snd.addEventListener('click', function () { soundOn = !soundOn; store('sound', soundOn ? '1' : '0'); unlock(); if (master) master.gain.value = soundOn ? 0.5 : 0; if (soundOn) musicOn(); else if (MP) MP.stop(); sndIcon(); });
   sndIcon();
 
   // ---------- State ----------
@@ -866,6 +887,7 @@
     var n = S.mode === 'play' ? S.speed : 1;
     for (var i = 0; i < n; i++) step(dt);
     draw(); hud();
+    if (MP) { MP.key((S.mode === 'play' || S.mode === 'end') && S.stage ? S.stage.id : 'menu'); MP.heat(musicHeat()); }
     requestAnimationFrame(frame);
   }
   showTitle();
@@ -873,5 +895,5 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { /* canvas text picks the fonts up on its next frame */ });
 
   // For the test scripts: ?debug exposes the game.
-  if (/[?&]debug\b/.test(location.search)) window.POF_A51 = { S: S, play: function (k) { ov.hidden = true; newGame('play', C.STAGES[k == null ? 2 : k]); }, stages: showStages, step: function (secs) { for (var i = 0; i < secs * 30; i++) step(1 / 30); }, bot: function () { C.bot(S.G, 'active'); }, end: showEnd, intro: function (k) { showIntro(C.STAGES[k == null ? 2 : k]); } };
+  if (/[?&]debug\b/.test(location.search)) window.POF_A51 = { S: S, play: function (k) { ov.hidden = true; newGame('play', C.STAGES[k == null ? 2 : k]); }, stages: showStages, step: function (secs) { for (var i = 0; i < secs * 30; i++) step(1 / 30); }, bot: function () { C.bot(S.G, 'active'); }, end: showEnd, music: function () { return MP; }, intro: function (k) { showIntro(C.STAGES[k == null ? 2 : k]); } };
 })();
