@@ -65,7 +65,7 @@
     if (!iso) return 'DAY ' + fmt(T.dayAt(x));
     return (long ? MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' : MONTHS[Number(iso.slice(5, 7)) - 1] + ' ') + iso.slice(0, 4);
   }
-  function mysteryPool() { return chainIds.map(function (id) { return { chain: CHAINS.CHAINS[id], data: window[CHAINS.CHAINS[id].dataVar] }; }); }
+  function mysteryPool() { return CHAINS.mysteryIds(today).map(function (id) { return { chain: CHAINS.CHAINS[id], data: window[CHAINS.CHAINS[id].dataVar] }; }); }
   function monthOf(iso) { return MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' + iso.slice(0, 4); }
   // The Mystery Chart shows the move since the start instead of the price, which would give the coin away.
   function moveOf(p) { var v = (p / T.mystery.price0 - 1) * 100; return (v >= 0 ? '+' : '−') + fmt(Math.abs(Math.round(v))) + '%'; }
@@ -264,7 +264,7 @@
         '<button class="dip-btn dip-btn-main" id="dip-again" type="button"><b>RIDE AGAIN</b></button>' +
         '<form class="dip-post" id="dip-post" hidden><input id="dip-initials" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" aria-label="Your initials">' +
           '<button class="dip-btn dip-btn-sm" id="dip-post-btn" type="submit"><b>POST SCORE</b></button></form>' +
-        '<div class="dip-row"><button class="dip-btn dip-btn-sm" id="dip-link" type="button"><b>SEND RACE LINK</b></button>' +
+        '<div class="dip-row"><button class="dip-btn dip-btn-sm" id="dip-sendlink" type="button"><b>SEND RACE LINK</b></button>' +
         '<button class="dip-btn dip-btn-sm" id="dip-share" type="button"><b>SHARE PICTURE</b></button></div>' +
         '<div class="dip-row">' +
         '<button class="dip-btn dip-btn-sm" id="dip-tomenu" type="button"><b>MENU</b></button></div>' +
@@ -285,7 +285,7 @@
     $('#dip-tomenu').addEventListener('click', menu);
     $('#dip-quit').addEventListener('click', menu);
     $('#dip-share').addEventListener('click', share);
-    $('#dip-link').addEventListener('click', shareLink);
+    $('#dip-sendlink').addEventListener('click', shareLink);
     $('#dip-post').addEventListener('submit', function (e) { e.preventDefault(); postScore(); });
     $('#dip-initials').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3); });
     $('#dip-lb-open').addEventListener('click', function () { openBoard(played); });

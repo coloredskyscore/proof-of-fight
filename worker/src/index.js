@@ -16,7 +16,7 @@ const terrains = {};
 function terrain(mode, seed) {
   const key = mode === 'daily' ? 'daily:' + seed : mode;
   if (!terrains[key]) {
-    if (mode === 'daily') terrains[key] = C.makeTerrain({ mode: 'daily', seed, pool: CH.ORDER.map(id => ({ chain: CH.CHAINS[id], data: globalThis[CH.CHAINS[id].dataVar] })) });
+    if (mode === 'daily') terrains[key] = C.makeTerrain({ mode: 'daily', seed, pool: CH.mysteryIds(seed).map(id => ({ chain: CH.CHAINS[id], data: globalThis[CH.CHAINS[id].dataVar] })) });
     else terrains[key] = C.makeTerrain({ mode: 'chain', chain: CH.CHAINS[mode], data: globalThis[CH.CHAINS[mode].dataVar] });
   }
   return terrains[key];

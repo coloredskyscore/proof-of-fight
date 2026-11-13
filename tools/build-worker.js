@@ -2,7 +2,7 @@
    for Cloudflare. Run: node tools/build-worker.js */
 var fs = require('fs'), path = require('path');
 var root = path.join(__dirname, '..');
-var parts = ['js/dip-data.js', 'js/dip-data-sol.js', 'js/dip-chains.js', 'js/dip-core.js'];
+var parts = ['js/dip-data.js', 'js/dip-data-sol.js', 'js/dip-data-link.js', 'js/dip-chains.js', 'js/dip-core.js'];
 // The browser files hang their globals off `window` / `this`; inside the function below both are globalThis,
 // and `module` is undefined so they don't take the node path.
 var shared = '(function () { var window = globalThis, module;\n' +

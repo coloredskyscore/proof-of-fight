@@ -77,10 +77,48 @@
         sky: { neutral: [60, 44, 190], bull: [20, 241, 149], bear: [153, 69, 255] },
         wallRGB: '220,31,255', btnBg: 'linear-gradient(100deg, #9945ff, #14f195)', btnInk: '#0a0620', accent: '#14f195'
       }
+    },
+    link: {
+      id: 'link', name: 'Chainlink', short: 'LINK', unit: 'juels', startYear: 2017, dataVar: 'POF_DIP_DATA_LINK',
+      pitch: '2017 to today, the real chart',
+      // Joins the daily Mystery Chart from this UTC date on, so earlier days keep the chart they had.
+      mysterySince: '2026-11-14',
+      events: [
+        ['2017-09-29', 'CHAINLINK ON THE CHART', 'about 32 cents'],
+        ['2017-11-29', 'THE FLOOR', '15 cents, its lowest close'],
+        ['2019-05-30', 'MAINNET LAUNCH', 'the oracle network goes live'],
+        ['2019-06-13', 'GOOGLE CLOUD NEWS', 'up 61% in a day'],
+        ['2020-03-12', 'COVID CRASH', 'down 47% in a day'],
+        ['2020-08-16', 'DEFI SUMMER', 'about $19'],
+        ['2021-05-09', '$52', 'the all-time high'],
+        ['2021-05-19', 'MAY 19 CRASH', 'down 34% in a day'],
+        ['2022-11-09', 'FTX COLLAPSES', 'down 19% in a day'],
+        ['2022-12-06', 'STAKING GOES LIVE', ''],
+        ['2023-06-19', 'THE BOTTOM', '$5.12, down 90% from the top'],
+        ['2023-07-17', 'CCIP LAUNCHES', 'cross-chain messaging'],
+        ['2024-12-15', '$29', 'the 2024 top'],
+        ['2025-10-10', 'OCT 10 LIQUIDATIONS', 'down 20% in a day'],
+        ['2026-06-30', 'THE 2026 LOW', '$7.19']
+      ],
+      // After the last real day (Claude's guess, the same shape as Solana's): the June 2026 low of $7.19 holds; the
+      // next bull market tops near $37, pulls back, runs to about $80, pulls back again, and the game ends at $100.
+      future: { seed: 11, floor: 7.2, vol: 0.0105, pts: [[0, 10.15], [60, 9.5], [130, 11.7], [210, 8.4], [330, 15],
+        [450, 26], [540, 37], [620, 28], [720, 20], [820, 19], [1000, 36], [1250, 58], [1500, 80],
+        [1580, 64], [1720, 47], [1820, 46], [2100, 66], [2500, 85], [2900, 100], [3040, 100]] },
+      theme: {
+        up: '#dce8ff', upRGB: '220,232,255', upLine: '#ffffff', upWord: 'white',
+        down: '#3d63f2', downRGB: '61,99,242', downLine: '#9db2ff', downWord: 'blue',
+        coin: '#ffd447', coinRGB: '255,212,71', coinCore: '#fff6d6',
+        ballRGB: '150,180,255', holdRGB: '61,99,242', trail: '170,195,255', hue: 225,
+        sky: { neutral: [40, 60, 170], bull: [120, 160, 255], bear: [55, 91, 210] },
+        wallRGB: '255,92,60', btnBg: 'linear-gradient(100deg, #1b2f7a, #375bd2)', btnInk: '#ffffff', accent: '#7aa2ff'
+      }
     }
   };
-  var ORDER = ['btc', 'sol'];
-  var api = { CHAINS: CHAINS, ORDER: ORDER };
+  var ORDER = ['btc', 'sol', 'link'];
+  // The chains the daily Mystery Chart picks from on a given day (a chain with mysterySince joins from that date).
+  function mysteryIds(day) { return ORDER.filter(function (id) { return !CHAINS[id].mysterySince || CHAINS[id].mysterySince <= day; }); }
+  var api = { CHAINS: CHAINS, ORDER: ORDER, mysteryIds: mysteryIds };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.POF_DIP_CHAINS = api;
 })(this);
