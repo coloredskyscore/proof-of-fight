@@ -14,8 +14,9 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 ### Nov 13, 2026: the Dust Bin
 
 - A **Dust Bin** section under the games on the arcade: where the dumbest game ideas go to die. Each binned idea is a faded, slightly crooked tile (it brightens on hover) that still opens the prototype, with the date it was born and binned.
-- First in: **Rap Battle** (Toly vs Vitalik, hosted by MC Satoshi), which opens `/fight/?rap`.
-- Also binned (Nov 13): **Guitar Battle**, which opens `/fight/?guitar` (Brian likes the idea but doesn't see it working long term).
+- First in: **Rap Battle** (Toly vs Vitalik, hosted by MC Satoshi).
+- Each binned game has its own page that opens straight into it: `/rap/` and `/guitar/` (← Games goes back to the arcade). They are built from `fight/index.html` by `tools/solo-pages.py`. Old `?rap` and `?guitar` links on the home page forward there; `/fight/?rap` and `/fight/?guitar` still add their buttons to the fight's title.
+- Also binned (Nov 13): **Guitar Battle** (Brian likes the idea but doesn't see it working long term).
 
 ### Nov 12, 2026: 51% Attack gets its own arcade cabinet
 
