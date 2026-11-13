@@ -91,8 +91,9 @@
   function wallC(a) { return 'rgba(' + TH.wallRGB + ',' + a + ')'; }
 
   // ---------- Sound: all of it made here with oscillators and noise ----------
-  var AC = null, master = null, musicG = null, windG = null, windF = null, noiseBuf = null, muted = store('pof-dip-mute') === '1';
-  var music = { on: false, step: 0, next: 0, timer: null, cut: null, energy: 0 };
+  var AC = null, master = null, musicG = null, rumbleG = null, noiseBuf = null, muted = store('pof-dip-mute') === '1';
+  // danger: 0 with the liquidation wall far behind, 1 when it is about to catch you. The music follows it.
+  var music = { on: false, step: 0, next: 0, timer: null, cut: null, danger: 0 };
   function audio() {
     if (AC) { if (AC.state !== 'running') AC.resume(); return true; }
     var K = window.AudioContext || window.webkitAudioContext;
@@ -104,10 +105,12 @@
     noiseBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
     var d = noiseBuf.getChannelData(0);
     for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    var n = AC.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
-    windF = AC.createBiquadFilter(); windF.type = 'bandpass'; windF.frequency.value = 600; windF.Q.value = 0.7;
-    windG = AC.createGain(); windG.gain.value = 0;
-    n.connect(windF); windF.connect(windG); windG.connect(master); n.start();
+    // The wall's rumble: deep, low-passed noise plus a sub tone, silent until the wall gets close.
+    var n = AC.createBufferSource(), rf = AC.createBiquadFilter(), sub = AC.createOscillator(), sg = AC.createGain();
+    n.buffer = noiseBuf; n.loop = true; rf.type = 'lowpass'; rf.frequency.value = 110; rf.Q.value = 0.5;
+    sub.type = 'sine'; sub.frequency.value = 41; sg.gain.value = 0.35;
+    rumbleG = AC.createGain(); rumbleG.gain.value = 0;
+    n.connect(rf); rf.connect(rumbleG); sub.connect(sg); sg.connect(rumbleG); rumbleG.connect(master); n.start(); sub.start();
     return true;
   }
   function tone(type, f0, f1, at, dur, vol, dest) {
@@ -140,7 +143,14 @@
       tone('sine', midi(b + 12), 0, now + 0.14, 0.45, 0.14); hiss(now, 0.18, 0.05, 6000);
     },
     bad: function () { var now = AC.currentTime; tone('sine', 150, 45, now, 0.25, 0.5); hiss(now, 0.16, 0.22, 900, 'lowpass'); },
-    launch: function () { hiss(AC.currentTime, 0.22, 0.045, 2400, 'bandpass'); },
+    // A soft swoosh as the orb leaves the ground: noise swept up through a gentle band-pass.
+    launch: function () {
+      var now = AC.currentTime, n = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+      n.buffer = noiseBuf; f.type = 'bandpass'; f.Q.value = 1.4;
+      f.frequency.setValueAtTime(320, now); f.frequency.exponentialRampToValueAtTime(1500, now + 0.32);
+      g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(0.07, now + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+      n.connect(f); f.connect(g); g.connect(master); n.start(now, Math.random()); n.stop(now + 0.45);
+    },
     fever: function () { var now = AC.currentTime; [0, 4, 7, 12, 16, 19, 24].forEach(function (s, i) { tone('square', midi(69 + s), 0, now + i * 0.055, 0.2, 0.07); }); },
     event: function () { var now = AC.currentTime; tone('sine', midi(88), 0, now, 0.5, 0.08); tone('sine', midi(93), 0, now + 0.09, 0.6, 0.06); },
     dead: function () {
@@ -151,30 +161,42 @@
   };
   function play(name, a) { if (AC && !muted && !attract) try { sfx[name](a); } catch (e) { /* no sound */ } }
 
-  // Music: a four-chord loop whose layers come in with speed. Slow = bass and pad; fast = drums; bull run = arp.
+  /* Music: a four-chord loop whose layers follow the danger (how close the liquidation wall is).
+       safe (under 0.3)   bass and a soft pad, the filter mostly closed
+       0.3 and up         the kick and light hats come in, the filter opens
+       0.55 and up        the chords turn dark, a snare on two and four, sixteenth hats
+       0.8 and up         a heartbeat thump and a two-note alarm on top
+     A Bull Run adds a square-wave lead on top of whatever is playing. */
   var ROOTS = [45, 41, 48, 43], CH = [[0, 3, 7], [0, 4, 7], [0, 4, 7], [0, 4, 7]], SPB = 60 / 116 / 4;
+  var DARK_ROOTS = [45, 45, 41, 40], DARK = [[0, 3, 7], [0, 3, 8], [0, 4, 7], [0, 4, 7]];
   function musicTick() {
     if (!music.on || !AC) return;
     while (music.next < AC.currentTime + 0.12) {
-      var st = music.step, at = music.next, bar = Math.floor(st / 16) % 4, s16 = st % 16, r = ROOTS[bar], e = music.energy;
-      if (s16 === 0) CH[bar].forEach(function (iv, i) {
+      var st = music.step, at = music.next, bar = Math.floor(st / 16) % 4, s16 = st % 16, e = music.danger;
+      var dark = e > 0.55, r = (dark ? DARK_ROOTS : ROOTS)[bar], chords = dark ? DARK : CH;
+      if (s16 === 0) chords[bar].forEach(function (iv, i) {
         var o = AC.createOscillator(), g = AC.createGain();
         o.type = 'sawtooth'; o.frequency.value = midi(r + 12 + iv); o.detune.value = (i - 1) * 9;
         g.gain.setValueAtTime(0.0001, at); g.gain.linearRampToValueAtTime(0.05, at + 0.5);
         g.gain.setValueAtTime(0.05, at + SPB * 13); g.gain.linearRampToValueAtTime(0.0001, at + SPB * 16.5);
         o.connect(g); g.connect(music.cut); o.start(at); o.stop(at + SPB * 17);
       });
-      if (s16 % 2 === 0) tone('sawtooth', midi(r + (s16 % 8 === 6 ? 12 : 0)), 0, at, SPB * 1.7, 0.16, music.cut);
-      if (e > 0.25 && s16 % 4 === 0) tone('sine', 150, 42, at, 0.2, 0.5 * Math.min(1, e * 1.6), musicG);
-      if (e > 0.15 && s16 % 2 === 0) hiss(at, s16 % 4 === 2 ? 0.07 : 0.03, 0.035 + 0.04 * e, 7500, 'highpass', musicG);
-      if (e > 0.5 && (s16 === 4 || s16 === 12)) hiss(at, 0.12, 0.12, 1800, 'bandpass', musicG);
-      if (S && S.fever > 0 && !attract) tone('square', midi(r + 36 + CH[bar][(s16 * 5) % 3] + (s16 % 4 === 3 ? 12 : 0)), 0, at, SPB * 0.9, 0.035, musicG);
+      // bass: eighths when calm, driving sixteenths when it's dark
+      if (dark ? true : s16 % 2 === 0) tone('sawtooth', midi(r + (s16 % 8 === 6 ? 12 : 0)), 0, at, SPB * (dark ? 0.9 : 1.7), dark ? 0.13 : 0.16, music.cut);
+      if (e > 0.3 && (dark ? s16 % 4 === 0 : s16 % 8 === 0 || s16 === 10)) tone('sine', 150, 42, at, 0.2, 0.55 * Math.min(1, (e - 0.2) * 2.5), musicG);
+      if (e > 0.3 && (dark ? true : s16 % 4 === 2)) hiss(at, s16 % 4 === 2 ? 0.05 : 0.025, 0.018 + 0.03 * e, 8000, 'highpass', musicG);
+      if (dark && (s16 === 4 || s16 === 12)) { hiss(at, 0.14, 0.11, 1600, 'bandpass', musicG); tone('triangle', 190, 140, at, 0.08, 0.12, musicG); }
+      if (e > 0.8) {
+        if (s16 === 0 || s16 === 8) { tone('sine', 62, 40, at, 0.16, 0.5, musicG); tone('sine', 58, 38, at + SPB * 1.2, 0.14, 0.35, musicG); }
+        if (s16 === 0 && bar % 2 === 0) { tone('square', midi(r + 31), 0, at, SPB * 3, 0.03, musicG); tone('square', midi(r + 30), 0, at + SPB * 4, SPB * 3, 0.03, musicG); }
+      }
+      if (S && S.fever > 0 && !attract) tone('square', midi(r + 36 + chords[bar][(s16 * 5) % 3] + (s16 % 4 === 3 ? 12 : 0)), 0, at, SPB * 0.9, 0.035, musicG);
       music.next += SPB; music.step++;
     }
   }
   function startMusic() {
     if (!AC || music.on) return;
-    music.on = true; music.step = 0; music.next = AC.currentTime + 0.06;
+    music.on = true; music.step = 0; music.next = AC.currentTime + 0.06; music.t0 = music.next;
     music.cut.frequency.cancelScheduledValues(AC.currentTime); music.cut.frequency.value = 900;
     musicG.gain.cancelScheduledValues(AC.currentTime); musicG.gain.setValueAtTime(0.55, AC.currentTime);
     music.timer = setInterval(musicTick, 40);
@@ -296,7 +318,7 @@
     if (AUTO) start(/[?&]daily\b/.test(location.search) ? 'daily' : /[?&]sol\b/.test(location.search) ? 'sol' : 'btc');
     last = performance.now();
     requestAnimationFrame(frame);
-    if (DEBUG) window.POF_DIP = { get S() { return S; }, get T() { return T; }, get GH() { return GH; }, get REC() { return REC; }, encode: function () { return C.encode(REC); }, start: start, menu: menu, core: C, card: shareCard, frame: tick, cam: cam, set auto(v) { AUTO = v; }, set manual(v) { paused = v; } };
+    if (DEBUG) window.POF_DIP = { get S() { return S; }, get T() { return T; }, get GH() { return GH; }, get REC() { return REC; }, encode: function () { return C.encode(REC); }, start: start, menu: menu, core: C, card: shareCard, frame: tick, cam: cam, set auto(v) { AUTO = v; }, set manual(v) { paused = v; }, get out() { audio(); return master; }, get music() { return music; } };
   }
   function press(on) { if (!attract && !over) hold = on; else hold = false; }
   function resize() {
@@ -518,12 +540,12 @@
     for (i = pops.length - 1; i >= 0; i--) { pops[i].t += dt; if (pops[i].t > 0.9) pops.splice(i, 1); }
     for (i = rings.length - 1; i >= 0; i--) { rings[i].t += dt; if (rings[i].t > 0.5) rings.splice(i, 1); }
     if (banner) { banner.t += dt; if (banner.t > 1.8) banner = null; }
-    if (AC && windG) {
-      var now = AC.currentTime, sp = clamp(S.vx / 2400, 0, 1);
-      windG.gain.setTargetAtTime(attract || over || muted ? 0 : (S.air ? 0.05 + 0.2 * sp : 0.04 * sp), now, 0.1);
-      windF.frequency.setTargetAtTime(400 + 2200 * sp, now, 0.1);
-      music.energy += (clamp((S.vx - 650) / 1100, 0, 1) - music.energy) * Math.min(1, dt * 1.5);
-      if (music.on) music.cut.frequency.setTargetAtTime(700 + 5200 * music.energy, now, 0.25);
+    if (AC && rumbleG) {
+      var now = AC.currentTime, want = attract || over ? 0 : clamp(1 - (S.x - S.wall - 250) / 2600, 0, 1);
+      // rises quickly, settles slowly, so a close call keeps the tension for a moment
+      music.danger += (want - music.danger) * Math.min(1, dt * (want > music.danger ? 3 : 0.8));
+      rumbleG.gain.setTargetAtTime(muted || over || attract ? 0 : 0.55 * music.danger * music.danger, now, over ? 0.4 : 0.15);
+      if (music.on) music.cut.frequency.setTargetAtTime(800 + 4600 * music.danger, now, 0.25);
     }
   }
 
@@ -688,12 +710,15 @@
     }
     ctx.shadowBlur = 0; ctx.globalAlpha = 1;
 
-    // red closing in at the edges
-    var gapT = clamp(1 - (S.x - S.wall) / 1500, 0, 1);
+    // red closing in at the edges, throbbing on the music's beat; when it gets close the whole screen pulses too
+    var gapT = clamp(1 - (S.x - S.wall) / 1500, 0, 1), hit = beatHit(), dz = AC ? music.danger : clamp(1 - (S.x - S.wall - 250) / 2600, 0, 1);
     if (gapT > 0 && !attract) {
       var vg = ctx.createLinearGradient(0, 0, W * 0.6, 0);
-      vg.addColorStop(0, wallC(0.32 * gapT * (0.75 + 0.25 * Math.sin(clock * 12)))); vg.addColorStop(1, wallC(0));
+      vg.addColorStop(0, wallC(0.32 * gapT * (0.65 + 0.35 * hit))); vg.addColorStop(1, wallC(0));
       ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    }
+    if (dz > 0.45 && !attract && !over && !CALM) {
+      ctx.fillStyle = wallC(0.075 * (dz - 0.45) / 0.55 * hit); ctx.fillRect(0, 0, W, H);
     }
     if (flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, flash) + ')'; ctx.fillRect(0, 0, W, H); }
     if (attract) { ctx.fillStyle = 'rgba(3,4,10,0.55)'; ctx.fillRect(0, 0, W, H); return; }
@@ -786,6 +811,13 @@
     mini = { w: mw, h: mh, n: n, dim: make('rgba(255,255,255,0.28)'), lit: make(GREEN) };
   }
 
+  // 1 on each beat of the music, fading fast to 0 before the next (follows the clock when there's no sound).
+  var CALM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function beatHit() {
+    var beat = SPB * 4, t = AC && music.on ? AC.currentTime - music.t0 : clock;
+    var ph = t / beat - Math.floor(t / beat);
+    return Math.exp(-6 * ph);
+  }
   function hud() {
     var u = clamp(Math.min(W, H) / 620, 0.72, 1.15), pad = Math.round(16 * u) + (W > H ? 6 : 0), top = pad + 2;
     var m = T.slope(S.x), p = T.priceAt(S.x), fever = S.fever > 0;
