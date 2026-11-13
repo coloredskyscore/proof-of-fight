@@ -196,7 +196,7 @@
   }
   function startMusic() {
     if (!AC || music.on) return;
-    music.on = true; music.step = 0; music.next = AC.currentTime + 0.06;
+    music.on = true; music.step = 0; music.next = AC.currentTime + 0.06; music.t0 = music.next;
     music.cut.frequency.cancelScheduledValues(AC.currentTime); music.cut.frequency.value = 900;
     musicG.gain.cancelScheduledValues(AC.currentTime); musicG.gain.setValueAtTime(0.55, AC.currentTime);
     music.timer = setInterval(musicTick, 40);
@@ -710,12 +710,15 @@
     }
     ctx.shadowBlur = 0; ctx.globalAlpha = 1;
 
-    // red closing in at the edges
-    var gapT = clamp(1 - (S.x - S.wall) / 1500, 0, 1);
+    // red closing in at the edges, throbbing on the music's beat; when it gets close the whole screen pulses too
+    var gapT = clamp(1 - (S.x - S.wall) / 1500, 0, 1), hit = beatHit(), dz = AC ? music.danger : clamp(1 - (S.x - S.wall - 250) / 2600, 0, 1);
     if (gapT > 0 && !attract) {
       var vg = ctx.createLinearGradient(0, 0, W * 0.6, 0);
-      vg.addColorStop(0, wallC(0.32 * gapT * (0.75 + 0.25 * Math.sin(clock * 12)))); vg.addColorStop(1, wallC(0));
+      vg.addColorStop(0, wallC(0.32 * gapT * (0.65 + 0.35 * hit))); vg.addColorStop(1, wallC(0));
       ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    }
+    if (dz > 0.45 && !attract && !over && !CALM) {
+      ctx.fillStyle = wallC(0.075 * (dz - 0.45) / 0.55 * hit); ctx.fillRect(0, 0, W, H);
     }
     if (flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, flash) + ')'; ctx.fillRect(0, 0, W, H); }
     if (attract) { ctx.fillStyle = 'rgba(3,4,10,0.55)'; ctx.fillRect(0, 0, W, H); return; }
@@ -808,6 +811,13 @@
     mini = { w: mw, h: mh, n: n, dim: make('rgba(255,255,255,0.28)'), lit: make(GREEN) };
   }
 
+  // 1 on each beat of the music, fading fast to 0 before the next (follows the clock when there's no sound).
+  var CALM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function beatHit() {
+    var beat = SPB * 4, t = AC && music.on ? AC.currentTime - music.t0 : clock;
+    var ph = t / beat - Math.floor(t / beat);
+    return Math.exp(-6 * ph);
+  }
   function hud() {
     var u = clamp(Math.min(W, H) / 620, 0.72, 1.15), pad = Math.round(16 * u) + (W > H ? 6 : 0), top = pad + 2;
     var m = T.slope(S.x), p = T.priceAt(S.x), fever = S.fever > 0;
