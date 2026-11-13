@@ -123,6 +123,29 @@ footer.site a { color: var(--ink); }
 .cons-bar em { position: absolute; top: -2px; bottom: -2px; left: 51%; width: 2px; background: #fff; opacity: .7; }
 .cons b { color: #fff; font-weight: 800; min-width: 3ch; text-align: right; }
 
+/* Dust Bin: rejected game ideas, still playable. Faded, a little crooked, like something you threw out. */
+.dustbin { display: grid; gap: 12px; padding: 16px; border-radius: 16px; border: 2px dashed #34304a; background: repeating-linear-gradient(-45deg, #0f0d17 0 10px, #121019 10px 20px); }
+.bin-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; }
+.bin-head h3 { margin: 0; display: inline-flex; align-items: center; gap: 8px; font: 400 18px var(--display); color: #8f89a6; letter-spacing: .04em; }
+.bin-ic { width: 20px; height: 20px; }
+.bin-head span { font-size: 13px; color: var(--muted); }
+.bin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 14px; }
+.binned { display: grid; grid-template-columns: 128px 1fr; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid #2c2540;
+  text-decoration: none; color: inherit; transform: rotate(-1.2deg); filter: grayscale(.55) brightness(.9); transition: filter .2s, transform .2s; }
+.binned:nth-child(even) { transform: rotate(1deg); }
+.binned:hover, .binned:focus-visible { filter: none; transform: rotate(0); }
+.binned:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.bin-art { position: relative; height: 72px; border-radius: 8px; background: #1b1726; overflow: hidden; display: flex; justify-content: center; align-items: flex-end; }
+.bin-art img { height: 88%; width: auto; image-rendering: pixelated; margin: 0 -2px; }
+.bin-art img + img { transform: scaleX(-1); }
+.bin-rap { height: 84px; background: radial-gradient(ellipse at 30% 40%, #2a2240 0%, #120f1c 70%); }
+.bin-rap img { position: absolute; inset: auto 0 0 0; width: 100%; height: auto; margin: 0; }
+.bin-pop { position: absolute; left: 50%; top: 22%; transform: translateX(-28%) rotate(-4deg); font: 400 15px var(--display); font-style: normal; color: #ff4d4d; -webkit-text-stroke: 1px var(--line); text-shadow: 0 2px 0 var(--line); white-space: nowrap; }
+.bin-txt b { display: block; font-size: 15px; }
+.bin-txt span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.bin-txt em { display: block; margin-top: 6px; font: 700 10px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #ff6b6b; font-style: normal; }
+@media (prefers-reduced-motion: reduce) { .binned { transition: none; } }
+
 /* Real-page additions */
 a { color: inherit; }
 .marquee { display: grid; gap: 0; }

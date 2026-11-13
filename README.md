@@ -4,7 +4,7 @@ Proof of Fight is an arcade of crypto games at **https://proofoffight.com**. The
 
 | Address | Game |
 |---|---|
-| `/` (`index.html`) | The arcade: today's Daily Fight and Mystery Chart, a cabinet per game, and what's in the lab |
+| `/` (`index.html`) | The arcade: today's Daily Fight and Mystery Chart, a cabinet per game, and the Dust Bin (rejected ideas, still playable) |
 | `/fight/` | **Proof of Fight**, the fighting game (below) |
 | `/ride/` | **Ride the Chart**, the one-button ride over a real price chart |
 | `/51/` | **51% Attack**, the network-defense game |
