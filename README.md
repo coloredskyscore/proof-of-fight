@@ -7,8 +7,9 @@ Proof of Fight is an arcade of crypto games at **https://proofoffight.com**. The
 | `/` (`index.html`) | The arcade: today's Daily Fight and Mystery Chart, a cabinet per game, and what's in the lab |
 | `/fight/` | **Proof of Fight**, the fighting game (below) |
 | `/ride/` | **Ride the Chart**, the one-button ride over a real price chart |
+| `/51/` | **51% Attack**, the network-defense game |
 
-The game pages keep their files (`css/`, `js/`, `art/`, `audio/`) at the site root and reach them through `<base href="../">`. Old links that put a game behind `?something` on the home page (`?dip`, `?ride&race=`, `?daily`, `?td`, ...) are forwarded to the right game's page by a script at the top of `index.html`. To add a game: a new folder with its own `index.html` (with `<base href="../">` and its own link preview), plus a cabinet in `index.html`.
+The game pages keep their files (`css/`, `js/`, `art/`, `audio/`) at the site root and reach them through `<base href="../">`. Old links that put a game behind `?something` on the home page (`?dip`, `?ride&race=`, `?daily`, `?51`, ...) are forwarded to the right game's page by a script at the top of `index.html`. To add a game: a new folder with its own `index.html` (with `<base href="../">` and its own link preview), plus a cabinet in `index.html`.
 
 The fighting game: a turn-based crypto founder brawl that runs in any browser. It looks like a 2D arcade fighter and plays like a card game: pick one of five buttons, the CPU picks at the same time, a short scene plays, repeat until someone hits 0 HP.
 
@@ -39,7 +40,6 @@ All numbers and joke lines are in `js/data.js`. After changing numbers, check ba
 node tools/sim.js            # win rates per fighter, balanced rules
 node tools/sim.js original   # same, with the original draft numbers
 node tools/check.js          # rules still behave (Supers can't be dodged, Blind skips a turn, ...)
-node tools/td-sim.js         # Tower Defense (?td): bots play the Hearing
 node tools/dip-sim.js        # Ride the Chart (?ride): bots ride each chain's chart, how far each gets
 ```
 
@@ -52,18 +52,16 @@ Add `?speed=0.3` to the URL to play animations faster while testing.
 | Path | What |
 |---|---|
 | `index.html`, `css/arcade.css`, `js/arcade.js` | The arcade home page: cabinets, today's dailies, your bests from this browser, live previews drawn in code |
-| `fight/index.html` | The fighting game's page (`?td`, `?rap`, `?guitar` test modes still open from here) |
+| `fight/index.html` | The fighting game's page (`?rap` and `?guitar` test modes still open from here) |
 | `ride/index.html` | Ride the Chart's page |
 | `404.html` | Shown for any URL that doesn't exist (GitHub Pages serves it automatically) |
 | `css/style.css` | The look |
 | `js/data.js` | Fighters, odds, damage, Supers, banners |
 | `js/engine.js` | Game rules (no graphics; runs in Node too) |
 | `js/app.js` | Screens, animations, Daily Fight, sharing |
-| `js/td-core.js`, `js/td.js`, `css/td.css` | Tower Defense test (`?td`): the rules (run in Node too), then the drawing and taps |
 | `js/dip-core.js`, `js/dip.js`, `js/dip-chains.js`, `css/dip.css` | Ride the Chart (`/ride`, `?ride`, formerly Buy the Dip at `?dip`): the rules (run in Node too), the drawing and sound (all made in code, no image or audio files), and the chains you can ride (landmarks, made-up future and colors for each) |
 | `worker/`, `tools/build-worker.js` | Ride the Chart server: a Cloudflare Worker (`pof-dip.brianboode.workers.dev`) with a D1 database for short race links and the leaderboards. It replays every run before storing it. `node tools/build-worker.js` bundles the game rules with `worker/src/index.js` into `worker/dist/worker.js`; tables are in `worker/schema.sql` |
 | `js/dip-data.js`, `js/dip-data-sol.js` | Ride the Chart price files: Bitcoin and Solana daily closing prices (see the header of each file for the source) |
-| `art/td/` | Tower Defense map, towers, enemies and node: the map fitted to the grid with `tools/td_map.py`, the rest cut from Grok sheets with `tools/td_art.py` |
 | `tools/` | Balance simulator, rules checks, art cut-out, music loop cutter, sound clip cutter, sound level meter |
 | `docs/supers/` | Fighter kits (Super concepts, button names), one per fighter, and the slots the game supports |
 | `art/` | Fighter portraits and stage sprites |

@@ -4,17 +4,18 @@
   <meta charset="utf-8">
   <script>
     // Old links: before the arcade, every game lived on this page behind ?something. Send them to the game's own page.
-    // ?ride / ?dip / ?race=... -> Ride the Chart; anything else (?daily, ?td, ?r=..., ?sounds...) -> the fighting game.
+    // ?ride / ?dip / ?race=... -> Ride the Chart; anything else (?daily, ?r=..., ?sounds...) -> the fighting game.
     (function () {
       var q = location.search, h = location.hash;
       if (!q && !h) return;
       var ride = /[?&](ride|dip|race)\b/i.test(q);
+      if (/[?&]51\b/.test(q)) { location.replace('51/' + h); return; }   // 51% Attack
       location.replace((ride ? 'ride/' : 'fight/') + q + h);
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Proof of Fight · Crypto games in your browser</title>
-  <meta name="description" content="Crypto games you can play in ten seconds: Proof of Fight, the founder brawl, and Ride the Chart. Free, in your browser, on your phone. No wallet.">
+  <meta name="description" content="Crypto games you can play in ten seconds: Proof of Fight, the founder brawl, Ride the Chart and 51% Attack. Free, in your browser, on your phone. No wallet.">
   <meta name="theme-color" content="#0b0a12">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Proof of Fight">
@@ -32,7 +33,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/arcade.css">
 </head>
 <body>
@@ -61,9 +62,9 @@
           <div class="kicker">The original · Fighting game</div>
           <h2>PROOF OF FIGHT</h2>
           <p>Crypto founders brawl in 16-bit. Five buttons, one bad decision per turn.</p>
-          <ul class="facts"><li id="n-fighters">10 fighters</li><li id="n-bosses">Story: 5 bosses</li><li>Daily fight</li><li>~3 min</li></ul>
+          <ul class="facts"><li id="n-fighters">10 fighters</li><li id="n-bosses">5 bosses</li><li>Daily fight</li></ul>
           <div class="row">
-            <div class="best" id="best-fight">Turn-based. Easy to learn, built for the phone.</div>
+            <div class="best" id="best-fight">Turn-based. Easy to learn.</div>
             <a class="play" href="fight/">PLAY</a>
           </div>
         </div>
@@ -75,25 +76,36 @@
           <div class="ticker"><span>BTC/USD <b id="px">$0.06</b> <span class="chg up" id="chg">+0%</span></span><span id="date">Jul 2010</span></div>
         </a>
         <div class="info">
-          <div class="kicker">New · One-button arcade</div>
+          <div class="kicker">One-button arcade</div>
           <h2 aria-label="Ride the Chart"><span>RIDE</span><span>THE</span><span class="chart">CHART</span></h2>
-          <p>Surf Bitcoin's real price history. Dive on the red, fly on the green, outrun liquidation.</p>
-          <ul class="facts"><li>Real data 2010 to today</li><li>Bitcoin · Solana</li><li>Race a friend's ghost</li><li>20 s to 2 min</li></ul>
+          <p>Surf real price history. Dive on the red, fly on the green, outrun liquidation.</p>
+          <ul class="facts"><li>Real charts</li><li>BTC · SOL</li><li>Ghost races</li></ul>
           <div class="row">
-            <div class="best" id="best-ride">One button. Hold on red, let go on green.</div>
+            <div class="best" id="best-ride">One button. 20 seconds to 2 minutes.</div>
             <a class="play" href="ride/">RIDE</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="cab cab-51">
+        <a class="screen" href="51/" tabindex="-1" aria-hidden="true">
+          <canvas id="net"></canvas>
+          <div class="cons"><span>CONSENSUS</span><span class="cons-bar"><i id="cons-fill"></i><em></em></span><b id="cons-pct">20%</b></div>
+        </a>
+        <div class="info">
+          <div class="kicker">New · Network defense</div>
+          <h2 aria-label="51% Attack"><span class="n51">51%</span><span class="atk">ATTACK</span></h2>
+          <p>Defend your chain's network. Every node you hold pays you. Don't let them take 51%.</p>
+          <ul class="facts"><li>Real-time</li><li>5 bosses</li><li>Story mode</li></ul>
+          <div class="row">
+            <div class="best" id="best-51">Tap to retake nodes. Hold the line.</div>
+            <a class="play" href="51/">DEFEND</a>
           </div>
         </div>
       </article>
     </section>
 
-    <section class="lab-wrap" aria-label="In the lab">
-      <div class="lab-head"><h3>IN THE LAB</h3><span>Games we're building. Follow <a href="https://x.com/ProofOfFight" target="_blank" rel="noopener">@ProofOfFight</a> to hear when they open.</span></div>
-      <div class="labs">
-        <div class="lab"><span class="lab-ic lab-td" aria-hidden="true"></span><span><b>Tower Defense</b><span>Defend your chain's node from the hearing.</span><em class="tag">Coming soon</em></span></div>
-        <div class="lab"><span class="lab-ic lab-next" aria-hidden="true">?</span><span><b>Next game</b><span>Got an idea? Tell us on X.</span><em class="tag">Vote on X</em></span></div>
-      </div>
-    </section>
+    <p class="more">More games are on the way. Got an idea? Tell <a href="https://x.com/ProofOfFight" target="_blank" rel="noopener">@ProofOfFight</a> on X.</p>
 
     <footer class="site">
       <p>Parody. Caricatures of public figures, not affiliated with or endorsed by any of them. No wallet, no tokens, no sign-up. Not financial advice.</p>
