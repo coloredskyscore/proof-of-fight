@@ -2096,6 +2096,20 @@
   function boot() {
     var title = $('#screen-title'), gate = $('#press-start');
     var quiet = !AU.supported() || (!AU.settings.music && !AU.settings.sfx);
+    // A Dust Bin game on its own page (/rap/, /guitar/): skip the fight's title and open that game.
+    // The game's script (loaded after this one) registers window.POF_SOLO_OPEN.
+    var solo = window.POF_SOLO;
+    function openSolo() { title.hidden = true; if (window.POF_SOLO_OPEN) window.POF_SOLO_OPEN(); }
+    if (solo) {
+      title.classList.add('boot');
+      if (quiet) { setTimeout(openSolo, 0); return; }
+      gate.hidden = false;
+      var go = function (ev) { if (ev) ev.preventDefault(); gate.removeEventListener('click', go); document.removeEventListener('keydown', key); AU.unlock(); gate.hidden = true; title.classList.remove('boot'); openSolo(); };
+      var key = function (ev) { if (ev.key === 'Enter' || ev.key === ' ') go(ev); };
+      gate.addEventListener('click', go);
+      document.addEventListener('keydown', key);
+      return;
+    }
     if (AU.settings.music && AU.supported()) AU.load('menu').catch(function () {});
     if (quiet) { intro(); return; }
     title.classList.add('boot');
