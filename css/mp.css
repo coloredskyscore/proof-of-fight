@@ -1,5 +1,5 @@
 /* Mempool (/mempool/). The game is one canvas (js/mp.js); this styles the menu, the end card and the leaderboard over it. */
-html.mp-on, html.mp-on body { margin: 0; overflow: hidden; overscroll-behavior: none; background: #060912; }
+html.mp-on, html.mp-on body { margin: 0; overflow: hidden; overscroll-behavior: none; background: #050b16; }
 #mp {
   --gold: #ffc53d; --teal: #19d9c3; --hot: #ff6a3d; --rug: #b455ff; --ink: #060912; --mute: rgba(214, 222, 255, 0.62); --line: rgba(150, 170, 255, 0.24);
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -26,11 +26,12 @@ html.mp-on, html.mp-on body { margin: 0; overflow: hidden; overscroll-behavior: 
   position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 12px;
   padding: max(56px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); box-sizing: border-box; text-align: center; overflow-y: auto;
 }
+#mp-menu { background: rgba(5, 11, 22, 0.74); }
 .mp-end, .mp-lb { background: rgba(4, 6, 13, 0.86); animation: mp-in 0.3s ease-out; }
 @keyframes mp-in { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
 
 .mp-logo { margin: 0; font: 800 clamp(48px, 13vw, 108px)/0.95 var(--mono); letter-spacing: -0.05em; color: #fff; }
-.mp-logo-b { color: var(--gold); text-shadow: 0 0 36px rgba(255, 197, 61, 0.6); }
+.mp-logo-b { color: #3fe0ff; text-shadow: 0 0 36px rgba(63, 224, 255, 0.6); }
 .mp-tag { margin: 0; font-size: clamp(15px, 2.4vw, 19px); color: rgba(238, 241, 255, 0.82); }
 .mp-how { list-style: none; margin: 4px 0 8px; padding: 0; display: grid; gap: 7px; text-align: left; font-size: clamp(13px, 2vw, 15px); color: rgba(238, 241, 255, 0.8); max-width: 360px; }
 .mp-how li { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: start; line-height: 1.35; }
