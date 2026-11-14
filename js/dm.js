@@ -193,7 +193,7 @@
     if (ca > 0) { g.globalAlpha = ca; for (i = 0; i < CLOUDS.length; i++) { var cl = CLOUDS[i]; y = ((cl.y + c * cl.p) % 3600 + 3600) % 3600 - 200; if (y > H + 100) continue; A.cloud(g, cl.x * VW - 40, y, cl.s); } g.globalAlpha = 1; }
     var gy = DOGY() + c + 20 - (state === 'title' ? 0 : 0);
     if (gy < H + 260) { g.fillStyle = '#5a86b8'; for (i = 0; i * 60 < VW; i++) { var bh = 60 + ((i * 37) % 5) * 34; g.fillRect(i * 60, gy - bh, 50, bh + 400); } g.fillStyle = '#3a5f8a'; g.fillRect(0, gy, VW, 400); }
-    captions(c, t);
+    if (state !== 'title') captions(c, t);
   }
   // Meme captions drift past, and get more broken the higher you are.
   function captions(c, t) {
