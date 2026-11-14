@@ -125,6 +125,7 @@
   function drawRide(now) {
     raf = 0;
     drawNet(now);
+    drawLambo(now);
     if (!ter.length) return;
     if (!R) R = fit(rideCv);
     var g = R.g, w = R.w, h = R.h, sec = (now - t0) / 1000;
@@ -219,7 +220,44 @@
     consFill.style.width = pct + '%'; consPct.textContent = pct + '%';
   }
 
-  function redraw() { drawStage(); R = null; N = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); } }
+  // Wen Lambo: a neon road into a striped sun, bending left and right, with the pink car on it.
+  var lamCv = $('lambo'), LB = null, lamStop = $('lam-stop'), lamMph = $('lam-mph'), STOPS = ['MIAMI', 'DENVER', 'RIVIERA', 'DUBAI', 'TOKYO', 'THE GRID'];
+  function drawLambo(now) {
+    if (!lamCv) return;
+    if (!LB) LB = fit(lamCv);
+    var g = LB.g, w = LB.w, h = LB.h, sec = (now - t0) / 1000, hz = h * 0.5, bend = Math.sin(sec * 0.45) * 0.9, i, y;
+    var sk = g.createLinearGradient(0, 0, 0, hz); sk.addColorStop(0, '#0d0221'); sk.addColorStop(0.55, '#3b0a5e'); sk.addColorStop(1, '#ff4fa3'); g.fillStyle = sk; g.fillRect(0, 0, w, hz + 1);
+    var r = h * 0.3, cx = w / 2 - bend * w * 0.05, cy = hz - r * 0.25, sg = g.createLinearGradient(0, cy - r, 0, cy + r); sg.addColorStop(0, '#ffd319'); sg.addColorStop(0.55, '#ff8f3a'); sg.addColorStop(1, '#ff2e97');
+    g.fillStyle = sg; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,79,163,.9)'; for (i = 0; i < 6; i++) g.fillRect(cx - r, cy + r * (0.08 + i * 0.15), r * 2, 1.5 + i * 0.8);
+    g.fillStyle = '#240a4a'; for (i = 0; i < 30; i++) { var bh = (0.05 + ((i * 37) % 11) / 11 * 0.13) * h, bx = ((i * w / 28 - bend * 14) % (w + 20) + w + 20) % (w + 20) - 10; g.fillRect(bx, hz - bh, w / 28 - 1, bh + 1); }
+    g.fillStyle = '#150430'; g.fillRect(0, hz, w, h - hz);
+    for (y = Math.ceil(hz); y < h; y += 2) {
+      var t = (y - hz) / (h - hz), z = 1 / Math.max(0.02, t), band = Math.floor(z * 2.2 + sec * 9) % 2, mid = w / 2 + bend * (1 - t) * (1 - t) * w * 0.42, half = t * w * 0.62;
+      if (band) { g.fillStyle = 'rgba(255,46,151,' + (0.1 + t * 0.25) + ')'; g.fillRect(0, y, w, 2); }
+      g.fillStyle = band ? '#ff2e97' : '#2de2e6'; g.fillRect(mid - half * 1.14, y, half * 2.28, 2);
+      g.fillStyle = band ? '#2a1150' : '#251048'; g.fillRect(mid - half, y, half * 2, 2);
+      if (band) { g.fillStyle = '#f6e7ff'; g.fillRect(mid - half / 3 - half * 0.02, y, half * 0.04, 2); g.fillRect(mid + half / 3 - half * 0.02, y, half * 0.04, 2); }
+    }
+    // the car, from behind
+    var cw = w * 0.3, u = cw / 300, ox = w / 2, oy = h - 6 + Math.sin(sec * 30) * 0.4;
+    g.save(); g.translate(ox, oy); g.rotate(bend * 0.04); g.scale(u, u);
+    var gl = g.createRadialGradient(0, 0, 4, 0, 0, 190); gl.addColorStop(0, 'rgba(45,226,230,.9)'); gl.addColorStop(1, 'rgba(45,226,230,0)'); g.save(); g.scale(1, 0.16); g.fillStyle = gl; g.beginPath(); g.arc(0, 0, 190, 0, 7); g.fill(); g.restore();
+    g.fillStyle = '#07010f'; g.fillRect(-146, -44, 40, 44); g.fillRect(106, -44, 40, 44);
+    g.fillStyle = '#ff2e97'; g.beginPath(); g.moveTo(-90 + bend * 6, -82); g.lineTo(-60 + bend * 12, -122); g.lineTo(60 + bend * 12, -122); g.lineTo(90 + bend * 6, -82); g.fill();
+    g.fillStyle = '#150a35'; g.beginPath(); g.moveTo(-78 + bend * 7, -84); g.lineTo(-52 + bend * 12, -114); g.lineTo(52 + bend * 12, -114); g.lineTo(78 + bend * 7, -84); g.fill();
+    var bg = g.createLinearGradient(0, -90, 0, -10); bg.addColorStop(0, '#ff7ac0'); bg.addColorStop(0.3, '#ff2e97'); bg.addColorStop(1, '#7a1150'); g.fillStyle = bg;
+    g.beginPath(); g.moveTo(-144, -20); g.lineTo(-150, -56); g.quadraticCurveTo(-150, -84, -134, -84); g.lineTo(134, -84); g.quadraticCurveTo(150, -84, 150, -56); g.lineTo(144, -20); g.fill();
+    g.fillStyle = '#0a0118'; g.fillRect(-114, -32, 228, 14); g.fillRect(-136, -90, 272, 7);
+    g.fillStyle = '#ff184c'; g.shadowColor = '#ff184c'; g.shadowBlur = 10; g.fillRect(-140, -66, 96, 9); g.fillRect(44, -66, 96, 9); g.shadowBlur = 0;
+    g.fillStyle = '#f6e7ff'; g.fillRect(-30, -60, 60, 16);
+    g.restore();
+    if (lamStop) lamStop.textContent = STOPS[Math.floor(sec / 4) % STOPS.length];
+    if (lamMph) lamMph.textContent = 204 + Math.round(Math.sin(sec * 1.7) * 6);
+  }
+  try { var wl = JSON.parse(get('pof-wl') || 'null'), stopsDone = wl && wl.done ? Object.keys(wl.done).length : 0; if (stopsDone) $('best-lambo').innerHTML = 'Road trip: <b>' + Math.min(6, stopsDone) + ' of 6</b> stops reached'; } catch (e) { /* nothing saved */ }
+
+  function redraw() { drawStage(); R = null; N = null; LB = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); drawLambo(t0 + 3000); } }
   redraw();
   run();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) run(); });
