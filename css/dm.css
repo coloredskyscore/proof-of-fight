@@ -63,4 +63,13 @@ html.dm-on body {
 .dm-post label { font-size: 14px; color: var(--dim); }
 .dm-post input { width: 84px; min-height: 42px; text-align: center; text-transform: uppercase; font: 400 18px var(--disp) !important; letter-spacing: 0.12em; background: #14112e; border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; -webkit-user-select: text; user-select: text; }
 .dm-note { min-height: 18px; font-size: 14px; color: #ffe066; }
+.dm-share { position: fixed; inset: 0; z-index: 5; background: rgba(3, 2, 14, 0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); animation: dm-in 0.2s ease-out; }
+.dm-share-box { width: 100%; max-width: 520px; background: #0b0a24; border: 3px solid var(--coin); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px; text-align: center; margin: auto; }
+.dm-share-img { width: 100%; height: auto; border-radius: 10px; display: block; }
+.dm-share-txt { margin: 0; font-size: 15px; line-height: 1.35; }
+.dm-share-txt span { color: var(--mint); }
+.dm-x { background: #ffffff; color: #0b0a24 !important; } .dm-x small { color: rgba(11, 10, 36, 0.7); }
+.dm-share-close { align-self: center; }
+@media (prefers-reduced-motion: reduce) { .dm-share { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .dm-screen { animation: none; } }
