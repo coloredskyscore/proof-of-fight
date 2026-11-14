@@ -450,15 +450,49 @@
     x.textAlign = 'right'; x.font = '26px ' + DISP; x.fillStyle = '#fff'; x.fillText('proofoffight.com/doge', 1160, 645);
     return c;
   }
+  // The share panel: a preview of the picture and plain buttons, instead of the system share box
+  // (on Windows that box rarely has X in it). Phones also get the system share as "More apps".
+  var URL_GAME = 'https://proofoffight.com/doge/', shareBlob = null;
   function share(card, text) {
-    var url = 'https://proofoffight.com/doge/', note = $('#dm-note');
-    card.toBlob(function (blob) {
-      var file = null; try { file = new File([blob], 'doge-moon-crash.png', { type: 'image/png' }); } catch (e) { /* old browser */ }
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], text: text + ' ' + url }).catch(function () { /* closed */ }); return; }
-      var done = function (copied) { if (note) note.textContent = copied ? 'Picture copied. Paste it into your post.' : 'Picture saved. Attach it to your post.'; window.open('https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank', 'noopener'); };
-      var dl = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'doge-moon-crash.png'; a.click(); done(false); };
-      if (navigator.clipboard && window.ClipboardItem) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function () { done(true); }, dl); else dl();
-    }, 'image/png');
+    var old = $('.dm-share'); if (old) old.remove();
+    shareBlob = null; card.toBlob(function (blob) { shareBlob = blob; }, 'image/png');
+    var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches, canFiles = false;
+    try { canFiles = touch && !!navigator.canShare && navigator.canShare({ files: [new File([new Blob(['x'], { type: 'image/png' })], 'a.png', { type: 'image/png' })] }); } catch (e) { /* no file sharing */ }
+    rootEl.insertAdjacentHTML('beforeend', '<div class="dm-share" role="dialog" aria-modal="true" aria-label="Share your run"><div class="dm-share-box">' +
+      '<img class="dm-share-img" alt="Your Doge Moon Crash result picture" src="' + card.toDataURL('image/png') + '">' +
+      '<p class="dm-share-txt">' + esc(text) + ' <span>' + URL_GAME.replace('https://', '') + '</span></p>' +
+      '<div class="dm-acts"><button type="button" class="dm-btn dm-x" data-s="x"><span>POST ON X</span><small>copies the picture too</small></button>' +
+      '<button type="button" class="dm-btn" data-s="save"><span>SAVE PICTURE</span><small>to attach anywhere</small></button>' +
+      '<button type="button" class="dm-btn" data-s="copy"><span>COPY TEXT</span><small>with the link</small></button>' +
+      (canFiles ? '<button type="button" class="dm-btn" data-s="more"><span>MORE APPS</span><small>your phone\'s share menu</small></button>' : '<button type="button" class="dm-btn" data-s="close"><span>CLOSE</span></button>') +
+      '</div><div class="dm-note" id="dm-snote" aria-live="polite"></div>' + (canFiles ? '<button type="button" class="dm-ghost dm-share-close" data-s="close">CLOSE</button>' : '') + '</div></div>');
+    var box = $('.dm-share'), note = $('#dm-snote');
+    function say(t) { note.textContent = t; }
+    function blobNow(cb) { if (shareBlob) cb(shareBlob); else card.toBlob(function (bl) { shareBlob = bl; cb(bl); }, 'image/png'); }
+    function save() { blobNow(function (bl) { var l = document.createElement('a'); l.href = URL.createObjectURL(bl); l.download = 'doge-moon-crash.png'; document.body.appendChild(l); l.click(); l.remove(); }); }
+    function copyText(t, ok) { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, function () { say('Copy this: ' + t); }); else say('Copy this: ' + t); }
+    box.addEventListener('click', function (e) {
+      if (e.target === box) { box.remove(); return; }
+      var b = e.target.closest('[data-s]'); if (!b) return; var k = b.getAttribute('data-s');
+      if (k === 'close') box.remove();
+      else if (k === 'save') { save(); say('Picture saved. Attach it to your post.'); }
+      else if (k === 'copy') copyText(text + ' ' + URL_GAME, function () { say('Text and link copied.'); });
+      else if (k === 'more') blobNow(function (bl) { navigator.share({ files: [new File([bl], 'doge-moon-crash.png', { type: 'image/png' })], text: text + ' ' + URL_GAME }).catch(function () { /* closed */ }); });
+      else if (k === 'x') {
+        // Copy the picture first (the browser needs this inside the click), then open the post box in a new tab.
+        var copied = false;
+        try {
+          if (navigator.clipboard && window.ClipboardItem) {
+            var item = new ClipboardItem({ 'image/png': shareBlob || new Promise(function (ok) { card.toBlob(ok, 'image/png'); }) });
+            navigator.clipboard.write([item]).then(function () { say('Picture copied. In X, paste it into your post (Ctrl+V, or long-press and Paste).'); }, function () { save(); say('Picture saved instead. Attach it to your post in X.'); });
+            copied = true;
+          }
+        } catch (er) { copied = false; }
+        if (!copied) { save(); say('Picture saved. Attach it to your post in X.'); }
+        window.open('https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(URL_GAME), '_blank', 'noopener');
+      }
+    });
+    var first = box.querySelector('[data-s="x"]'); if (first) first.focus();
   }
 
   // ---------- Input: hold = jetpack, finger or mouse x = steer, or the arrow keys ----------
@@ -470,6 +504,7 @@
   window.addEventListener('keydown', function (e) {
     var c = e.code;
     if (e.target && e.target.tagName === 'INPUT') return;
+    if (c === 'Escape' && $('.dm-share')) { $('.dm-share').remove(); return; }
     if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW') { e.preventDefault(); audio(); if (state === 'play' && !paused) held = true; }
     else if (c === 'ArrowLeft' || c === 'KeyA') { keyL = true; e.preventDefault(); } else if (c === 'ArrowRight' || c === 'KeyD') { keyR = true; e.preventDefault(); }
     else if (c === 'Escape' || c === 'KeyP') { if (state === 'play') { if (paused) resume(); else showPause(); } }
