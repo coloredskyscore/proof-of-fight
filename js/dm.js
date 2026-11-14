@@ -52,7 +52,38 @@
     }).join('') + '</ol>';
   }
 
-  // ---------- Sound: a tiny synth, no files ----------
+  // ---------- Sound: Brian's Suno songs for the music, a tiny synth for the effects ----------
+  // loop: [start, end] in seconds, picked so the jump back is seamless (the climb skips its intro and its fade-out).
+  var SONGS = {
+    title: { src: 'audio/dm/title.mp3', loop: [2.0, 122.915], vol: 0.5 },
+    climb: { src: 'audio/dm/climb.mp3', loop: [3.5, 106.394], vol: 0.5 },
+    moon: { src: 'audio/dm/moon-landing.mp3', vol: 0.55 }
+  };
+  var songG = null, songNow = null, songWant = null, songRate = 1;
+  function loadSong(name) {
+    var sg = SONGS[name]; if (sg.buf || sg.loading || sg.failed || !ac) return;
+    sg.loading = true;
+    fetch(sg.src).then(function (r) { return r.ok ? r.arrayBuffer() : Promise.reject(); })
+      .then(function (data) { return new Promise(function (ok, no) { var p = ac.decodeAudioData(data, ok, no); if (p && p.then) p.then(ok, no); }); })
+      .then(function (buf) { sg.buf = buf; sg.loading = false; if (songWant && songWant.name === name) song(name, 0); })
+      .catch(function () { sg.loading = false; sg.failed = true; });
+  }
+  // Switch the music. Fades out whatever is playing; the new song starts once it has loaded.
+  function song(name, delay) {
+    if (!ac) return;
+    if (songNow) { var old = songNow; old.g.gain.setTargetAtTime(0, ac.currentTime, 0.15); setTimeout(function () { try { old.src.stop(); } catch (e) { /* already stopped */ } }, 900); songNow = null; }
+    songWant = name ? { name: name } : null;
+    if (!name) return;
+    var sg = SONGS[name]; if (!sg.buf) { loadSong(name); return; }
+    var src = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (delay || 0);
+    src.buffer = sg.buf; if (sg.loop) { src.loop = true; src.loopStart = sg.loop[0]; src.loopEnd = sg.loop[1]; }
+    src.playbackRate.value = name === 'climb' ? songRate : 1;
+    g.gain.value = sg.vol; src.connect(g); g.connect(songG); src.start(t);
+    songNow = { name: name, src: src, g: g }; songWant = null;
+  }
+  // The climb speeds up a touch in every layer.
+  function songLayer(L) { songRate = 1 + L * 0.025; if (songNow && songNow.name === 'climb') songNow.src.playbackRate.setTargetAtTime(songRate, ac.currentTime, 0.5); }
+  function synthMusic() { return SONGS.climb.failed; }   // the old code-made tune, only if the song can't load
   var ac = null, master = null, jetG = null, musicT = 0, musicStep = 0, musicOn = false;
   function audio() {
     if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
@@ -61,6 +92,9 @@
     var len = ac.sampleRate * 2, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0), i; for (i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     var n = ac.createBufferSource(); n.buffer = b; n.loop = true; var f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 650;
     jetG = ac.createGain(); jetG.gain.value = 0; n.connect(f); f.connect(jetG); jetG.connect(master); n.start();
+    songG = ac.createGain(); songG.connect(master);
+    loadSong('climb'); loadSong('title'); loadSong('moon');
+    if (state === 'title') song('title');
   }
   function tone(f1, f2, dur, type, vol, when) {
     if (!ac) return; var o = ac.createOscillator(), v = ac.createGain(), t = ac.currentTime + (when || 0);
@@ -70,7 +104,7 @@
   // Music: a bass note and a little arpeggio. It gets faster and climbs a key in every layer.
   var SCALE = [0, 3, 5, 7, 10, 12, 15, 17], BASS = [0, 0, 5, 3], ARP = [0, 2, 4, 5, 4, 2, 3, 1, 0, 2, 4, 6, 5, 4, 2, 1];
   function music() {
-    if (!ac || !musicOn) return;
+    if (!ac || !musicOn || !synthMusic()) return;
     var L = S ? S.layer || 0 : 0, beat = 60 / (104 + L * 9) / 2, root = 110 * Math.pow(2, L * 2 / 12);
     while (musicT < ac.currentTime + 0.15) {
       if (musicT < ac.currentTime) musicT = ac.currentTime + 0.02;
@@ -103,7 +137,7 @@
   function startRun(mode) {
     var seed = mode === 'daily' ? C.today() : Math.floor(Math.random() * 2176782335).toString(36);
     S = C.newRun(mode, seed); S.layer = 0; cam = S.a; started = false; paused = false; held = false; tx = FW / 2; pops = []; parts = []; shake = 0; toast = null; acc = 0; endT = 0; botMv = null;
-    state = 'play'; show(null); audio(); musicOn = true; save.runs++; store();
+    state = 'play'; show(null); audio(); musicOn = true; songRate = 1; song('climb'); save.runs++; store();
   }
   function events() {
     var i, e, m;
@@ -131,7 +165,7 @@
     S.ev.length = 0;
   }
   function finish(timeout) {
-    state = 'end'; endT = 0; held = false; musicOn = false; if (jetG) jetG.gain.value = 0; var pb0 = $('#dm-pause'); if (pb0) pb0.hidden = true;
+    state = 'end'; endT = 0; held = false; musicOn = false; if (jetG) jetG.gain.value = 0; song(timeout ? null : 'moon', 0.5); var pb0 = $('#dm-pause'); if (pb0) pb0.hidden = true;
     lastRun = { mode: S.mode, seed: S.seed, ms: S.ms, coins: S.coins, combo: S.bestStreak, hits: S.hits, oofs: S.oofs, code: timeout ? '' : C.encode(S), timeout: timeout, posted: false, pb: false, dayBest: false };
     if (!timeout) {
       shake = 0.6; burst(S.x, S.a + 20, '#d9d3bf', 40); tone(120, 40, 0.5, 'square', 0.2);
@@ -146,7 +180,7 @@
     if (AUTO) { if (S.tick % 4 === 0 || !botMv) botMv = C.bot(S, 1); held = botMv.hold; tx = botMv.tx; }
     else if (keyL || keyR) tx = Math.max(0, Math.min(FW, S.x + ((keyR ? 1 : 0) - (keyL ? 1 : 0)) * 60));
     C.play(S, held, tx);
-    S.layer = C.layerAt(S.a);
+    var Lnow = C.layerAt(S.a); if (Lnow !== S.layer) songLayer(Lnow); S.layer = Lnow;
     events();
   }
   function frame(now) {
@@ -337,7 +371,7 @@
   function show(html) { rootEl.querySelectorAll('.dm-screen').forEach(function (e) { e.remove(); }); if (html) rootEl.insertAdjacentHTML('beforeend', html); var pb = $('#dm-pause'); if (pb) pb.hidden = state !== 'play'; }
   function soundBtn() { return '<button type="button" class="dm-ghost" data-a="sound" aria-pressed="' + (!save.muted) + '">' + (save.muted ? 'SOUND OFF' : 'SOUND ON') + '</button>'; }
   function showTitle() {
-    state = 'title'; musicOn = false; paused = false; if (jetG) jetG.gain.value = 0;
+    state = 'title'; musicOn = false; paused = false; if (jetG) jetG.gain.value = 0; if (ac) { if (ac.state === 'suspended') ac.resume(); song('title'); }
     var date = C.today(), mine = save.daily[date];
     show('<div class="dm-screen dm-title"><div class="dm-top"><a class="dm-ghost" href="./">← GAMES</a>' + soundBtn() + '</div>' +
       '<h1 class="dm-logo"><span>DOGE MOON</span><em>CRASH</em></h1><p class="dm-tag"><i>such game.</i> <b>very wow.</b></p><div class="dm-gap"></div>' +
@@ -375,16 +409,20 @@
     }
   }
   function showPause() {
-    paused = true; if (jetG) jetG.gain.value = 0; musicOn = false;
+    paused = true; if (jetG) jetG.gain.value = 0; musicOn = false; if (songNow) songNow.g.gain.setTargetAtTime(0.12, ac.currentTime, 0.1);
     show('<div class="dm-screen dm-end"><div class="dm-card"><div class="dm-rate">PAUSED</div><div class="dm-acts row"><button type="button" class="dm-btn dm-primary" data-a="resume"><span>RESUME</span></button><button type="button" class="dm-btn" data-a="again"><span>RESTART</span></button><button type="button" class="dm-btn" data-a="menu"><span>MENU</span></button></div><div class="dm-acts row">' + soundBtn() + '</div></div></div>');
     $('#dm-pause').hidden = true;
   }
+  function resume() { paused = false; musicOn = true; held = false; show(null); if (songNow) songNow.g.gain.setTargetAtTime(SONGS[songNow.name].vol, ac.currentTime, 0.1); }
+  // Browsers only allow sound after a tap or key, so the title music starts on the first one.
+  document.addEventListener('pointerdown', function () { audio(); }, { once: true });
+  document.addEventListener('keydown', function () { audio(); }, { once: true });
   rootEl.addEventListener('click', function (e) {
     var b = e.target.closest('[data-a]'); if (!b) return; var a = b.getAttribute('data-a');
     if (a === 'daily' || a === 'free') startRun(a);
     else if (a === 'again') startRun(S ? S.mode : 'daily');
     else if (a === 'menu') showTitle();
-    else if (a === 'resume') { paused = false; musicOn = true; held = false; show(null); }
+    else if (a === 'resume') { resume(); }
     else if (a === 'pause') { if (state === 'play' && !paused) showPause(); }
     else if (a === 'sound') { audio(); setMuted(!save.muted); b.textContent = save.muted ? 'SOUND OFF' : 'SOUND ON'; b.setAttribute('aria-pressed', String(!save.muted)); }
     else if (a === 'share') { var r = lastRun, md = C.medal(r.ms); share(shareCard(r), 'I flew a doge to the moon in ' + C.fmt(r.ms) + (md ? ' (' + MEDAL[md].toLowerCase() + ')' : '') + (r.mode === 'daily' ? ' on Daily Moon #' + C.dayNum(r.seed) : '') + '. Such game. Very wow.'); }
@@ -434,7 +472,7 @@
     if (e.target && e.target.tagName === 'INPUT') return;
     if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW') { e.preventDefault(); audio(); if (state === 'play' && !paused) held = true; }
     else if (c === 'ArrowLeft' || c === 'KeyA') { keyL = true; e.preventDefault(); } else if (c === 'ArrowRight' || c === 'KeyD') { keyR = true; e.preventDefault(); }
-    else if (c === 'Escape' || c === 'KeyP') { if (state === 'play') { if (paused) { paused = false; musicOn = true; show(null); } else showPause(); } }
+    else if (c === 'Escape' || c === 'KeyP') { if (state === 'play') { if (paused) resume(); else showPause(); } }
   });
   window.addEventListener('keyup', function (e) { var c = e.code; if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW') held = false; else if (c === 'ArrowLeft' || c === 'KeyA') keyL = false; else if (c === 'ArrowRight' || c === 'KeyD') keyR = false; });
   window.addEventListener('blur', function () { held = false; keyL = keyR = false; });
@@ -446,6 +484,6 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { /* canvas text picks the fonts up on the next frame */ });
   showTitle();
   requestAnimationFrame(frame);
-  if (DEBUG) window.POF_DM = { get S() { return S; }, get state() { return state; }, core: C, save: save, start: startRun, card: shareCard, title: showTitle, get last() { return lastRun; },
+  if (DEBUG) window.POF_DM = { get S() { return S; }, get song() { return songNow ? songNow.name + ' x' + songNow.src.playbackRate.value.toFixed(3) : (songWant ? 'loading ' + songWant.name : 'none'); }, get state() { return state; }, core: C, save: save, start: startRun, card: shareCard, title: showTitle, get last() { return lastRun; },
     jump: function (L) { S.a = L * C.LEN + 60; S.top = S.a; S.floor = S.a - 460; S.lo = 0; cam = S.a; }, nearEnd: function () { S.a = C.TOTAL - 500; S.top = S.a; S.floor = S.a - 460; cam = S.a; S.lo = 0; }, go: function () { started = true; }, god: function () { S.inv = 1e9; } };
 })();

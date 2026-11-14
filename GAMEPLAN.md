@@ -25,6 +25,7 @@ Brian's idea: a Flappy-style "to the moon" game with the Doge. Built as a vertic
 - **Leaderboard:** `/dm/scores` on the same Cloudflare Worker as Ride the Chart and Wen Lambo, boards `dm-YYYY-MM-DD`. A run is its recorded input (jetpack on or off and the steering target, sampled 30 times a second); the server flies it again with `js/dm-core.js` and only takes the time if it reaches the moon on the same tick. Whenever `js/dm-core.js` changes, rebuild and deploy the Worker.
 - `js/dm-core.js` is the rules with no drawing (node-runnable, no sin/cos so every machine agrees). `node tools/dm-sim.js` flies six daily maps with two bots and checks that runs replay.
 - `/doge/?debug` exposes `window.POF_DM`; `?auto` lets the bot fly.
+- **Music** (Brian's Suno songs, `audio/dm/`): `title.mp3` on the menu, `climb.mp3` during the run (loops from 3.5 s to 106.394 s, skipping its intro and fade-out, and plays 2.5% faster in each layer), `moon-landing.mp3` once after the bonk. Loop points are in `SONGS` in `js/dm.js`. If the climb song can't load, the old code-made tune plays instead. Sound effects stay code-made.
 
 ### Nov 14, 2026: Whale Cannonball goes in the Dust Bin
 
