@@ -35,7 +35,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Monoton&family=Chakra+Petch:wght@700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Comic+Neue:wght@700&family=Monoton&family=Chakra+Petch:wght@700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/arcade.css">
 </head>
 <body>
@@ -122,6 +122,23 @@
           </div>
         </div>
       </article>
+
+      <article class="cab cab-doge">
+        <a class="screen" href="doge/" tabindex="-1" aria-hidden="true">
+          <canvas id="doge"></canvas>
+          <div class="dm-hud"><span><b id="dm-km">0</b> KM</span><span>MOON <b>384,400</b> KM</span></div>
+        </a>
+        <div class="info">
+          <div class="kicker">New · Race to the moon</div>
+          <h2 aria-label="Doge Moon Crash"><span>DOGE MOON</span><em>CRASH</em></h2>
+          <p>Jetpack a doge to the moon past red candles, FUD birds and Elawn's posts. Fastest time wins.</p>
+          <ul class="facts"><li>Daily Moon</li><li>Leaderboard</li><li>Such wow</li></ul>
+          <div class="row">
+            <div class="best" id="best-doge">Hold to boost. Don't let the dump catch you.</div>
+            <a class="play" href="doge/">LAUNCH</a>
+          </div>
+        </div>
+      </article>
     </section>
 
     <section class="dustbin" aria-labelledby="bin-h">
@@ -157,6 +174,7 @@
   <script src="js/engine.js"></script>
   <script src="js/dip-data.js"></script>
   <script src="js/dip-core.js"></script>
+  <script src="js/dm-art.js"></script>
   <script src="js/arcade.js"></script>
   <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "18725511f80d4503841c5fb7c4b7895b"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
