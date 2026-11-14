@@ -64,15 +64,20 @@
       }
     },
     niner: {
-      wheels: [218, 742], r: 66, len: 980,
-      body: 'M50 -50 Q28 -60 30 -110 Q34 -168 110 -196 Q250 -252 400 -256 Q500 -256 560 -214 L640 -168 Q760 -166 860 -150 Q940 -136 954 -100 L958 -56 L940 -50 Z',
-      glass: ['M404 -244 Q486 -244 540 -210 L598 -172 L410 -170 Z', 'M228 -214 Q320 -240 392 -244 L396 -170 L290 -172 Q250 -180 228 -214 Z'],
-      wing: [86, -190], door: 'M410 -164 L404 -66 L610 -66 L616 -164', mirror: [590, -182],
+      wheels: [228, 762], r: 72, len: 980,
+      body: 'M46 -32 L24 -60 Q14 -112 28 -152 Q48 -178 98 -186 Q210 -222 330 -251 Q400 -267 452 -265 Q500 -263 532 -252 L648 -198 Q716 -190 772 -184 Q852 -178 902 -152 Q950 -126 958 -92 L962 -48 Q960 -34 944 -32 Z',
+      glass: ['M434 -251 Q500 -251 528 -241 L628 -199 L438 -201 Z', 'M250 -213 Q340 -245 422 -251 L426 -201 L300 -203 Q268 -205 250 -213 Z'],
+      wing: [78, -188], door: 'M438 -195 L432 -62 L636 -62 L646 -193', mirror: [610, -208],
       extra: function (g, P) {
-        g.fillStyle = '#fff6c8'; glow(g, '#fff6c8', 14); g.beginPath(); g.ellipse(900, -128, 34, 15, -0.32, 0, 6.3); g.fill(); g.shadowBlur = 0;   // round lamp, seen from the side
-        g.fillStyle = '#ff184c'; glow(g, '#ff184c', 12); poly(g, [[32, -128], [58, -150], [64, -140], [38, -116]]); g.shadowBlur = 0;
-        g.fillStyle = rgba('#000000', 0.3); for (var i = 0; i < 5; i++) poly(g, [[112 + i * 20, -196 - i * 8], [124 + i * 20, -201 - i * 8], [126 + i * 20, -194 - i * 8], [114 + i * 20, -189 - i * 8]]);
-        g.fillStyle = INK; poly(g, [[56, -62], [948, -62], [940, -50], [50, -50]]);
+        g.fillStyle = '#fff6c8'; glow(g, '#fff6c8', 14); g.beginPath(); g.ellipse(912, -134, 34, 14, 0.72, 0, 6.3); g.fill(); g.shadowBlur = 0;   // the round lamp on the wing, seen from the side
+        g.fillStyle = '#ffb02e'; poly(g, [[934, -100], [957, -96], [957, -90], [934, -94]]);
+        g.fillStyle = '#ff184c'; glow(g, '#ff184c', 12); poly(g, [[24, -150], [84, -176], [90, -166], [28, -136]]); g.shadowBlur = 0;
+        g.fillStyle = INK; poly(g, [[298, -152], [332, -158], [328, -116], [302, -114]]);                       // intake ahead of the rear wheel
+        for (var i = 0; i < 3; i++) poly(g, [[26, -88 + i * 13], [74, -90 + i * 13], [74, -84 + i * 13], [27, -82 + i * 13]]);   // vents in the rear bumper
+        poly(g, [[898, -72], [960, -76], [961, -52], [898, -50]]);                                             // front intake
+        g.fillStyle = rgba('#000000', 0.3); for (i = 0; i < 4; i++) poly(g, [[116 + i * 20, -194 - i * 6.6], [128 + i * 20, -198 - i * 6.6], [130 + i * 20, -191 - i * 6.6], [118 + i * 20, -187 - i * 6.6]]);
+        g.fillStyle = INK; poly(g, [[60, -46], [946, -46], [944, -32], [46, -32]]);
+        g.fillStyle = rgba('#000000', 0.4); poly(g, [[452, -150], [486, -150], [486, -144], [452, -144]]);       // door handle
       }
     },
     strake: {
@@ -169,7 +174,7 @@
   }
   // opt: { spin: wheel angle, noGlow, noShadow }. Draws at the current transform; scale and translate before calling.
   function side(g, id, build, opt) {
-    opt = opt || {}; var M = SIDE[id] || SIDE.nightwedge, body = P2(M.body), p = part('paint', build.paint), gl = part('glow', build.glow), top = id === 'suv' ? -330 : id === 'bear' ? -280 : -256;
+    opt = opt || {}; var M = SIDE[id] || SIDE.nightwedge, body = P2(M.body), p = part('paint', build.paint), gl = part('glow', build.glow), top = id === 'suv' ? -330 : id === 'bear' ? -280 : id === 'niner' ? -267 : -256;
     g.save(); g.lineJoin = 'round';
     if (!opt.noShadow) { g.fillStyle = 'rgba(0,0,0,0.5)'; g.beginPath(); g.ellipse(M.len / 2, 4, M.len * 0.5, 16, 0, 0, 6.3); g.fill(); }
     if (gl.a && !opt.noGlow) { var rg = g.createRadialGradient(M.len / 2, 6, 10, M.len / 2, 6, M.len * 0.56); rg.addColorStop(0, rgba(gl.a, 0.95)); rg.addColorStop(0.5, rgba(gl.a, 0.45)); rg.addColorStop(1, rgba(gl.a, 0)); g.save(); g.translate(0, 6); g.scale(1, 0.09); g.translate(0, -6); g.fillStyle = rg; g.beginPath(); g.arc(M.len / 2, 6, M.len * 0.56, 0, 6.3); g.fill(); g.restore(); }
@@ -193,7 +198,7 @@
   var REAR = {
     nightwedge: { hw: 150, top: -84, sh: -64, cabB: 92, cabT: 60, cabTop: -122, clear: 20, tire: [40, 44], lights: 'blade', pipes: 'centre', round: 8 },
     bigblock: { hw: 140, top: -96, sh: -84, cabB: 104, cabT: 80, cabTop: -142, clear: 26, tire: [38, 46], lights: 'bar6', pipes: 'dual', round: 4 },
-    niner: { hw: 136, top: -92, sh: -60, cabB: 98, cabT: 66, cabTop: -140, clear: 22, tire: [40, 44], lights: 'strip', pipes: 'dual', round: 26 },
+    niner: { hw: 142, top: -90, sh: -56, cabB: 92, cabT: 60, cabTop: -146, clear: 22, tire: [40, 44], lights: 'strip', pipes: 'dual', round: 26 },
     strake: { hw: 156, top: -82, sh: -66, cabB: 96, cabT: 64, cabTop: -118, clear: 20, tire: [44, 44], lights: 'slats', pipes: 'quad', round: 6 },
     suv: { hw: 134, top: -132, sh: -112, cabB: 116, cabT: 92, cabTop: -196, clear: 40, tire: [36, 62], lights: 'strip', pipes: 'dual', round: 16 },
     bear: { hw: 110, top: -112, sh: -100, cabB: 98, cabT: 86, cabTop: -174, clear: 30, tire: [26, 46], lights: 'square', pipes: 'one', round: 6 }
