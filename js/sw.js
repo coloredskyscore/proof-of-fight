@@ -26,7 +26,7 @@
   function heatWord(total) { return total >= 28000 ? ['SURF LEGEND', 'the whole beach is chanting your name'] : total >= 25000 ? ['TOTALLY TUBULAR', 'that was righteous, dude'] : total >= 21000 ? ['RADICAL RIPPER', 'the judges are stoked'] : total >= 16000 ? ['GNARLY', 'solid heat, brah'] : total >= 10000 ? ['STOKED GROM', 'you are getting the hang of it'] : ['BEACH KOOK', 'the crowd still loves you']; }
 
   // ---------- Saved ----------
-  var save = { v: 1, best: 0, daily: {}, initials: '', muted: false, runs: 0 };
+  var save = { v: 1, best: 0, daily: {}, initials: '', muted: false, runs: 0, tubes: 0 };
   try { var raw = JSON.parse(localStorage.getItem('pof-sw') || 'null'); if (raw && raw.v === 1) for (var k0 in raw) save[k0] = raw[k0]; } catch (e) { /* private mode */ }
   function store() { try { localStorage.setItem('pof-sw', JSON.stringify(save)); } catch (e) { /* private mode */ } }
 
@@ -114,9 +114,9 @@
   function muffle(on) { if (ac) musicF.frequency.setTargetAtTime(on ? 520 : 16000, ac.currentTime, 0.15); }
 
   // ---------- The loop ----------
-  // state: title | ready | ride | trans | tube | out | wipe | score | end
+  // state: title | ready | ride | trans | tubeready | tube | out | wipe | score | end
   var state = 'title', S = null, last = 0, acc = 0, tSec = 0, sT = 0, paused = false, lastRun = null, wipeWhere = '', autoT = 0;
-  var held = false, botMv = false, camY = 0, flow = 0, trail = [], pops = [], parts = [], shake = 0, flash = 0, callout = null, tubeTip = 0, streak = 0;
+  var held = false, pressed = false, botMv = false, camY = 0, flow = 0, trail = [], pops = [], parts = [], shake = 0, flash = 0, callout = null, tubeTip = 0, streak = 0;
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2); var w = cv.clientWidth * dpr, h = cv.clientHeight * dpr; cv.width = Math.round(w); cv.height = Math.round(h);
     SC = Math.min(w / 520, h / 640); H = h / SC; VW = w / SC;
@@ -156,7 +156,7 @@
         pop(e === 'chunk' ? 'CLIPPED!' : 'TOO ' + (e === 'scrape:top' ? 'HIGH!' : 'LOW!'), VW / 2, H * 0.36, '#ff6b8a', 30);
         if (navigator.vibrate) try { navigator.vibrate(40); } catch (er2) { /* no haptics */ }
       } else if (e === 'out') {
-        state = 'out'; sT = 0; held = false; muffle(false); seaTo(0.035, 500); cheer(true);
+        state = 'out'; sT = 0; held = false; save.tubes = (save.tubes || 0) + 1; store(); muffle(false); seaTo(0.035, 500); cheer(true);
         tone(523, 1046, 0.3, 'triangle', 0.12, 0.05); tone(659, 1318, 0.3, 'triangle', 0.12, 0.2); tone(784, 1568, 0.6, 'triangle', 0.12, 0.35);
         var r = S.results[S.results.length - 1]; say(r.scrapes === 0 ? OUT[Math.floor(Math.random() * 2) * 0 + (S.results.length * 3 + S.tick) % OUT.length] : OUT[(S.tick + 1) % OUT.length], r.scrapes === 0 ? 'clean barrel!' : 'you made it out!', 2.6);
         parts = [];
@@ -176,6 +176,9 @@
   }
   function tick() {
     if (state === 'ready') { if (held || AUTO) { state = 'ride'; } else return; }
+    if (state === 'tubeready') {   // a breath before the tube: it waits for a tap the first time, a moment otherwise
+      if ((pressed && sT > 0.5) || (S.wave > 0 && save.tubes > 0 && sT > 1.5) || (AUTO && sT > 0.8)) { state = 'tube'; sT = 0; pressed = false; } else return;
+    }
     if (state !== 'ride' && state !== 'tube') return;
     if (AUTO) { if (S.tick % 3 === 0) botMv = C.bot(S, 1); held = botMv; }
     C.play(S, held);
@@ -186,9 +189,9 @@
     requestAnimationFrame(frame);
     var dt = Math.min(0.1, (now - last) / 1000) || 0, i, p; last = now; tSec = now / 1000;
     if (!paused) {
-      if (state === 'ready' || state === 'ride' || state === 'tube') { acc += dt; var n = 0; while (acc >= C.DT && n++ < 8) { tick(); acc -= C.DT; if (state !== 'ride' && state !== 'tube') { acc = 0; break; } } if (n > 8) acc = 0; }
+      if (state === 'ready' || state === 'ride' || state === 'tube' || state === 'tubeready') { acc += dt; var n = 0; while (acc >= C.DT && n++ < 8) { tick(); acc -= C.DT; if (state !== 'ride' && state !== 'tube') { acc = 0; break; } } if (n > 8) acc = 0; }
       sT += dt; flow += dt;
-      if (state === 'trans' && sT > 1.25) { state = 'tube'; sT = 0; tubeTip = S.wave === 0 ? 3 : 1.6; muffle(true); seaTo(0.11, 900); flash = 0.6; }
+      if (state === 'trans' && sT > 1.25) { state = 'tubeready'; sT = 0; pressed = false; held = false; muffle(true); seaTo(0.11, 900); flash = 0.6; }
       if ((state === 'out' || state === 'wipe') && sT > 2.7) { state = 'score'; sT = 0; autoT = 0; showWave(); }
       if (state === 'score' && AUTO) { autoT += dt; if (autoT > 1.6) nextWave(); }
       if (S && state === 'ride') { var want = Math.max(0, (S.h - 1.02) * FH * 0.85); camY += (want - camY) * Math.min(1, dt * 8); } else camY += (0 - camY) * Math.min(1, dt * 5);
@@ -405,20 +408,25 @@
         for (j = 0; j <= n; j++) { g.beginPath(); g.arc(R.x - R.rx + j * wdt, ye + Math.sin(t * 7 + j * 2) * 0.02 * R.ry, wdt * 0.62, 0, TAU); g.fill(); }
         g.fillStyle = 'rgba(77,162,255,.35)'; for (j = 0; j < n; j++) { g.beginPath(); g.arc(R.x - R.rx + (j + 0.5) * wdt, ye + wdt * 0.9, wdt * 0.3, 0, TAU); g.fill(); }
       }
+      if (it.d < 1300 && !V.intro && it.g === B.gates[V.gi]) {   // say what to do, right on the next one
+        var fp = clamp(R.ry * 0.17, 9, 40), ly = it.g.top ? ye - R.ry * 0.16 : ye + R.ry * 0.2;
+        g.globalAlpha = 1; g.font = fp + 'px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#0b2f7a'; g.fillText(it.g.top ? 'GO UNDER' : 'GO OVER', R.x, ly);
+        g.beginPath(); var ax = R.x, ay = ly + (it.g.top ? fp * 1.1 : -fp * 1.1), aw = fp * 0.6, dir = it.g.top ? 1 : -1; g.moveTo(ax - aw, ay - dir * aw * 0.5); g.lineTo(ax + aw, ay - dir * aw * 0.5); g.lineTo(ax, ay + dir * aw * 0.7); g.closePath(); g.fill();
+      }
       g.restore();
     }
     // spray flying past
     g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2.5;
     for (i = 0; i < 26; i++) { var ph = (t * 1.5 + hsh(i)) % 1, a3 = hsh(i * 2.7) * TAU, r0 = ph * ph * Math.max(VW, H) * 0.75 + 20; g.beginPath(); g.moveTo(cx + Math.cos(a3) * r0, cy + Math.sin(a3) * r0 * 0.8); g.lineTo(cx + Math.cos(a3) * (r0 + 10 + ph * 46), cy + Math.sin(a3) * (r0 + 10 + ph * 46) * 0.8); g.stroke(); }
     // the nose of your board
-    var bs = Math.min(1.25, VW / 520);
-    g.save(); g.translate(cx, H + 12 - Math.abs(Math.sin(t * 7)) * 4); g.rotate(clamp(-V.vh * 0.14, -0.14, 0.14)); g.scale(bs, bs);
+    var bs = Math.min(1.25, VW / 520, H / 900);
+    g.save(); g.translate(cx, H - 118 - Math.abs(Math.sin(t * 7)) * 4); g.rotate(clamp(-V.vh * 0.14, -0.14, 0.14)); g.scale(bs, bs);
     g.beginPath(); g.moveTo(-92, 30); g.quadraticCurveTo(-84, -112, 0, -196); g.quadraticCurveTo(84, -112, 92, 30); g.closePath();
     var ng = g.createLinearGradient(0, -196, 0, 30); ng.addColorStop(0, '#ffffff'); ng.addColorStop(1, '#d9ecff'); g.fillStyle = ng; g.fill(); g.lineWidth = 5; g.strokeStyle = '#0b1b4a'; g.stroke();
     g.fillStyle = '#4da2ff'; g.beginPath(); g.moveTo(-7, 30); g.lineTo(-4, -176); g.lineTo(4, -176); g.lineTo(7, 30); g.fill();
     g.fillStyle = '#ff4fa3'; g.beginPath(); g.moveTo(-88, 30); g.quadraticCurveTo(-84, -40, -66, -92); g.lineTo(-52, -84); g.quadraticCurveTo(-66, -30, -68, 30); g.fill();
     g.beginPath(); g.moveTo(88, 30); g.quadraticCurveTo(84, -40, 66, -92); g.lineTo(52, -84); g.quadraticCurveTo(66, -30, 68, 30); g.fill();
-    g.restore(); droplet(cx + Math.sin(-V.vh * 0.14) * 90 * bs, H - 78 * bs, 13 * bs, 0, false);
+    g.restore(); droplet(cx + Math.sin(-V.vh * 0.14) * 90 * bs, H - 130 - 78 * bs, 13 * bs, 0, false);
     // the foam ball closing in from behind
     var f = clamp(1 - V.gap / 55, 0, 1);
     if (f > 0) {
@@ -434,6 +442,61 @@
     surfer(g, VW / 2 + Math.sin(t * 1.3) * 30, H * 0.55 + Math.sin(t * 2) * 14, 1.5, { pose: 'tumble', ang: t * 3 });
   }
 
+  // The side view of the tube, at the bottom of the screen: where you are, the roof, the floor and what is coming.
+  function tubeMap(t) {
+    var B = S.B, w = Math.min(VW - 20, 460), h = 132, x = (VW - w) / 2, y = H - h - 10, back = 170, ahead = 1500, x0 = x + w * back / (back + ahead), z, first, i, o, px;
+    function mx(zz) { return x + (zz - S.z + back) / (back + ahead) * w; }
+    function my(hh) { return y + h - 4 - clamp((hh - 0.08) / 0.84, 0, 1) * (h - 8); }
+    g.save(); rr(g, x, y, w, h, 12); g.fillStyle = '#eaf8ff'; g.fill(); g.clip();
+    // the open water between the roof and the floor
+    g.beginPath(); first = true; for (z = S.z - back; z <= S.z + ahead + 50; z += 50) { px = mx(z); var top = my(C.cen(B, z) + C.rad(B, z)); if (first) { g.moveTo(px, top); first = false; } else g.lineTo(px, top); }
+    for (z = S.z + ahead + 50; z >= S.z - back; z -= 50) g.lineTo(mx(z), my(C.cen(B, z) - C.rad(B, z)));
+    g.closePath(); var wg = g.createLinearGradient(0, y, 0, y + h); wg.addColorStop(0, '#55c8ff'); wg.addColorStop(1, '#1f6fe0'); g.fillStyle = wg; g.fill(); g.lineWidth = 3; g.strokeStyle = '#0b2f7a'; g.stroke();
+    if (B.TL < S.z + ahead + 60) { g.fillStyle = '#ffd27a'; g.fillRect(mx(B.TL), y, w, h); g.fillStyle = '#0b2f7a'; g.font = '11px ' + DISP; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('EXIT', mx(B.TL) + 6, y + h / 2); }
+    for (i = S.gi; i < B.gates.length; i++) {   // waterfalls hang from the roof, foam sits on the floor
+      o = B.gates[i]; if (o.z > S.z + ahead) break; px = mx(o.z);
+      g.fillStyle = '#ffffff'; g.strokeStyle = '#0b2f7a'; g.lineWidth = 2.5;
+      if (o.top) { rr(g, px - 7, my(C.cen(B, o.z) + C.rad(B, o.z)) - 4, 14, my(o.hi) - my(C.cen(B, o.z) + C.rad(B, o.z)) + 4, 5); } else { rr(g, px - 7, my(o.lo), 14, my(C.cen(B, o.z) - C.rad(B, o.z)) - my(o.lo) + 4, 5); }
+      g.fill(); g.stroke();
+    }
+    for (i = S.ti; i < B.tdrops.length; i++) { o = B.tdrops[i]; if (o.z > S.z + ahead) break; g.save(); g.translate(mx(o.z), my(o.h)); dropPath(g, 4.5); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#0b2f7a'; g.stroke(); g.restore(); }
+    // you
+    var yy = my(S.h), blink = S.inv > 0 && Math.floor(t * 14) % 2 === 0;
+    if (!blink) { g.save(); g.translate(x0, yy); g.rotate(clamp(-S.vh * 0.5, -0.5, 0.5)); g.beginPath(); g.moveTo(-15, 1); g.quadraticCurveTo(0, -6, 17, -1); g.quadraticCurveTo(0, 6, -15, 1); g.fillStyle = '#ff4fa3'; g.fill(); g.lineWidth = 2.5; g.strokeStyle = '#0b1b4a'; g.stroke(); g.beginPath(); g.arc(0, -8, 5, 0, TAU); g.fillStyle = '#ffe14a'; g.fill(); g.stroke(); g.restore(); }
+    g.restore();
+    rr(g, x, y, w, h, 12); g.lineWidth = 3; g.strokeStyle = '#0b1b4a'; g.stroke();
+    g.font = '10px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'bottom'; g.lineWidth = 3; g.strokeStyle = '#0b1b4a'; g.strokeText('YOU', x0, yy - 16); g.fillStyle = '#ffe14a'; g.fillText('YOU', x0, yy - 16);
+    g.textAlign = 'right'; g.textBaseline = 'top'; g.strokeText('SIDE VIEW', x + w - 8, y + 6); g.fillStyle = '#fff'; g.fillText('SIDE VIEW', x + w - 8, y + 6);
+  }
+  // Training wheels on the first tube: an arrow that says hold or let go.
+  function tubeHint(t) {
+    var B = S.B, target = C.cen(B, S.z + 120), i, o, cx = VW / 2, cy = H * 0.2 + safeTop + 40;
+    for (i = S.gi; i < B.gates.length; i++) { o = B.gates[i]; if (o.z - S.z < 650) target = (o.lo + o.hi) / 2; break; }
+    var d = target - S.h, up = d > 0.045, down = d < -0.045, pulse = 0.75 + 0.25 * Math.sin(t * 10);
+    if (!up && !down) return;
+    g.save(); g.translate(cx, cy); g.globalAlpha = pulse; g.lineJoin = 'round';
+    g.beginPath(); if (up) { g.moveTo(0, -30); g.lineTo(30, 4); g.lineTo(12, 4); g.lineTo(12, 26); g.lineTo(-12, 26); g.lineTo(-12, 4); g.lineTo(-30, 4); } else { g.moveTo(0, 30); g.lineTo(30, -4); g.lineTo(12, -4); g.lineTo(12, -26); g.lineTo(-12, -26); g.lineTo(-12, -4); g.lineTo(-30, -4); }
+    g.closePath(); g.fillStyle = up ? '#ffe14a' : '#7df3ff'; g.fill(); g.lineWidth = 5; g.strokeStyle = '#0b1b4a'; g.stroke();
+    g.font = '24px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 6; g.strokeText(up ? 'HOLD' : 'LET GO', 0, 50); g.fillText(up ? 'HOLD' : 'LET GO', 0, 50);
+    g.restore();
+  }
+  // Shown before the tube starts.
+  function tubeIntro(t) {
+    var first = S.wave === 0 || !save.tubes, w = Math.min(VW - 24, 440), hgt = first ? 250 : 120, x = (VW - w) / 2, y = Math.max(118 + safeTop, H * 0.42 - hgt / 2 - 40);
+    g.fillStyle = 'rgba(4,22,58,.86)'; rr(g, x, y, w, hgt, 16); g.fill(); g.lineWidth = 3; g.strokeStyle = '#7df3ff'; g.stroke();
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    function line(txt, px, col, yy) { fitFont(txt, px, DISP, w - 24); g.fillStyle = col; g.fillText(txt, VW / 2, yy); }
+    line('INSIDE THE BARREL', 28, '#fff', y + 30);
+    if (first) {
+      line('same one button, now seen from your board', 13, '#7df3ff', y + 58);
+      line('HOLD = RISE', 24, '#ffe14a', y + 92); line('LET GO = SINK', 24, '#7df3ff', y + 122);
+      line('stay between the roof and the floor', 13, '#fff', y + 152);
+      line('go UNDER the waterfalls · go OVER the foam', 13, '#fff', y + 172);
+      line('the side view below shows where you are', 13, '#fff', y + 192);
+      g.globalAlpha = 0.7 + 0.3 * Math.sin(t * 6); line(matchMedia('(pointer: coarse)').matches ? 'TAP TO GO' : 'CLICK OR PRESS SPACE TO GO', 22, '#fff', y + 226); g.globalAlpha = 1;
+    } else { line('HOLD = RISE · LET GO = SINK', 18, '#ffe14a', y + 64); line('GET READY...', 20, '#fff', y + 94); }
+  }
+
   // ---------- Drawing: text on the canvas ----------
   function shadow(txt, x, y, mw) { var c = g.fillStyle; g.fillStyle = 'rgba(4,22,58,.7)'; g.fillText(txt, x + 2, y + 2, mw); g.fillStyle = c; g.fillText(txt, x, y, mw); }
   function bar(x, y, w, v, col, name) {
@@ -443,7 +506,7 @@
   }
   function wavePts() { var p = S.wp; return Math.min(C.MAX_WAVE, Math.round(p.drops + p.airs + p.speed + p.tube + p.tdrops + p.clean)); }
   function hud(t) {
-    var y0 = 12 + safeTop, tubeNow = state === 'tube', w = Math.min(240, VW - 150), x = VW / 2 - w / 2;
+    var y0 = 12 + safeTop, tubeNow = state === 'tube' || state === 'tubeready', w = Math.min(240, VW - 150), x = VW / 2 - w / 2;
     g.textBaseline = 'top'; g.textAlign = 'left'; g.font = '13px ' + DISP; g.fillStyle = '#7df3ff'; shadow('WAVE ' + (S.wave + 1) + '/' + C.NW, 14, y0);
     g.font = '26px ' + DISP; g.fillStyle = '#fff'; shadow(C.fmt(wavePts()), 14, y0 + 16);
     g.textAlign = 'right'; g.font = '13px ' + DISP; g.fillStyle = '#ffe14a'; shadow('HEAT ' + C.fmt(S.total), VW - 62, y0 + 4);
@@ -493,7 +556,7 @@
       drawRide({ x: t * 300, h: hh, vh: 0.54 * Math.cos(t * 1.5), air: false, rot: 0, meter: Math.min(100, (G0.sx - 96) / 1.7), objs: null, geo: G0, scale: 1.25 }, t);
       g.restore(); return;
     }
-    if (state === 'tube') drawTube({ B: S.B, z: S.z, h: S.h, vh: S.vh, gap: S.gap, gi: S.gi, ti: S.ti }, t);
+    if (state === 'tube' || state === 'tubeready') drawTube({ B: S.B, z: S.z, h: S.h, vh: S.vh, gap: S.gap, gi: S.gi, ti: S.ti, intro: state === 'tubeready' }, t);
     else if (state === 'wipe' && wipeWhere === 'tube') drawUnder(t);
     else {
       V = { x: S.x, h: S.h, vh: S.vh, air: S.air, rot: S.rot, meter: S.meter, inv: S.inv, objs: S };
@@ -517,20 +580,21 @@
     if (flash > 0) { g.fillStyle = 'rgba(255,255,255,' + Math.min(0.8, flash) + ')'; g.fillRect(-20, -20, VW + 40, H + 40); }
     g.restore();
     for (i = 0; i < pops.length; i++) { p = pops[i]; g.save(); g.translate(clamp(p.x, 70, VW - 70), p.y - p.t * 46); g.rotate(p.rot); g.globalAlpha = Math.min(1, (1.1 - p.t) * 3); g.font = p.size + 'px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = 5; g.strokeStyle = 'rgba(4,22,58,.85)'; g.strokeText(p.text, 0, 0); g.fillStyle = p.col; g.fillText(p.text, 0, 0); g.restore(); }
-    if (state === 'ride' || state === 'tube' || state === 'ready' || state === 'trans') hud(t);
+    if (state === 'tube' || state === 'tubeready') { tubeMap(t); if (state === 'tube' && (S.wave === 0 || !save.tubes)) tubeHint(t); }
+    if (state === 'ride' || state === 'tube' || state === 'tubeready' || state === 'ready' || state === 'trans') hud(t);
     if (state === 'ready') {
       var W = S.W, y = H * 0.2 + safeTop + 40;
       centerText([['WAVE ' + (S.wave + 1) + ' OF ' + C.NW, 16, '#7df3ff'], [W.name, 38, '#fff'], [W.ft + ' FT', 22, '#ffe14a']], y, t);
       g.globalAlpha = 0.75 + 0.25 * Math.sin(t * 5); centerText([['HOLD TO DROP IN', 28, '#fff']], y + 130, t); g.globalAlpha = 1;
-      centerText(S.wave === 0 ? [['hold = carve up the wave · let go = drop down', 14, '#fff'], ['keep moving up and down to stay fast', 14, '#fff'], ['fly off the top for an air · hold to spin · let go to land', 14, '#ffe14a']] : [['hold = up · let go = down', 14, '#fff']], y + 172, t);
+      centerText(S.wave === 0 ? [['hold = carve up the wave · let go = drop down', 14, '#fff'], ['keep moving up and down to stay fast', 14, '#fff'], ['fly off the top for an air · hold to spin · let go to land', 14, '#ffe14a'], ['after 20 seconds the wave closes over you: the tube', 14, '#7df3ff']] : [['hold = up · let go = down', 14, '#fff']], y + 172, t);
     }
     if (state === 'trans') centerText([['HERE COMES THE BARREL!', 30, '#fff']], H * 0.22 + safeTop + 40, t);
-    if (state === 'tube' && tubeTip > 0) { g.globalAlpha = Math.min(1, tubeTip * 2); centerText([['STAY IN THE BARREL', 30, '#fff'], ['hold = up · let go = down', 16, '#ffe14a'], ['duck the waterfalls, hop the foam', 16, '#ffe14a']], H * 0.2 + safeTop + 60, t); g.globalAlpha = 1; }
+    if (state === 'tubeready') tubeIntro(t);
     if (callout) drawCallout(callout, t);
   }
 
   // ---------- Screens ----------
-  function show(html) { rootEl.querySelectorAll('.sw-screen').forEach(function (e) { e.remove(); }); if (html) rootEl.insertAdjacentHTML('beforeend', html); var pb = $('#sw-pause'); if (pb) pb.hidden = !(state === 'ready' || state === 'ride' || state === 'tube' || state === 'trans'); }
+  function show(html) { rootEl.querySelectorAll('.sw-screen').forEach(function (e) { e.remove(); }); if (html) rootEl.insertAdjacentHTML('beforeend', html); var pb = $('#sw-pause'); if (pb) pb.hidden = !(state === 'ready' || state === 'ride' || state === 'tube' || state === 'tubeready' || state === 'trans'); }
   function soundBtn() { return '<button type="button" class="sw-ghost" data-a="sound" aria-pressed="' + (!save.muted) + '">' + (save.muted ? 'SOUND OFF' : 'SOUND ON') + '</button>'; }
   function showTitle() {
     state = 'title'; paused = false; musicMode = 'menu'; muffle(false); seaTo(0.03, 500);
@@ -597,7 +661,7 @@
     else if (a === 'menu') showTitle();
     else if (a === 'next') { if (state === 'score') nextWave(); }
     else if (a === 'resume') resume();
-    else if (a === 'pause') { if ((state === 'ready' || state === 'ride' || state === 'tube' || state === 'trans') && !paused) showPause(); }
+    else if (a === 'pause') { if ((state === 'ready' || state === 'ride' || state === 'tube' || state === 'tubeready' || state === 'trans') && !paused) showPause(); }
     else if (a === 'sound') { audio(); setMuted(!save.muted); b.textContent = save.muted ? 'SOUND OFF' : 'SOUND ON'; b.setAttribute('aria-pressed', String(!save.muted)); }
     else if (a === 'share') { var r = lastRun; share(shareCard(r), 'I scored ' + C.fmt(r.total) + ' out of 30 on Sui Swell' + (r.mode === 'daily' ? ' (Daily Heat #' + C.dayNum(r.seed) + ')' : '') + ' and made ' + r.made + ' of 3 barrels. ' + heatWord(r.total)[0].charAt(0) + heatWord(r.total)[0].slice(1).toLowerCase() + '.'); }
   });
@@ -670,7 +734,7 @@
   }
 
   // ---------- Input: one button. Hold anywhere, or Space / Up ----------
-  cv.addEventListener('pointerdown', function (e) { e.preventDefault(); audio(); if (paused) return; held = true; });
+  cv.addEventListener('pointerdown', function (e) { e.preventDefault(); audio(); if (paused) return; held = true; if (state === 'tubeready') pressed = true; });
   window.addEventListener('pointerup', function () { held = false; }); window.addEventListener('pointercancel', function () { held = false; });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   window.addEventListener('keydown', function (e) {
@@ -679,8 +743,8 @@
     if (c === 'Escape' && $('.sw-share')) { $('.sw-share').remove(); return; }
     if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW') {
       if (e.target && e.target.tagName === 'BUTTON' && c === 'Space') return;
-      e.preventDefault(); audio(); if (!paused && (state === 'ready' || state === 'ride' || state === 'tube')) held = true;
-    } else if (c === 'Escape' || c === 'KeyP') { if (state === 'ready' || state === 'ride' || state === 'tube') { if (paused) resume(); else showPause(); } }
+      e.preventDefault(); audio(); if (!paused && (state === 'ready' || state === 'ride' || state === 'tube' || state === 'tubeready')) { held = true; if (state === 'tubeready' && !e.repeat) pressed = true; }
+    } else if (c === 'Escape' || c === 'KeyP') { if (state === 'ready' || state === 'ride' || state === 'tube' || state === 'tubeready') { if (paused) resume(); else showPause(); } }
   });
   window.addEventListener('keyup', function (e) { var c = e.code; if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW') held = false; });
   window.addEventListener('blur', function () { held = false; });
