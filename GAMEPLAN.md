@@ -13,20 +13,19 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ### Nov 13, 2026: Mempool (proofoffight.com/mempool)
 
-A new game with its own cabinet in the arcade: every transaction waits in the mempool, so the mempool is an actual swimming pool (Brian's twist). A fast packing puzzle. No roster, no pictures, everything drawn in code.
+A new game with its own cabinet in the arcade: a fast packing puzzle where you are the miner. No roster, no pictures, everything drawn in code.
 
-- **The idea:** three floats (transactions) wait on the deck, each a shape with a fee on it. Drag them into the pool (7 x 7, seen from above, at night) before the lifeguard's whistle. Shapes can't be turned. Colors go by fee per cell: white with blue stripes, green, yellow, pink. Awkward shapes tend to pay better, so it is always greed against fit.
-- **The floats:** inflatables with seams and a shine. A single cell is a swim ring, the 3 x 3 is a whale (eye, smile, spout), and they bob on the water.
-- **Bonuses:** a 100% full pool is a POOL PARTY, pays +50% and ends on the spot; a pool 90% full or more is PACKED and pays +20%.
-- **The rug:** a soggy rug that pays about ten times the usual, but it sinks every float touching it (they pay nothing; two rugs touching sink each other). The pool wall is safe. None in the first pool.
-- **The deck moves:** a float left in its slot for 5 seconds is taken and replaced, so a stuck tray clears itself. BLOW THE WHISTLE (or Space) ends the pool early.
-- **Daily Pools:** six pools, 26 seconds down to 16, fees up 15% a pool, the same floats for everybody (seeded by the UTC date). One run a day per browser; after that the button shows your result.
-- **Endless:** three lives, the clock shrinks to 11 seconds, and a pool under the fill target (55%, rising 3% a pool to 88%) is closed: it pays nothing and costs a life.
-- **End card and sharing:** score in sats, your pools as small pictures, average fill, pool parties, fees sunk by rugs. Share makes a 1200 x 675 picture plus a line of colored squares for the post (green full, yellow 90%+, orange 75%+, red under, black closed).
-- **Leaderboards:** one per day for Daily Pools and one for Endless, three-letter initials, on the same Cloudflare Worker as Ride the Chart (`/mp/scores`). Every move is logged with its tick (20 ticks a second), so the Worker plays the run again and turns away a score that doesn't come out the same. **The Worker has to be deployed again for these to go live** (`node tools/build-worker.js`, then deploy `worker/`); until then the game says the leaderboard is offline.
-- **Sound:** a synth made in code: a loop that speeds up each pool and adds a pulse in the last five seconds, a splash for each float, a glug for a rug, and the whistle.
-- **Files:** `js/mp-core.js` (rules, runs in node; it still says block and transaction), `js/mp.js` (canvas, sound, menus), `css/mp.css`, `mempool/index.html`, link preview `art/social/mp-og.jpg`.
-- **Balance:** `node tools/mp-sim.js`. A casual bot fills about 80% and scores about 75,000 on the daily; a sharp one fills about 90% and scores about 100,000, with a full pool about one time in 25.
+- **The idea:** three transactions wait in the mempool, each a shape with a fee on it. Drag them into the block (7 x 7) before the timer mines it. Shapes can't be turned. Hotter colors pay more per cell (blue, teal, gold, orange), and awkward shapes tend to pay better, so it is always greed against fit.
+- **Bonuses:** a 100% full block pays +50% and is mined on the spot; a block 90% full or more pays +20%.
+- **Rugs:** a purple striped transaction that pays about ten times the usual, but every transaction touching it pays nothing (two rugs touching cancel each other). Walls are safe. None in the first block.
+- **The mempool moves:** a transaction left in its slot for 5 seconds is taken by another miner and replaced, so a stuck tray clears itself. MINE BLOCK NOW (or Space) mines early.
+- **Daily Blocks:** six blocks, 26 seconds down to 16, fees up 15% a block, the same mempool for everybody (seeded by the UTC date). One run a day per browser; after that the button shows your result.
+- **Endless:** three lives, the clock shrinks to 11 seconds, and a block mined under the fill target (55%, rising 3% a block to 88%) is orphaned: it pays nothing and costs a life.
+- **End card and sharing:** score in sats, your chain of blocks as small pictures, average fill, full blocks, fees lost to rugs. Share makes a 1200 x 675 picture plus a line of colored squares for the post (green full, yellow 90%+, orange 75%+, red under, black orphaned).
+- **Leaderboards:** one per day for Daily Blocks and one for Endless, three-letter initials, on the same Cloudflare Worker as Ride the Chart (`/mp/scores`). Every move is logged with its tick (20 ticks a second), so the Worker plays the run again and turns away a score that doesn't come out the same. **The Worker has to be deployed again for these to go live** (`node tools/build-worker.js`, then deploy `worker/`); until then the game says the leaderboard is offline.
+- **Sound:** a synth made in code: a loop that speeds up each block and adds a pulse in the last five seconds, plus placing, rug, mining and full-block sounds.
+- **Files:** `js/mp-core.js` (rules, runs in node), `js/mp.js` (canvas, sound, menus), `css/mp.css`, `mempool/index.html`, link preview `art/social/mp-og.jpg`.
+- **Balance:** `node tools/mp-sim.js`. A casual bot fills about 80% and scores about 75,000 on the daily; a sharp one fills about 90% and scores about 100,000, with a full block about one time in 25.
 - `/mempool/?debug` exposes `window.POF_MP` and lets you replay the daily; `?auto` lets the bot play.
 
 ### Nov 13, 2026: the Dust Bin
