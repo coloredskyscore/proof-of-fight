@@ -123,11 +123,12 @@
       '<div class="wl-mid"><span id="wl-where"></span><div class="wl-prog"><i id="wl-pm"></i><em id="wl-pg"></em></div></div>' +
       '<div class="wl-stat r"><span>MPH</span><b id="wl-mph">0</b><i id="wl-boost">DRAFT</i></div></div>' +
       '<div class="wl-flash" id="wl-flash" aria-live="polite"></div>' +
+      '<div class="wl-np" id="wl-np" aria-live="polite"><span id="wl-npst"></span><b id="wl-npt"></b></div>' +
       '<div class="wl-bot"><button type="button" class="wl-pill" id="wl-radio" aria-label="Change radio station">' + ICON.radio + '<span id="wl-rname"></span></button>' +
       '<button type="button" class="wl-pill" id="wl-pause" aria-label="Pause">' + ICON.pause + '</button></div>' +
       '<div class="wl-hint" id="wl-hint">Hold the <b>left</b> or <b>right</b> side to steer. Hold <b>both</b> to brake.</div>';
     rootEl.appendChild(hudEl);
-    ['time', 'gap', 'where', 'pm', 'pg', 'mph', 'boost', 'flash', 'rname', 'hint', 'tl'].forEach(function (id) { el[id] = $('#wl-' + id); });
+    ['time', 'gap', 'where', 'pm', 'pg', 'mph', 'boost', 'flash', 'rname', 'hint', 'tl', 'np', 'npst', 'npt'].forEach(function (id) { el[id] = $('#wl-' + id); });
     $('#wl-radio').addEventListener('click', function () { radioNext(); });
     $('#wl-pause').addEventListener('click', function () { pause(); });
   }
@@ -139,8 +140,26 @@
     mute: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9h4l5-4v14l-5-4H4V9Zm11.600.200L17.500 11l1.900-1.800 1.400 1.400L18.900 12.500l1.900 1.900-1.400 1.400-1.900-1.900-1.900 1.900-1.400-1.400 1.900-1.900-1.900-1.900 1.400-1.400Z"/></svg>'
   };
   function flash(text, cls) { el.flash.textContent = text; el.flash.className = 'wl-flash ' + (cls || ''); void el.flash.offsetWidth; el.flash.classList.add('on'); }
-  function radioLabel() { var st = A.station(); el.rname.textContent = st.off ? 'RADIO OFF' : st.name + ' ' + st.freq; var m = $('#wl-m-radio'); if (m) m.textContent = st.off ? 'RADIO OFF' : st.name + ' ' + st.freq; }
-  function radioNext() { A.start(); A.nextStation(); save.radio = A.index(); store(); radioLabel(); if (state === 'drive') flash(A.station().off ? 'RADIO OFF' : A.station().name + '  ' + A.station().freq, 'radio'); }
+  // The radio pill shows the station and, while driving, the song; a card slides out by it each time a song starts.
+  function radioLabel() {
+    var st = A.station(), np = A.nowPlaying(), name = st.off ? 'RADIO OFF' : st.name + ' ' + st.freq;
+    el.rname.innerHTML = esc(name) + (np && np.id && A.mode === 'radio' ? '<small>' + esc(np.title) + '</small>' : '');
+    var m = $('#wl-m-radio'); if (m) m.textContent = name;
+  }
+  var npT = 0;
+  function nowPlayingCard(np) {
+    if (state !== 'drive' && state !== 'count' && state !== 'pause') return;
+    el.npst.textContent = np ? np.station + ' ' + np.freq : 'RADIO';
+    el.npt.textContent = np ? np.title : 'OFF';
+    el.np.classList.remove('on'); void el.np.offsetWidth; el.np.classList.add('on');
+    clearTimeout(npT); npT = setTimeout(function () { el.np.classList.remove('on'); }, 4200);
+  }
+  A.onTrack = function (np, changed) {
+    if (A.index() !== save.radio) { save.radio = A.index(); store(); }
+    radioLabel();
+    if (changed) nowPlayingCard(np);
+  };
+  function radioNext() { A.start(); A.nextStation(); save.radio = A.index(); store(); radioLabel(); }
   function onEvent(ev) {
     if (ev === 'crash') { bump = 1; A.sfx.crash(); flash(S.car.id === 'suv' ? 'SHOVE' : 'REKT', 'bad'); if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) { /* no haptics */ } }
     else if (ev === 'draft') { A.sfx.draft(); flash('DRAFT!', 'good'); }
@@ -158,8 +177,8 @@
       el.gap.textContent = S.tick > 90 ? txt : gInfo; el.gap.className = d >= 0 ? 'good' : 'bad';
     } else { el.pg.hidden = true; el.gap.textContent = ''; }
   }
-  function startRun(stage, cruise) {
-    A.start(); closeScreens();
+  function startRun(stage, cruise, keepSong) {
+    A.start(); closeScreens(); A.drive(stage, keepSong);
     save.stage = stage; store();
     S = C.newRun(stage, save.car, cruise); G = null; gInfo = '';
     if (!cruise && save.ghost !== 'off') {
@@ -171,6 +190,7 @@
     el.hint.hidden = !('ontouchstart' in window) || !!save.done.miami;
     hudEl.hidden = false; radioLabel();
     if (cruise) { state = 'drive'; flash(stageName(stage), 'radio'); } else { state = 'count'; countT = 3.2; flash('', ''); }
+    if (!keepSong) nowPlayingCard(A.nowPlaying());
   }
   function pause() {
     if (state !== 'drive' && state !== 'count') return;
@@ -183,7 +203,7 @@
     A.sfx.finish();
     if (S.cruise) {   // cruise rolls on into the next open stage
       var i = S.T.stage.i, nx = i; for (var n = 1; n <= C.STAGES.length; n++) { var j = (i + n) % C.STAGES.length; if (stageOpen(j)) { nx = j; break; } }
-      rootEl.classList.add('wl-fade'); setTimeout(function () { if (state === 'drive' && S.cruise) startRun(C.STAGES[nx].id, true); rootEl.classList.remove('wl-fade'); }, 700);
+      rootEl.classList.add('wl-fade'); setTimeout(function () { if (state === 'drive' && S.cruise) startRun(C.STAGES[nx].id, true, true); rootEl.classList.remove('wl-fade'); }, 700);
       return;
     }
     var stage = S.T.id, ms = S.ms, code = C.encode(S), before = unlockedSet(), prev = save.best[stage], isBest = !prev || ms < prev.ms;
@@ -209,7 +229,7 @@
 
   // The road trip map
   function showMap() {
-    state = 'map'; hudEl.hidden = true; if (!bg || bg.T.id !== save.stage) newBg();
+    state = 'map'; A.menu(); hudEl.hidden = true; if (!bg || bg.T.id !== save.stage) newBg();
     var stops = C.STAGES.map(function (s, i) {
       var open = stageOpen(i), b = save.best[s.id], md = b ? C.medal(s.id, b.ms) : 0;
       return '<button type="button" class="wl-stop' + (s.id === save.stage ? ' sel' : '') + (open ? '' : ' locked') + '" data-a="stop" data-id="' + s.id + '"' + (open ? '' : ' aria-disabled="true"') + '>' +
@@ -257,6 +277,7 @@
 
   // The results
   function showResult() {
+    A.menu();
     var r = lastRun, s = C.STAGES[C.stageIdx[r.stage]], md = C.medal(r.stage, r.ms), nx = C.STAGES[s.i + 1], par = C.PAR[r.stage];
     var nextGoal = md < 3 ? MEDAL[md + 1] + ' is ' + C.fmt(par[2 - md]) : 'Gold. Nothing left to prove here.';
     screen('wl-result',
@@ -300,7 +321,7 @@
   var gTab = 'paint', gView = 'side';
   var TABS = [['paint', 'PAINT'], ['wheels', 'WHEELS'], ['wing', 'WING'], ['glow', 'GLOW'], ['decal', 'DECAL'], ['plate', 'PLATE']];
   function showGarage() {
-    state = 'garage'; hudEl.hidden = true;
+    state = 'garage'; A.menu(); hudEl.hidden = true;
     screen('wl-garage',
       '<header class="wl-head"><button type="button" class="wl-back" data-a="map">← Map</button><h1 class="wl-logo sm"><span>WEN</span> <em>LAMBO</em></h1><div class="wl-headr">' + soundBtn() + '</div></header>' +
       '<div class="wl-gwrap"><div class="wl-gstage"><canvas id="wl-gcv" width="1200" height="620"></canvas><div class="wl-gname"><b id="wl-gn"></b><span id="wl-gb"></span></div>' +

@@ -163,11 +163,20 @@ html.wl-on body {
 @keyframes wl-pop { 0% { opacity: 0; transform: scale(1.5); } 15% { opacity: 1; transform: scale(1); } 70% { opacity: 1; } 100% { opacity: 0; transform: scale(0.96); } }
 .wl-bot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; padding: 0 max(12px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
 .wl-bot .wl-pill { pointer-events: auto; }
+.wl-bot #wl-rname { display: inline-flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+.wl-bot #wl-rname small { font: 600 11px var(--text); letter-spacing: 0.02em; color: var(--cyan); max-width: 34vw; overflow: hidden; text-overflow: ellipsis; }
+.wl-np { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: calc(64px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 2px; padding: 10px 16px 10px 14px; border-left: 3px solid var(--cyan); border-radius: 4px 12px 12px 4px; background: linear-gradient(90deg, rgba(13, 2, 33, 0.9), rgba(13, 2, 33, 0.6)); box-shadow: 0 0 18px rgba(0, 240, 255, 0.25); opacity: 0; transform: translateX(-24px); transition: opacity 0.35s, transform 0.35s; pointer-events: none; max-width: 70vw; }
+.wl-np.on { opacity: 1; transform: none; }
+.wl-np span { font: 800 11px var(--mono); letter-spacing: 0.12em; color: var(--cyan); }
+.wl-np span::before { content: '\266A  NOW PLAYING · '; color: rgba(246, 231, 255, 0.6); }
+.wl-np b { font: 800 clamp(17px, 2.6vw, 24px) var(--text); color: var(--ink); text-shadow: 0 0 12px rgba(255, 46, 151, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wl-hint { position: absolute; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: max-content; max-width: 90%; text-align: center; padding: 8px 14px; border-radius: 12px; background: rgba(13, 2, 33, 0.78); font: 500 13px var(--text); }
 
 @media (orientation: portrait) {
   .wl-bot { bottom: auto; top: calc(74px + env(safe-area-inset-top)); padding-bottom: 0; }
   .wl-hint { bottom: auto; top: 46%; }
+  .wl-np { bottom: auto; top: calc(126px + env(safe-area-inset-top)); }
+  .wl-np span::before { content: '\266A  '; }
   .wl-flash { top: 30%; }
 }
 @media (max-width: 820px) {
