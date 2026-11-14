@@ -1,0 +1,66 @@
+/* Doge Moon Crash (/doge/). The climb is one canvas; this styles the menu, the results and the pause button on top of it. */
+html.dm-on, html.dm-on body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+html.dm-on body {
+  --space: #07061a; --coin: #ffc93c; --ink: #ffffff; --pink: #ff4fd8; --mint: #3dff9b; --red: #e5323b; --dim: rgba(255, 255, 255, 0.72);
+  --disp: 'Bungee', Impact, 'Arial Black', sans-serif; --meme: 'Comic Neue', 'Comic Sans MS', 'Comic Sans', cursive;
+  background: var(--space); color: var(--ink); font-family: var(--meme); font-weight: 700; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; color-scheme: dark;
+}
+#dm-cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
+#dm-root [hidden] { display: none !important; }
+#dm-root *, #dm-root *::before, #dm-root *::after { box-sizing: border-box; }
+#dm-root button, #dm-root input { font: inherit; color: inherit; }
+#dm-root button { cursor: pointer; }
+#dm-root button:focus-visible, #dm-root a:focus-visible, #dm-root input:focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; }
+#dm-safe { position: fixed; top: 0; left: 0; width: 0; height: 0; padding-top: env(safe-area-inset-top, 0px); visibility: hidden; pointer-events: none; }
+#dm-pause {
+  position: fixed; z-index: 2; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10.5vh); margin-left: max(-232px, calc(-50vw + 8px)); width: 38px; height: 38px; border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.5); background: rgba(7, 6, 26, 0.45); font: 400 13px var(--disp) !important; letter-spacing: 0.1em; opacity: 0.75;
+}
+
+.dm-screen {
+  position: fixed; inset: 0; z-index: 3; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: flex; flex-direction: column; align-items: center; gap: 10px; animation: dm-in 0.25s ease-out;
+}
+@keyframes dm-in { from { opacity: 0; } to { opacity: 1; } }
+.dm-screen > * { width: 100%; max-width: 448px; flex: none; }
+.dm-top { display: flex; justify-content: space-between; align-items: center; }
+.dm-ghost { font: 400 12px var(--disp) !important; letter-spacing: 0.06em; color: var(--ink); text-decoration: none; background: rgba(7, 6, 26, 0.45); border: 2px solid rgba(255, 255, 255, 0.45); border-radius: 999px; padding: 8px 14px; min-height: 38px; display: inline-flex; align-items: center; }
+.dm-ghost:hover { border-color: var(--coin); color: var(--coin); }
+.dm-logo { margin: 4px 0 0; text-align: center; font: 400 clamp(40px, 12.5vw, 62px)/0.95 var(--disp); transform: rotate(-3deg); }
+.dm-logo span, .dm-logo em { display: block; font-style: normal; text-shadow: 4px 4px 0 #000; white-space: nowrap; }
+.dm-logo span { color: var(--coin); } .dm-logo em { color: #fff; font-size: 0.9em; }
+.dm-tag { margin: 2px 0 0; text-align: center; font-size: 20px; }
+.dm-tag i { color: var(--pink); font-style: normal; display: inline-block; transform: rotate(-6deg); margin-right: 14px; } .dm-tag b { color: var(--mint); display: inline-block; transform: rotate(5deg); }
+.dm-gap { flex: 1 0 clamp(170px, 30vh, 280px) !important; }
+.dm-panel, .dm-card { background: rgba(8, 6, 26, 0.86); border: 3px solid var(--coin); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.dm-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dm-acts.row { display: flex; flex-wrap: wrap; justify-content: center; }
+.dm-acts.row .dm-btn { flex: 1 1 110px; }
+.dm-btn { border: 0; border-radius: 12px; padding: 10px 10px 9px; min-height: 52px; background: #2a2552; box-shadow: 0 4px 0 #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
+.dm-btn span { font: 400 16px/1.1 var(--disp); letter-spacing: 0.02em; }
+.dm-btn small { font-size: 12px; color: var(--dim); line-height: 1.2; }
+.dm-btn:hover { filter: brightness(1.15); } .dm-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+.dm-primary { background: var(--coin); color: #1b1200 !important; } .dm-primary small { color: rgba(27, 18, 0, 0.75); }
+.dm-small { min-height: 42px; padding: 6px 12px; background: var(--mint); color: #062012 !important; }
+.dm-how { margin: 0; font-size: 14px; line-height: 1.35; color: var(--dim); text-align: center; }
+.dm-k { font: 400 11px var(--disp); letter-spacing: 0.1em; color: var(--mint); text-align: center; }
+.dm-dim { color: var(--dim); font-size: 14px; text-align: center; }
+.dm-board { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-variant-numeric: tabular-nums; }
+.dm-board li { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; padding: 4px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.07); font-size: 15px; }
+.dm-board li.me { background: rgba(255, 201, 60, 0.25); }
+.dm-board .rk { color: var(--dim); } .dm-board .in { font-family: var(--disp); font-weight: 400; letter-spacing: 0.08em; } .dm-board .tm { color: var(--coin); }
+
+.dm-end { justify-content: flex-end; }
+@media (min-height: 860px) { .dm-end { justify-content: center; padding-top: 34vh; } }
+.dm-card { text-align: center; gap: 8px; }
+.dm-time { font: 400 clamp(44px, 13vw, 58px)/1 var(--disp); color: var(--coin); font-variant-numeric: tabular-nums; }
+.dm-rate { font: 400 22px/1.1 var(--disp); } .dm-rate.m3 { color: var(--coin); } .dm-rate.m2 { color: #d9dde6; } .dm-rate.m1 { color: #e08a4a; }
+.dm-sub { color: var(--pink); font-size: 17px; margin-top: -4px; }
+.dm-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; font-size: 15px; }
+.dm-pb { color: #ffe066; font-size: 17px; }
+.dm-post { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.dm-post label { font-size: 14px; color: var(--dim); }
+.dm-post input { width: 84px; min-height: 42px; text-align: center; text-transform: uppercase; font: 400 18px var(--disp) !important; letter-spacing: 0.12em; background: #14112e; border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; -webkit-user-select: text; user-select: text; }
+.dm-note { min-height: 18px; font-size: 14px; color: #ffe066; }
+@media (prefers-reduced-motion: reduce) { .dm-screen { animation: none; } }

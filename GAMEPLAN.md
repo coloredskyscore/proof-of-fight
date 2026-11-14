@@ -11,6 +11,21 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 14, 2026: Doge Moon Crash (proofoffight.com/doge)
+
+Brian's idea: a Flappy-style "to the moon" game with the Doge. Built as a vertical climb, all drawn in code. Its own page and look (`doge/index.html`, `css/dm.css`), and a cabinet on the arcade.
+
+- **The climb:** hold to fire the jetpack, let go to fall; slide a finger or the mouse (or arrow keys) to steer. 384,400 km in five layers: Launchpad, Clouds, Stratosphere, Space, Moon. The meme captions in the sky get more warped the higher you are. The run ends when the doge bonks helmet-first into the moon and a Ð flag goes up. The time to the moon is the score.
+- **In the way:** rows of red candles with one gap (some slide), FUD birds, paper-hand ghosts, and per layer: INFLATION weather balloons (Clouds), WHALE AIR jets with a warning (Stratosphere), FUD-SAT satellites and RUG asteroids (Space), falling burning candles with a warning line (Moon). **The dump**, a wall of red candles, rises behind you.
+- **Three bones.** A hit costs one and slows you. The third is an OOF: back to the start of that layer with the clock still running. A bone pickup gives one back.
+- **Coins and combos:** coins in a row raise the multiplier (wow x2 at 5, much x3 at 12, such x5 at 25) and each step makes you climb 8% faster. Three seconds without a coin loses the streak.
+- **Elawn Moosk's posts** (the avatar is Brian's image, `art/dm/elawn.webp`): a good post is 3 seconds of rocket mode, a bad one is 4 seconds of heavy gravity after a one-second warning. **Much wow** is a 7-second shield and coin magnet.
+- **Daily Moon:** one map a day, the same for everyone (seeded by the UTC date), with a leaderboard. **Free Flight:** a new random map every run, times kept on the device. Medals: gold 1:48, silver 2:00, bronze 2:20.
+- **The dog** is an original code-drawn Shiba astronaut (`js/dm-art.js`); no photo of the real Doge is used. The share picture (1200x675) and the arcade tile use the same drawing.
+- **Leaderboard:** `/dm/scores` on the same Cloudflare Worker as Ride the Chart and Wen Lambo, boards `dm-YYYY-MM-DD`. A run is its recorded input (jetpack on or off and the steering target, sampled 30 times a second); the server flies it again with `js/dm-core.js` and only takes the time if it reaches the moon on the same tick. Whenever `js/dm-core.js` changes, rebuild and deploy the Worker.
+- `js/dm-core.js` is the rules with no drawing (node-runnable, no sin/cos so every machine agrees). `node tools/dm-sim.js` flies six daily maps with two bots and checks that runs replay.
+- `/doge/?debug` exposes `window.POF_DM`; `?auto` lets the bot fly.
+
 ### Nov 14, 2026: Whale Cannonball goes in the Dust Bin
 
 - **Whale Cannonball** (`/cannonball/`): a whale in polka-dot trunks waddles off a 10 m board into a pool of traders on swim rings. Tap to jump (closer to the tip is better), tap again to tuck (nearer the top of the arc is better). The water is a row of springs; traders thrown out of the pool are "shaken out". Three dives, judges' cards. Brian found the water and physics great but not replayable after about ten dives, so it went straight to the Dust Bin. One self-contained page (`cannonball/index.html`), tile art `art/dustbin-cannonball.webp`.
