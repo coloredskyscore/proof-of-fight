@@ -123,18 +123,6 @@ footer.site a { color: var(--ink); }
 .cons-bar em { position: absolute; top: -2px; bottom: -2px; left: 51%; width: 2px; background: #fff; opacity: .7; }
 .cons b { color: #fff; font-weight: 800; min-width: 3ch; text-align: right; }
 
-/* Mempool: a block filling with transactions, colored by fee */
-.cab-mp { --mpgold: #ffc53d; background: #080b16; box-shadow: 0 0 0 1px #232b4a inset, 0 10px 0 var(--line); font-family: var(--grotesk); }
-.cab-mp .screen { background: #060912; }
-.cab-mp .kicker { color: #19d9c3; font-family: var(--mono); }
-.cab-mp h2 { margin: 0; font: 800 28px/1 var(--mono); letter-spacing: -.05em; color: #fff; }
-.cab-mp h2 .pool { color: var(--mpgold); text-shadow: 0 0 18px rgba(255,197,61,.6); }
-.cab-mp p { font-family: var(--grotesk); }
-.cab-mp .facts li { background: #121831; color: #dbe1fa; font-family: var(--mono); font-size: 11px; }
-.cab-mp .play { font: 800 18px var(--mono); letter-spacing: .04em; background: var(--mpgold); color: #1c1200; box-shadow: 0 4px 0 var(--line), 0 0 18px rgba(255,197,61,.25); }
-.mpt { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; font: 500 10px var(--mono); color: #96a0c8; letter-spacing: .06em; pointer-events: none; }
-.mpt b { color: #fff; font-weight: 800; }
-
 /* Dust Bin: rejected game ideas, still playable. Faded, a little crooked, like something you threw out. */
 .dustbin { display: grid; gap: 12px; padding: 16px; border-radius: 16px; border: 2px dashed #34304a; background: repeating-linear-gradient(-45deg, #0f0d17 0 10px, #121019 10px 20px); }
 .bin-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; }

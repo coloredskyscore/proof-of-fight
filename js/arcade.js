@@ -71,11 +71,6 @@
   var unl = +get('pof.a51.unlocked') || 0, won51 = get('pof.a51.best.vault');
   if (unl > 1 || won51) $('best-51').innerHTML = 'Story: <b>stage ' + Math.max(1, Math.min(5, unl || 1)) + ' of 5</b> unlocked';
 
-  var mpBest = +get('pof.mp.best.endless') || 0, mpDay = null;
-  try { mpDay = JSON.parse(get('pof.mp.daily.' + new Date().toISOString().slice(0, 10)) || 'null'); } catch (e) { /* nothing saved */ }
-  if (mpDay && mpDay.score) $('best-mp').innerHTML = 'Today: <b>' + Number(mpDay.score).toLocaleString('en-US') + '</b> sats';
-  else if (mpBest) $('best-mp').innerHTML = 'Endless best: <b>' + mpBest.toLocaleString('en-US') + '</b> sats';
-
   // ---------- Previews ----------
   function fit(c) {
     var r = c.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1);
@@ -130,7 +125,6 @@
   function drawRide(now) {
     raf = 0;
     drawNet(now);
-    drawPool(now);
     if (!ter.length) return;
     if (!R) R = fit(rideCv);
     var g = R.g, w = R.w, h = R.h, sec = (now - t0) / 1000;
@@ -225,57 +219,7 @@
     consFill.style.width = pct + '%'; consPct.textContent = pct + '%';
   }
 
-  // Mempool: one block filling up, a transaction at a time, then mined. Each entry is the fee color
-  // (0 low to 3 whale) and the cells it covers in the 7 x 7 block.
-  var poolCv = $('pool'), PL = null, mpFees = $('mp-fees'), mpFill = $('mp-fill');
-  var POOL = [[2, 0, 1, 2], [1, 7, 8, 14, 21, 22], [0, 18, 19, 20, 25], [3, 23, 24, 30], [1, 3, 9, 10, 11, 17], [2, 26, 27, 34], [0, 4], [2, 41, 48], [0, 31, 32, 33], [1, 42, 43, 44],
-    [3, 37], [1, 38], [0, 15, 16], [2, 45], [1, 5], [3, 28, 29, 35, 36], [0, 39, 40, 46, 47], [2, 6], [1, 12, 13]];
-  var POOL_COL = ['#4a7dff', '#19d9c3', '#ffc53d', '#ff6a3d'], POOL_FEE = [110, 230, 420, 760];
-  function drawPool(now) {
-    if (!poolCv) return;
-    if (!PL) PL = fit(poolCv);
-    var g = PL.g, w = PL.w, h = PL.h, sec = (now - t0) / 1000, loop = sec % 11, i, k;
-    g.fillStyle = '#060912'; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(150,170,255,.08)';
-    for (var gx = 8; gx < w; gx += 16) for (var gy = 8; gy < h; gy += 16) g.fillRect(gx, gy, 1, 1);
-    var size = Math.min(h - 44, w * 0.5), c = size / 7, x0 = (w - size) / 2, y0 = 30 + (h - 36 - size) / 2;
-    var shown = Math.min(POOL.length, Math.floor(loop / 0.42)), mined = loop > POOL.length * 0.42 + 0.3, fade = loop > 10.2 ? (11 - loop) / 0.8 : 1;
-    // transactions waiting on both sides
-    for (i = 0; i < 10; i++) {
-      var side = i % 2 ? 1 : -1, yy = ((i * 0.173 + sec * 0.05) % 1) * h, sz = c * (0.5 + (i % 3) * 0.25), xx = w / 2 + side * (size / 2 + 14 + (i * 37 % 50) / 50 * (w / 2 - size / 2 - 30 - sz));
-      g.fillStyle = POOL_COL[i % 4]; g.globalAlpha = 0.22; g.fillRect(side > 0 ? xx : xx - sz, yy, sz, sz);
-    }
-    g.globalAlpha = 1;
-    g.fillStyle = '#0c1226'; g.fillRect(x0 - 5, y0 - 5, size + 10, size + 10);
-    var fees = 0, cells = 0;
-    g.globalAlpha = fade;
-    for (i = 0; i < shown; i++) {
-      var tx = POOL[i], age = loop - i * 0.42, popIn = Math.min(1, age / 0.18), has = {};
-      for (k = 1; k < tx.length; k++) has[tx[k]] = 1;
-      g.fillStyle = POOL_COL[tx[0]];
-      if (tx[0] === 3) { g.shadowColor = POOL_COL[3]; g.shadowBlur = 8; }
-      for (k = 1; k < tx.length; k++) {
-        var cx = tx[k] % 7, cy = (tx[k] / 7) | 0, l = cx > 0 && has[tx[k] - 1] ? 0 : 1.5, r = cx < 6 && has[tx[k] + 1] ? 0 : 1.5, t = has[tx[k] - 7] ? 0 : 1.5, b = has[tx[k] + 7] ? 0 : 1.5, grow = (1 - popIn) * c * 0.3;
-        g.fillRect(x0 + cx * c + l + grow, y0 + cy * c + t + grow, c - l - r - grow * 2 + (r ? 0 : 0.5), c - t - b - grow * 2 + (b ? 0 : 0.5));
-      }
-      g.shadowBlur = 0;
-      fees += POOL_FEE[tx[0]] * (tx.length - 1); cells += tx.length - 1;
-    }
-    g.globalAlpha = 1;
-    var flashT = loop - (POOL.length * 0.42 + 0.3);
-    g.lineWidth = 2; g.strokeStyle = mined ? '#ffc53d' : 'rgba(150,170,255,.5)'; g.shadowColor = '#ffc53d'; g.shadowBlur = mined ? 16 : 0;
-    g.strokeRect(x0 - 5, y0 - 5, size + 10, size + 10); g.shadowBlur = 0;
-    if (mined && flashT < 0.5) { g.fillStyle = 'rgba(255,255,255,' + (0.6 * (1 - flashT / 0.5)) + ')'; g.fillRect(x0 - 5, y0 - 5, size + 10, size + 10); }
-    if (mined && fade > 0.2) {
-      g.fillStyle = 'rgba(6,9,18,.82)'; g.fillRect(x0 - 5, y0 + size / 2 - 15, size + 10, 30);
-      g.fillStyle = '#ffc53d'; g.font = '800 ' + Math.round(Math.min(17, size * 0.12)) + 'px "JetBrains Mono", ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText('FULL BLOCK +50%', w / 2, y0 + size / 2 + 1);
-    }
-    mpFees.textContent = Math.round(fees * (mined ? 1.5 : 1)).toLocaleString('en-US');
-    mpFill.textContent = Math.round(cells / 49 * 100) + '% FULL';
-  }
-
-  function redraw() { drawStage(); R = null; N = null; PL = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); drawPool(t0 + 9000); } }
+  function redraw() { drawStage(); R = null; N = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); } }
   redraw();
   run();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) run(); });
