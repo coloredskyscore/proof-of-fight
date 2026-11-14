@@ -11,6 +11,10 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 14, 2026: Whale Cannonball goes in the Dust Bin
+
+- **Whale Cannonball** (`/cannonball/`): a whale in polka-dot trunks waddles off a 10 m board into a pool of traders on swim rings. Tap to jump (closer to the tip is better), tap again to tuck (nearer the top of the arc is better). The water is a row of springs; traders thrown out of the pool are "shaken out". Three dives, judges' cards. Brian found the water and physics great but not replayable after about ten dives, so it went straight to the Dust Bin. One self-contained page (`cannonball/index.html`), tile art `art/dustbin-cannonball.webp`.
+
 ### Nov 14, 2026: Wen Lambo (proofoffight.com/lambo)
 
 A synthwave road-trip racer, all drawn in code: build your car in the garage, drive it to a crypto conference in each city, post it. Its own page and look (`lambo/index.html`, `css/wl.css`), and a cabinet on the arcade.
