@@ -11,6 +11,22 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 14, 2026: Sui Swell (proofoffight.com/sui)
+
+Brian's idea: a Sui wave surfer. You ride the wave up and down, and when it crests over you the game switches to a first-person view inside the tube. Make it out and the crowd cheers with 80s and 90s surf talk; wipe out and they give a kind "ohhh, good try" instead of a boo. All drawn in code. Its own page and look (`sui/index.html`, `css/sw.css`), and a cabinet on the arcade. Tagline: "Drop in. Get barreled. Stay liquid."
+
+- **One button.** Hold to carve up the face, let go to drop. The same button works in the tube.
+- **A heat is three waves:** Testnet Ripple (8 ft), Devnet Swell (15 ft), Mainnet Monster (30 ft). Each is faster than the last, with a tighter tube.
+- **The ride (side view, 20 seconds):** grab the droplets, keep moving up and down to keep the SPEED meter up (coasting drains it, and at zero the whitewater catches you). Fly off the lip for an air; hold in the air to spin and let go to land on a whole turn (a half turn is a sketchy landing). In the way: FUD buoys, GAS jellyfish, a RUG shark fin at the bottom, a PAPER HANDS gull above the lip. A whale's back at the bottom pumps you into the sky.
+- **The tube (first person, about 10 seconds):** stay inside the barrel as it bends and narrows, duck the waterfalls and hop the foam mounds, and grab droplets. The foam ball chases you: your lead starts from the speed you kept on the ride, drains steadily, and every bump costs more. Reach the daylight and you shoot out.
+- **Judging:** a wave is worth up to 10.00 (10,000 points): droplets 2.40, airs up to 2.00, speed into the tube 0.60, making the barrel 2.50, tube droplets 1.50, a clean barrel 1.00. Three judges hold up cards after every wave. The heat is out of 30.
+- **Daily Heat:** the same three waves for everyone (seeded by the UTC date), with a leaderboard. **Free Surf:** new waves every heat, best kept on the device.
+- **Sui:** the name, the blue palette and a plain water droplet (the pickups and the mark on the board). The droplet is our own drawing, not Sui's logo.
+- **Sound** is all made in code: sea noise, a surf-rock loop that goes muffled inside the tube, a crowd cheer and the kind "ohhh". Suno songs can replace the loop later.
+- **Leaderboard:** `/sw/scores` on the same Cloudflare Worker as the other games, boards `sw-YYYY-MM-DD`, highest score first. A heat is its recorded input (the ticks on which the button changed); the server surfs it again with `js/sw-core.js` and only takes the score if it comes out the same. Whenever `js/sw-core.js` changes, rebuild and deploy the Worker.
+- `js/sw-core.js` is the rules with no drawing (node-runnable, no sin/cos so every machine agrees). `node tools/sw-sim.js` surfs six daily heats with two bots and checks that heats replay.
+- `/sui/?debug` exposes `window.POF_SW`; `?auto` lets the bot surf.
+
 ### Nov 14, 2026: Doge Moon Crash (proofoffight.com/doge)
 
 Brian's idea: a Flappy-style "to the moon" game with the Doge. Built as a vertical climb, all drawn in code. Its own page and look (`doge/index.html`, `css/dm.css`), and a cabinet on the arcade.

@@ -4,6 +4,7 @@
    - leaderboards: one per chain plus one per day for Daily Coin, three-letter initials.
    - Wen Lambo's leaderboards (/wl/scores): one per stage, fastest time first.
    - Doge Moon Crash's leaderboards (/dm/scores): one per day for the Daily Moon, fastest time first.
+   - Sui Swell's leaderboards (/sw/scores): one per day for the Daily Heat, highest score first.
    The game's own rules (js/dip-core.js and the price files) are bundled in front of this file by
    tools/build-worker.js, which leaves them on globalThis as POF_DIP_CORE / POF_DIP_CHAINS / the price data.
    With VERIFY = "1" every run is replayed here before it is stored, and the replay must die on the
@@ -81,6 +82,19 @@ function checkDm(code) {
   const S = DM.replay(R);
   if (!S.done || !S.ms || S.tick !== R.ticks || S.coins !== R.coins) return 'run does not replay';
   return { mode: 'dm', seed: R.seed, score: 10000000 - S.ms, day: S.coins, board: 'dm-' + R.seed };
+}
+
+// Sui Swell (js/sw-core.js): the recorded heat is surfed again here and must end on the same tick with the
+// same score. Only the Daily Heat has a board. day holds how many barrels were made.
+const SW = globalThis.POF_SW_CORE;
+function checkSw(code) {
+  if (typeof code !== 'string' || code.length > MAX_CODE) return 'bad run';
+  const R = SW.decode(code);
+  if (!R || R.mode !== 'daily') return 'bad run';
+  if (![utcDay(-1), utcDay(0), utcDay(1)].includes(R.seed)) return 'old daily heat';
+  const S = SW.replay(R);
+  if (S.phase !== 'done' || S.n !== R.n || S.total !== R.total) return 'run does not replay';
+  return { mode: 'sw', seed: R.seed, score: S.total, day: S.made, board: 'sw-' + R.seed };
 }
 
 async function shortId(code) {
@@ -180,6 +194,27 @@ async function handle(req, env) {
   if (req.method === 'GET' && path === '/dm/scores') {
     const b = url.searchParams.get('board') || 'dm-' + utcDay(0);
     if (!/^dm-\d{4}-\d{2}-\d{2}$/.test(b)) return json({ error: 'bad board' }, 400);
+    const n = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit'), 10) || 10));
+    const rows = await env.DB.prepare('SELECT initials, score, day, run, created FROM scores WHERE board = ? ORDER BY score DESC, created ASC LIMIT ?').bind(b, n).all();
+    return json({ board: b, top: rows.results || [] }, 200, 30);
+  }
+  if (req.method === 'POST' && path === '/sw/scores') {
+    const body = await req.json().catch(() => ({}));
+    const initials = String(body.initials || '').toUpperCase();
+    if (!/^[A-Z]{3}$/.test(initials) || BAD.has(initials)) return json({ error: 'pick other initials' }, 400);
+    const ip = await ipKey(req);
+    if (await tooMany(env, ip, 'scores', 6)) return json({ error: 'slow down' }, 429);
+    const R = checkSw(body.code);
+    if (typeof R === 'string') return json({ error: R }, 400);
+    const run = await saveRun(env, body.code, R);
+    await env.DB.prepare('INSERT OR IGNORE INTO scores (board, initials, score, day, run, ip, created) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .bind(R.board, initials, R.score, R.day, run, ip, Date.now()).run();
+    const rank = await env.DB.prepare('SELECT COUNT(*) + 1 AS r FROM scores WHERE board = ? AND score > ?').bind(R.board, R.score).first();
+    return json({ run, board: R.board, rank: rank.r });
+  }
+  if (req.method === 'GET' && path === '/sw/scores') {
+    const b = url.searchParams.get('board') || 'sw-' + utcDay(0);
+    if (!/^sw-\d{4}-\d{2}-\d{2}$/.test(b)) return json({ error: 'bad board' }, 400);
     const n = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit'), 10) || 10));
     const rows = await env.DB.prepare('SELECT initials, score, day, run, created FROM scores WHERE board = ? ORDER BY score DESC, created ASC LIMIT ?').bind(b, n).all();
     return json({ board: b, top: rows.results || [] }, 200, 30);

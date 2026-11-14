@@ -139,6 +139,17 @@ footer.site a { color: var(--ink); }
 .cab-doge .facts li { background: #1c1a47; color: #fff; font-weight: 700; }
 .cab-doge .best { font-weight: 700; }
 .cab-doge .play { font: 400 18px 'Bungee', sans-serif; background: #ffc93c; color: #1b1200; box-shadow: 0 4px 0 var(--line); }
+/* Cabinet: Sui Swell, a sunset surf contest */
+.cab-sui { background: #04163a; box-shadow: 0 0 0 1px #1c4a9c inset, 0 10px 0 var(--line); font-family: var(--grotesk); }
+.cab-sui .screen { background: #0b3a9a; }
+.cab-sui .sw-hud { position: absolute; left: 10px; right: 10px; top: 8px; display: flex; justify-content: space-between; font: 400 11px 'Bungee', sans-serif; color: #fff; text-shadow: 1px 1px 0 #1b0b4a; pointer-events: none; }
+.cab-sui .sw-hud b { color: #ffe14a; font-weight: 400; }
+.cab-sui .kicker { color: #7df3ff; font-family: var(--mono); }
+.cab-sui h2 { margin: 0; gap: .22em; font: 400 30px/1.1 'Pacifico', 'Brush Script MT', cursive; white-space: nowrap; transform: rotate(-2deg); transform-origin: left center; }
+.cab-sui h2 span { color: #fff35c; text-shadow: 2px 3px 0 #1b0b4a; }
+.cab-sui h2 em { font-style: normal; color: #ff4fa3; text-shadow: 2px 3px 0 #1b0b4a; }
+.cab-sui .facts li { background: #0d2f73; color: #e6f4ff; font-family: var(--mono); font-size: 11px; }
+.cab-sui .play { font: 400 18px 'Bungee', sans-serif; background: #ffe14a; color: #3a1500; box-shadow: 0 4px 0 var(--line); }
 .lam-hud { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; font: 500 10px var(--mono); color: #d9c8ff; letter-spacing: .08em; pointer-events: none; text-shadow: 0 1px 2px #000; }
 .lam-hud b { color: #fff; font-weight: 800; }
 .cons { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; font: 500 10px var(--mono); color: #9b93b8; letter-spacing: .06em; pointer-events: none; }
