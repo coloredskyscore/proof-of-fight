@@ -9,6 +9,7 @@ Proof of Fight is an arcade of crypto games at **https://proofoffight.com**. The
 | `/ride/` | **Ride the Chart**, the one-button ride over a real price chart |
 | `/51/` | **51% Attack**, the network-defense game |
 | `/lambo/` | **Wen Lambo**, the synthwave road-trip racer with a garage |
+| `/cannonball/` | **Whale Cannonball**, a Dust Bin game: one self-contained page, all drawn in code |
 | `/rap/`, `/guitar/` | The Dust Bin games, Rap Battle and Guitar Battle, each opening straight into its game. They run on the fight's page: both are built from `fight/index.html` by `python3 tools/solo-pages.py` (run it again after editing that file) |
 
 The game pages keep their files (`css/`, `js/`, `art/`, `audio/`) at the site root and reach them through `<base href="../">`. Old links that put a game behind `?something` on the home page (`?dip`, `?ride&race=`, `?daily`, `?51`, ...) are forwarded to the right game's page by a script at the top of `index.html`. To add a game: a new folder with its own `index.html` (with `<base href="../">` and its own link preview), plus a cabinet in `index.html`.
