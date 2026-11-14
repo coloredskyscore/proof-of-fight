@@ -410,6 +410,6 @@
   hudBuild(); resize(); A.mute(save.muted); A.setStation(save.radio || 0, true);
   newBg(); showMap();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (state === 'map') showMap(); });
-  if (DEBUG) window.POF_WL = { get S() { return S; }, get G() { return G; }, get state() { return state; }, save: save, core: C, start: startRun, map: showMap, garage: showGarage, card: shareCard, finishNow: function () { S.pos = S.T.finishZ - C.PZ - 400; }, get last() { return lastRun; } };
+  if (DEBUG) window.POF_WL = { get S() { return S; }, get G() { return G; }, get state() { return state; }, save: save, core: C, start: startRun, map: showMap, garage: showGarage, card: shareCard, skipCount: function () { countT = 0.02; }, finishNow: function () { S.pos = S.T.finishZ - C.PZ - 400; }, get last() { return lastRun; } };
   requestAnimationFrame(frame);
 })();
