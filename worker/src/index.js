@@ -1,7 +1,8 @@
 /* Buy the Dip server: a Cloudflare Worker with a D1 database. Two jobs:
    - short race links: a recorded run (see encode in js/dip-core.js) is stored under a short id, so a link is
      proofoffight.com/?dip&r=<id> instead of the whole run;
-   - leaderboards: one per chain plus one per day for Daily Coin, three-letter initials.
+   - leaderboards: one per chain plus one per day for Daily Coin, three-letter initials;
+   - Mempool's leaderboards (/mp/scores): one per day for Daily Blocks plus one for Endless.
    The game's own rules (js/dip-core.js and the price files) are bundled in front of this file by
    tools/build-worker.js, which leaves them on globalThis as POF_DIP_CORE / POF_DIP_CHAINS / the price data.
    With VERIFY = "1" every run is replayed here before it is stored, and the replay must die on the
@@ -53,6 +54,19 @@ function check(code, verify) {
   }
   if (!S.dead || C.score(S) !== R.score) return 'run does not replay';
   return R;
+}
+
+// Mempool (js/mp-core.js): the same idea. The moves are played again here and the score must come out the same.
+const MP = globalThis.POF_MP_CORE;
+function checkMp(code) {
+  if (typeof code !== 'string' || code.length > MAX_CODE) return 'bad run';
+  const R = MP.decode(code);
+  if (!R) return 'bad run';
+  if (R.mode === 'daily') { if (![utcDay(-1), utcDay(0), utcDay(1)].includes(R.seed)) return 'old daily mempool'; }
+  else if (!/^[0-9a-z]{4,12}$/.test(R.seed)) return 'bad run';
+  const G = MP.replay(R, MP.TPS * 60 * 40);
+  if (!G || G.score !== R.score) return 'run does not replay';
+  return { mode: R.mode === 'daily' ? 'mp-d' : 'mp-e', seed: R.seed, score: G.score, day: G.blocks.length, board: R.mode === 'daily' ? 'mp-daily-' + R.seed : 'mp-endless' };
 }
 
 async function shortId(code) {
@@ -112,6 +126,27 @@ async function handle(req, env) {
     if (!/^(btc|sol|[a-z]{2,8}|daily-\d{4}-\d{2}-\d{2})$/.test(b)) return json({ error: 'bad board' }, 400);
     const n = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit'), 10) || 10));
     const rows = await env.DB.prepare('SELECT initials, score, day, run, created FROM scores WHERE board = ? ORDER BY score DESC, created ASC LIMIT ?').bind(b, n).all();
+    return json({ board: b, top: rows.results || [] }, 200, 30);
+  }
+  if (req.method === 'POST' && path === '/mp/scores') {
+    const body = await req.json().catch(() => ({}));
+    const initials = String(body.initials || '').toUpperCase();
+    if (!/^[A-Z]{3}$/.test(initials) || BAD.has(initials)) return json({ error: 'pick other initials' }, 400);
+    const ip = await ipKey(req);
+    if (await tooMany(env, ip, 'scores', 6)) return json({ error: 'slow down' }, 429);
+    const R = checkMp(body.code);
+    if (typeof R === 'string') return json({ error: R }, 400);
+    const run = await saveRun(env, body.code, R);
+    await env.DB.prepare('INSERT OR IGNORE INTO scores (board, initials, score, day, run, ip, created) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .bind(R.board, initials, R.score, R.day, run, ip, Date.now()).run();
+    const rank = await env.DB.prepare('SELECT COUNT(*) + 1 AS r FROM scores WHERE board = ? AND score > ?').bind(R.board, R.score).first();
+    return json({ run, board: R.board, rank: rank.r });
+  }
+  if (req.method === 'GET' && path === '/mp/scores') {
+    const b = url.searchParams.get('board') || 'mp-endless';
+    if (!/^(mp-endless|mp-daily-\d{4}-\d{2}-\d{2})$/.test(b)) return json({ error: 'bad board' }, 400);
+    const n = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit'), 10) || 10));
+    const rows = await env.DB.prepare('SELECT initials, score, day, created FROM scores WHERE board = ? ORDER BY score DESC, created ASC LIMIT ?').bind(b, n).all();
     return json({ board: b, top: rows.results || [] }, 200, 30);
   }
   if (path === '' || path === '/health') return json({ ok: true, verify });

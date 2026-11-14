@@ -11,6 +11,23 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 13, 2026: Mempool (proofoffight.com/mempool)
+
+A new game with its own cabinet in the arcade: a fast packing puzzle where you are the miner. No roster, no pictures, everything drawn in code.
+
+- **The idea:** three transactions wait in the mempool, each a shape with a fee on it. Drag them into the block (7 x 7) before the timer mines it. Shapes can't be turned. Hotter colors pay more per cell (blue, teal, gold, orange), and awkward shapes tend to pay better, so it is always greed against fit.
+- **Bonuses:** a 100% full block pays +50% and is mined on the spot; a block 90% full or more pays +20%.
+- **Rugs:** a purple striped transaction that pays about ten times the usual, but every transaction touching it pays nothing (two rugs touching cancel each other). Walls are safe. None in the first block.
+- **The mempool moves:** a transaction left in its slot for 5 seconds is taken by another miner and replaced, so a stuck tray clears itself. MINE BLOCK NOW (or Space) mines early.
+- **Daily Blocks:** six blocks, 26 seconds down to 16, fees up 15% a block, the same mempool for everybody (seeded by the UTC date). One run a day per browser; after that the button shows your result.
+- **Endless:** three lives, the clock shrinks to 11 seconds, and a block mined under the fill target (55%, rising 3% a block to 88%) is orphaned: it pays nothing and costs a life.
+- **End card and sharing:** score in sats, your chain of blocks as small pictures, average fill, full blocks, fees lost to rugs. Share makes a 1200 x 675 picture plus a line of colored squares for the post (green full, yellow 90%+, orange 75%+, red under, black orphaned).
+- **Leaderboards:** one per day for Daily Blocks and one for Endless, three-letter initials, on the same Cloudflare Worker as Ride the Chart (`/mp/scores`). Every move is logged with its tick (20 ticks a second), so the Worker plays the run again and turns away a score that doesn't come out the same. **The Worker has to be deployed again for these to go live** (`node tools/build-worker.js`, then deploy `worker/`); until then the game says the leaderboard is offline.
+- **Sound:** a synth made in code: a loop that speeds up each block and adds a pulse in the last five seconds, plus placing, rug, mining and full-block sounds.
+- **Files:** `js/mp-core.js` (rules, runs in node), `js/mp.js` (canvas, sound, menus), `css/mp.css`, `mempool/index.html`, link preview `art/social/mp-og.jpg`.
+- **Balance:** `node tools/mp-sim.js`. A casual bot fills about 80% and scores about 75,000 on the daily; a sharp one fills about 90% and scores about 100,000, with a full block about one time in 25.
+- `/mempool/?debug` exposes `window.POF_MP` and lets you replay the daily; `?auto` lets the bot play.
+
 ### Nov 13, 2026: the Dust Bin
 
 - A **Dust Bin** section under the games on the arcade: where the dumbest game ideas go to die. Each binned idea is a faded, slightly crooked tile (it brightens on hover) that still opens the prototype, with the date it was born and binned.
