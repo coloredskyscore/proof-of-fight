@@ -125,6 +125,20 @@ footer.site a { color: var(--ink); }
 .cab-lambo h2 em { font-style: normal; color: var(--lc); text-shadow: 0 0 14px rgba(45,226,230,.8); }
 .cab-lambo .facts li { background: #1d0b3d; color: #f6e7ff; font-family: var(--mono); font-size: 11px; }
 .cab-lambo .play { font: 800 18px var(--mono); letter-spacing: .04em; background: #ffd319; color: #0d0221; box-shadow: 0 4px 0 var(--line), 0 0 18px rgba(255,211,25,.35); }
+
+/* Cabinet: Doge Moon Crash, comic and loud */
+.cab-doge { background: #0b0a24; box-shadow: 0 0 0 1px #2c2a66 inset, 0 10px 0 var(--line); font-family: 'Comic Neue', 'Comic Sans MS', cursive; }
+.cab-doge .screen { background: #07061a; }
+.cab-doge .dm-hud { position: absolute; left: 10px; right: 10px; top: 8px; display: flex; justify-content: space-between; font: 400 11px 'Bungee', sans-serif; color: #fff; text-shadow: 1px 1px 0 #000; pointer-events: none; }
+.cab-doge .dm-hud b { color: #ffc93c; font-weight: 400; }
+.cab-doge .kicker { color: #3dff9b; }
+.cab-doge h2 { margin: 0; gap: .3em; font: 400 22px/1 'Bungee', 'Arial Black', system-ui, sans-serif; white-space: nowrap; transform: rotate(-1.5deg); }
+.cab-doge h2 span { color: #ffc93c; text-shadow: 2px 2px 0 #000; }
+.cab-doge h2 em { font-style: normal; color: #fff; text-shadow: 2px 2px 0 #000; }
+.cab-doge p { font-weight: 700; }
+.cab-doge .facts li { background: #1c1a47; color: #fff; font-weight: 700; }
+.cab-doge .best { font-weight: 700; }
+.cab-doge .play { font: 400 18px 'Bungee', sans-serif; background: #ffc93c; color: #1b1200; box-shadow: 0 4px 0 var(--line); }
 .lam-hud { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; font: 500 10px var(--mono); color: #d9c8ff; letter-spacing: .08em; pointer-events: none; text-shadow: 0 1px 2px #000; }
 .lam-hud b { color: #fff; font-weight: 800; }
 .cons { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; font: 500 10px var(--mono); color: #9b93b8; letter-spacing: .06em; pointer-events: none; }

@@ -126,6 +126,7 @@
     raf = 0;
     drawNet(now);
     drawLambo(now);
+    drawDoge(now);
     if (!ter.length) return;
     if (!R) R = fit(rideCv);
     var g = R.g, w = R.w, h = R.h, sec = (now - t0) / 1000;
@@ -257,7 +258,30 @@
   }
   try { var wl = JSON.parse(get('pof-wl') || 'null'), stopsDone = wl && wl.done ? Object.keys(wl.done).length : 0; if (stopsDone) $('best-lambo').innerHTML = 'Road trip: <b>' + Math.min(6, stopsDone) + ' of 6</b> stops reached'; } catch (e) { /* nothing saved */ }
 
-  function redraw() { drawStage(); R = null; N = null; LB = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); drawLambo(t0 + 3000); } }
+  // Doge Moon Crash: the astronaut doge climbing from blue sky into space, red candles sliding past.
+  var dogeCv = $('doge'), DG = null, dmKm = $('dm-km'), DMA = window.POF_DM_ART;
+  function drawDoge(now) {
+    if (!dogeCv || !DMA) return;
+    if (!DG) DG = fit(dogeCv);
+    var g = DG.g, w = DG.w, h = DG.h, sec = (now - t0) / 1000, loop = (sec % 24) / 24, i;
+    function mix(a, b, t) { return 'rgb(' + a.map(function (v, k) { return Math.round(v + (b[k] - v) * t); }).join(',') + ')'; }
+    var k = Math.min(1, loop * 1.6), sk = g.createLinearGradient(0, 0, 0, h);
+    sk.addColorStop(0, mix([63, 143, 224], [3, 3, 16], k)); sk.addColorStop(1, mix([191, 227, 255], [36, 26, 82], k)); g.fillStyle = sk; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#fff'; for (i = 0; i < 40; i++) { g.globalAlpha = k * (0.4 + 0.6 * ((i * 37) % 10) / 10); g.fillRect((i * 97) % w, ((i * 53 + sec * 14) % h), 1.5, 1.5); } g.globalAlpha = 1;
+    DMA.moon(g, w * 0.84, h * 0.2, h * (0.07 + loop * 0.16));
+    var u = h / 330;   // candles and coins slide down past the dog
+    for (i = 0; i < 2; i++) {
+      var y = ((i * 0.62 + sec * 0.2) % 1.24 - 0.12) * h, gap = (0.25 + ((i * 53) % 5) * 0.11) * w, x;
+      for (x = -10 * u; x < w; x += 30 * u) { if (x + 26 * u > gap - 46 * u && x < gap + 46 * u) continue; var bh = (34 + ((x * 7 + i * 13) % 30)) * u; DMA.candle(g, x, y - bh / 2, 26 * u, bh, 9 * u); }
+      DMA.coin(g, gap, y, 8 * u, sec);
+    }
+    var dx = w * (0.5 + Math.sin(sec * 0.9) * 0.2);
+    DMA.doge(g, dx, h * 0.52 + Math.sin(sec * 2) * 4, 22 * u, sec, { flame: 1, tilt: Math.cos(sec * 0.9) * 0.2, wow: true, tongue: true });
+    if (dmKm) dmKm.textContent = Math.round(loop * loop * 384400).toLocaleString('en-US');
+  }
+  try { var dm = JSON.parse(get('pof-dm') || 'null'); if (dm && dm.best) { var dms = dm.best, dmm = Math.floor(dms / 60000), dss = Math.floor(dms / 1000) % 60; $('best-doge').innerHTML = 'Your fastest moon: <b>' + dmm + ':' + (dss < 10 ? '0' : '') + dss + '</b>'; } } catch (e) { /* nothing saved */ }
+
+  function redraw() { drawStage(); R = null; N = null; LB = null; DG = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); drawLambo(t0 + 3000); drawDoge(t0 + 9000); } }
   redraw();
   run();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) run(); });
