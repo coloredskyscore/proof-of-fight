@@ -11,6 +11,20 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 14, 2026: Wen Lambo (proofoffight.com/lambo)
+
+A synthwave road-trip racer, all drawn in code: build your car in the garage, drive it to a crypto conference in each city, post it. Its own page and look (`lambo/index.html`, `css/wl.css`), and a cabinet on the arcade.
+
+- **The drive:** a pseudo-3D road (flat segments projected one by one, `js/wl-view.js`). The car accelerates by itself; steer with the arrow keys or by holding a side of the screen, brake with Down or by holding both sides. Running into traffic costs most of your speed; passing a car closely gives a **DRAFT** boost. Off the road is slow.
+- **Six stages, unlocked in order:** Miami (Sunset Causeway), Denver (mountains at night, snow), Riviera (coast road), Dubai (desert highway, sand on the road costs grip), Tokyo (rain, less grip, tight bends), The Grid (bonus: rollercoaster hills, lane-changing traffic). Each has its own sky, skyline, roadside, billboards and a finish gantry named after a made-up event (HODL CON, BUIDL WEEK, LE SUMMIT, TOKEN OASIS, NEON BLOCK WEEK, THE MAINNET). No real conference names or logos.
+- **Two modes:** Time Trial (clock, traffic, bronze/silver/gold medal times, a ghost of your best run or of the leaderboard's #1) and Cruise (no traffic, no clock, slower, rolls on into the next open stage).
+- **Six cars** with their own top speed, acceleration and grip: Nightwedge (wedge supercar) and Big Block (muscle car) from the start, then Niner (rear-engine coupe, after Miami), Strake 80 (80s exotic, after Denver), HODL SUV (after Dubai; keeps most of its speed when it hits traffic) and Bear Market (a slow hatchback, after Tokyo). They nod at kinds of car, copy none, and have no badges (`js/wl-cars.js`, side and rear views).
+- **Garage:** paint (13) and finish (gloss, matte, neon, chrome), wheels (5 styles, 6 colours), wing, underglow, decal, and a plate of up to 7 characters. Most parts unlock by finishing stages, a few by winning gold. **Share** makes a 1200x675 picture of the car (with the time, after a run).
+- **Radio:** a button while driving (or R) changes station: WAGMI FM 104.2, HODL RADIO 88.8, DEGEN 99.9, or off. For now each station is a code-made loop; `STATIONS` in `js/wl-audio.js` takes a list of real tracks per station (`tracks: ['audio/wl/...mp3']`) for Brian's Suno songs.
+- **Leaderboards:** one per stage, fastest first, on the same Cloudflare Worker as Ride the Chart (`/wl/scores`). A run is its recorded steering; the server drives it again with `js/wl-core.js` and only takes the time if it comes out the same. The Worker has to be deployed again for this; until then the game says the leaderboard is offline and keeps times on the device.
+- `js/wl-core.js` is the rules with no drawing (node-runnable). `node tools/wl-sim.js` drives every car down every stage with two bots and checks that runs replay. Medal times come from the best bot run plus 3%, 10% and 22%.
+- `/lambo/?all` opens every stage, car and part. `?debug` exposes `window.POF_WL`; `?auto` lets the bot drive.
+
 ### Nov 13, 2026: the Dust Bin
 
 - A **Dust Bin** section under the games on the arcade: where the dumbest game ideas go to die. Each binned idea is a faded, slightly crooked tile (it brightens on hover) that still opens the prototype, with the date it was born and binned.

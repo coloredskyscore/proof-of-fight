@@ -2,6 +2,7 @@
    - short race links: a recorded run (see encode in js/dip-core.js) is stored under a short id, so a link is
      proofoffight.com/?dip&r=<id> instead of the whole run;
    - leaderboards: one per chain plus one per day for Daily Coin, three-letter initials.
+   - Wen Lambo's leaderboards (/wl/scores): one per stage, fastest time first.
    The game's own rules (js/dip-core.js and the price files) are bundled in front of this file by
    tools/build-worker.js, which leaves them on globalThis as POF_DIP_CORE / POF_DIP_CHAINS / the price data.
    With VERIFY = "1" every run is replayed here before it is stored, and the replay must die on the
@@ -53,6 +54,18 @@ function check(code, verify) {
   }
   if (!S.dead || C.score(S) !== R.score) return 'run does not replay';
   return R;
+}
+
+// Wen Lambo (js/wl-core.js): the recorded steering is driven again here and the time must come out the same.
+// Boards sort by score, highest first, so a time is stored as 10,000,000 minus its milliseconds. day holds the car.
+const WL = globalThis.POF_WL_CORE;
+function checkWl(code) {
+  if (typeof code !== 'string' || code.length > MAX_CODE) return 'bad run';
+  const R = WL.decode(code);
+  if (!R) return 'bad run';
+  const S = WL.replay(R);
+  if (!S.done || !S.ms || S.ms !== R.ms) return 'run does not replay';
+  return { mode: 'wl-' + R.stage, seed: '', score: 10000000 - S.ms, day: WL.carIdx[R.car], board: 'wl-' + R.stage };
 }
 
 async function shortId(code) {
@@ -110,6 +123,27 @@ async function handle(req, env) {
   if (req.method === 'GET' && path === '/scores') {
     const b = url.searchParams.get('board') || 'btc';
     if (!/^(btc|sol|[a-z]{2,8}|daily-\d{4}-\d{2}-\d{2})$/.test(b)) return json({ error: 'bad board' }, 400);
+    const n = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit'), 10) || 10));
+    const rows = await env.DB.prepare('SELECT initials, score, day, run, created FROM scores WHERE board = ? ORDER BY score DESC, created ASC LIMIT ?').bind(b, n).all();
+    return json({ board: b, top: rows.results || [] }, 200, 30);
+  }
+  if (req.method === 'POST' && path === '/wl/scores') {
+    const body = await req.json().catch(() => ({}));
+    const initials = String(body.initials || '').toUpperCase();
+    if (!/^[A-Z]{3}$/.test(initials) || BAD.has(initials)) return json({ error: 'pick other initials' }, 400);
+    const ip = await ipKey(req);
+    if (await tooMany(env, ip, 'scores', 6)) return json({ error: 'slow down' }, 429);
+    const R = checkWl(body.code);
+    if (typeof R === 'string') return json({ error: R }, 400);
+    const run = await saveRun(env, body.code, R);
+    await env.DB.prepare('INSERT OR IGNORE INTO scores (board, initials, score, day, run, ip, created) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .bind(R.board, initials, R.score, R.day, run, ip, Date.now()).run();
+    const rank = await env.DB.prepare('SELECT COUNT(*) + 1 AS r FROM scores WHERE board = ? AND score > ?').bind(R.board, R.score).first();
+    return json({ run, board: R.board, rank: rank.r });
+  }
+  if (req.method === 'GET' && path === '/wl/scores') {
+    const b = url.searchParams.get('board') || 'wl-miami';
+    if (!/^wl-[a-z]{2,10}$/.test(b)) return json({ error: 'bad board' }, 400);
     const n = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit'), 10) || 10));
     const rows = await env.DB.prepare('SELECT initials, score, day, run, created FROM scores WHERE board = ? ORDER BY score DESC, created ASC LIMIT ?').bind(b, n).all();
     return json({ board: b, top: rows.results || [] }, 200, 30);

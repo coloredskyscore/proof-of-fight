@@ -117,6 +117,16 @@ footer.site a { color: var(--ink); }
 .cab-51 h2 .atk { color: var(--red51); font-size: .62em; letter-spacing: .14em; text-shadow: 0 0 14px rgba(255,61,90,.75); }
 .cab-51 .facts li { background: #15122a; color: #dcd6f5; font-family: var(--mono); font-size: 11px; }
 .cab-51 .play { font: 800 18px var(--mono); letter-spacing: .04em; background: var(--teal); color: #03140f; box-shadow: 0 4px 0 var(--line), 0 0 18px rgba(25,230,176,.25); }
+.cab-lambo { --lp: #ff2e97; --lc: #2de2e6; background: #0d0221; box-shadow: 0 0 0 1px #3a1a66 inset, 0 10px 0 var(--line); font-family: var(--grotesk); }
+.cab-lambo .screen { background: #0d0221; }
+.cab-lambo .kicker { color: var(--lc); font-family: var(--mono); }
+.cab-lambo h2 { margin: 0; gap: .22em; font: 400 29px/1 'Monoton', 'Arial Black', system-ui, sans-serif; white-space: nowrap; }
+.cab-lambo h2 span { color: var(--lp); text-shadow: 0 0 14px rgba(255,46,151,.8); }
+.cab-lambo h2 em { font-style: normal; color: var(--lc); text-shadow: 0 0 14px rgba(45,226,230,.8); }
+.cab-lambo .facts li { background: #1d0b3d; color: #f6e7ff; font-family: var(--mono); font-size: 11px; }
+.cab-lambo .play { font: 800 18px var(--mono); letter-spacing: .04em; background: #ffd319; color: #0d0221; box-shadow: 0 4px 0 var(--line), 0 0 18px rgba(255,211,25,.35); }
+.lam-hud { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; font: 500 10px var(--mono); color: #d9c8ff; letter-spacing: .08em; pointer-events: none; text-shadow: 0 1px 2px #000; }
+.lam-hud b { color: #fff; font-weight: 800; }
 .cons { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; font: 500 10px var(--mono); color: #9b93b8; letter-spacing: .06em; pointer-events: none; }
 .cons-bar { position: relative; flex: 1; height: 6px; border-radius: 3px; background: rgba(25,230,176,.22); overflow: hidden; }
 .cons-bar i { position: absolute; inset: 0 auto 0 0; width: 20%; background: #ff3d5a; box-shadow: 0 0 8px #ff3d5a; }
