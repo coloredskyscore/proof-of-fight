@@ -20,7 +20,7 @@ Brian's idea: a boombox on proofoffight.com that plays the songs from every game
 - **Looks, all drawn in code:** a graphite 80s boombox with piano keys, two speakers whose cones pump with the bass, an LCD with an equaliser and a seek bar, a cassette whose label names the song and whose reels turn (the tape moves from one reel to the other as the song plays), and the dial with a red needle. A song list below names each song's game, linked to it. While music plays and the boombox is scrolled away, a mini player sits at the bottom of the screen.
 - **Files:** `js/boombox.js` (station list, player, drawing), `css/boombox.css`, the section in `index.html`. Extra song files in `audio/box/`, built by `python3 tools/boombox.py PROJECT_FILES RENDER_DIR`: full rap beats and Arena Anthem from the project's Suno files, the fighting game's songs stretched from their seamless loops to about two minutes with a fade (only the loop cuts survive), and the 51% Attack and Ride the Chart music recorded by `node tools/boombox-render.js RENDER_DIR` (Ride's music is a copy of the one in `js/dip.js`). Other songs play the game's own file.
 - **Adding a song:** drop the mp3 in `audio/box/` (about -16 LUFS) and add a line to `STATIONS` in `js/boombox.js`. A song made only for the boombox uses game `null` and shows BOOMBOX EXCLUSIVE. Brian is making more rock songs for SHRED (prompts in the project's `boombox/shred-prompts.md`).
-- A gold music-note button in the top corner of the hub jumps to the boombox and pulses while music plays.
+- A small music-note icon in the top-right corner of the page jumps to the boombox and glows gold while music plays.
 - The station, volume and shuffle are kept in localStorage `pof-bb`.
 
 ### Nov 14, 2026: Sui Swell (proofoffight.com/sui)
