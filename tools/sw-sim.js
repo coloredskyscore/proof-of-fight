@@ -12,7 +12,7 @@ function run(seed, skill, every) {
 }
 function line(S) {
   return C.fmt(S.total) + ' [' + S.results.map(function (r) {
-    return C.fmt(r.pts) + (r.out ? '' : ' WIPE:' + r.where) + ' d' + r.drops + '/' + r.nDrops + ' a' + r.airs + '+' + r.spins + ' t' + r.tdrops + '/' + r.nT + ' s' + r.scrapes + ' h' + r.hits;
+    return C.fmt(r.pts) + (r.out ? '' : ' WIPE:' + r.where) + ' d' + r.drops + '/' + r.nDrops + ' a' + r.airs + '+' + r.spins + ' deep' + r.parts.deep + ' x' + r.maxMult + (r.dodge ? ' DODGE' : '') + ' h' + r.hits;
   }).join(' | ') + ']';
 }
 var ok = true, days = ['2026-11-14', '2026-11-15', '2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19'];
