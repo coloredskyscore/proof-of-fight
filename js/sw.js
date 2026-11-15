@@ -51,7 +51,7 @@
     }).join('') + '</ol>';
   }
 
-  // ---------- Sound: all made in code. Sea noise, a surf-rock loop, the crowd ----------
+  // ---------- Sound: the song is an MP3; the sea, the crowd and a stand-in loop are made in code ----------
   var ac = null, master = null, musicG = null, musicF = null, seaG = null, seaF = null, noiseBuf = null, musicT = 0, musicStep = 0;
   function audio() {
     if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
@@ -61,6 +61,7 @@
     var n = ac.createBufferSource(); n.buffer = noiseBuf; n.loop = true; seaF = ac.createBiquadFilter(); seaF.type = 'lowpass'; seaF.frequency.value = 500;
     seaG = ac.createGain(); seaG.gain.value = 0.03; n.connect(seaF); seaF.connect(seaG); seaG.connect(master); n.start();
     musicF = ac.createBiquadFilter(); musicF.type = 'lowpass'; musicF.frequency.value = 16000; musicG = ac.createGain(); musicG.gain.value = 0.5; musicF.connect(musicG); musicG.connect(master);
+    loadSong();
   }
   function tone(f1, f2, dur, type, vol, when, dest) {
     if (!ac) return; var o = ac.createOscillator(), v = ac.createGain(), t = ac.currentTime + (when || 0);
@@ -92,8 +93,22 @@
   var BASS = [82.41, 82.41, 98, 110];
   var LEAD = [[659.3, 659.3, 587.3, 493.9, 587.3, 493.9, 440, 392], [440, 493.9, 587.3, 493.9, 440, 392, 329.6, 329.6], [392, 493.9, 587.3, 784, 587.3, 493.9, 587.3, 493.9], [440, 554.4, 659.3, 880, 659.3, 554.4, 493.9, 493.9]];
   var musicMode = 'menu';   // menu | surf | off
+  // The song (made by Brian in Suno) replaces the code-made loop once it has loaded. It runs through the same
+  // filter, so it goes muffled inside the barrel. It loops just before the silent tail of the file.
+  var songG = null, songOn = false, SONG = 'audio/sw/sui-swell.mp3', SONG_END = 74.0;
+  function loadSong() {
+    if (!window.fetch) return;
+    fetch(SONG).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(function (ab) {
+      return new Promise(function (ok, no) { ac.decodeAudioData(ab, ok, no); });
+    }).then(function (buf) {
+      var src = ac.createBufferSource(); src.buffer = buf; src.loop = true; src.loopStart = 0; src.loopEnd = Math.min(SONG_END, buf.duration);
+      songG = ac.createGain(); songG.gain.value = 0; src.connect(songG); songG.connect(musicF); src.start(); songOn = true;
+    }).catch(function () { /* no song: the code-made loop keeps playing */ });
+  }
   function music() {
-    if (!ac || musicMode === 'off') return;
+    if (!ac) return;
+    if (songOn) { songG.gain.setTargetAtTime(musicMode === 'off' ? 0 : musicMode === 'surf' ? 1.6 : 1.0, ac.currentTime, 0.25); return; }
+    if (musicMode === 'off') return;
     var beat = 60 / 152 / 4;
     while (musicT < ac.currentTime + 0.15) {
       if (musicT < ac.currentTime) musicT = ac.currentTime + 0.02;
@@ -754,6 +769,7 @@
   });
   window.addEventListener('keyup', function (e) { var c = e.code; if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW') held = false; });
   window.addEventListener('blur', function () { held = false; });
+  document.addEventListener('visibilitychange', function () { if (ac) { if (document.hidden) ac.suspend(); else ac.resume(); } });
   document.addEventListener('visibilitychange', function () { if (document.hidden && (state === 'ride' || state === 'tube') && !paused && !AUTO) showPause(); });
 
   document.documentElement.classList.add('sw-on');
@@ -761,6 +777,6 @@
   window.addEventListener('resize', resize); resize();
   showTitle();
   requestAnimationFrame(frame);
-  if (DEBUG) window.POF_SW = { get S() { return S; }, get state() { return state; }, core: C, save: save, start: startRun, card: shareCard, title: showTitle, get last() { return lastRun; },
+  if (DEBUG) window.POF_SW = { get S() { return S; }, get state() { return state; }, core: C, save: save, dbg: function () { return { ac: ac, musicF: musicF, songG: songG, songOn: songOn }; }, start: startRun, card: shareCard, title: showTitle, get last() { return lastRun; },
     toTube: function () { S.x = S.B.L - 60; S.lo = S.B.objs.length; }, nearExit: function () { S.tt = S.B.TT - 150; }, hold: function (v) { held = v; }, god: function () { S.meter = 100; } };
 })();
