@@ -11,6 +11,17 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 15, 2026: the Boombox (on the hub)
+
+Brian's idea: a boombox on proofoffight.com that plays the songs from every game. His calls: genre radio stations, nonstop play, a randomizer, and the game's name where a radio shows the artist.
+
+- **Five stations** on a tuner dial: 8-BIT 88.3 (Doge Moon Crash's chiptune plus the code-made music of 51% Attack and Ride the Chart), BARS 96.1 (the 9 Rap Battle beats, full length), SHRED 99.5 (Arena Anthem, Sui Swell), BOSS FM 101.5 (the fighting game's dubstep: title, fight, five boss themes, Triumph of Light) and NEON 107.7 (Wen Lambo's 10 songs). 34 songs.
+- **Play:** nothing plays until a tap (browsers block sound before one). Then it's nonstop: the next song, and after a station's last song the next station. Tuning a station starts it. Shuffle picks from every station and doesn't repeat until half the songs have played. Lock-screen and headphone controls show the song, the game as the artist, and the station.
+- **Looks, all drawn in code:** a graphite 80s boombox with piano keys, two speakers whose cones pump with the bass, an LCD with an equaliser and a seek bar, a cassette whose label names the song and whose reels turn (the tape moves from one reel to the other as the song plays), and the dial with a red needle. A song list below names each song's game, linked to it. While music plays and the boombox is scrolled away, a mini player sits at the bottom of the screen.
+- **Files:** `js/boombox.js` (station list, player, drawing), `css/boombox.css`, the section in `index.html`. Extra song files in `audio/box/`, built by `python3 tools/boombox.py PROJECT_FILES RENDER_DIR`: full rap beats and Arena Anthem from the project's Suno files, the fighting game's songs stretched from their seamless loops to about two minutes with a fade (only the loop cuts survive), and the 51% Attack and Ride the Chart music recorded by `node tools/boombox-render.js RENDER_DIR` (Ride's music is a copy of the one in `js/dip.js`). Other songs play the game's own file.
+- **Adding a song:** drop the mp3 in `audio/box/` (about -16 LUFS) and add a line to `STATIONS` in `js/boombox.js`. A song made only for the boombox uses game `null` and shows BOOMBOX EXCLUSIVE. Brian is making more rock songs for SHRED (prompts in the project's `boombox/shred-prompts.md`).
+- The station, volume and shuffle are kept in localStorage `pof-bb`.
+
 ### Nov 14, 2026: Sui Swell (proofoffight.com/sui)
 
 Brian's idea: a Sui wave surfer. You ride the wave up and down, and when it crests over you the game switches to a first-person view inside the tube. Make it out and the crowd cheers with 80s and 90s surf talk; wipe out and they give a kind "ohhh, good try" instead of a boo. All drawn in code. Its own page and look (`sui/index.html`, `css/sw.css`), and a cabinet on the arcade. Tagline: "Drop in. Get barreled. Stay liquid."
