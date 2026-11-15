@@ -18,12 +18,12 @@
   var UP = 3.4, DOWN = 3.0, VMAX = 1.25, LAUNCH = 0.8, GA = 2.4, SPIN = 1.25, PUMP = 1.9;
   var GAIN = 11, DECAY = 4.5;          // speed meter per second: carving earns it, coasting loses it
   // the tube: d is how deep you are, 0 at the opening and 1 at the foam ball, per second
-  var STALL = 0.36, TRIM = 0.9, TUBE_T = TPS * 8, CLOSE = TPS, WARN = 48, DODGE = 66;
+  var STALL = 0.36, TRIM = 1.26, TUBE_T = TPS * 8, CLOSE = TPS, WARN = 90, DODGE = 66;
   var FACT = [0, 0.1, 0.4, 0.7, 1], DEEPV = 3000 / (TUBE_T * 0.72);   // points a tick at MAX; 72% of the tube at MAX fills it
   var WAVES = [
-    { name: 'TESTNET RIPPLE', ft: 8, vx: 300, ride: 20, surges: 2, surge: 0.3, dur: 80 },
-    { name: 'DEVNET SWELL', ft: 15, vx: 335, ride: 20, surges: 3, surge: 0.42, dur: 72 },
-    { name: 'MAINNET MONSTER', ft: 30, vx: 370, ride: 20, surges: 4, surge: 0.55, dur: 64 }
+    { name: 'TESTNET RIPPLE', ft: 8, vx: 300, ride: 20, surges: 2, surge: 0.24, dur: 120 },
+    { name: 'DEVNET SWELL', ft: 15, vx: 335, ride: 20, surges: 3, surge: 0.34, dur: 110 },
+    { name: 'MAINNET MONSTER', ft: 30, vx: 370, ride: 20, surges: 4, surge: 0.45, dur: 100 }
   ];
   var KINDS = [
     [['arc', 0.34], ['air', 0.2], ['buoy', 0.16], ['jelly', 0.15], ['fin', 0.1], ['whale', 0.05]],
@@ -216,12 +216,12 @@
   function encode(S) {
     var out = '', prev = 0, i, v;
     for (i = 0; i < S.tog.length; i++) { v = S.tog[i] - prev; prev = S.tog[i]; while (v >= 32) { out += A64[32 + (v & 31)]; v = Math.floor(v / 32); } out += A64[v]; }
-    return ['sw2', S.mode === 'daily' ? 'd' : 'f', S.seed, S.total, S.n, out].join('.');
+    return ['sw3', S.mode === 'daily' ? 'd' : 'f', S.seed, S.total, S.n, out].join('.');
   }
   function decode(code) {
     if (typeof code !== 'string') return null;
     var p = code.split('.'), tog = [], i, c, v = 0, sh = 1, at = 0;
-    if (p.length !== 6 || p[0] !== 'sw2' || (p[1] !== 'd' && p[1] !== 'f')) return null;
+    if (p.length !== 6 || p[0] !== 'sw3' || (p[1] !== 'd' && p[1] !== 'f')) return null;
     if (p[1] === 'd' ? !/^\d{4}-\d{2}-\d{2}$/.test(p[2]) : !/^[a-z0-9]{1,12}$/.test(p[2])) return null;
     if (!/^\d{1,5}$/.test(p[3]) || !/^\d{1,5}$/.test(p[4]) || +p[4] > MAX_N || p[5].length > 12000) return null;
     for (i = 0; i < p[5].length; i++) {

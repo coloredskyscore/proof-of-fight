@@ -478,7 +478,14 @@
     for (i = 0; i < 4; i++) { g.fillStyle = m === i + 1 ? '#fff' : 'rgba(4,22,58,.7)'; g.fillText(MULT[i + 1], x + w * (i + 0.5) / 4, y + h / 2 + 1); }
     // where the foam ball is about to lunge to
     var Lmin = L; for (i = 1; i <= C.WARN + 40; i += 4) Lmin = Math.min(Lmin, C.limit(B, S.tt + i));
-    if (Lmin < L - 0.02 && B.TT - S.tt > C.CLOSE + 30) { g.fillStyle = 'rgba(255,79,109,' + (0.45 + 0.3 * Math.sin(t * 16)) + ')'; g.fillRect(x + Lmin * w, y, (L - Lmin) * w, h); }
+    var surgeOn = Lmin < L - 0.02 && B.TT - S.tt > C.CLOSE + 30;
+    if (surgeOn) {   // bright red stripes so the warning stands out from the pink MAX zone
+      var zx = x + Lmin * w, zw = (L - Lmin) * w;
+      g.fillStyle = '#ff2448'; g.globalAlpha = 0.75 + 0.25 * Math.sin(t * 14); g.fillRect(zx, y, zw, h);
+      g.globalAlpha = 1; g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath();
+      for (i = -h; i < zw; i += 14) { var sx = zx + i + (t * 40) % 14; g.moveTo(sx, y + h); g.lineTo(sx + 7, y + h); g.lineTo(sx + 7 + h, y); g.lineTo(sx + h, y); g.closePath(); }
+      g.fill(); g.fillStyle = '#fff'; g.fillRect(zx, y, 3, h);
+    }
     // the foam ball
     var fxx = x + L * w; g.fillStyle = '#fff'; g.fillRect(fxx, y, w, h);
     for (i = 0; i < 5; i++) { g.beginPath(); g.arc(fxx + Math.sin(t * 6 + i * 2) * 3, y + i * h / 4, 9 + (i % 2) * 4, 0, TAU); g.fill(); }
@@ -489,16 +496,18 @@
     g.save(); g.translate(px, y - 4); g.beginPath(); g.moveTo(0, 6); g.lineTo(11, -10); g.lineTo(-11, -10); g.closePath(); g.fillStyle = '#ffe14a'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#0b1b4a'; g.lineJoin = 'round'; g.stroke(); g.restore();
     g.fillStyle = '#ffe14a'; g.fillRect(px - 1.5, y, 3, h);
     g.font = '10px ' + DISP; g.textBaseline = 'bottom'; g.fillStyle = '#fff'; g.textAlign = 'center'; shadow('YOU', px, y - 16);
-    g.textAlign = 'left'; if (px > x + 44) shadow('EXIT', x + 2, y - 3); g.textAlign = 'right'; shadow('FOAM BALL', x + w - 2, y - 3);
+    g.textAlign = 'left'; if (px > x + 44) shadow('EXIT', x + 2, y - 3); g.textAlign = 'right';
+    if (surgeOn) { g.fillStyle = '#ff8fa3'; g.font = '12px ' + DISP; shadow('SURGE!', x + w - 2, y - 3); } else shadow('FOAM BALL', x + w - 2, y - 3);
   }
   // The multiplier, big, and a word of advice when you need one.
   function tubeHint(t) {
     var B = S.B, d = S.d, m = C.multOf(d), L = C.limit(B, S.tt), rem = B.TT - S.tt, i, Lmin = L, y = H * 0.2 + safeTop + 40, msg = null, col = '#fff';
-    for (i = 1; i <= C.WARN + 20; i += 4) Lmin = Math.min(Lmin, C.limit(B, S.tt + i));
+    for (i = 1; i <= C.WARN + 40; i += 4) Lmin = Math.min(Lmin, C.limit(B, S.tt + i));
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
     g.save(); g.translate(VW / 2, y); var sc = (m === 4 ? 1 + 0.06 * Math.sin(t * 12) : 1) * (1 + multPulse * 0.45); multPulse = Math.max(0, multPulse - 0.06); g.scale(sc, sc); g.font = (m === 4 ? 64 : 54) + 'px ' + DISP; g.lineWidth = 9; g.strokeStyle = '#0b1b4a'; g.strokeText(MULT[m], 0, 0); g.fillStyle = m === 1 ? '#fff' : m === 4 ? '#ff7ab8' : '#ffe14a'; g.fillText(MULT[m], 0, 0); g.restore();
     if (rem < C.CLOSE + 30) { if (d > 0.1) { msg = 'LET GO! SHOOT OUT!'; col = '#ff8fa3'; } }
     else if (Lmin < L - 0.02 && d > Lmin - 0.12) { msg = 'FOAM SURGE! LET GO'; col = '#ff8fa3'; }
+    else if (Lmin < L - 0.02) { msg = 'SURGE! STAY OUT OF THE RED'; col = '#ffb3c0'; }
     else if (d > L - 0.13) { msg = 'TOO DEEP! LET GO'; col = '#ff8fa3'; }
     else if (S.maxMult === 1 && S.tt > 40 && !held) msg = 'HOLD TO STALL AND GO DEEPER';
     else if (held && m < 4) msg = 'deeper...';
