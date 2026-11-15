@@ -249,6 +249,7 @@
     $('bb-mini-title').textContent = x ? x[0] : '';
     $('bb-mini-from').textContent = x ? (g ? g.name : 'Boombox exclusive') + ' · ' + S.name : '';
     root.classList.toggle('is-playing', playing);
+    var jump = $('bb-jump'); if (jump) jump.classList.toggle('is-playing', playing);
     mini();
     mediaSession();
     renderTime();
@@ -265,6 +266,9 @@
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (es) { seen = es[0].isIntersecting; mini(); if (seen) wake(); }, { threshold: 0.05 }).observe(root.querySelector('.boombox'));
   }
+  // The music-note shortcut at the top of the page.
+  var jumpBtn = $('bb-jump');
+  if (jumpBtn) jumpBtn.addEventListener('click', function (e) { e.preventDefault(); root.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); });
   $('bb-mini-up').addEventListener('click', function () { root.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); });
 
   // ---------- Drawing ----------

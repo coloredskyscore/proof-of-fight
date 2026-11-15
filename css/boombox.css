@@ -108,3 +108,16 @@
   .bb-handle { left: 24%; right: 24%; }
 }
 @media (prefers-reduced-motion: reduce) { .bars i { animation: none; } .bb-needle, .bb-keys button { transition: none; } }
+
+/* The music-note shortcut in the top corner: jumps down to the boombox, and pulses while music plays */
+.marquee { position: relative; }
+.bb-jump { position: absolute; top: 0; right: 0; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; text-decoration: none;
+  background: linear-gradient(180deg, #ffe27a, var(--gold)); border: 3px solid var(--line); box-shadow: 0 4px 0 var(--red), 0 6px 0 var(--line); color: var(--line); }
+.bb-jump svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.bb-jump svg circle { fill: currentColor; }
+.bb-jump:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--red), 0 3px 0 var(--line); }
+.bb-jump:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.bb-jump.is-playing { animation: bb-jump 1s ease-in-out infinite; }
+@keyframes bb-jump { 50% { box-shadow: 0 4px 0 var(--red), 0 6px 0 var(--line), 0 0 0 7px rgba(255,210,63,.25); } }
+@media (max-width: 640px) { .bb-jump { width: 38px; height: 38px; top: -16px; } .bb-jump svg { width: 20px; height: 20px; } }
+@media (prefers-reduced-motion: reduce) { .bb-jump.is-playing { animation: none; } }
