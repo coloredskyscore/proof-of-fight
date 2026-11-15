@@ -27,7 +27,7 @@
       ['The Climb (Title Mix)', 'doge', 'audio/dm/title.mp3', 129],
       ['Buy the Dip', 'ride', 'audio/box/ride-buy-the-dip.mp3', 150],
       ['Moon Landing', 'doge', 'audio/dm/moon-landing.mp3', 75]] },
-    { id: 'bars', name: 'BARS', freq: '96.1', tag: 'Hip-hop battle beats', color: '#b48cff', ink: '#1a0b38', songs: [
+    { id: 'bars', name: 'BEATS', freq: '96.1', tag: 'Hip-hop battle beats', color: '#b48cff', ink: '#1a0b38', songs: [
       ['Detroit', 'rap', 'audio/box/rap-detroit.mp3', 89],
       ['Gangsta', 'rap', 'audio/box/rap-gangsta.mp3', 157],
       ['Final Round', 'rap', 'audio/box/rap-final-round.mp3', 116],
