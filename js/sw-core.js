@@ -7,7 +7,9 @@
    A heat is three waves. Each wave has two parts:
    - the ride (side view): hold to carve up the face, let go to drop. Grab droplets, launch off the lip, keep
      your speed up or the whitewater catches you;
-   - the tube (first person): the same one button keeps you inside the barrel until you shoot out of the end.
+   - the tube (first person, 8 seconds): hold to stall and sink deeper into the barrel, where the score
+     multiplier is higher and the foam ball is closer; let go to trim back toward the opening. Left alone you
+     ride out safely at 1x. The foam ball surges now and then, and the barrel closes at the end.
    A wave is worth up to 10,000 points, shown the way surf judges do: 10.00. */
 (function (root) {
   'use strict';
@@ -15,12 +17,13 @@
   // the ride: h is the height on the face, 0 at the bottom and 1 at the lip, per second
   var UP = 3.4, DOWN = 3.0, VMAX = 1.25, LAUNCH = 0.8, GA = 2.4, SPIN = 1.25, PUMP = 1.9;
   var GAIN = 11, DECAY = 4.5;          // speed meter per second: carving earns it, coasting loses it
-  // the tube
-  var TUP = 2.6, TDOWN = 2.3, TV = 0.85, DRAIN = 3;
+  // the tube: d is how deep you are, 0 at the opening and 1 at the foam ball, per second
+  var STALL = 0.36, TRIM = 0.9, TUBE_T = TPS * 8, CLOSE = TPS, WARN = 48, DODGE = 66;
+  var FACT = [0, 0.1, 0.4, 0.7, 1], DEEPV = 3000 / (TUBE_T * 0.72);   // points a tick at MAX; 72% of the tube at MAX fills it
   var WAVES = [
-    { name: 'TESTNET RIPPLE', ft: 8, vx: 300, ride: 20, vz: 300, tube: 10, bend: 0.7, r1: 0.31, open: 0.37, hurt: 0.6 },
-    { name: 'DEVNET SWELL', ft: 15, vx: 335, ride: 20, vz: 335, tube: 10.5, bend: 0.85, r1: 0.28, open: 0.33, hurt: 0.8 },
-    { name: 'MAINNET MONSTER', ft: 30, vx: 370, ride: 20, vz: 370, tube: 11, bend: 1, r1: 0.25, open: 0.29, hurt: 1 }
+    { name: 'TESTNET RIPPLE', ft: 8, vx: 300, ride: 20, surges: 2, surge: 0.3, dur: 80 },
+    { name: 'DEVNET SWELL', ft: 15, vx: 335, ride: 20, surges: 3, surge: 0.42, dur: 72 },
+    { name: 'MAINNET MONSTER', ft: 30, vx: 370, ride: 20, surges: 4, surge: 0.55, dur: 64 }
   ];
   var KINDS = [
     [['arc', 0.34], ['air', 0.2], ['buoy', 0.16], ['jelly', 0.15], ['fin', 0.1], ['whale', 0.05]],
@@ -82,30 +85,20 @@
     objs.sort(function (p, q) { return p.x - q.x; });
     for (i = 0; i < objs.length; i++) objs[i].i = i;
 
-    // the tube: its centre wanders, it narrows toward the end, and chunks of the lip close half of it
-    var B = { w: w, objs: objs, L: L, nDrops: nDrops, dropV: 2400 / Math.max(1, nDrops), TL: W.vz * W.tube, p1: r(), p2: r(), gates: [], tdrops: [] };
-    var z = 800, tops = 0;
-    while (z < B.TL - 500) {
-      var top = r() < 0.5; if (tops >= 2) top = false; else if (tops <= -2) top = true;
-      tops = top ? Math.max(1, tops + 1) : Math.min(-1, tops - 1);
-      var c = cen(B, z), rd = rad(B, z), g = { z: z, top: top };
-      if (top) { g.lo = c - rd; g.hi = g.lo + W.open; } else { g.hi = c + rd; g.lo = g.hi - W.open; }
-      B.gates.push(g);
-      z += 520 - 60 * w + r() * 260;
-    }
-    var p4 = r();
-    for (z = 400; z < B.TL - 200; z += 150) {
-      var near = false;
-      for (i = 0; i < B.gates.length; i++) if (z > B.gates[i].z - 280 && z < B.gates[i].z + 120) near = true;
-      if (!near) B.tdrops.push({ z: z, h: cen(B, z) + (pp(z / 800 + p4) * 2 - 1) * rad(B, z) * 0.45 });
-    }
-    for (i = 0; i < B.gates.length; i++) B.tdrops.push({ z: B.gates[i].z, h: (B.gates[i].lo + B.gates[i].hi) / 2 });
-    B.tdrops.sort(function (p, q) { return p.z - q.z; });
-    B.tdropV = 1500 / Math.max(1, B.tdrops.length);
+    // the tube: the foam ball lunges forward a few times; each lunge is the same for everyone with this seed
+    var B = { w: w, objs: objs, L: L, nDrops: nDrops, dropV: 2400 / Math.max(1, nDrops), TT: TUBE_T, surges: [] };
+    for (i = 0; i < W.surges; i++) B.surges.push({ t0: Math.floor(170 + (i + 0.1 + r() * 0.6) * (190 / W.surges)), dur: W.dur, a: W.surge + r() * 0.1 });
     return B;
   }
-  function cen(B, z) { var W = WAVES[B.w], k = Math.min(1, z / 500) * W.bend; return 0.5 + k * (0.19 * (pp(z / 900 + B.p1) * 2 - 1) + 0.07 * (pp(z / 370 + B.p2) * 2 - 1)); }
-  function rad(B, z) { var W = WAVES[B.w]; return 0.38 - (0.38 - W.r1) * Math.min(1, z / B.TL); }
+  // How deep you may be on this tube tick before the foam ball has you: 1 normally, less during a surge,
+  // and it closes to almost nothing in the last second.
+  function limit(B, tt) {
+    var L = 1, i, s, rem = B.TT - tt;
+    for (i = 0; i < B.surges.length; i++) { s = B.surges[i]; if (tt > s.t0 && tt < s.t0 + s.dur) L = Math.min(L, 1 - s.a * pp((tt - s.t0) / s.dur)); }
+    if (rem < CLOSE) L = Math.min(L, 0.12 + rem / CLOSE);
+    return L;
+  }
+  function multOf(d) { return d < 0.25 ? 1 : d < 0.5 ? 2 : d < 0.75 ? 3 : 4; }
 
   // Where a moving thing is on this tick: fills o.cx (px along the wave) and o.ch (height on the face).
   function place(o, tick) {
@@ -126,18 +119,18 @@
     if (S.phase !== 'between' || S.wave >= NW - 1) return;
     S.wave++; S.W = WAVES[S.wave]; S.B = build(seedKey(S.mode, S.seed), S.wave); S.taken = {};
     S.phase = 'ride'; S.wt = 0; S.x = 0; S.h = 0.5; S.vh = 0; S.air = false; S.rot = 0; S.pump = 0; S.meter = 60; S.inv = 0; S.lo = 0;
-    S.z = 0; S.gap = 0; S.gi = 0; S.ti = 0; S.scrapes = 0; S.hits = 0; S.dropsN = 0; S.tdropsN = 0; S.airsN = 0; S.spinsN = 0;
-    S.wp = { drops: 0, airs: 0, speed: 0, tube: 0, tdrops: 0, clean: 0 };
+    S.d = 0; S.tt = 0; S.lastDeep = 0; S.deepT = 0; S.maxMult = 1; S.hits = 0; S.dropsN = 0; S.airsN = 0; S.spinsN = 0;
+    S.wp = { drops: 0, airs: 0, speed: 0, tube: 0, deep: 0, dodge: 0 };
   }
   function endWave(S, out, where) {
     var p = S.wp;
-    if (out) { p.tube = 2500; p.clean = Math.max(0, 1000 - 350 * S.scrapes); }
-    var pts = Math.min(MAX_WAVE, Math.round(p.drops + p.airs + p.speed + p.tube + p.tdrops + p.clean));
+    if (out) { p.tube = 1500; if (S.lastDeep && S.tt - S.lastDeep <= DODGE) p.dodge = 500; }
+    var pts = Math.min(MAX_WAVE, Math.round(p.drops + p.airs + p.speed + p.tube + p.deep + p.dodge));
     S.total += pts; if (out) S.made++;
-    S.results.push({ pts: pts, out: out, where: where, drops: S.dropsN, nDrops: S.B.nDrops, tdrops: S.tdropsN, nT: S.B.tdrops.length, airs: S.airsN, spins: S.spinsN, scrapes: S.scrapes, hits: S.hits,
-      parts: { drops: Math.round(p.drops), airs: Math.round(p.airs), speed: Math.round(p.speed), tube: p.tube, tdrops: Math.round(p.tdrops), clean: p.clean } });
+    S.results.push({ pts: pts, out: out, where: where, drops: S.dropsN, nDrops: S.B.nDrops, airs: S.airsN, spins: S.spinsN, hits: S.hits, maxMult: S.maxMult, deepT: S.deepT, dodge: p.dodge > 0,
+      parts: { drops: Math.round(p.drops), airs: Math.round(p.airs), speed: Math.round(p.speed), tube: p.tube, deep: Math.round(p.deep), dodge: p.dodge } });
     S.phase = S.wave >= NW - 1 ? 'done' : 'between';
-    S.ev.push(out ? 'out' : 'wipe:' + where);
+    S.ev.push(out ? (p.dodge ? 'out:dodge' : 'out') : 'wipe:' + where);
     if (S.phase === 'done') S.ev.push('finish');
   }
   function meter(S, d) { S.meter = Math.max(0, Math.min(100, S.meter + d)); }
@@ -192,30 +185,23 @@
     }
     if (S.meter <= 0) { endWave(S, false, 'ride'); return; }
     if (S.x >= B.L && !S.air) {            // the lip throws over: into the tube with whatever speed you kept
-      S.wp.speed = S.meter * 6; S.phase = 'tube'; S.z = 0; S.h = 0.5; S.vh = 0; S.inv = 0; S.gap = 55 + 0.45 * S.meter; S.ev.push('tube');
+      S.wp.speed = S.meter * 6; S.phase = 'tube'; S.d = 0; S.tt = 0; S.h = 0.5; S.vh = 0; S.inv = 0; S.ev.push('tube');
     }
   }
   function tube(S, hold) {
-    var W = S.W, B = S.B, c, r, g, d;
-    S.z += W.vz * DT;
-    S.vh += (hold ? TUP : -TDOWN) * DT; S.vh = Math.max(-TV, Math.min(TV, S.vh));
-    S.h += S.vh * DT;
-    c = cen(B, S.z); r = rad(B, S.z);
-    if (S.h > c + r - 0.05) { S.h = c + r - 0.05; S.vh = -0.35; scrape(S, 'scrape:top'); }
-    else if (S.h < c - r + 0.05) { S.h = c - r + 0.05; S.vh = 0.35; scrape(S, 'scrape:bottom'); }
-    while (S.gi < B.gates.length && B.gates[S.gi].z <= S.z) {
-      g = B.gates[S.gi++];
-      if (S.h < g.lo + 0.02 || S.h > g.hi - 0.02) { S.gap -= 18 * W.hurt; S.inv = 40; S.scrapes++; S.ev.push('chunk'); } else S.ev.push('thread');
-    }
-    while (S.ti < B.tdrops.length && B.tdrops[S.ti].z <= S.z) {
-      d = B.tdrops[S.ti++];
-      if (Math.abs(S.h - d.h) < 0.1) { S.taken['t' + (S.ti - 1)] = 1; S.wp.tdrops += B.tdropV; S.tdropsN++; S.gap = Math.min(100, S.gap + 1.5); S.ev.push('drop'); }
-    }
-    S.gap -= DRAIN * DT;
-    if (S.gap <= 0) { S.gap = 0; endWave(S, false, 'tube'); return; }
-    if (S.z >= B.TL) endWave(S, true, '');
+    var B = S.B, i, m0 = multOf(S.d), m, L;
+    S.tt++;
+    S.d += (hold ? STALL : -TRIM) * DT; if (S.d < 0) S.d = 0;
+    m = multOf(S.d); L = limit(B, S.tt);
+    if (m > m0) S.ev.push('mult:' + m);
+    if (m > S.maxMult) S.maxMult = m;
+    if (m === 4) { S.deepT++; S.lastDeep = S.tt; }
+    S.wp.deep = Math.min(3000, S.wp.deep + DEEPV * FACT[m]);
+    for (i = 0; i < B.surges.length; i++) if (S.tt === B.surges[i].t0 - WARN) S.ev.push('surge');
+    if (S.tt === B.TT - CLOSE - 30) S.ev.push('closing');
+    if (S.d >= L) { endWave(S, false, 'tube'); return; }
+    if (S.tt >= B.TT) endWave(S, true, '');
   }
-  function scrape(S, ev) { if (S.inv > 0) return; S.gap -= 10 * S.W.hurt; S.inv = 50; S.scrapes++; S.ev.push(ev); }
 
   // ---------- Recording: the ticks on which the button changed, packed as base64 numbers ----------
   var A64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_', MAX_N = TPS * 150;
@@ -230,12 +216,12 @@
   function encode(S) {
     var out = '', prev = 0, i, v;
     for (i = 0; i < S.tog.length; i++) { v = S.tog[i] - prev; prev = S.tog[i]; while (v >= 32) { out += A64[32 + (v & 31)]; v = Math.floor(v / 32); } out += A64[v]; }
-    return ['sw1', S.mode === 'daily' ? 'd' : 'f', S.seed, S.total, S.n, out].join('.');
+    return ['sw2', S.mode === 'daily' ? 'd' : 'f', S.seed, S.total, S.n, out].join('.');
   }
   function decode(code) {
     if (typeof code !== 'string') return null;
     var p = code.split('.'), tog = [], i, c, v = 0, sh = 1, at = 0;
-    if (p.length !== 6 || p[0] !== 'sw1' || (p[1] !== 'd' && p[1] !== 'f')) return null;
+    if (p.length !== 6 || p[0] !== 'sw2' || (p[1] !== 'd' && p[1] !== 'f')) return null;
     if (p[1] === 'd' ? !/^\d{4}-\d{2}-\d{2}$/.test(p[2]) : !/^[a-z0-9]{1,12}$/.test(p[2])) return null;
     if (!/^\d{1,5}$/.test(p[3]) || !/^\d{1,5}$/.test(p[4]) || +p[4] > MAX_N || p[5].length > 12000) return null;
     for (i = 0; i < p[5].length; i++) {
@@ -263,16 +249,16 @@
     T.taken = Object.create(S.taken); T.ev = []; T.results = S.results.slice(); T.wp = {}; for (k in S.wp) T.wp[k] = S.wp[k];
     return T;
   }
-  function value(T) { var p = T.wp; return p.drops + p.airs + p.tdrops; }
+  function value(T) { var p = T.wp; return p.drops + p.airs + p.deep; }
   function bot(S, skill) {
     var look = skill >= 1 ? 54 : 26, cuts = skill >= 1 ? [0, 6, 12, 20, 30, 42] : [0, 12], best = -1e9, pick = false, a, c, k, T, sc, wave = S.wave, v0 = value(S);
     for (a = 0; a < 2; a++) for (c = 0; c < cuts.length; c++) {
       // plan: hold (a = 1) or let go (a = 0) for cuts[c] ticks, then the opposite
       T = clone(S);
       for (k = 0; k < look && T.wave === wave && (T.phase === 'ride' || T.phase === 'tube'); k++) step(T, cuts[c] === 0 ? a === 1 : (k < cuts[c]) === (a === 1));
-      sc = value(T) - v0 - (T.hits - S.hits) * 900 - (T.scrapes - S.scrapes) * 1200;
+      sc = value(T) - v0 - (T.hits - S.hits) * 900;
       if (T.phase === 'ride' && S.phase === 'ride') sc += (T.meter - S.meter) * 12 + (T.meter < 25 ? -600 : 0);
-      if (S.phase === 'tube') { sc += T.phase === 'tube' ? -Math.abs(T.h - cen(T.B, T.z)) * 300 : 0; }
+      if (S.phase === 'tube' && T.phase === 'tube' && T.d > limit(T.B, T.tt + (skill >= 1 ? 6 : 16)) - 0.04) sc -= 4000;   // too close to the foam ball
       if (T.results.length > S.results.length && !T.results[T.results.length - 1].out) sc -= 8000;
       if (sc > best) { best = sc; pick = a === 1; }
     }
@@ -283,7 +269,7 @@
   function today() { return new Date().toISOString().slice(0, 10); }
   function dayNum(date) { return Math.floor((Date.parse(date) - Date.parse('2026-11-14')) / 864e5) + 1; }
 
-  var C = { TPS: TPS, DT: DT, FH: FH, NW: NW, MAX_WAVE: MAX_WAVE, VMAX: VMAX, TV: TV, WAVES: WAVES, pp: pp, rng: rng, hash: hash, cen: cen, rad: rad, place: place,
+  var C = { TPS: TPS, DT: DT, FH: FH, NW: NW, MAX_WAVE: MAX_WAVE, VMAX: VMAX, STALL: STALL, TRIM: TRIM, CLOSE: CLOSE, WARN: WARN, WAVES: WAVES, pp: pp, rng: rng, hash: hash, limit: limit, multOf: multOf, place: place,
     newRun: newRun, next: next, step: step, play: play, encode: encode, decode: decode, replay: replay, bot: bot, fmt: fmt, today: today, dayNum: dayNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = C; else root.POF_SW_CORE = C;
 })(typeof window !== 'undefined' ? window : this);

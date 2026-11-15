@@ -116,7 +116,7 @@
   // ---------- The loop ----------
   // state: title | ready | ride | trans | tubeready | tube | out | wipe | score | end
   var state = 'title', S = null, last = 0, acc = 0, tSec = 0, sT = 0, paused = false, lastRun = null, wipeWhere = '', autoT = 0;
-  var held = false, pressed = false, botMv = false, camY = 0, flow = 0, trail = [], pops = [], parts = [], shake = 0, flash = 0, callout = null, tubeTip = 0, streak = 0;
+  var held = false, pressed = false, botMv = false, camY = 0, flow = 0, trail = [], pops = [], parts = [], shake = 0, flash = 0, callout = null, dv = 0, tubeZ = 0, wasHeld = false, multPulse = 0, streak = 0;
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2); var w = cv.clientWidth * dpr, h = cv.clientHeight * dpr; cv.width = Math.round(w); cv.height = Math.round(h);
     SC = Math.min(w / 520, h / 640); H = h / SC; VW = w / SC;
@@ -150,15 +150,17 @@
         shake = 0.35; streak = 0; tone(200, 60, 0.3, 'sawtooth', 0.16); noise(0.25, 900, 300, 0.12); pop(HITS[e.slice(4)] || 'OUCH', px + 30, py - 60, '#ff6b8a', 28); burst(px, py, '#fff', 16, 240);
         if (navigator.vibrate) try { navigator.vibrate(40); } catch (er) { /* no haptics */ }
       } else if (e === 'tube') { state = 'trans'; sT = 0; held = false; noise(1.3, 300, 900, 0.2, 0, 0.6, null, 0.5); }
-      else if (e === 'thread') noise(0.25, 1400, 500, 0.07);
-      else if (e === 'chunk' || e.indexOf('scrape') === 0) {
-        shake = 0.35; flash = 0.5; streak = 0; noise(0.4, 1200, 300, 0.2); tone(160, 60, 0.25, 'sawtooth', 0.1);
-        pop(e === 'chunk' ? 'CLIPPED!' : 'TOO ' + (e === 'scrape:top' ? 'HIGH!' : 'LOW!'), VW / 2, H * 0.36, '#ff6b8a', 30);
-        if (navigator.vibrate) try { navigator.vibrate(40); } catch (er2) { /* no haptics */ }
-      } else if (e === 'out') {
+      else if (e.indexOf('mult:') === 0) {
+        var mm = +e.slice(5); tone(440 * mm, 880 * mm, 0.22, 'triangle', 0.1); if (mm === 4) tone(1760, 2640, 0.3, 'triangle', 0.08, 0.12);
+        multPulse = 1;
+      } else if (e === 'surge') { noise(1.4, 200, 700, 0.22, 0, 0.6, null, 0.6); shake = 0.2; }
+      else if (e === 'closing') { tone(880, 880, 0.1, 'square', 0.06); tone(880, 880, 0.1, 'square', 0.06, 0.2); tone(1175, 1175, 0.16, 'square', 0.06, 0.4); }
+      else if (e === 'out' || e === 'out:dodge') {
         state = 'out'; sT = 0; held = false; save.tubes = (save.tubes || 0) + 1; store(); muffle(false); seaTo(0.035, 500); cheer(true);
         tone(523, 1046, 0.3, 'triangle', 0.12, 0.05); tone(659, 1318, 0.3, 'triangle', 0.12, 0.2); tone(784, 1568, 0.6, 'triangle', 0.12, 0.35);
-        var r = S.results[S.results.length - 1]; say(r.scrapes === 0 ? OUT[Math.floor(Math.random() * 2) * 0 + (S.results.length * 3 + S.tick) % OUT.length] : OUT[(S.tick + 1) % OUT.length], r.scrapes === 0 ? 'clean barrel!' : 'you made it out!', 2.6);
+        var r = S.results[S.results.length - 1];
+        if (r.dodge) say('SPIT DODGE!', OUT[(S.results.length * 3 + S.tick) % OUT.length].toLowerCase(), 2.6);
+        else say(OUT[(S.results.length * 3 + S.tick) % OUT.length], r.maxMult === 4 ? 'deep barrel!' : r.maxMult === 1 ? 'next time hold to go deeper' : 'you made it out!', 2.6);
         parts = [];
       } else if (e.indexOf('wipe:') === 0) {
         state = 'wipe'; sT = 0; held = false; wipeWhere = e.slice(5); muffle(wipeWhere === 'tube'); seaTo(0.09, 300); noise(1.4, 500, 150, 0.25, 0, 0.5); aww();
@@ -181,6 +183,8 @@
     }
     if (state !== 'ride' && state !== 'tube') return;
     if (AUTO) { if (S.tick % 3 === 0) botMv = C.bot(S, 1); held = botMv; }
+    if (state === 'tube' && held && !wasHeld) noise(0.35, 2600, 1300, 0.07);   // the hand goes into the wall
+    wasHeld = held;
     C.play(S, held);
     if (state === 'ride') { trail.push({ x: S.x, h: S.h, air: S.air }); if (trail.length > 44) trail.shift(); }
     events();
@@ -191,11 +195,15 @@
     if (!paused) {
       if (state === 'ready' || state === 'ride' || state === 'tube' || state === 'tubeready') { acc += dt; var n = 0; while (acc >= C.DT && n++ < 8) { tick(); acc -= C.DT; if (state !== 'ride' && state !== 'tube') { acc = 0; break; } } if (n > 8) acc = 0; }
       sT += dt; flow += dt;
-      if (state === 'trans' && sT > 1.25) { state = 'tubeready'; sT = 0; pressed = false; held = false; muffle(true); seaTo(0.11, 900); flash = 0.6; }
+      if (state === 'trans' && sT > 1.25) { state = 'tubeready'; sT = 0; pressed = false; held = false; dv = 0; muffle(true); seaTo(0.11, 900); flash = 0.6; }
       if ((state === 'out' || state === 'wipe') && sT > 2.7) { state = 'score'; sT = 0; autoT = 0; showWave(); }
       if (state === 'score' && AUTO) { autoT += dt; if (autoT > 1.6) nextWave(); }
       if (S && state === 'ride') { var want = Math.max(0, (S.h - 1.02) * FH * 0.85); camY += (want - camY) * Math.min(1, dt * 8); } else camY += (0 - camY) * Math.min(1, dt * 5);
-      shake = Math.max(0, shake - dt); flash = Math.max(0, flash - dt * 1.6); if (tubeTip > 0 && state === 'tube') tubeTip -= dt;
+      shake = Math.max(0, shake - dt); flash = Math.max(0, flash - dt * 1.6);
+      if (state === 'tube' || state === 'tubeready') {   // deeper = slower water, darker picture, more muffled sound
+        dv += (S.d - dv) * Math.min(1, dt * 6); tubeZ += dt * (held && state === 'tube' ? 420 : 760);
+        if (ac) { musicF.frequency.setTargetAtTime(380 + 3200 * (1 - dv) * (1 - dv), ac.currentTime, 0.08); seaG.gain.setTargetAtTime(0.07 + dv * 0.13, ac.currentTime, 0.1); }
+      }
       if (callout) { callout.t += dt; if (callout.t > callout.dur) callout = null; }
       for (i = 0; i < pops.length; i++) pops[i].t += dt; pops = pops.filter(function (q) { return q.t < 1.1; });
       for (i = 0; i < parts.length; i++) { p = parts[i]; p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 420 * dt; } parts = parts.filter(function (q) { return q.t < q.life; });
@@ -351,88 +359,91 @@
 
   // ---------- Drawing: the tube (first person) ----------
   function mixRGB(a, b, k) { return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
+  // The barrel, seen from the board: an oval that leans, with the opening up and to the right. The wave's
+  // wall is on the left and curls over the top; foam lines run along the floor. V.d (0..1) is how deep you are:
+  // the deeper, the further away and smaller the opening.
   function drawTube(V, t) {
-    var B = V.B, cx = VW / 2, cy = H * 0.46, TP = Math.max(H * 1.15, VW * 0.8), FAR = 2300, STEP = 50, i, d, k, zr;
-    function bx(z) { return Math.sin(z / 620 + B.p1 * 6) * 0.22 + Math.sin(z / 250 + B.p2 * 6) * 0.05; }
-    var bx0 = bx(V.z);
-    function ring(z) { var dd = Math.max(-190, z - V.z), kk = 240 / (240 + dd), r = C.rad(B, z) * TP * kk; return { k: kk, x: cx + (bx(z) - bx0) * TP * kk * clamp(dd / 300, 0, 1), y: cy - (C.cen(B, z) - V.h) * TP * kk, ry: r, rx: r * 1.35 }; }
-    function Yh(h, kk) { return cy - (h - V.h) * TP * kk; }
-    var near = [10, 52, 150], mid = [40, 138, 245], far = [165, 238, 255], lit = [205, 255, 246];
-    g.fillStyle = 'rgb(8,40,120)'; g.fillRect(0, 0, VW, H);
-    var z0 = Math.ceil((V.z - 170) / STEP) * STEP, R, last = null, rgb = function (c, m) { return 'rgb(' + (c[0] * m | 0) + ',' + (c[1] * m | 0) + ',' + (c[2] * m | 0) + ')'; };
-    for (zr = z0; zr <= B.TL && zr <= V.z + FAR; zr += STEP) {
-      d = zr - V.z; R = ring(zr); last = R;
-      var u = clamp(d / FAR, 0, 1), col = u < 0.5 ? mixRGB(near, mid, u * 2) : mixRGB(mid, far, (u - 0.5) * 2), sh = (Math.round(zr / STEP) & 1) ? 0.9 : 1;
-      // light comes through the lip overhead, so every band is bright on top and deep below
-      var rg = g.createLinearGradient(0, R.y - R.ry, 0, R.y + R.ry); rg.addColorStop(0, rgb(mixRGB(col, lit, 0.5), sh)); rg.addColorStop(0.45, rgb(col, sh)); rg.addColorStop(1, rgb(col, sh * 0.62));
-      g.fillStyle = rg; g.beginPath(); g.ellipse(R.x, R.y, R.rx, R.ry, 0, 0, TAU); g.fill();
+    var cx0 = VW * 0.5, cy0 = H * 0.52, vx = VW * 0.63, vy = H * 0.35, RY = Math.max(H * 0.62, VW * 0.46), TILT = -0.2, STEP = 60, i, k, dd, zr, R;
+    var dE = 300 + V.d * 2100;
+    function ring(d0) { var d1 = Math.max(-190, d0), kk = 240 / (240 + d1), kc = Math.min(1, kk); return { k: kk, x: vx + (cx0 - vx) * kc, y: vy + (cy0 - vy) * kc, ry: RY * kk, rx: RY * kk * 1.5 }; }
+    function oval(R0) { g.beginPath(); g.ellipse(R0.x, R0.y, R0.rx, R0.ry, TILT, 0, TAU); }
+    var near = [9, 44, 128], mid = [44, 132, 214], far = [150, 226, 240], lit = [240, 240, 176];
+    var rgb = function (c, m) { return 'rgb(' + (c[0] * m | 0) + ',' + (c[1] * m | 0) + ',' + (c[2] * m | 0) + ')'; };
+    g.fillStyle = 'rgb(8,36,108)'; g.fillRect(0, 0, VW, H);
+    var off = tubeZ % STEP;
+    for (dd = -180 - off; dd <= dE; dd += STEP) {
+      R = ring(dd);
+      var u = clamp(dd / 2400, 0, 1), col = u < 0.5 ? mixRGB(near, mid, u * 2) : mixRGB(mid, far, (u - 0.5) * 2), sh = (Math.round((dd + tubeZ) / STEP) & 1) ? 0.9 : 1;
+      // sunlight comes through the lip overhead: warm on top, deep blue below
+      var rg = g.createLinearGradient(R.x + R.ry * 0.25, R.y - R.ry, R.x - R.ry * 0.25, R.y + R.ry); rg.addColorStop(0, rgb(mixRGB(col, lit, 0.62), sh)); rg.addColorStop(0.4, rgb(col, sh)); rg.addColorStop(1, rgb(col, sh * 0.6));
+      g.fillStyle = rg; oval(R); g.fill();
     }
-    // the way out: daylight, and then the sunset
-    var dE = B.TL - V.z;
-    if (dE <= FAR) {
-      R = ring(B.TL); g.save(); g.beginPath(); g.ellipse(R.x, R.y, R.rx, R.ry, 0, 0, TAU); g.clip();
-      var sk = g.createLinearGradient(0, R.y - R.ry, 0, R.y + R.ry); sk.addColorStop(0, '#b0389a'); sk.addColorStop(0.45, '#ff7a6b'); sk.addColorStop(0.62, '#ffd27a'); sk.addColorStop(0.63, '#2f8dff'); sk.addColorStop(1, '#0b3a9a'); g.fillStyle = sk; g.fillRect(R.x - R.rx, R.y - R.ry, R.rx * 2, R.ry * 2);
-      g.fillStyle = '#fff3b0'; g.beginPath(); g.arc(R.x + R.rx * 0.2, R.y + R.ry * 0.12, R.ry * 0.3, Math.PI, TAU); g.fill();
-      g.restore(); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = Math.max(2, 14 * R.k); g.beginPath(); g.ellipse(R.x, R.y, R.rx, R.ry, 0, 0, TAU); g.stroke();
-    } else if (last) {
-      var eg = g.createRadialGradient(last.x, last.y, 0, last.x, last.y, last.rx); eg.addColorStop(0, '#ffffff'); eg.addColorStop(0.6, '#d8f6ff'); eg.addColorStop(1, 'rgba(150,232,255,0)'); g.fillStyle = eg; g.beginPath(); g.ellipse(last.x, last.y, last.rx, last.ry, 0, 0, TAU); g.fill();
+    // the opening: sunset, sea and somebody paddling out
+    R = ring(dE); g.save(); oval(R); g.clip();
+    var sk = g.createLinearGradient(0, R.y - R.ry, 0, R.y + R.ry), hz = R.y + R.ry * 0.22; sk.addColorStop(0, '#b0389a'); sk.addColorStop(0.42, '#ff7a6b'); sk.addColorStop(0.6, '#ffd27a'); sk.addColorStop(0.61, '#2f8dff'); sk.addColorStop(1, '#0b3a9a'); g.fillStyle = sk; g.fillRect(R.x - R.rx, R.y - R.rx, R.rx * 2, R.rx * 2);
+    g.fillStyle = '#fff3b0'; g.beginPath(); g.arc(R.x + R.rx * 0.25, hz, R.ry * 0.26, Math.PI, TAU); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = Math.max(1, R.ry * 0.02); for (i = 0; i < 4; i++) { g.beginPath(); g.moveTo(R.x - R.rx * (0.9 - i * 0.2), hz + R.ry * (0.14 + i * 0.16)); g.lineTo(R.x - R.rx * (0.2 - i * 0.22), hz + R.ry * (0.14 + i * 0.16)); g.stroke(); }
+    g.fillStyle = '#0b1b4a'; g.beginPath(); g.ellipse(R.x - R.rx * 0.3, hz + R.ry * 0.12, R.ry * 0.07, R.ry * 0.02, 0, 0, TAU); g.arc(R.x - R.rx * 0.3, hz + R.ry * 0.08, R.ry * 0.025, 0, TAU); g.fill();
+    g.restore(); g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = Math.max(2, 16 * R.k); oval(R); g.stroke();
+    // lines along the wall: thick foam lines on the floor, thin ones up the wall, none on the bright ceiling
+    var DS = [-170, -110, -60, -20, 20, 60, 110, 170, 250, 350, 480, 650, 870, 1150, 1500, 1900, 2400], ct = Math.cos(TILT), st = Math.sin(TILT);
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    for (i = 0; i < 16; i++) {
+      var an = 0.35 + i * (Math.PI * 1.25) / 15, floor = Math.sin(an) > 0.55, first = true; g.beginPath();
+      for (k = 0; k < DS.length; k++) { if (DS[k] > dE) break; R = ring(DS[k]); var a2 = an + DS[k] * 0.00035, ex = Math.cos(a2) * R.rx * 0.985, ey = Math.sin(a2) * R.ry * 0.985, px = R.x + ex * ct - ey * st, py = R.y + ex * st + ey * ct; if (first) { g.moveTo(px, py); first = false; } else g.lineTo(px, py); }
+      g.strokeStyle = 'rgba(255,255,255,' + (floor ? 0.3 : 0.14) + ')'; g.lineWidth = floor ? 3 + (i % 3) * 2 : 2; g.stroke();
     }
-    // water streaks spiralling up the wall
-    g.lineCap = 'round';
-    var DS = [-170, -110, -60, -20, 20, 60, 110, 170, 250, 350, 480, 650, 870, 1150, 1500, 1900, 2300];
-    for (i = 0; i < 14; i++) {
-      var an = i * TAU / 14 + V.z * 0.003, first = true; g.beginPath();
-      for (k = 0; k < DS.length; k++) { zr = V.z + DS[k]; if (zr > B.TL) break; R = ring(zr); var a2 = an + DS[k] * 0.0007, px = R.x + Math.cos(a2) * R.rx * 0.99, py = R.y + Math.sin(a2) * R.ry * 0.99; if (first) { g.moveTo(px, py); first = false; } else g.lineTo(px, py); }
-      g.strokeStyle = 'rgba(255,255,255,' + (i % 3 === 0 ? 0.15 : 0.06) + ')'; g.lineWidth = i % 3 === 0 ? 3 : 2; g.lineJoin = 'round'; g.stroke();
-    }
-    // light through the lip above, shadow below
-    var lg = g.createLinearGradient(0, 0, 0, H); lg.addColorStop(0, 'rgba(160,255,240,.12)'); lg.addColorStop(0.5, 'rgba(160,255,240,0)'); lg.addColorStop(1, 'rgba(2,10,50,.25)'); g.fillStyle = lg; g.fillRect(0, 0, VW, H);
-    // chunks of the lip and droplets, far ones first
-    var items = [], it;
-    for (i = V.gi; i < B.gates.length; i++) { d = B.gates[i].z - V.z; if (d > FAR) break; if (d > 0) items.push({ d: d, g: B.gates[i] }); }
-    for (i = V.ti; i < B.tdrops.length; i++) { d = B.tdrops[i].z - V.z; if (d > FAR) break; if (d > 0) items.push({ d: d, p: B.tdrops[i] }); }
-    items.sort(function (p, q) { return q.d - p.d; });
-    for (i = 0; i < items.length; i++) {
-      it = items[i]; R = ring(V.z + it.d); var al = Math.min(1, (FAR - it.d) / 500);
-      if (it.p) { g.globalAlpha = al; droplet(R.x, Yh(it.p.h, R.k), Math.max(2, 34 * R.k * TP / 800), t, true); g.globalAlpha = 1; continue; }
-      g.save(); g.globalAlpha = al * 0.93; g.beginPath(); g.ellipse(R.x, R.y, R.rx, R.ry, 0, 0, TAU); g.clip();
-      var ye, n = 9, j, wdt = R.rx * 2 / n;
-      if (it.g.top) {       // a curtain of water falling from the lip: get under it
-        ye = Yh(it.g.hi, R.k); var cg = g.createLinearGradient(0, R.y - R.ry, 0, ye); cg.addColorStop(0, '#dffaff'); cg.addColorStop(1, '#ffffff'); g.fillStyle = cg;
-        g.beginPath(); g.moveTo(R.x - R.rx, R.y - R.ry - 4); g.lineTo(R.x + R.rx, R.y - R.ry - 4); g.lineTo(R.x + R.rx, ye);
-        for (j = n; j >= 0; j--) g.lineTo(R.x - R.rx + j * wdt, ye + (j % 2 ? 0.07 : -0.02) * R.ry + Math.sin(t * 9 + j) * 0.02 * R.ry);
-        g.closePath(); g.fill();
-        g.strokeStyle = 'rgba(77,162,255,.5)'; g.lineWidth = Math.max(1, 5 * R.k); for (j = 1; j < n; j++) { g.beginPath(); g.moveTo(R.x - R.rx + j * wdt, R.y - R.ry); g.lineTo(R.x - R.rx + j * wdt, ye - 0.03 * R.ry); g.stroke(); }
-      } else {              // a mound of foam on the floor: get over it
-        ye = Yh(it.g.lo, R.k); g.fillStyle = '#ffffff'; g.fillRect(R.x - R.rx, ye, R.rx * 2, R.y + R.ry - ye + 4);
-        for (j = 0; j <= n; j++) { g.beginPath(); g.arc(R.x - R.rx + j * wdt, ye + Math.sin(t * 7 + j * 2) * 0.02 * R.ry, wdt * 0.62, 0, TAU); g.fill(); }
-        g.fillStyle = 'rgba(77,162,255,.35)'; for (j = 0; j < n; j++) { g.beginPath(); g.arc(R.x - R.rx + (j + 0.5) * wdt, ye + wdt * 0.9, wdt * 0.3, 0, TAU); g.fill(); }
-      }
-      if (it.d < 1300 && !V.intro && it.g === B.gates[V.gi]) {   // say what to do, right on the next one
-        var fp = clamp(R.ry * 0.17, 9, 40), ly = it.g.top ? ye - R.ry * 0.16 : ye + R.ry * 0.2;
-        g.globalAlpha = 1; g.font = fp + 'px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#0b2f7a'; g.fillText(it.g.top ? 'GO UNDER' : 'GO OVER', R.x, ly);
-        g.beginPath(); var ax = R.x, ay = ly + (it.g.top ? fp * 1.1 : -fp * 1.1), aw = fp * 0.6, dir = it.g.top ? 1 : -1; g.moveTo(ax - aw, ay - dir * aw * 0.5); g.lineTo(ax + aw, ay - dir * aw * 0.5); g.lineTo(ax, ay + dir * aw * 0.7); g.closePath(); g.fill();
-      }
-      g.restore();
-    }
-    // spray flying past
+    // bits of foam riding the floor toward you
+    g.fillStyle = 'rgba(255,255,255,.85)';
+    for (i = 0; i < 18; i++) { var fz = ((i * 137 - tubeZ * 1.0) % 1600 + 1600) % 1600; if (fz > dE) continue; R = ring(fz); var fa = 0.75 + hsh(i * 3.3) * 1.6, fx2 = Math.cos(fa) * R.rx * 0.9, fy2 = Math.sin(fa) * R.ry * 0.9; g.beginPath(); g.ellipse(R.x + fx2 * ct - fy2 * st, R.y + fx2 * st + fy2 * ct, 22 * R.k * (0.6 + hsh(i)), 9 * R.k * (0.6 + hsh(i * 2)), TILT, 0, TAU); g.fill(); }
+    // deeper is darker
+    g.fillStyle = 'rgba(2,8,40,' + (V.d * 0.42) + ')'; g.fillRect(0, 0, VW, H);
+    // spray flying past, faster when you trim
     g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2.5;
-    for (i = 0; i < 26; i++) { var ph = (t * 1.5 + hsh(i)) % 1, a3 = hsh(i * 2.7) * TAU, r0 = ph * ph * Math.max(VW, H) * 0.75 + 20; g.beginPath(); g.moveTo(cx + Math.cos(a3) * r0, cy + Math.sin(a3) * r0 * 0.8); g.lineTo(cx + Math.cos(a3) * (r0 + 10 + ph * 46), cy + Math.sin(a3) * (r0 + 10 + ph * 46) * 0.8); g.stroke(); }
+    for (i = 0; i < 26; i++) { var ph = (tubeZ / 520 + hsh(i)) % 1, a3 = hsh(i * 2.7) * TAU, r0 = ph * ph * Math.max(VW, H) * 0.75 + 20; g.beginPath(); g.moveTo(vx + Math.cos(a3) * r0, vy + Math.sin(a3) * r0 * 0.8); g.lineTo(vx + Math.cos(a3) * (r0 + 10 + ph * 46), vy + Math.sin(a3) * (r0 + 10 + ph * 46) * 0.8); g.stroke(); }
     // the nose of your board
-    var bs = Math.min(1.25, VW / 520, H / 900);
-    g.save(); g.translate(cx, H - 118 - Math.abs(Math.sin(t * 7)) * 4); g.rotate(clamp(-V.vh * 0.14, -0.14, 0.14)); g.scale(bs, bs);
+    var bs = Math.min(1.25, VW / 520, H / 900), bob = Math.abs(Math.sin(t * 7)) * 4;
+    g.save(); g.translate(cx0, H - 78 - bob); g.rotate(V.hold ? -0.05 : 0.03); g.scale(bs, bs);
     g.beginPath(); g.moveTo(-92, 30); g.quadraticCurveTo(-84, -112, 0, -196); g.quadraticCurveTo(84, -112, 92, 30); g.closePath();
     var ng = g.createLinearGradient(0, -196, 0, 30); ng.addColorStop(0, '#ffffff'); ng.addColorStop(1, '#d9ecff'); g.fillStyle = ng; g.fill(); g.lineWidth = 5; g.strokeStyle = '#0b1b4a'; g.stroke();
     g.fillStyle = '#4da2ff'; g.beginPath(); g.moveTo(-7, 30); g.lineTo(-4, -176); g.lineTo(4, -176); g.lineTo(7, 30); g.fill();
     g.fillStyle = '#ff4fa3'; g.beginPath(); g.moveTo(-88, 30); g.quadraticCurveTo(-84, -40, -66, -92); g.lineTo(-52, -84); g.quadraticCurveTo(-66, -30, -68, 30); g.fill();
     g.beginPath(); g.moveTo(88, 30); g.quadraticCurveTo(84, -40, 66, -92); g.lineTo(52, -84); g.quadraticCurveTo(66, -30, 68, 30); g.fill();
-    g.restore(); droplet(cx + Math.sin(-V.vh * 0.14) * 90 * bs, H - 130 - 78 * bs, 13 * bs, 0, false);
+    g.restore(); droplet(cx0, H - 90 - 78 * bs - bob, 13 * bs, 0, false);
+    // stalling: your hand drags in the wall on the left and throws up a rooster tail
+    if (V.hold) {
+      var hx = Math.max(34, VW * 0.5 - 250 * bs), hy = H * 0.66;
+      // forearm, palm, four fingers and a thumb, seen from your own eyes; the fingertips are in the water at (hx, hy)
+      var ex0 = hx + 130 * bs, ey0 = H + 40, adx = hx - ex0, ady = hy - ey0, al = Math.sqrt(adx * adx + ady * ady), AS = bs * 1.7, AL = al / AS - 56, SK = '#f0b48a', SK2 = '#d9946a', OL = '#0b1b4a';
+      g.save(); g.translate(hx - adx / al * 56 * AS, hy - ady / al * 56 * AS); g.rotate(Math.atan2(adx, -ady) + Math.sin(t * 9) * 0.015); g.scale(AS, AS);
+      g.lineJoin = 'round'; g.lineCap = 'round'; g.lineWidth = 3; g.strokeStyle = OL;
+      var FG = [[-13, -27, 24, -0.16], [-4.5, -30, 30, -0.05], [4.5, -30, 28, 0.05], [13, -26, 21, 0.17]];
+      for (i = 0; i < 4; i++) { g.save(); g.translate(FG[i][0], FG[i][1]); g.rotate(FG[i][3]); g.beginPath(); g.moveTo(-4.6, 6); g.lineTo(-4.2, -FG[i][2] + 4); g.arc(0, -FG[i][2] + 4, 4.2, Math.PI, 0); g.lineTo(4.6, 6); g.closePath(); g.fillStyle = SK; g.fill(); g.stroke(); g.restore(); }
+      g.save(); g.translate(15, -6); g.rotate(0.85); g.beginPath(); g.moveTo(-5.5, 6); g.lineTo(-4.8, -20); g.arc(0, -20, 4.8, Math.PI, 0); g.lineTo(5.5, 6); g.closePath(); g.fillStyle = SK; g.fill(); g.stroke(); g.restore();
+      // forearm: narrow at the wrist, wider toward the elbow
+      g.beginPath(); g.moveTo(-12, 4); g.bezierCurveTo(-16, AL * 0.3, -27, AL * 0.55, -24, AL + 10); g.lineTo(24, AL + 10); g.bezierCurveTo(25, AL * 0.55, 15, AL * 0.3, 12, 4); g.closePath(); g.fillStyle = SK; g.fill(); g.stroke();
+      g.save(); g.clip(); g.fillStyle = SK2; g.globalAlpha = 0.55; g.beginPath(); g.moveTo(4, 0); g.bezierCurveTo(8, AL * 0.3, 14, AL * 0.6, 8, AL + 10); g.lineTo(30, AL + 10); g.lineTo(30, 0); g.closePath(); g.fill(); g.restore();
+      // palm over the finger roots and the wrist
+      g.beginPath(); g.moveTo(-12, 6); g.quadraticCurveTo(-19, -10, -17.5, -26); g.quadraticCurveTo(-9, -33, 0, -33.5); g.quadraticCurveTo(10, -33, 17.5, -25); g.quadraticCurveTo(20, -8, 12, 6); g.closePath(); g.fillStyle = SK; g.fill();
+      g.beginPath(); g.moveTo(-12, 6); g.quadraticCurveTo(-19, -10, -17.5, -26); g.moveTo(17.5, -25); g.quadraticCurveTo(20, -8, 12, 6); g.stroke();
+      g.fillStyle = SK; g.fillRect(-10, 0, 20, 10);
+      g.strokeStyle = SK2; g.lineWidth = 2.2; for (i = 0; i < 4; i++) { g.beginPath(); g.arc(FG[i][0], FG[i][1] + 2, 3.6, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
+      g.beginPath(); g.moveTo(-8, 5); g.quadraticCurveTo(0, 8, 8, 5); g.stroke();
+      g.restore();
+      // white water where the fingers cut the wall
+      g.fillStyle = 'rgba(255,255,255,.95)'; for (i = 0; i < 7; i++) { g.beginPath(); g.arc(hx + (hsh(i * 3.1) - 0.5) * 62 * bs, hy - 4 * bs + (hsh(i * 1.7) - 0.5) * 14 * bs + Math.sin(t * 20 + i) * 2, (6 + hsh(i * 9) * 7) * bs, 0, TAU); g.fill(); }
+      g.fillStyle = '#fff';
+      for (i = 0; i < 26; i++) { var sp2 = (t * 2.4 + hsh(i * 1.9)) % 1, sa = -1.9 + hsh(i * 5.1) * 0.9, sr = sp2 * (150 + hsh(i) * 130) * bs; g.globalAlpha = 1 - sp2; g.beginPath(); g.arc(hx - 4 + Math.cos(sa) * sr * 0.6, hy - 6 + Math.sin(sa) * sr + sp2 * sp2 * 70 * bs, (3 + hsh(i * 7) * 6) * bs * (1 - sp2 * 0.5), 0, TAU); g.fill(); }
+      g.globalAlpha = 1;
+    }
+    // the barrel closing at the end: mist blasts past you
+    if (V.rem < 80 && V.rem > 0) { g.fillStyle = 'rgba(255,255,255,' + (0.35 * (1 - V.rem / 80)) + ')'; g.fillRect(0, 0, VW, H); }
     // the foam ball closing in from behind
-    var f = clamp(1 - V.gap / 55, 0, 1);
+    var f = clamp(1 - (V.L - V.d) / 0.32, 0, 1);
     if (f > 0) {
-      var Rm = Math.hypot(VW, H) / 2, vg = g.createRadialGradient(cx, H / 2, Rm * (0.95 - f * 0.55), cx, H / 2, Rm); vg.addColorStop(0, 'rgba(255,255,255,0)'); vg.addColorStop(1, 'rgba(255,255,255,' + (0.5 + f * 0.5) + ')'); g.fillStyle = vg; g.fillRect(0, 0, VW, H);
+      var Rm = Math.hypot(VW, H) / 2, vg = g.createRadialGradient(VW / 2, H / 2, Rm * (0.95 - f * 0.5), VW / 2, H / 2, Rm); vg.addColorStop(0, 'rgba(255,255,255,0)'); vg.addColorStop(1, 'rgba(255,255,255,' + (0.5 + f * 0.5) + ')'); g.fillStyle = vg; g.fillRect(0, 0, VW, H);
       g.fillStyle = 'rgba(255,255,255,' + (0.35 + f * 0.6) + ')';
-      for (i = 0; i < 22; i++) { var a4 = i * TAU / 22 + t * 0.6, rb = Rm * (1.02 - f * 0.42) + Math.sin(t * 5 + i * 1.7) * 14; g.beginPath(); g.arc(cx + Math.cos(a4) * rb * (VW / (Rm * 1.4)), H / 2 + Math.sin(a4) * rb * (H / (Rm * 1.4)), 30 + hsh(i) * 40 + f * 30, 0, TAU); g.fill(); }
+      for (i = 0; i < 22; i++) { var a4 = i * TAU / 22 + t * 0.6, rb = Rm * (1.02 - f * 0.4) + Math.sin(t * 5 + i * 1.7) * 14; g.beginPath(); g.arc(VW / 2 + Math.cos(a4) * rb * (VW / (Rm * 1.4)), H / 2 + Math.sin(a4) * rb * (H / (Rm * 1.4)), 30 + hsh(i) * 40 + f * 30, 0, TAU); g.fill(); }
     }
   }
   function drawUnder(t) {   // after a wipeout in the tube: underwater, bubbles going up
@@ -442,59 +453,56 @@
     surfer(g, VW / 2 + Math.sin(t * 1.3) * 30, H * 0.55 + Math.sin(t * 2) * 14, 1.5, { pose: 'tumble', ang: t * 3 });
   }
 
-  // The side view of the tube, at the bottom of the screen: where you are, the roof, the floor and what is coming.
-  function tubeMap(t) {
-    var B = S.B, w = Math.min(VW - 20, 460), h = 132, x = (VW - w) / 2, y = H - h - 10, back = 170, ahead = 1500, x0 = x + w * back / (back + ahead), z, first, i, o, px;
-    function mx(zz) { return x + (zz - S.z + back) / (back + ahead) * w; }
-    function my(hh) { return y + h - 4 - clamp((hh - 0.08) / 0.84, 0, 1) * (h - 8); }
-    g.save(); rr(g, x, y, w, h, 12); g.fillStyle = '#eaf8ff'; g.fill(); g.clip();
-    // the open water between the roof and the floor
-    g.beginPath(); first = true; for (z = S.z - back; z <= S.z + ahead + 50; z += 50) { px = mx(z); var top = my(C.cen(B, z) + C.rad(B, z)); if (first) { g.moveTo(px, top); first = false; } else g.lineTo(px, top); }
-    for (z = S.z + ahead + 50; z >= S.z - back; z -= 50) g.lineTo(mx(z), my(C.cen(B, z) - C.rad(B, z)));
-    g.closePath(); var wg = g.createLinearGradient(0, y, 0, y + h); wg.addColorStop(0, '#55c8ff'); wg.addColorStop(1, '#1f6fe0'); g.fillStyle = wg; g.fill(); g.lineWidth = 3; g.strokeStyle = '#0b2f7a'; g.stroke();
-    if (B.TL < S.z + ahead + 60) { g.fillStyle = '#ffd27a'; g.fillRect(mx(B.TL), y, w, h); g.fillStyle = '#0b2f7a'; g.font = '11px ' + DISP; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('EXIT', mx(B.TL) + 6, y + h / 2); }
-    for (i = S.gi; i < B.gates.length; i++) {   // waterfalls hang from the roof, foam sits on the floor
-      o = B.gates[i]; if (o.z > S.z + ahead) break; px = mx(o.z);
-      g.fillStyle = '#ffffff'; g.strokeStyle = '#0b2f7a'; g.lineWidth = 2.5;
-      if (o.top) { rr(g, px - 7, my(C.cen(B, o.z) + C.rad(B, o.z)) - 4, 14, my(o.hi) - my(C.cen(B, o.z) + C.rad(B, o.z)) + 4, 5); } else { rr(g, px - 7, my(o.lo), 14, my(C.cen(B, o.z) - C.rad(B, o.z)) - my(o.lo) + 4, 5); }
-      g.fill(); g.stroke();
-    }
-    for (i = S.ti; i < B.tdrops.length; i++) { o = B.tdrops[i]; if (o.z > S.z + ahead) break; g.save(); g.translate(mx(o.z), my(o.h)); dropPath(g, 4.5); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#0b2f7a'; g.stroke(); g.restore(); }
-    // you
-    var yy = my(S.h), blink = S.inv > 0 && Math.floor(t * 14) % 2 === 0;
-    if (!blink) { g.save(); g.translate(x0, yy); g.rotate(clamp(-S.vh * 0.5, -0.5, 0.5)); g.beginPath(); g.moveTo(-15, 1); g.quadraticCurveTo(0, -6, 17, -1); g.quadraticCurveTo(0, 6, -15, 1); g.fillStyle = '#ff4fa3'; g.fill(); g.lineWidth = 2.5; g.strokeStyle = '#0b1b4a'; g.stroke(); g.beginPath(); g.arc(0, -8, 5, 0, TAU); g.fillStyle = '#ffe14a'; g.fill(); g.stroke(); g.restore(); }
+  var MULT = ['', '1x', '2x', '3x', 'MAX'], MCOL = ['', '#55c8ff', '#3d9bff', '#8f7bff', '#ff4fa3'];
+  // The depth bar at the bottom: the exit on the left, the foam ball on the right, you in between.
+  function depthGauge(t) {
+    var B = S.B, w = Math.min(VW - 20, 460), h = 46, x = (VW - w) / 2, y = H - h - 14, i, L = C.limit(B, S.tt), d = S.d, m = C.multOf(d);
+    g.save(); rr(g, x, y, w, h, 12); g.clip();
+    for (i = 0; i < 4; i++) { g.fillStyle = MCOL[i + 1]; g.globalAlpha = m === i + 1 ? 1 : 0.55; g.fillRect(x + w * i / 4, y, w / 4 + 1, h); }
+    g.globalAlpha = 1; g.font = '15px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (i = 0; i < 4; i++) { g.fillStyle = m === i + 1 ? '#fff' : 'rgba(4,22,58,.7)'; g.fillText(MULT[i + 1], x + w * (i + 0.5) / 4, y + h / 2 + 1); }
+    // where the foam ball is about to lunge to
+    var Lmin = L; for (i = 1; i <= C.WARN + 40; i += 4) Lmin = Math.min(Lmin, C.limit(B, S.tt + i));
+    if (Lmin < L - 0.02 && B.TT - S.tt > C.CLOSE + 30) { g.fillStyle = 'rgba(255,79,109,' + (0.45 + 0.3 * Math.sin(t * 16)) + ')'; g.fillRect(x + Lmin * w, y, (L - Lmin) * w, h); }
+    // the foam ball
+    var fxx = x + L * w; g.fillStyle = '#fff'; g.fillRect(fxx, y, w, h);
+    for (i = 0; i < 5; i++) { g.beginPath(); g.arc(fxx + Math.sin(t * 6 + i * 2) * 3, y + i * h / 4, 9 + (i % 2) * 4, 0, TAU); g.fill(); }
     g.restore();
     rr(g, x, y, w, h, 12); g.lineWidth = 3; g.strokeStyle = '#0b1b4a'; g.stroke();
-    g.font = '10px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'bottom'; g.lineWidth = 3; g.strokeStyle = '#0b1b4a'; g.strokeText('YOU', x0, yy - 16); g.fillStyle = '#ffe14a'; g.fillText('YOU', x0, yy - 16);
-    g.textAlign = 'right'; g.textBaseline = 'top'; g.strokeText('SIDE VIEW', x + w - 8, y + 6); g.fillStyle = '#fff'; g.fillText('SIDE VIEW', x + w - 8, y + 6);
+    // you
+    var px = x + clamp(d, 0, 1) * w;
+    g.save(); g.translate(px, y - 4); g.beginPath(); g.moveTo(0, 6); g.lineTo(11, -10); g.lineTo(-11, -10); g.closePath(); g.fillStyle = '#ffe14a'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#0b1b4a'; g.lineJoin = 'round'; g.stroke(); g.restore();
+    g.fillStyle = '#ffe14a'; g.fillRect(px - 1.5, y, 3, h);
+    g.font = '10px ' + DISP; g.textBaseline = 'bottom'; g.fillStyle = '#fff'; g.textAlign = 'center'; shadow('YOU', px, y - 16);
+    g.textAlign = 'left'; if (px > x + 44) shadow('EXIT', x + 2, y - 3); g.textAlign = 'right'; shadow('FOAM BALL', x + w - 2, y - 3);
   }
-  // Training wheels on the first tube: an arrow that says hold or let go.
+  // The multiplier, big, and a word of advice when you need one.
   function tubeHint(t) {
-    var B = S.B, target = C.cen(B, S.z + 120), i, o, cx = VW / 2, cy = H * 0.2 + safeTop + 40;
-    for (i = S.gi; i < B.gates.length; i++) { o = B.gates[i]; if (o.z - S.z < 650) target = (o.lo + o.hi) / 2; break; }
-    var d = target - S.h, up = d > 0.045, down = d < -0.045, pulse = 0.75 + 0.25 * Math.sin(t * 10);
-    if (!up && !down) return;
-    g.save(); g.translate(cx, cy); g.globalAlpha = pulse; g.lineJoin = 'round';
-    g.beginPath(); if (up) { g.moveTo(0, -30); g.lineTo(30, 4); g.lineTo(12, 4); g.lineTo(12, 26); g.lineTo(-12, 26); g.lineTo(-12, 4); g.lineTo(-30, 4); } else { g.moveTo(0, 30); g.lineTo(30, -4); g.lineTo(12, -4); g.lineTo(12, -26); g.lineTo(-12, -26); g.lineTo(-12, -4); g.lineTo(-30, -4); }
-    g.closePath(); g.fillStyle = up ? '#ffe14a' : '#7df3ff'; g.fill(); g.lineWidth = 5; g.strokeStyle = '#0b1b4a'; g.stroke();
-    g.font = '24px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 6; g.strokeText(up ? 'HOLD' : 'LET GO', 0, 50); g.fillText(up ? 'HOLD' : 'LET GO', 0, 50);
-    g.restore();
+    var B = S.B, d = S.d, m = C.multOf(d), L = C.limit(B, S.tt), rem = B.TT - S.tt, i, Lmin = L, y = H * 0.2 + safeTop + 40, msg = null, col = '#fff';
+    for (i = 1; i <= C.WARN + 20; i += 4) Lmin = Math.min(Lmin, C.limit(B, S.tt + i));
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+    g.save(); g.translate(VW / 2, y); var sc = (m === 4 ? 1 + 0.06 * Math.sin(t * 12) : 1) * (1 + multPulse * 0.45); multPulse = Math.max(0, multPulse - 0.06); g.scale(sc, sc); g.font = (m === 4 ? 64 : 54) + 'px ' + DISP; g.lineWidth = 9; g.strokeStyle = '#0b1b4a'; g.strokeText(MULT[m], 0, 0); g.fillStyle = m === 1 ? '#fff' : m === 4 ? '#ff7ab8' : '#ffe14a'; g.fillText(MULT[m], 0, 0); g.restore();
+    if (rem < C.CLOSE + 30) { if (d > 0.1) { msg = 'LET GO! SHOOT OUT!'; col = '#ff8fa3'; } }
+    else if (Lmin < L - 0.02 && d > Lmin - 0.12) { msg = 'FOAM SURGE! LET GO'; col = '#ff8fa3'; }
+    else if (d > L - 0.13) { msg = 'TOO DEEP! LET GO'; col = '#ff8fa3'; }
+    else if (S.maxMult === 1 && S.tt > 40 && !held) msg = 'HOLD TO STALL AND GO DEEPER';
+    else if (held && m < 4) msg = 'deeper...';
+    if (msg) { g.globalAlpha = col === '#fff' ? 0.9 : 0.7 + 0.3 * Math.sin(t * 14); centerText([[msg, msg === 'deeper...' ? 16 : 24, col]], y + 56, t); g.globalAlpha = 1; }
   }
   // Shown before the tube starts.
   function tubeIntro(t) {
-    var first = S.wave === 0 || !save.tubes, w = Math.min(VW - 24, 440), hgt = first ? 250 : 120, x = (VW - w) / 2, y = Math.max(118 + safeTop, H * 0.42 - hgt / 2 - 40);
-    g.fillStyle = 'rgba(4,22,58,.86)'; rr(g, x, y, w, hgt, 16); g.fill(); g.lineWidth = 3; g.strokeStyle = '#7df3ff'; g.stroke();
+    var first = S.wave === 0 || !save.tubes, w = Math.min(VW - 24, 440), hgt = first ? 262 : 124, x = (VW - w) / 2, y = Math.max(118 + safeTop, H * 0.42 - hgt / 2 - 40);
+    g.fillStyle = 'rgba(4,22,58,.88)'; rr(g, x, y, w, hgt, 16); g.fill(); g.lineWidth = 3; g.strokeStyle = '#7df3ff'; g.stroke();
     g.textAlign = 'center'; g.textBaseline = 'middle';
     function line(txt, px, col, yy) { fitFont(txt, px, DISP, w - 24); g.fillStyle = col; g.fillText(txt, VW / 2, yy); }
     line('INSIDE THE BARREL', 28, '#fff', y + 30);
     if (first) {
-      line('same one button, now seen from your board', 13, '#7df3ff', y + 58);
-      line('HOLD = RISE', 24, '#ffe14a', y + 92); line('LET GO = SINK', 24, '#7df3ff', y + 122);
-      line('stay between the roof and the floor', 13, '#fff', y + 152);
-      line('go UNDER the waterfalls · go OVER the foam', 13, '#fff', y + 172);
-      line('the side view below shows where you are', 13, '#fff', y + 192);
-      g.globalAlpha = 0.7 + 0.3 * Math.sin(t * 6); line(matchMedia('(pointer: coarse)').matches ? 'TAP TO GO' : 'CLICK OR PRESS SPACE TO GO', 22, '#fff', y + 226); g.globalAlpha = 1;
-    } else { line('HOLD = RISE · LET GO = SINK', 18, '#ffe14a', y + 64); line('GET READY...', 20, '#fff', y + 94); }
+      line('HOLD = STALL', 24, '#ffe14a', y + 68); line('drag your hand, sink deeper, score more', 13, '#fff', y + 92);
+      line('LET GO = SPEED UP', 24, '#7df3ff', y + 126); line('you slide back toward the exit', 13, '#fff', y + 150);
+      line('the deeper you ride, the closer the foam ball', 13, '#ff9fce', y + 178);
+      line('let go before the barrel closes (8 seconds)', 13, '#ff9fce', y + 198);
+      g.globalAlpha = 0.7 + 0.3 * Math.sin(t * 6); line(matchMedia('(pointer: coarse)').matches ? 'TAP TO GO' : 'CLICK OR PRESS SPACE TO GO', 22, '#fff', y + 236); g.globalAlpha = 1;
+    } else { line('HOLD = STALL DEEPER · LET GO = SPEED OUT', 17, '#ffe14a', y + 66); line('GET READY...', 20, '#fff', y + 98); }
   }
 
   // ---------- Drawing: text on the canvas ----------
@@ -504,17 +512,15 @@
     g.fillStyle = col; rr(g, x, y, Math.max(10, w * clamp(v, 0, 1)), 10, 5); g.fill();
     g.font = '10px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'top'; g.fillStyle = '#fff'; shadow(name, x + w / 2, y + 16);
   }
-  function wavePts() { var p = S.wp; return Math.min(C.MAX_WAVE, Math.round(p.drops + p.airs + p.speed + p.tube + p.tdrops + p.clean)); }
+  function wavePts() { var p = S.wp; return Math.min(C.MAX_WAVE, Math.round(p.drops + p.airs + p.speed + p.tube + p.deep + p.dodge)); }
   function hud(t) {
     var y0 = 12 + safeTop, tubeNow = state === 'tube' || state === 'tubeready', w = Math.min(240, VW - 150), x = VW / 2 - w / 2;
     g.textBaseline = 'top'; g.textAlign = 'left'; g.font = '13px ' + DISP; g.fillStyle = '#7df3ff'; shadow('WAVE ' + (S.wave + 1) + '/' + C.NW, 14, y0);
     g.font = '26px ' + DISP; g.fillStyle = '#fff'; shadow(C.fmt(wavePts()), 14, y0 + 16);
     g.textAlign = 'right'; g.font = '13px ' + DISP; g.fillStyle = '#ffe14a'; shadow('HEAT ' + C.fmt(S.total), VW - 62, y0 + 4);
-    g.font = '13px ' + DISP; g.fillStyle = '#fff'; shadow((tubeNow ? S.tdropsN + '/' + S.B.tdrops.length : S.dropsN + '/' + S.B.nDrops) + ' drops', VW - 62, y0 + 22);
+    g.font = '13px ' + DISP; g.fillStyle = '#fff'; shadow(tubeNow ? 'deep +' + C.fmt(Math.round(S.wp.deep)) : S.dropsN + '/' + S.B.nDrops + ' drops', VW - 62, y0 + 22);
     if (tubeNow) {
-      var low = S.gap < 28; bar(x, y0 + 52, w, S.gap / 100, low && Math.floor(t * 8) % 2 ? '#ff4f6d' : '#ffffff', low ? 'FOAM BALL RIGHT BEHIND YOU!' : 'YOUR LEAD ON THE FOAM BALL');
-      g.fillStyle = 'rgba(4,22,58,.55)'; rr(g, x - 3, y0 + 90, w + 6, 10, 5); g.fill(); g.fillStyle = '#ffe14a'; rr(g, x, y0 + 93, Math.max(6, w * clamp(S.z / S.B.TL, 0, 1)), 4, 2); g.fill();
-      g.font = '10px ' + DISP; g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillStyle = '#ffe14a'; shadow('EXIT', x + w + 44, y0 + 95);
+      var left = Math.max(0, (S.B.TT - S.tt) / C.TPS), soon = left < 2; bar(x, y0 + 52, w, left / 8, soon && Math.floor(t * 8) % 2 ? '#ff4f6d' : '#ffffff', soon ? 'THE BARREL IS CLOSING!' : 'BARREL CLOSES IN ' + left.toFixed(1));
     } else {
       var lowm = S.meter < 30; bar(x, y0 + 52, w, S.meter / 100, lowm && Math.floor(t * 8) % 2 ? '#ff4f6d' : '#7df3ff', lowm ? 'TOO SLOW! CARVE UP AND DOWN' : 'SPEED');
       g.fillStyle = 'rgba(4,22,58,.55)'; rr(g, x - 3, y0 + 90, w + 6, 10, 5); g.fill(); g.fillStyle = '#ffe14a'; rr(g, x, y0 + 93, Math.max(6, w * clamp(S.x / S.B.L, 0, 1)), 4, 2); g.fill();
@@ -556,7 +562,7 @@
       drawRide({ x: t * 300, h: hh, vh: 0.54 * Math.cos(t * 1.5), air: false, rot: 0, meter: Math.min(100, (G0.sx - 96) / 1.7), objs: null, geo: G0, scale: 1.25 }, t);
       g.restore(); return;
     }
-    if (state === 'tube' || state === 'tubeready') drawTube({ B: S.B, z: S.z, h: S.h, vh: S.vh, gap: S.gap, gi: S.gi, ti: S.ti, intro: state === 'tubeready' }, t);
+    if (state === 'tube' || state === 'tubeready') drawTube({ d: dv, hold: held && state === 'tube', L: C.limit(S.B, S.tt), rem: S.B.TT - S.tt }, t);
     else if (state === 'wipe' && wipeWhere === 'tube') drawUnder(t);
     else {
       V = { x: S.x, h: S.h, vh: S.vh, air: S.air, rot: S.rot, meter: S.meter, inv: S.inv, objs: S };
@@ -580,7 +586,7 @@
     if (flash > 0) { g.fillStyle = 'rgba(255,255,255,' + Math.min(0.8, flash) + ')'; g.fillRect(-20, -20, VW + 40, H + 40); }
     g.restore();
     for (i = 0; i < pops.length; i++) { p = pops[i]; g.save(); g.translate(clamp(p.x, 70, VW - 70), p.y - p.t * 46); g.rotate(p.rot); g.globalAlpha = Math.min(1, (1.1 - p.t) * 3); g.font = p.size + 'px ' + DISP; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = 5; g.strokeStyle = 'rgba(4,22,58,.85)'; g.strokeText(p.text, 0, 0); g.fillStyle = p.col; g.fillText(p.text, 0, 0); g.restore(); }
-    if (state === 'tube' || state === 'tubeready') { tubeMap(t); if (state === 'tube' && (S.wave === 0 || !save.tubes)) tubeHint(t); }
+    if (state === 'tube' || state === 'tubeready') { depthGauge(t); if (state === 'tube') tubeHint(t); }
     if (state === 'ride' || state === 'tube' || state === 'tubeready' || state === 'ready' || state === 'trans') hud(t);
     if (state === 'ready') {
       var W = S.W, y = H * 0.2 + safeTop + 40;
@@ -603,7 +609,7 @@
       '<h1 class="sw-logo"><span>Sui</span><em>Swell</em></h1><p class="sw-tag">Drop in. Get barreled. <b>Stay liquid.</b></p><div class="sw-gap"></div>' +
       '<div class="sw-panel"><div class="sw-acts"><button type="button" class="sw-btn sw-primary" data-a="daily"><span>DAILY HEAT #' + C.dayNum(date) + '</span><small>' + (mine ? 'your best today ' + C.fmt(mine) : 'same 3 waves for everyone today') + '</small></button>' +
       '<button type="button" class="sw-btn" data-a="free"><span>FREE SURF</span><small>new waves every heat</small></button></div>' +
-      '<p class="sw-how">Hold to carve up the wave, let go to drop. Grab the droplets, launch off the lip, then survive the tube. Three waves, judged out of 10.</p>' +
+      '<p class="sw-how">Hold to carve up the wave, let go to drop. Grab the droplets and launch off the lip. In the tube, hold to stall deeper for a bigger score. Three waves, judged out of 10.</p>' +
       '<div class="sw-k">TODAY\'S TOP SURFERS</div><div id="sw-board"><div class="sw-dim">Loading…</div></div></div></div>');
     getBoard(function (b) { var el = $('#sw-board'); if (el) el.innerHTML = boardHtml(b ? { top: b.top.slice(0, 5) } : null); });
   }
@@ -615,7 +621,7 @@
       '<div class="sw-judges">' + js.map(function (v, i) { return '<div class="sw-judge" style="animation-delay:' + (0.15 + i * 0.25) + 's"><i></i><b>' + v + '</b></div>'; }).join('') + '</div>' +
       '<div class="sw-time">' + C.fmt(r.pts) + '</div><div class="sw-rate">' + (r.out ? waveWord(r.pts) : r.where === 'tube' ? 'SO CLOSE, BRAH!' : 'BUMMER, DUDE') + '</div>' +
       '<ul class="sw-rows">' + rowHtml('Droplets ' + r.drops + '/' + r.nDrops, r.parts.drops, r.drops) + rowHtml(r.airs + (r.airs === 1 ? ' air' : ' airs') + (r.spins ? ', ' + r.spins + (r.spins === 1 ? ' spin' : ' spins') : ''), r.parts.airs, r.airs) +
-      (r.where === 'ride' ? rowHtml('Caught by the whitewater', 0, false) : rowHtml('Speed into the tube', r.parts.speed, true) + rowHtml(r.out ? 'Made it out of the barrel' : 'Wiped out in the barrel', r.parts.tube, r.out) + rowHtml('Tube droplets ' + r.tdrops + '/' + r.nT, r.parts.tdrops, r.tdrops) + rowHtml(r.scrapes ? 'Clean barrel (' + r.scrapes + (r.scrapes === 1 ? ' bump)' : ' bumps)') : 'Clean barrel', r.parts.clean, r.parts.clean)) + '</ul>' +
+      (r.where === 'ride' ? rowHtml('Caught by the whitewater', 0, false) : rowHtml('Speed into the tube', r.parts.speed, true) + rowHtml(r.out ? 'Made it out of the barrel' : 'Caught by the foam ball', r.parts.tube, r.out) + rowHtml('Deep in the barrel (best ' + MULT[r.maxMult] + ')', r.parts.deep, r.maxMult > 1) + rowHtml('Spit dodge', r.parts.dodge, r.dodge)) + '</ul>' +
       '<div class="sw-sub">HEAT SO FAR ' + C.fmt(S.total) + '</div>' +
       '<div class="sw-acts row"><button type="button" class="sw-btn sw-primary" data-a="next"><span>' + (lastWave ? 'SEE YOUR HEAT' : 'PADDLE OUT') + '</span><small>' + (lastWave ? 'final score' : 'wave ' + (S.wave + 2) + ': ' + C.WAVES[S.wave + 1].name.toLowerCase()) + '</small></button></div></div></div>');
     var b = $('[data-a="next"]'); if (b) b.focus();
@@ -756,5 +762,5 @@
   showTitle();
   requestAnimationFrame(frame);
   if (DEBUG) window.POF_SW = { get S() { return S; }, get state() { return state; }, core: C, save: save, start: startRun, card: shareCard, title: showTitle, get last() { return lastRun; },
-    toTube: function () { S.x = S.B.L - 60; S.lo = S.B.objs.length; }, nearExit: function () { S.z = S.B.TL - 700; while (S.gi < S.B.gates.length && S.B.gates[S.gi].z < S.z) S.gi++; while (S.ti < S.B.tdrops.length && S.B.tdrops[S.ti].z < S.z) S.ti++; }, hold: function (v) { held = v; }, god: function () { S.meter = 100; S.gap = 100; } };
+    toTube: function () { S.x = S.B.L - 60; S.lo = S.B.objs.length; }, nearExit: function () { S.tt = S.B.TT - 150; }, hold: function (v) { held = v; }, god: function () { S.meter = 100; } };
 })();
