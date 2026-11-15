@@ -37,9 +37,12 @@
       ['Cold Streets', 'rap', 'audio/box/rap-cold-streets.mp3', 107],
       ['Night Ride', 'rap', 'audio/box/rap-night-ride.mp3', 164],
       ['Showdown', 'rap', 'audio/box/rap-showdown.mp3', 138]] },
-    { id: 'shred', name: 'SHRED', freq: '99.5', tag: 'Arena rock and surf guitar', color: '#ff8a2a', ink: '#2b1200', songs: [
+    { id: 'shred', name: 'SHRED', freq: '99.5', tag: 'Rock anthems, power ballads and surf guitar', color: '#ff8a2a', ink: '#2b1200', songs: [
       ['Arena Anthem', 'guitar', 'audio/box/arena-anthem.mp3', 172],
-      ['Sui Swell', 'sui', 'audio/sw/sui-swell.mp3', 75]] },
+      ['Encore', null, 'audio/box/shred-encore.mp3', 210],
+      ['Wide Open', null, 'audio/box/shred-wide-open.mp3', 92],
+      ['Sui Swell', 'sui', 'audio/sw/sui-swell.mp3', 75],
+      ['Lighters Up', null, 'audio/box/shred-lighters-up.mp3', 220]] },
     { id: 'boss', name: 'BOSS FM', freq: '101.5', tag: 'Fight-game dubstep', color: '#ffd23f', ink: '#2a1d00', songs: [
       ['Title Theme', 'fight', 'audio/box/pof-menu.mp3', 131],
       ['Fight!', 'fight', 'audio/box/pof-fight.mp3', 184],

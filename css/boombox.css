@@ -10,12 +10,13 @@
   background: linear-gradient(180deg, #4a4a55 0%, #33333d 9%, #26262e 60%, #1c1c23 100%);
   box-shadow: 0 0 0 1px #6a6a78 inset, 0 2px 0 rgba(255,255,255,.18) inset, 0 10px 0 var(--line), 0 0 calc(10px + 40px * var(--kick)) color-mix(in srgb, var(--st) calc(45% * var(--kick)), transparent);
   display: grid; gap: 12px; }
+/* the radio dial sits on top, the transport keys under the tape */
 /* the carry handle: a chrome bar on two posts */
 .boombox { isolation: isolate; }
 .bb-handle { position: absolute; z-index: -1; left: 20%; right: 20%; top: -26px; height: 40px; border: 9px solid #9c9da8; border-bottom: 0; border-radius: 18px 18px 0 0; pointer-events: none;
   box-shadow: 0 0 0 3px var(--line), 0 0 0 3px var(--line) inset, 0 2px 0 4px rgba(255,255,255,.12) inset; }
 
-.bb-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bb-ctl { display: flex; align-items: center; justify-content: center; gap: 10px 18px; flex-wrap: wrap; padding-bottom: 6px; }
 .bb-keys { display: flex; gap: 6px; }
 .bb-keys button, .bb-mini button { cursor: pointer; display: grid; place-items: center; border: 2px solid var(--line); color: #22222a; font: inherit; }
 .bb-keys button { width: 52px; height: 40px; border-radius: 6px 6px 9px 9px; background: linear-gradient(180deg, #f2f2f6, #b8b9c3); box-shadow: 0 5px 0 #5c5d68, 0 6px 0 var(--line); transition: transform .06s, box-shadow .06s; }
@@ -100,7 +101,6 @@
   .bb-mid { grid-area: mid; }
   #bb-spk-l { grid-area: l; } #bb-spk-r { grid-area: r; }
   .bb-spk { max-width: 150px; justify-self: center; }
-  .bb-top { justify-content: center; }
   .bb-keys button { width: 48px; } .bb-keys .bb-key-play { width: 60px; }
   .bb-vol input { width: 160px; }
   .bb-dial button { padding: 10px 0 6px; }

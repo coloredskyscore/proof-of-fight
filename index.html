@@ -166,15 +166,7 @@
       </div>
       <div class="boombox">
         <div class="bb-handle" aria-hidden="true"></div>
-        <div class="bb-top">
-          <div class="bb-keys">
-            <button type="button" id="bb-prev" aria-label="Previous song"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h2.5v14H5zM20 5v14L9 12z"/></svg></button>
-            <button type="button" id="bb-play" class="bb-key-play" aria-label="Play"></button>
-            <button type="button" id="bb-next" aria-label="Next song"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 5H19v14h-2.5zM4 5v14l11-7z"/></svg></button>
-            <button type="button" id="bb-shuf" aria-label="Shuffle every station" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c4 0 6 10 10 10H20M3 17h3.5c1.6 0 2.8-1.6 3.9-3.6M20 7h-3.5c-1.6 0-2.8 1.6-3.9 3.6M17.5 4.5 20 7l-2.5 2.5M17.5 14.5 20 17l-2.5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          </div>
-          <label class="bb-vol"><span>VOL</span><input type="range" id="bb-vol" min="0" max="100" value="80" aria-label="Volume"></label>
-        </div>
+        <div class="bb-tuner"><div class="bb-dial" id="bb-dial" role="radiogroup" aria-label="Stations"></div><i class="bb-needle" id="bb-needle" aria-hidden="true"></i></div>
         <div class="bb-face">
           <canvas class="bb-spk" id="bb-spk-l" aria-hidden="true"></canvas>
           <div class="bb-mid">
@@ -186,10 +178,18 @@
               <canvas id="bb-eq" aria-hidden="true"></canvas>
             </div>
             <canvas class="bb-tape" id="bb-tape" aria-hidden="true"></canvas>
+            <div class="bb-ctl">
+              <div class="bb-keys">
+                <button type="button" id="bb-prev" aria-label="Previous song"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h2.5v14H5zM20 5v14L9 12z"/></svg></button>
+                <button type="button" id="bb-play" class="bb-key-play" aria-label="Play"></button>
+                <button type="button" id="bb-next" aria-label="Next song"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 5H19v14h-2.5zM4 5v14l11-7z"/></svg></button>
+                <button type="button" id="bb-shuf" aria-label="Shuffle every station" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c4 0 6 10 10 10H20M3 17h3.5c1.6 0 2.8-1.6 3.9-3.6M20 7h-3.5c-1.6 0-2.8 1.6-3.9 3.6M17.5 4.5 20 7l-2.5 2.5M17.5 14.5 20 17l-2.5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
+              <label class="bb-vol"><span>VOL</span><input type="range" id="bb-vol" min="0" max="100" value="80" aria-label="Volume"></label>
+            </div>
           </div>
           <canvas class="bb-spk" id="bb-spk-r" aria-hidden="true"></canvas>
         </div>
-        <div class="bb-tuner"><div class="bb-dial" id="bb-dial" role="radiogroup" aria-label="Stations"></div><i class="bb-needle" id="bb-needle" aria-hidden="true"></i></div>
       </div>
       <div class="bb-songs">
         <div class="bb-list-h" id="bb-list-h"></div>
