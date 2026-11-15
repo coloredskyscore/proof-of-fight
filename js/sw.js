@@ -633,7 +633,7 @@
       '<h1 class="sw-logo"><span>Sui</span><em>Swell</em></h1><p class="sw-tag">Drop in. Get barreled. <b>Stay liquid.</b></p><div class="sw-gap"></div>' +
       '<div class="sw-panel"><div class="sw-acts"><button type="button" class="sw-btn sw-primary" data-a="daily"><span>DAILY HEAT #' + C.dayNum(date) + '</span><small>' + (mine ? 'your best today ' + C.fmt(mine) : 'same 3 waves for everyone today') + '</small></button>' +
       '<button type="button" class="sw-btn" data-a="free"><span>FREE SURF</span><small>new waves every heat</small></button></div>' +
-      '<p class="sw-how">Hold to carve up the wave, let go to drop. Grab the droplets and launch off the lip. In the tube, hold to stall deeper for a bigger score. Three waves, judged out of 10.</p>' +
+      '<p class="sw-how">Hold to carve up the wave, let go to drop. Grab the droplets and launch off the lip. Whales are friendly: drop onto one at the bottom and it launches you sky high. In the tube, hold to stall deeper for a bigger score. Three waves, judged out of 10.</p>' +
       '<div class="sw-k">TODAY\'S TOP SURFERS</div><div id="sw-board"><div class="sw-dim">Loading…</div></div></div></div>');
     getBoard(function (b) { var el = $('#sw-board'); if (el) el.innerHTML = boardHtml(b ? { top: b.top.slice(0, 5) } : null); });
   }
