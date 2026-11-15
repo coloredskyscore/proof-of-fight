@@ -295,6 +295,7 @@
   }
 
   function speaker(c, kick) {
+    if (!c.offsetWidth) return;   // hidden on phones
     var f = fit(c), g = f.g, w = f.w, h = f.h, cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 2;
     g.clearRect(0, 0, w, h);
     // the grille: a dark disc with rings of holes

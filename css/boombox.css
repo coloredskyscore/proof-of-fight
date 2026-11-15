@@ -97,10 +97,9 @@
 
 @media (max-width: 640px) {
   .boombox { padding: 10px 10px 12px; }
-  .bb-face { grid-template-columns: 1fr 1fr; grid-template-areas: 'mid mid' 'l r'; gap: 10px; }
-  .bb-mid { grid-area: mid; }
-  #bb-spk-l { grid-area: l; } #bb-spk-r { grid-area: r; }
-  .bb-spk { max-width: 150px; justify-self: center; }
+  /* phones: no speakers, the cassette and LCD get the width (the box still glows with the bass) */
+  .bb-face { grid-template-columns: 1fr; }
+  .bb-spk { display: none; }
   .bb-keys button { width: 48px; } .bb-keys .bb-key-play { width: 60px; }
   .bb-vol input { width: 160px; }
   .bb-dial button { padding: 10px 0 6px; }
