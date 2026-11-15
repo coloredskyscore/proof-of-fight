@@ -1,0 +1,123 @@
+/* The hub's boombox (js/boombox.js): an 80s graphite boombox with piano keys on top, two speakers, an LCD and a cassette
+   in the middle, and a tuner dial for the five stations. --st is the station's colour, --kick the bass level (0..1). */
+.bbx { --st: #ffd23f; --st-ink: #2a1d00; --kick: 0; display: grid; gap: 14px; }
+.bb-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; }
+.bb-head h3 { margin: 0; display: inline-flex; align-items: center; gap: 8px; font: 400 22px var(--display); color: var(--gold); -webkit-text-stroke: 1px var(--line); text-shadow: 0 3px 0 var(--red); letter-spacing: .03em; }
+.bb-head h3 svg { width: 24px; height: 24px; color: var(--gold); filter: drop-shadow(0 2px 0 var(--red)); }
+.bb-head > span { font-size: 13px; color: var(--muted); }
+
+.boombox { position: relative; margin-top: 26px; padding: 12px 14px 14px; border-radius: 22px; border: 3px solid var(--line);
+  background: linear-gradient(180deg, #4a4a55 0%, #33333d 9%, #26262e 60%, #1c1c23 100%);
+  box-shadow: 0 0 0 1px #6a6a78 inset, 0 2px 0 rgba(255,255,255,.18) inset, 0 10px 0 var(--line), 0 0 calc(10px + 40px * var(--kick)) color-mix(in srgb, var(--st) calc(45% * var(--kick)), transparent);
+  display: grid; gap: 12px; }
+/* the radio dial sits on top, the transport keys under the tape */
+/* the carry handle: a chrome bar on two posts */
+.boombox { isolation: isolate; }
+.bb-handle { position: absolute; z-index: -1; left: 20%; right: 20%; top: -26px; height: 40px; border: 9px solid #9c9da8; border-bottom: 0; border-radius: 18px 18px 0 0; pointer-events: none;
+  box-shadow: 0 0 0 3px var(--line), 0 0 0 3px var(--line) inset, 0 2px 0 4px rgba(255,255,255,.12) inset; }
+
+.bb-ctl { display: flex; align-items: center; justify-content: center; gap: 10px 18px; flex-wrap: wrap; padding-bottom: 6px; }
+.bb-keys { display: flex; gap: 6px; }
+.bb-keys button, .bb-mini button { cursor: pointer; display: grid; place-items: center; border: 2px solid var(--line); color: #22222a; font: inherit; }
+.bb-keys button { width: 52px; height: 40px; border-radius: 6px 6px 9px 9px; background: linear-gradient(180deg, #f2f2f6, #b8b9c3); box-shadow: 0 5px 0 #5c5d68, 0 6px 0 var(--line); transition: transform .06s, box-shadow .06s; }
+.bb-keys button:active { transform: translateY(4px); box-shadow: 0 1px 0 #5c5d68, 0 2px 0 var(--line); }
+.bb-keys svg { width: 20px; height: 20px; fill: currentColor; }
+.bb-keys .bb-key-play { width: 64px; background: linear-gradient(180deg, #ff6b5a, #c8402b); color: #fff; box-shadow: 0 5px 0 #6e1d14, 0 6px 0 var(--line); }
+.bb-keys .bb-key-play:active { box-shadow: 0 1px 0 #6e1d14, 0 2px 0 var(--line); }
+.bb-keys #bb-shuf[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in srgb, var(--st) 70%, #fff), var(--st)); color: var(--st-ink); transform: translateY(3px); box-shadow: 0 2px 0 #5c5d68, 0 3px 0 var(--line); }
+.bb-keys button:focus-visible, .bb-dial button:focus-visible, .bb-list button:focus-visible, .bb-mini button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.bb-vol { display: flex; align-items: center; gap: 8px; font: 800 11px var(--mono); color: #c9cad3; letter-spacing: .1em; }
+.bb-vol input { width: 130px; accent-color: var(--st); }
+
+.bb-face { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr) minmax(0, 1fr); gap: 14px; align-items: center; }
+.bb-spk { width: 100%; aspect-ratio: 1; display: block; }
+.bb-mid { display: grid; gap: 10px; min-width: 0; }
+.bb-lcd { position: relative; border-radius: 10px; border: 2px solid var(--line); padding: 8px 10px 8px; min-width: 0;
+  background: linear-gradient(180deg, #0c1a14, #07120d); box-shadow: 0 0 0 2px #45454f, 0 0 18px rgba(125,255,176,.08) inset;
+  font-family: var(--mono); color: #7dffb0; text-shadow: 0 0 6px rgba(125,255,176,.45); display: grid; gap: 2px; }
+.bb-lcd-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em; }
+.bb-lcd-top span:first-child { color: var(--st); text-shadow: 0 0 6px color-mix(in srgb, var(--st) 60%, transparent); }
+.bb-title { font: 800 17px/1.2 var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e8fff1; }
+.bb-from { font-size: 12px; color: #7dffb0; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-from[href]:hover b, .bb-from[href]:focus-visible b { text-decoration: underline; }
+.bb-from b { color: #e8fff1; }
+.bb-seek { position: relative; height: 6px; margin: 4px 0 2px; border-radius: 3px; background: rgba(125,255,176,.14); cursor: pointer; }
+.bb-seek::before { content: ''; position: absolute; inset: -8px 0; }   /* a bigger target for fingers */
+.bb-seek i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 3px; background: #7dffb0; box-shadow: 0 0 6px rgba(125,255,176,.6); }
+#bb-eq { width: 100%; height: 34px; display: block; }
+.bb-tape { width: 100%; aspect-ratio: 1.75; display: block; border-radius: 10px; border: 2px solid var(--line);
+  background: linear-gradient(180deg, #0b0b10, #15151b); box-shadow: 0 0 0 2px #45454f, 0 6px 14px rgba(0,0,0,.5) inset; }
+
+/* The tuner: frequencies on a backlit strip, a red needle over the station that's on */
+.bb-tuner { position: relative; border-radius: 10px; border: 2px solid var(--line); background: linear-gradient(180deg, #1a1712, #0f0d0a); box-shadow: 0 0 0 2px #45454f; padding: 6px; overflow: hidden; }
+.bb-tuner::before { content: ''; position: absolute; left: 10px; right: 10px; top: 4px; height: 6px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, rgba(255,214,140,.5) 0 1px, transparent 1px 10px); }
+.bb-dial { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.bb-dial button { cursor: pointer; border: 0; background: transparent; color: #c7b48a; padding: 10px 2px 6px; border-radius: 7px; font: inherit; display: grid; gap: 1px; justify-items: center; min-width: 0; }
+.bb-dial button b { font: 800 15px var(--mono); color: #ffe2a8; text-shadow: 0 0 8px rgba(255,180,80,.35); }
+.bb-dial button span { font: 400 12px var(--display); letter-spacing: .04em; color: var(--c); white-space: nowrap; }
+.bb-dial button small { font: 600 10px var(--mono); color: #8d7e60; }
+.bb-dial button:hover { background: rgba(255,214,140,.06); }
+.bb-dial button[aria-checked="true"] { background: color-mix(in srgb, var(--c) 14%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 55%, transparent) inset; }
+.bb-needle { position: absolute; top: 0; height: 14px; width: 3px; margin-left: -1.5px; left: 50%; background: #ff3b2f; box-shadow: 0 0 8px #ff3b2f; border-radius: 0 0 2px 2px; pointer-events: none; transition: left .35s cubic-bezier(.3, 1.4, .6, 1); }
+
+/* The song list for the station on the dial */
+.bb-songs { border-radius: 14px; background: var(--panel); border: 2px solid var(--line); box-shadow: 0 0 0 1px #2c2540 inset; padding: 12px; display: grid; gap: 8px; }
+.bb-list-h { font-size: 13px; color: var(--muted); padding: 0 4px; }
+.bb-list-h b { color: var(--st); font-family: var(--mono); }
+.bb-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 4px 14px; }
+.bb-list li { display: flex; align-items: center; gap: 8px; border-radius: 8px; padding-right: 8px; min-width: 0; }
+.bb-list li.on { background: color-mix(in srgb, var(--st) 12%, transparent); }
+.bb-list button { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; border: 0; background: transparent; color: var(--ink); font: inherit; padding: 8px 6px; border-radius: 8px; }
+.bb-list button:hover .t { color: var(--st); }
+.bb-list .n { width: 18px; flex: none; text-align: center; font: 700 12px var(--mono); color: var(--muted); }
+.bb-list .t { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-list li.on .t { color: var(--st); font-weight: 700; }
+.bb-list .d { font: 500 12px var(--mono); color: var(--muted); }
+.bb-list li a, .bb-list li em { flex: none; font-size: 11px; color: var(--muted); max-width: 42%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: normal; }
+.bb-list li a:hover { color: var(--ink); }
+.bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+.bars i { width: 3px; background: var(--st); animation: bb-bar .8s ease-in-out infinite; height: 40%; }
+.bars i:nth-child(2) { animation-delay: -.3s; } .bars i:nth-child(3) { animation-delay: -.55s; }
+.bbx:not(.is-playing) .bars i { animation: none; height: 35%; }
+@keyframes bb-bar { 50% { height: 100%; } }
+
+/* Mini player, pinned to the bottom while music plays and the boombox is off screen */
+.bb-mini { position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  width: min(440px, calc(100% - 24px)); display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 14px;
+  background: #1c1c23; border: 2px solid var(--line); box-shadow: 0 0 0 1px #4a4a55 inset, 0 8px 24px rgba(0,0,0,.55); }
+.bb-mini[hidden] { display: none; }
+.bb-mini .bb-mini-up { flex: 1; min-width: 0; display: grid; justify-items: start; text-align: left; cursor: pointer; background: transparent; border: 0; color: var(--ink); padding: 2px 6px; }
+.bb-mini .bb-mini-up span { font: 800 14px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-mini .bb-mini-up small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-mini button:not(.bb-mini-up) { width: 44px; height: 40px; flex: none; border-radius: 9px; background: linear-gradient(180deg, #f2f2f6, #b8b9c3); }
+.bb-mini #bb-mini-play { background: linear-gradient(180deg, #ff6b5a, #c8402b); color: #fff; }
+.bb-mini svg { width: 18px; height: 18px; fill: currentColor; }
+
+@media (max-width: 640px) {
+  .boombox { padding: 10px 10px 12px; }
+  /* phones: no speakers, the cassette and LCD get the width (the box still glows with the bass) */
+  .bb-face { grid-template-columns: 1fr; }
+  .bb-spk { display: none; }
+  .bb-keys button { width: 48px; } .bb-keys .bb-key-play { width: 60px; }
+  .bb-vol input { width: 160px; }
+  .bb-dial button { padding: 10px 0 6px; }
+  .bb-dial button b { font-size: 12px; }
+  .bb-dial button span { font-size: 10px; }
+  .bb-handle { left: 24%; right: 24%; }
+}
+@media (prefers-reduced-motion: reduce) { .bars i { animation: none; } .bb-needle, .bb-keys button { transition: none; } }
+
+/* The music-note shortcut in the top corner: jumps down to the boombox, and pulses while music plays */
+.marquee { position: relative; }
+.bb-jump { position: absolute; top: 0; right: 0; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; text-decoration: none;
+  background: linear-gradient(180deg, #ffe27a, var(--gold)); border: 3px solid var(--line); box-shadow: 0 4px 0 var(--red), 0 6px 0 var(--line); color: var(--line); }
+.bb-jump svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.bb-jump svg circle { fill: currentColor; }
+.bb-jump:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--red), 0 3px 0 var(--line); }
+.bb-jump:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.bb-jump.is-playing { animation: bb-jump 1s ease-in-out infinite; }
+@keyframes bb-jump { 50% { box-shadow: 0 4px 0 var(--red), 0 6px 0 var(--line), 0 0 0 7px rgba(255,210,63,.25); } }
+@media (max-width: 640px) { .bb-jump { width: 38px; height: 38px; top: -16px; } .bb-jump svg { width: 20px; height: 20px; } }
+@media (prefers-reduced-motion: reduce) { .bb-jump.is-playing { animation: none; } }
