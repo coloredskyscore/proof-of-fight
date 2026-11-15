@@ -413,9 +413,25 @@
     // stalling: your hand drags in the wall on the left and throws up a rooster tail
     if (V.hold) {
       var hx = Math.max(34, VW * 0.5 - 250 * bs), hy = H * 0.66;
-      g.lineCap = 'round'; g.strokeStyle = '#0b1b4a'; g.lineWidth = 34 * bs; g.beginPath(); g.moveTo(hx + 90 * bs, H + 20); g.quadraticCurveTo(hx + 50 * bs, hy + 120 * bs, hx, hy); g.stroke();
-      g.strokeStyle = '#f2b58a'; g.lineWidth = 27 * bs; g.stroke();
-      g.fillStyle = '#f2b58a'; g.beginPath(); g.arc(hx, hy, 19 * bs, 0, TAU); g.fill(); g.lineWidth = 3.5; g.strokeStyle = '#0b1b4a'; g.stroke();
+      // forearm, palm, four fingers and a thumb, seen from your own eyes; the fingertips are in the water at (hx, hy)
+      var ex0 = hx + 130 * bs, ey0 = H + 40, adx = hx - ex0, ady = hy - ey0, al = Math.sqrt(adx * adx + ady * ady), AS = bs * 1.7, AL = al / AS - 56, SK = '#f0b48a', SK2 = '#d9946a', OL = '#0b1b4a';
+      g.save(); g.translate(hx - adx / al * 56 * AS, hy - ady / al * 56 * AS); g.rotate(Math.atan2(adx, -ady) + Math.sin(t * 9) * 0.015); g.scale(AS, AS);
+      g.lineJoin = 'round'; g.lineCap = 'round'; g.lineWidth = 3; g.strokeStyle = OL;
+      var FG = [[-13, -27, 24, -0.16], [-4.5, -30, 30, -0.05], [4.5, -30, 28, 0.05], [13, -26, 21, 0.17]];
+      for (i = 0; i < 4; i++) { g.save(); g.translate(FG[i][0], FG[i][1]); g.rotate(FG[i][3]); g.beginPath(); g.moveTo(-4.6, 6); g.lineTo(-4.2, -FG[i][2] + 4); g.arc(0, -FG[i][2] + 4, 4.2, Math.PI, 0); g.lineTo(4.6, 6); g.closePath(); g.fillStyle = SK; g.fill(); g.stroke(); g.restore(); }
+      g.save(); g.translate(15, -6); g.rotate(0.85); g.beginPath(); g.moveTo(-5.5, 6); g.lineTo(-4.8, -20); g.arc(0, -20, 4.8, Math.PI, 0); g.lineTo(5.5, 6); g.closePath(); g.fillStyle = SK; g.fill(); g.stroke(); g.restore();
+      // forearm: narrow at the wrist, wider toward the elbow
+      g.beginPath(); g.moveTo(-12, 4); g.bezierCurveTo(-16, AL * 0.3, -27, AL * 0.55, -24, AL + 10); g.lineTo(24, AL + 10); g.bezierCurveTo(25, AL * 0.55, 15, AL * 0.3, 12, 4); g.closePath(); g.fillStyle = SK; g.fill(); g.stroke();
+      g.save(); g.clip(); g.fillStyle = SK2; g.globalAlpha = 0.55; g.beginPath(); g.moveTo(4, 0); g.bezierCurveTo(8, AL * 0.3, 14, AL * 0.6, 8, AL + 10); g.lineTo(30, AL + 10); g.lineTo(30, 0); g.closePath(); g.fill(); g.restore();
+      // palm over the finger roots and the wrist
+      g.beginPath(); g.moveTo(-12, 6); g.quadraticCurveTo(-19, -10, -17.5, -26); g.quadraticCurveTo(-9, -33, 0, -33.5); g.quadraticCurveTo(10, -33, 17.5, -25); g.quadraticCurveTo(20, -8, 12, 6); g.closePath(); g.fillStyle = SK; g.fill();
+      g.beginPath(); g.moveTo(-12, 6); g.quadraticCurveTo(-19, -10, -17.5, -26); g.moveTo(17.5, -25); g.quadraticCurveTo(20, -8, 12, 6); g.stroke();
+      g.fillStyle = SK; g.fillRect(-10, 0, 20, 10);
+      g.strokeStyle = SK2; g.lineWidth = 2.2; for (i = 0; i < 4; i++) { g.beginPath(); g.arc(FG[i][0], FG[i][1] + 2, 3.6, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
+      g.beginPath(); g.moveTo(-8, 5); g.quadraticCurveTo(0, 8, 8, 5); g.stroke();
+      g.restore();
+      // white water where the fingers cut the wall
+      g.fillStyle = 'rgba(255,255,255,.95)'; for (i = 0; i < 7; i++) { g.beginPath(); g.arc(hx + (hsh(i * 3.1) - 0.5) * 62 * bs, hy - 4 * bs + (hsh(i * 1.7) - 0.5) * 14 * bs + Math.sin(t * 20 + i) * 2, (6 + hsh(i * 9) * 7) * bs, 0, TAU); g.fill(); }
       g.fillStyle = '#fff';
       for (i = 0; i < 26; i++) { var sp2 = (t * 2.4 + hsh(i * 1.9)) % 1, sa = -1.9 + hsh(i * 5.1) * 0.9, sr = sp2 * (150 + hsh(i) * 130) * bs; g.globalAlpha = 1 - sp2; g.beginPath(); g.arc(hx - 4 + Math.cos(sa) * sr * 0.6, hy - 6 + Math.sin(sa) * sr + sp2 * sp2 * 70 * bs, (3 + hsh(i * 7) * 6) * bs * (1 - sp2 * 0.5), 0, TAU); g.fill(); }
       g.globalAlpha = 1;
