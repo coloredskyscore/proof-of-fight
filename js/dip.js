@@ -37,8 +37,11 @@
   var REC = null, GH = null, ghostWho = '', ghostTrail = [], ghostPassed = false, racing = false, CHALLENGE = null;
   // The Ride the Chart server (worker/ in the repo): short race links and the leaderboards. ?dip&debug&api=<url> points
   // the page at another copy (a local one, say).
+  // Phones and tablets get the system share sheet; a computer with a mouse gets copy, download and the X post
+  // instead (Windows and macOS open their own share dialog for navigator.share, which isn't what people want there).
+  var SHEET = !!navigator.share && window.matchMedia && matchMedia('(pointer: coarse)').matches;
   var API = (DEBUG && (/[?&]api=([^&#]+)/.exec(location.search) || [])[1]) ? decodeURIComponent(/[?&]api=([^&#]+)/.exec(location.search)[1]) : 'https://pof-dip.brianboode.workers.dev';
-  var posted = false, postedTo = {}, lbBoard = null, shortUrl = '', played = chainIds[0];
+  var posted = false, postedTo = {}, myRun = {}, lbBoard = null, shortUrl = '', played = chainIds[0];
   function api(path, body, fresh) {
     return fetch(API + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : fresh ? { cache: 'reload' } : {})
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'error'); return j; }); });
@@ -264,6 +267,7 @@
         '<button class="dip-btn dip-btn-main" id="dip-again" type="button"><b>RIDE AGAIN</b></button>' +
         '<form class="dip-post" id="dip-post" hidden><input id="dip-initials" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" aria-label="Your initials">' +
           '<button class="dip-btn dip-btn-sm" id="dip-post-btn" type="submit"><b>POST SCORE</b></button></form>' +
+        '<button class="dip-btn dip-btn-sm" id="dip-see-lb" type="button" hidden><b>SEE LEADERBOARD</b></button>' +
         '<div class="dip-row"><button class="dip-btn dip-btn-sm" id="dip-sendlink" type="button"><b>SEND RACE LINK</b></button>' +
         '<button class="dip-btn dip-btn-sm" id="dip-share" type="button"><b>SHARE PICTURE</b></button></div>' +
         '<div class="dip-row">' +
@@ -289,6 +293,7 @@
     $('#dip-post').addEventListener('submit', function (e) { e.preventDefault(); postScore(); });
     $('#dip-initials').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3); });
     $('#dip-lb-open').addEventListener('click', function () { openBoard(played); });
+    $('#dip-see-lb').addEventListener('click', function () { var m = mode; menu(); openBoard(m); });
     $('#dip-lb-close').addEventListener('click', function () { $('#dip-lb').hidden = true; $('#dip-menu').hidden = false; });
     root.querySelectorAll('.dip-lb-tab').forEach(function (b) { b.addEventListener('click', function () { openBoard(b.getAttribute('data-board')); }); });
     $('#dip-mute').addEventListener('click', function () { audio(); setMuted(!muted); });
@@ -395,6 +400,7 @@
     api('/scores?board=' + boardId(m) + '&limit=10', null, fresh).then(function (j) {
       if (lbBoard !== m) return;
       note.textContent = j.top.length ? 'Tap RACE to ride against a run.' : 'No scores yet. Be the first.';
+      var mine = myRun[boardId(m)], shown = false;
       j.top.forEach(function (row) {
         var li = document.createElement('li'), where = m === 'daily' ? fmt(row.day) + ' days' : whenOf(LT, row.day * DAY);
         li.innerHTML = '<b></b><span></span><em></em><button class="dip-lb-race" type="button">RACE</button>';
@@ -407,8 +413,10 @@
             $('#dip-lb').hidden = true; start(CHALLENGE.mode, true);
           }, function () { note.textContent = 'Could not load that run.'; });
         });
+        if (mine && row.run === mine.run) { li.className = 'mine'; shown = true; }
         list.appendChild(li);
       });
+      if (mine && !shown) note.textContent = 'You\'re #' + fmt(mine.rank) + ', just outside the top 10. ' + note.textContent;
     }, function () { if (lbBoard === m) note.textContent = 'The leaderboard is offline right now.'; });
   }
   function postScore() {
@@ -418,7 +426,8 @@
     posted = true; store('pof-dip-initials', ini);
     $('#dip-post-btn').disabled = true; note.textContent = 'Posting…';
     api('/scores', { code: C.encode(REC), initials: ini }).then(function (j) {
-      $('#dip-post').hidden = true; postedTo[boardId(mode)] = true;
+      $('#dip-post').hidden = true; postedTo[boardId(mode)] = true; myRun[boardId(mode)] = { run: j.run, rank: j.rank };
+      $('#dip-see-lb').hidden = false;
       note.textContent = 'You\'re #' + fmt(j.rank) + ' on the ' + (mode === 'daily' ? 'Mystery Chart' : CHAINS.CHAINS[mode].name) + ' board.';
     }, function (e) {
       posted = /does not replay|bad run|old daily/.test(e.message); $('#dip-post-btn').disabled = false;
@@ -451,7 +460,7 @@
     $('#dip-note').textContent = '';
     posted = false; $('#dip-post-btn').disabled = false; shortUrl = '';
     if (REC && REC.end) { var mine = REC; api('/runs', { code: C.encode(REC) }).then(function (j) { if (REC === mine) shortUrl = 'https://proofoffight.com/ride/?r=' + j.id; }, function () { /* offline: long link */ }); }
-    $('#dip-post').hidden = !(REC && REC.end && sc > 0);
+    $('#dip-post').hidden = !(REC && REC.end && sc > 0); $('#dip-see-lb').hidden = true;
     $('#dip-initials').value = store('pof-dip-initials') || '';
     $('#dip-end').hidden = false; $('#dip-quit').hidden = true;
   }
@@ -919,10 +928,10 @@
     var text = shareText(), url = raceUrl(), note = $('#dip-note');
     var copy = function () {
       var all = text + ' ' + url;
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(all).then(function () { note.textContent = 'Race link copied. Paste it in a text.'; }, function () { window.prompt('Copy this link:', all); });
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(all).then(function () { note.textContent = 'Race link copied. Paste it anywhere.'; }, function () { window.prompt('Copy this link:', all); });
       else window.prompt('Copy this link:', all);
     };
-    if (navigator.share) navigator.share({ text: text, url: url }).catch(function (e) { if (e && e.name !== 'AbortError') copy(); });
+    if (SHEET) navigator.share({ text: text, url: url }).catch(function (e) { if (e && e.name !== 'AbortError') copy(); });
     else copy();
   }
   function share() {
@@ -930,7 +939,7 @@
     shareCard().toBlob(function (blob) {
       var file = null;
       try { file = new File([blob], 'ride-the-chart.png', { type: 'image/png' }); } catch (e) { /* old browser */ }
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (SHEET && file && navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({ files: [file], text: text + ' ' + url }).catch(function () { /* closed */ });
         return;
       }
