@@ -50,10 +50,12 @@
   if (!C.STAGES[C.stageIdx[save.stage]] || !stageOpen(C.stageIdx[save.stage])) save.stage = 'miami';
 
   // ---------- Leaderboards (a small server shared with Ride the Chart; the game works without it) ----------
-  var boards = {}, topRuns = {};
+  var boards = {}, topRuns = {}, staleBoard = {};
   function getBoard(stage, cb) {
     var b = boards[stage]; if (b && Date.now() - b.at < 60000) { cb(b); return; }
-    fetch(API + '/wl/scores?board=wl-' + stage + '&limit=5').then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
+    // the server lets browsers cache a board for 30 s, so right after a post ask past that cache
+    var fresh = staleBoard[stage]; staleBoard[stage] = false;
+    fetch(API + '/wl/scores?board=wl-' + stage + '&limit=5', fresh ? { cache: 'reload' } : undefined).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
       boards[stage] = { at: Date.now(), top: (j.top || []).map(function (r) { return { initials: r.initials, ms: 10000000 - r.score, car: C.CARS[r.day] ? C.CARS[r.day].name : '', run: r.run }; }) }; cb(boards[stage]);
       var t = boards[stage].top[0]; if (t && !topRuns[stage]) fetch(API + '/runs/' + t.run).then(function (r) { return r.json(); }).then(function (j2) { var R = C.decode(j2.code); if (R) topRuns[stage] = { R: R, initials: t.initials }; }).catch(function () { /* no ghost */ });
     }).catch(function () { cb(null); });
@@ -311,7 +313,7 @@
     box.innerHTML = '<span class="wl-dim">Posting your time…</span>';
     postScore(r.code, ini, function (res, err) {
       if (lastRun !== r || !$('#wl-rank')) return;
-      if (res) { save.initials = ini; store(); r.rank = res.rank; delete boards[r.stage]; rankBox(); }
+      if (res) { save.initials = ini; store(); r.rank = res.rank; delete boards[r.stage]; staleBoard[r.stage] = true; rankBox(); }
       else if (err === 'pick other initials') { save.initials = ''; store(); rankBox(); var n = $('#wl-note'); if (n) n.textContent = 'Pick other initials.'; }
       else $('#wl-rank').innerHTML = '<span class="wl-dim">The leaderboard is offline. Your time is saved on this device.</span>';
     });

@@ -36,7 +36,8 @@
   function getBoard(cb, fresh) {
     var date = C.today();
     if (!fresh && board && board.date === date && Date.now() - board.at < 60000) { cb(board); return; }
-    fetch(API + '/dm/scores?board=dm-' + date + '&limit=10').then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
+    // the server lets browsers cache the board for 30 s, so right after a post ask past that cache
+    fetch(API + '/dm/scores?board=dm-' + date + '&limit=10', fresh ? { cache: 'reload' } : undefined).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) {
       board = { at: Date.now(), date: date, top: (j.top || []).map(function (r) { return { initials: r.initials, ms: 10000000 - r.score, coins: r.day }; }) }; cb(board);
     }).catch(function () { cb(null); });
   }
