@@ -125,6 +125,9 @@
   function drawRide(now) {
     raf = 0;
     drawNet(now);
+    drawLambo(now);
+    drawDoge(now);
+    drawSui(now);
     if (!ter.length) return;
     if (!R) R = fit(rideCv);
     var g = R.g, w = R.w, h = R.h, sec = (now - t0) / 1000;
@@ -219,7 +222,101 @@
     consFill.style.width = pct + '%'; consPct.textContent = pct + '%';
   }
 
-  function redraw() { drawStage(); R = null; N = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); } }
+  // Wen Lambo: a neon road into a striped sun, bending left and right, with the pink car on it.
+  var lamCv = $('lambo'), LB = null, lamStop = $('lam-stop'), lamMph = $('lam-mph'), STOPS = ['MIAMI', 'DENVER', 'RIVIERA', 'DUBAI', 'TOKYO', 'THE GRID'];
+  function drawLambo(now) {
+    if (!lamCv) return;
+    if (!LB) LB = fit(lamCv);
+    var g = LB.g, w = LB.w, h = LB.h, sec = (now - t0) / 1000, hz = h * 0.5, bend = Math.sin(sec * 0.45) * 0.9, i, y;
+    var sk = g.createLinearGradient(0, 0, 0, hz); sk.addColorStop(0, '#0d0221'); sk.addColorStop(0.55, '#3b0a5e'); sk.addColorStop(1, '#ff4fa3'); g.fillStyle = sk; g.fillRect(0, 0, w, hz + 1);
+    var r = h * 0.3, cx = w / 2 - bend * w * 0.05, cy = hz - r * 0.25, sg = g.createLinearGradient(0, cy - r, 0, cy + r); sg.addColorStop(0, '#ffd319'); sg.addColorStop(0.55, '#ff8f3a'); sg.addColorStop(1, '#ff2e97');
+    g.fillStyle = sg; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,79,163,.9)'; for (i = 0; i < 6; i++) g.fillRect(cx - r, cy + r * (0.08 + i * 0.15), r * 2, 1.5 + i * 0.8);
+    g.fillStyle = '#240a4a'; for (i = 0; i < 30; i++) { var bh = (0.05 + ((i * 37) % 11) / 11 * 0.13) * h, bx = ((i * w / 28 - bend * 14) % (w + 20) + w + 20) % (w + 20) - 10; g.fillRect(bx, hz - bh, w / 28 - 1, bh + 1); }
+    g.fillStyle = '#150430'; g.fillRect(0, hz, w, h - hz);
+    for (y = Math.ceil(hz); y < h; y += 2) {
+      var t = (y - hz) / (h - hz), z = 1 / Math.max(0.02, t), band = Math.floor(z * 2.2 + sec * 9) % 2, mid = w / 2 + bend * (1 - t) * (1 - t) * w * 0.42, half = t * w * 0.62;
+      if (band) { g.fillStyle = 'rgba(255,46,151,' + (0.1 + t * 0.25) + ')'; g.fillRect(0, y, w, 2); }
+      g.fillStyle = band ? '#ff2e97' : '#2de2e6'; g.fillRect(mid - half * 1.14, y, half * 2.28, 2);
+      g.fillStyle = band ? '#2a1150' : '#251048'; g.fillRect(mid - half, y, half * 2, 2);
+      if (band) { g.fillStyle = '#f6e7ff'; g.fillRect(mid - half / 3 - half * 0.02, y, half * 0.04, 2); g.fillRect(mid + half / 3 - half * 0.02, y, half * 0.04, 2); }
+    }
+    // the car, from behind
+    var cw = w * 0.3, u = cw / 300, ox = w / 2, oy = h - 6 + Math.sin(sec * 30) * 0.4;
+    g.save(); g.translate(ox, oy); g.rotate(bend * 0.04); g.scale(u, u);
+    var gl = g.createRadialGradient(0, 0, 4, 0, 0, 190); gl.addColorStop(0, 'rgba(45,226,230,.9)'); gl.addColorStop(1, 'rgba(45,226,230,0)'); g.save(); g.scale(1, 0.16); g.fillStyle = gl; g.beginPath(); g.arc(0, 0, 190, 0, 7); g.fill(); g.restore();
+    g.fillStyle = '#07010f'; g.fillRect(-146, -44, 40, 44); g.fillRect(106, -44, 40, 44);
+    g.fillStyle = '#ff2e97'; g.beginPath(); g.moveTo(-90 + bend * 6, -82); g.lineTo(-60 + bend * 12, -122); g.lineTo(60 + bend * 12, -122); g.lineTo(90 + bend * 6, -82); g.fill();
+    g.fillStyle = '#150a35'; g.beginPath(); g.moveTo(-78 + bend * 7, -84); g.lineTo(-52 + bend * 12, -114); g.lineTo(52 + bend * 12, -114); g.lineTo(78 + bend * 7, -84); g.fill();
+    var bg = g.createLinearGradient(0, -90, 0, -10); bg.addColorStop(0, '#ff7ac0'); bg.addColorStop(0.3, '#ff2e97'); bg.addColorStop(1, '#7a1150'); g.fillStyle = bg;
+    g.beginPath(); g.moveTo(-144, -20); g.lineTo(-150, -56); g.quadraticCurveTo(-150, -84, -134, -84); g.lineTo(134, -84); g.quadraticCurveTo(150, -84, 150, -56); g.lineTo(144, -20); g.fill();
+    g.fillStyle = '#0a0118'; g.fillRect(-114, -32, 228, 14); g.fillRect(-136, -90, 272, 7);
+    g.fillStyle = '#ff184c'; g.shadowColor = '#ff184c'; g.shadowBlur = 10; g.fillRect(-140, -66, 96, 9); g.fillRect(44, -66, 96, 9); g.shadowBlur = 0;
+    g.fillStyle = '#f6e7ff'; g.fillRect(-30, -60, 60, 16);
+    g.restore();
+    if (lamStop) lamStop.textContent = STOPS[Math.floor(sec / 4) % STOPS.length];
+    if (lamMph) lamMph.textContent = 204 + Math.round(Math.sin(sec * 1.7) * 6);
+  }
+  try { var wl = JSON.parse(get('pof-wl') || 'null'), stopsDone = wl && wl.done ? Object.keys(wl.done).length : 0; if (stopsDone) $('best-lambo').innerHTML = 'Road trip: <b>' + Math.min(6, stopsDone) + ' of 6</b> stops reached'; } catch (e) { /* nothing saved */ }
+
+  // Doge Moon Crash: the astronaut doge climbing from blue sky into space, red candles sliding past.
+  var dogeCv = $('doge'), DG = null, dmKm = $('dm-km'), DMA = window.POF_DM_ART;
+  function drawDoge(now) {
+    if (!dogeCv || !DMA) return;
+    if (!DG) DG = fit(dogeCv);
+    var g = DG.g, w = DG.w, h = DG.h, sec = (now - t0) / 1000, loop = (sec % 24) / 24, i;
+    function mix(a, b, t) { return 'rgb(' + a.map(function (v, k) { return Math.round(v + (b[k] - v) * t); }).join(',') + ')'; }
+    var k = Math.min(1, loop * 1.6), sk = g.createLinearGradient(0, 0, 0, h);
+    sk.addColorStop(0, mix([63, 143, 224], [3, 3, 16], k)); sk.addColorStop(1, mix([191, 227, 255], [36, 26, 82], k)); g.fillStyle = sk; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#fff'; for (i = 0; i < 40; i++) { g.globalAlpha = k * (0.4 + 0.6 * ((i * 37) % 10) / 10); g.fillRect((i * 97) % w, ((i * 53 + sec * 14) % h), 1.5, 1.5); } g.globalAlpha = 1;
+    DMA.moon(g, w * 0.84, h * 0.2, h * (0.07 + loop * 0.16));
+    var u = h / 330;   // candles and coins slide down past the dog
+    for (i = 0; i < 2; i++) {
+      var y = ((i * 0.62 + sec * 0.2) % 1.24 - 0.12) * h, gap = (0.25 + ((i * 53) % 5) * 0.11) * w, x;
+      for (x = -10 * u; x < w; x += 30 * u) { if (x + 26 * u > gap - 46 * u && x < gap + 46 * u) continue; var bh = (34 + ((x * 7 + i * 13) % 30)) * u; DMA.candle(g, x, y - bh / 2, 26 * u, bh, 9 * u); }
+      DMA.coin(g, gap, y, 8 * u, sec);
+    }
+    var dx = w * (0.5 + Math.sin(sec * 0.9) * 0.2);
+    DMA.doge(g, dx, h * 0.52 + Math.sin(sec * 2) * 4, 22 * u, sec, { flame: 1, tilt: Math.cos(sec * 0.9) * 0.2, wow: true, tongue: true });
+    if (dmKm) dmKm.textContent = Math.round(loop * loop * 384400).toLocaleString('en-US');
+  }
+  try { var dm = JSON.parse(get('pof-dm') || 'null'); if (dm && dm.best) { var dms = dm.best, dmm = Math.floor(dms / 60000), dss = Math.floor(dms / 1000) % 60; $('best-doge').innerHTML = 'Your fastest moon: <b>' + dmm + ':' + (dss < 10 ? '0' : '') + dss + '</b>'; } } catch (e) { /* nothing saved */ }
+
+  // Sui Swell: a surfer carving a sunset wave, droplets ahead and the whitewater behind.
+  var suiCv = $('sui'), SU = null, swJ = $('sw-j');
+  function drawSui(now) {
+    if (!suiCv) return;
+    if (!SU) SU = fit(suiCv);
+    var g = SU.g, w = SU.w, h = SU.h, sec = (now - t0) / 1000, u = h / 200, i, x, y, yt = h * 0.34, yb = h * 0.86, fl = sec * 150 * u, T = Math.PI * 2;
+    var sk = g.createLinearGradient(0, 0, 0, yt + 10); sk.addColorStop(0, '#2a1466'); sk.addColorStop(0.55, '#b0389a'); sk.addColorStop(1, '#ffb070'); g.fillStyle = sk; g.fillRect(0, 0, w, yt + 12);
+    var sn = g.createLinearGradient(0, yt - 46 * u, 0, yt + 20 * u); sn.addColorStop(0, '#fff6b8'); sn.addColorStop(1, '#ff8f5c'); g.fillStyle = sn; g.beginPath(); g.arc(w * 0.74, yt - 8 * u, 34 * u, 0, T); g.fill();
+    var fg = g.createLinearGradient(0, yt, 0, h); fg.addColorStop(0, '#8fe9ff'); fg.addColorStop(0.12, '#55c8ff'); fg.addColorStop(0.5, '#2f8dff'); fg.addColorStop(1, '#0b3a9a');
+    function lip(xx) { return yt + Math.sin((xx + fl) * 0.02 / u) * 3 * u; }
+    g.fillStyle = fg; g.beginPath(); g.moveTo(0, lip(0)); for (x = 0; x <= w + 12; x += 12) g.lineTo(x, lip(x)); g.lineTo(w, h); g.lineTo(0, h); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 2;
+    for (i = -1; i < w / (50 * u) + 2; i++) { x = i * 50 * u - (fl % (50 * u)); g.beginPath(); g.moveTo(x + 30 * u, h); g.quadraticCurveTo(x + 24 * u, yt + (h - yt) * 0.45, x - 14 * u, yt); g.stroke(); }
+    g.fillStyle = '#fff'; for (i = -1; i < w / (11 * u) + 2; i++) { x = i * 11 * u - (fl % (11 * u)); g.beginPath(); g.arc(x, lip(x), (2.5 + ((i * 7 + Math.floor(fl / (11 * u)) * 7) % 5) * 0.5) * u, 0, T); g.fill(); }
+    g.fillStyle = 'rgba(4,22,58,.55)'; g.fillRect(0, yb + 6 * u, w, h); g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(0, yb + 4 * u, w, 2.5 * u);
+    var ph = sec * 1.5, sh = 0.5 + 0.36 * Math.sin(ph), sx = w * 0.42, sy = yb - sh * (yb - yt), tilt = -Math.cos(ph) * 0.32;
+    for (i = 0; i < 4; i++) {   // droplets on the line he is about to carve
+      x = sx + (((i * 46 * u - fl) % (184 * u)) + 184 * u) % (184 * u) + 14 * u; y = yb - (0.5 + 0.36 * Math.sin(ph + (x - sx) / (150 * u) * 1.5)) * (yb - yt);
+      g.save(); g.translate(x, y); g.scale(u, u); g.beginPath(); g.moveTo(0, -8.7); g.bezierCurveTo(2.1, -4.8, 6, -1.5, 6, 1.5); g.arc(0, 1.5, 6, 0, Math.PI); g.bezierCurveTo(-6, -1.5, -2.1, -4.8, 0, -8.7); g.fillStyle = '#c9f2ff'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#0b2f7a'; g.stroke(); g.restore();
+    }
+    g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3 * u; g.lineCap = 'round'; g.beginPath();   // his wake
+    for (i = 0; i <= 12; i++) { x = sx - 14 * u - i * 9 * u; y = yb - (0.5 + 0.36 * Math.sin(ph - i * 0.09)) * (yb - yt); if (i) g.lineTo(x, y); else g.moveTo(x, y); } g.stroke();
+    g.save(); g.translate(sx, sy); g.rotate(tilt); g.scale(u * 0.9, u * 0.9); g.lineCap = 'round'; g.lineJoin = 'round';
+    g.beginPath(); g.moveTo(-24, 1); g.quadraticCurveTo(0, -6, 28, -2); g.quadraticCurveTo(0, 6, -24, 1); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2; g.strokeStyle = '#0b1b4a'; g.stroke();
+    g.strokeStyle = '#0b1b4a'; g.lineWidth = 7; g.beginPath(); g.moveTo(-8, -4); g.lineTo(-2, -16); g.lineTo(8, -4); g.moveTo(-2, -16); g.lineTo(2, -29); g.moveTo(-14, -26); g.lineTo(2, -29); g.lineTo(17, -29); g.stroke();
+    g.strokeStyle = '#f2b58a'; g.lineWidth = 4; g.stroke(); g.strokeStyle = '#ff4fa3'; g.lineWidth = 6; g.beginPath(); g.moveTo(-5, -11); g.lineTo(-2, -17); g.lineTo(4, -11); g.stroke();
+    g.beginPath(); g.arc(4, -36, 5.5, 0, T); g.fillStyle = '#f2b58a'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#0b1b4a'; g.stroke(); g.fillStyle = '#ffe9a0'; g.beginPath(); g.arc(3, -38, 5.5, Math.PI * 0.9, Math.PI * 1.9); g.fill(); g.fillStyle = '#0b1b4a'; g.fillRect(4, -38, 6, 3);
+    g.restore();
+    g.fillStyle = '#fff'; for (i = 0; i < 9; i++) { g.beginPath(); g.arc(w * 0.06 + Math.sin(sec * 3 + i * 1.7) * 3 * u - (i % 2) * 8 * u, yt - 8 * u + i * (yb - yt + 20 * u) / 8, (11 + (i * 5) % 7) * u, 0, T); g.fill(); }
+    g.fillStyle = '#dff4ff'; g.fillRect(0, yt - 12 * u, w * 0.045, h);
+    if (swJ) swJ.textContent = (9 + 0.4 * (0.5 + 0.5 * Math.sin(sec * 0.7))).toFixed(1);
+  }
+  try { var swv = JSON.parse(get('pof-sw') || 'null'); if (swv && swv.best) $('best-sui').innerHTML = 'Your best heat: <b>' + (swv.best / 1000).toFixed(2) + '</b> / 30'; } catch (e) { /* nothing saved */ }
+
+  function redraw() { drawStage(); R = null; N = null; LB = null; DG = null; SU = null; if (reduce) { drawRide(t0 + 300000); drawNet(t0 + 8000); drawLambo(t0 + 3000); drawDoge(t0 + 9000); drawSui(t0 + 2000); } }
   redraw();
   run();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) run(); });

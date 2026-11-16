@@ -12,7 +12,8 @@
    to switch between drums, rhythm and solo), and the end screen gives your sync per part and your best.
    MC Satoshi hosts. The guitars here are drawn in code over the stage sprites until the Grok poses arrive. */
 (function () {
-  if (!/[?&]guitar\b/i.test(location.search)) return;
+  var SOLO = window.POF_SOLO === 'guitar';   // on its own page (/guitar/), opened straight from the arcade's Dust Bin
+  if (!SOLO && !/[?&]guitar\b/i.test(location.search)) return;
   var D = window.POF_DATA, AU = window.POF_AUDIO;
 
   var PLAYERS = ['toly', 'vitalik'];
@@ -183,7 +184,7 @@
     sec.className = 'screen gtr';
     sec.hidden = true;
     sec.innerHTML =
-      '<div class="rap-top"><button class="btn btn-ghost btn-sm" id="gtr-back" type="button">← Menu</button>' +
+      '<div class="rap-top"><button class="btn btn-ghost btn-sm" id="gtr-back" type="button">' + (SOLO ? '← Games' : '← Menu') + '</button>' +
         '<span class="rap-round" id="gtr-round">Guitar Battle</span></div>' +
       '<div class="rap-meter"><span class="rap-mface" id="gtr-mface-l"></span>' +
         '<div class="rap-bar" id="gtr-bar"><div class="rap-fill" id="gtr-fill"></div><div class="rap-mid"></div></div>' +
@@ -971,6 +972,7 @@
     pickPlayer();
   }
   function leave() {
+    if (SOLO) { stopAll(); location.href = './'; return; }   // back to the arcade
     stopAll();
     document.removeEventListener('keydown', onKey);
     show('screen-title');
@@ -991,5 +993,6 @@
     b.addEventListener('click', open);
   }
   if (/[?&]debug\b/i.test(location.search)) window.POF_GUITAR = { state: function () { return S; }, offset: offsetNow }; // for test bots
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addButton); else addButton();
+  if (SOLO) window.POF_SOLO_OPEN = open;
+  else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addButton); else addButton();
 })();

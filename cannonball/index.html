@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Whale Cannonball, a Dust Bin game (binned Nov 14, 2026). One self-contained page, all drawn in code. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Whale Cannonball · Proof of Fight Dust Bin</title>
+  <meta name="description" content="A whale in polka-dot trunks cannonballs into a pool full of traders. Shake out the weak hands.">
+  <meta name="theme-color" content="#1a1238">
+  <link rel="icon" href="../favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&display=swap">
+  <style>
+  /* One screen, one canvas: a sunset pool seen from the side. A single look on purpose (it is a game). */
+  :root { --night: #1a1238; --ink: #12233f; --foam: #ffffff; --sun: #ffd23f; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace; color-scheme: dark; }
+  html, body { height: 100%; }
+  body { background: var(--night); color: var(--foam); font-family: var(--mono); overflow: hidden; overscroll-behavior: none;
+    padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px));
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  #cv { display: block; width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+  #snd { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 2;
+    font: 800 12px var(--mono); letter-spacing: 0.08em; color: var(--foam); background: rgba(18, 35, 63, 0.8); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px; padding: 9px 12px; cursor: pointer; }
+  #snd:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+  #back { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 2; font: 800 12px var(--mono); letter-spacing: 0.08em; color: var(--foam); text-decoration: none; background: rgba(18, 35, 63, 0.8); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px; padding: 9px 12px; }
+  #back:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+  html, body { margin: 0; }
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="Whale Cannonball: tap to jump, tap again to tuck"></canvas>
+<a id="back" href="../">← Games</a>
+<button id="snd" type="button">SOUND ON</button>
+<script>
+(function () {
+  'use strict';
+  var MONO = '"JetBrains Mono", ui-monospace, Menlo, monospace';
+  var W = 720, H = 1280, BOARD_Y = 420, TIP = 365, WATER_Y = 930, POOL_L = 190, POOL_R = 690, RIM_Y = 880;
+  var N = 126, DX = (POOL_R - POOL_L) / (N - 1), G = 1500, DIVES = 3;
+  var RINGS = ['#ff5ea8', '#ffd23f', '#5dff8f', '#ff8a3d', '#b98cff', '#ffffff', '#3fe0ff', '#ff5470'];
+  var LAUNCH_H = 46, VY0 = 260, VYK = 6.5, VX0 = 10, VXK = 3.6;
+  var cv = document.getElementById('cv'), g = cv.getContext('2d'), S = 1, OX = 0, OY = 0, dpr = 1, bgCv = null;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- The world ----------
+  var st = null;
+  function newDive(keep) {
+    var xs = [], tries = 0;
+    while (xs.length < 8 && tries++ < 400) { var x = POOL_L + 34 + Math.random() * (POOL_R - POOL_L - 68); if (xs.every(function (o) { return Math.abs(o - x) > 46; })) xs.push(x); }
+    st = {
+      phase: 'walk', t: 0, dive: keep ? keep.dive + 1 : 1, total: keep ? keep.total : 0,
+      h: new Float32Array(N), v: new Float32Array(N),
+      whale: { x: 84, y: BOARD_Y - 137, vx: 0, vy: 0, rot: 0, q: 0, tuckQ: 0, tucked: false, flop: false, wet: false, ph: 0 },
+      traders: xs.map(function (x, i) { return { x: x, y: WATER_Y, vx: 0, vy: 0, rot: 0, vr: 0, state: 'float', col: RINGS[i], bob: Math.random() * 6 }; }),
+      drops: [], out: 0, P: 0, cards: null, bend: 0, bendV: 0, shake: 0, score: 0, verdict: '', pops: []
+    };
+  }
+  function col(x) { return Math.max(0, Math.min(N - 1, Math.round((x - POOL_L) / DX))); }
+  function surf(x) { return WATER_Y - st.h[col(x)]; }
+
+  function jump() {
+    var w = st.whale, d = Math.max(0, TIP - w.x) / (TIP - 84);
+    w.q = 1 - d; w.vy = -(400 + 360 * w.q); w.vx = 55 + 30 * w.q; st.phase = 'air'; st.bendV = 16 + 30 * w.q;
+    sfx('boing', w.q); pop(w.q > 0.88 ? 'PERFECT JUMP' : w.q > 0.6 ? 'GOOD JUMP' : 'EARLY', w.x + 40, w.y - 150, w.q > 0.88 ? '#5dff8f' : '#fff');
+  }
+  function tuck() {
+    var w = st.whale; if (w.tucked || w.flop) return;
+    w.tucked = true; w.tuckQ = Math.max(0.25, 1 - Math.abs(w.vy) / 620); sfx('tuck');
+    pop(w.tuckQ > 0.85 ? 'PERFECT TUCK' : w.tuckQ > 0.5 ? 'TUCK' : 'LATE TUCK', w.x, w.y - 140, w.tuckQ > 0.85 ? '#5dff8f' : '#fff');
+  }
+  function impact() {
+    var w = st.whale;
+    var P = (0.4 + 0.6 * w.q) * (w.tucked ? 0.45 + 0.55 * w.tuckQ : 0.36) * Math.max(0.6, Math.min(1.15, w.vy / 1180));
+    st.P = P; w.wet = true; st.phase = 'water'; st.t = 0; st.shake = 26 * P;
+    for (var i = 0; i < N; i++) {
+      var d = Math.abs(POOL_L + i * DX - w.x);
+      if (d < 78) st.v[i] -= 30 * P * (1 - d / 78 * 0.45);
+      else if (d < 190) st.v[i] += 21 * P * (1 - (d - 78) / 112);
+    }
+    for (var k = 0; k < 20 + 90 * P; k++) { var a = -Math.PI * (0.12 + 0.76 * Math.random()), sp = (300 + Math.random() * 900) * (0.4 + P); st.drops.push({ x: w.x + (Math.random() - 0.5) * 110, y: WATER_Y, vx: Math.cos(a) * sp * 0.55, vy: Math.sin(a) * sp, r: 3 + Math.random() * 9, t: 0 }); }
+    w.vy *= 0.5; sfx('splash', P);
+    if (navigator.vibrate) try { navigator.vibrate(P > 0.7 ? [40, 30, 80] : 40); } catch (e) { /* no haptics */ }
+  }
+  // One sixtieth of a second.
+  function step() {
+    var dt = 1 / 60, w = st.whale, i, k;
+    st.t += dt;
+    // the board is a spring
+    st.bendV += (-st.bend * 0.3 - st.bendV * 0.12); st.bend += st.bendV;
+    if (st.phase === 'walk') {
+      w.x += 128 * dt; w.ph += dt * 11; w.rot = Math.sin(w.ph) * 0.09;
+      var on = (w.x - 84) / (TIP - 84); st.bend += (on * 9 - st.bend) * 0.2;
+      w.y = BOARD_Y - 137 + st.bend * on + Math.abs(Math.sin(w.ph)) * -5;
+      if (w.x > TIP + 14) { w.flop = true; w.q = 0.2; w.vx = 60; w.vy = 40; st.phase = 'air'; pop('OOPS', w.x, w.y - 150, '#ff8296'); }
+    } else if (st.phase === 'air') {
+      w.vy += G * (w.tucked ? 1.3 : 1) * dt; w.x += w.vx * dt; w.y += w.vy * dt;
+      if (w.tucked) w.rot += 11 * dt; else w.rot += ((w.flop ? 1.5 : 0.25) - w.rot) * 0.06;
+      if (w.x > POOL_R - 70) { w.x = POOL_R - 70; w.vx = 0; }
+      if (w.y + 62 > surf(w.x)) impact();
+    } else {
+      // in the water: drag, then he floats and bobs
+      var rest = surf(w.x) - 6;
+      w.vy += ((rest - w.y) * 20 - w.vy * 5.5) * dt; w.y += w.vy * dt; if (w.y > 1100) { w.y = 1100; w.vy = -Math.abs(w.vy) * 0.3; } w.x += w.vx * dt; w.vx *= 0.94;
+      w.rot += ((w.tucked ? Math.round(w.rot / 6.283) * 6.283 : 0) - w.rot) * 0.05;
+      if (w.y < WATER_Y - 20 && w.vy < 0) for (i = col(w.x - 60); i <= col(w.x + 60); i++) st.v[i] += 0.12;   // he pushes water as he comes up
+    }
+    // the water: a row of springs that pull on their neighbours
+    for (i = 0; i < N; i++) { st.v[i] += -0.014 * st.h[i] - 0.009 * st.v[i]; st.h[i] += st.v[i]; }
+    for (k = 0; k < 6; k++) {
+      for (i = 1; i < N; i++) { var dl = 0.22 * (st.h[i] - st.h[i - 1]); st.v[i - 1] += dl * 0.5; st.v[i] -= dl * 0.5; st.h[i - 1] += dl * 0.5; st.h[i] -= dl * 0.5; }
+    }
+    // traders ride the surface until a crest throws them
+    for (k = 0; k < st.traders.length; k++) {
+      var tr = st.traders[k], c = col(tr.x);
+      if (tr.state === 'float') {
+        tr.y += (surf(tr.x) - tr.y) * 0.5;
+        var slope = (st.h[Math.min(N - 1, c + 2)] - st.h[Math.max(0, c - 2)]) / (4 * DX);
+        tr.rot += (-slope * 0.9 - tr.rot) * 0.3; tr.x += -slope * 2.2;
+        tr.x = Math.max(POOL_L + 30, Math.min(POOL_R - 30, tr.x));
+        tr.peak = Math.max(tr.peak || 0, st.h[c]);
+        if (tr.peak > LAUNCH_H && st.v[c] < 0.4 && w.wet) {                       // at the top of a big enough crest
+          var dir = tr.x < w.x ? -1 : 1, hh = tr.peak; tr.peak = 0;
+          tr.state = 'air'; tr.vy = -Math.min(1200, VY0 + hh * VYK); tr.vx = dir * (VX0 + hh * VXK + Math.random() * 40); tr.vr = dir * (3 + Math.random() * 6);
+          sfx('yelp', k);
+        }
+      } else if (tr.state === 'air') {
+        tr.vy += 1400 * dt; tr.x += tr.vx * dt; tr.y += tr.vy * dt; tr.rot += tr.vr * dt;
+        var inside = tr.x > POOL_L && tr.x < POOL_R;
+        if (inside && tr.y > RIM_Y + 8 && (tr.x < POOL_L + 16 || tr.x > POOL_R - 16)) { tr.vx *= -0.4; tr.x = tr.x < 440 ? POOL_L + 16 : POOL_R - 16; }   // the wall
+        if (inside && tr.vy > 0 && tr.y >= surf(tr.x)) { tr.state = 'float'; tr.vr = 0; st.v[c] -= 3; for (i = 0; i < 6; i++) st.drops.push({ x: tr.x, y: tr.y, vx: (Math.random() - 0.5) * 240, vy: -200 - Math.random() * 260, r: 3 + Math.random() * 4, t: 0 }); }
+        else if (!inside && (tr.y >= RIM_Y - 12 || tr.x < -60 || tr.x > W + 60)) { tr.state = 'out'; tr.y = Math.min(tr.y, RIM_Y - 12); st.out++; pop('OUT!', Math.max(60, Math.min(660, tr.x)), RIM_Y - 70, '#ffd23f'); sfx('out'); }
+      } else { tr.rot += ((tr.x < POOL_L ? -0.25 : 0.25) - tr.rot) * 0.2; }
+      if (tr.state !== 'float') tr.peak = 0; else if (st.h[c] < 8) tr.peak = 0;
+    }
+    for (k = st.drops.length - 1; k >= 0; k--) { var d = st.drops[k]; d.t += dt; d.vy += 1500 * dt; d.x += d.vx * dt; d.y += d.vy * dt; if (d.y > WATER_Y + 10 && d.vy > 0 || d.t > 3) st.drops.splice(k, 1); }
+    for (k = st.pops.length - 1; k >= 0; k--) { st.pops[k].t += dt; if (st.pops[k].t > 1.1) st.pops.splice(k, 1); }
+    st.shake *= 0.9;
+    if (st.phase === 'water' && st.t > 3.4 && !st.traders.some(function (t) { return t.state === 'air'; })) judge();
+  }
+  function judge() {
+    var w = st.whale, base = 3.5 + 6.5 * Math.min(1, st.P / 0.95);
+    st.cards = [0, 1, 2].map(function () { return Math.max(1, Math.min(10, Math.round((base + (Math.random() - 0.5) * 1.2) * 2) / 2)); });
+    st.score = st.out * 1000 + Math.round((st.cards[0] + st.cards[1] + st.cards[2]) * 100);
+    st.total += st.score; st.phase = 'judged'; st.t = 0;
+    st.verdict = w.flop || !w.tucked ? 'BELLY FLOP' : st.P > 0.85 ? 'PERFECT CANNONBALL' : st.P > 0.55 ? 'SOLID CANNONBALL' : 'A BIT OF A PLOP';
+    try { var b = +localStorage.getItem('whale-cannonball-best') || 0; if (st.dive === DIVES && st.total > b) { localStorage.setItem('whale-cannonball-best', st.total); st.newBest = true; } } catch (e) { /* private mode */ }
+    [0, 1, 2].forEach(function (i) { setTimeout(function () { sfx('ding', i); }, 250 + i * 260); });
+  }
+  function pop(text, x, y, color) { st.pops.push({ text: text, x: x, y: y, color: color, t: 0 }); }
+  function tap() {
+    audio();
+    if (!st) return;
+    if (st.phase === 'walk') jump();
+    else if (st.phase === 'air') tuck();
+    else if (st.phase === 'judged' && st.t > 1.3) newDive(st.dive < DIVES ? st : null);
+  }
+
+  // ---------- Sound: a small synth ----------
+  var AC = null, out = null, noise = null, muted = false;
+  function audio() {
+    if (!AC) { var K = window.AudioContext || window.webkitAudioContext; if (!K) return; AC = new K(); out = AC.createGain(); out.gain.value = muted ? 0 : 0.6; out.connect(AC.destination);
+      noise = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); var d = noise.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    if (AC.state === 'suspended') AC.resume();
+  }
+  function tone(type, f0, f1, at, dur, vol) { var o = AC.createOscillator(), a = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f0, at); if (f1) o.frequency.exponentialRampToValueAtTime(f1, at + dur); a.gain.setValueAtTime(0.0001, at); a.gain.linearRampToValueAtTime(vol, at + 0.01); a.gain.exponentialRampToValueAtTime(0.0001, at + dur); o.connect(a); a.connect(out); o.start(at); o.stop(at + dur + 0.05); }
+  function hiss(at, dur, vol, f0, f1) { var s = AC.createBufferSource(), f = AC.createBiquadFilter(), a = AC.createGain(); s.buffer = noise; s.loop = true; f.type = 'lowpass'; f.frequency.setValueAtTime(f0, at); f.frequency.exponentialRampToValueAtTime(f1, at + dur); a.gain.setValueAtTime(vol, at); a.gain.exponentialRampToValueAtTime(0.0001, at + dur); s.connect(f); f.connect(a); a.connect(out); s.start(at); s.stop(at + dur + 0.05); }
+  function sfx(name, a) {
+    if (!AC || AC.state !== 'running') return;
+    var now = AC.currentTime;
+    if (name === 'boing') { tone('sine', 140, 420 + 300 * a, now, 0.35, 0.4); tone('triangle', 90, 60, now, 0.2, 0.3); }
+    else if (name === 'tuck') tone('sawtooth', 300, 900, now, 0.18, 0.08);
+    else if (name === 'splash') { hiss(now, 0.9 + a, 0.25 + 0.6 * a, 5000, 300); tone('sine', 110, 34, now, 0.7, 0.5 + 0.4 * a); }
+    else if (name === 'yelp') tone('square', 500 + a * 60, 1100 + a * 80, now, 0.16, 0.05);
+    else if (name === 'out') tone('triangle', 880, 1320, now, 0.14, 0.12);
+    else if (name === 'ding') tone('sine', [784, 988, 1175][a], 0, now, 0.5, 0.18);
+  }
+
+  // ---------- Drawing ----------
+  function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  // Everything that never moves, painted once.
+  function paintBg() {
+    bgCv = document.createElement('canvas'); bgCv.width = W; bgCv.height = H;
+    var c = bgCv.getContext('2d'), seed = 3, i; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    var sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#2b1d5c'); sky.addColorStop(0.45, '#ff6fa3'); sky.addColorStop(0.72, '#ffc46b'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    c.fillStyle = 'rgba(255,240,200,0.9)'; c.beginPath(); c.arc(520, 640, 90, 0, 6.3); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.7)'; for (i = 0; i < 40; i++) c.fillRect(rnd() * W, rnd() * 330, 3, 3);
+    c.fillStyle = '#3a1f5e'; for (var bx = 0; bx < W;) { var bw = 40 + rnd() * 70, bh = 60 + rnd() * 170; c.fillRect(bx, 790 - bh, bw, bh + 40); bx += bw + 6; }
+    function palm(x, y, s) { c.save(); c.translate(x, y); c.scale(s, s); c.strokeStyle = '#1d1238'; c.lineWidth = 12; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(14, -90, 0, -190); c.stroke();
+      c.lineWidth = 9; [-2.6, -2.0, -1.2, -0.5, 0.2].forEach(function (a) { c.beginPath(); c.moveTo(0, -190); c.quadraticCurveTo(Math.cos(a) * 60, -190 + Math.sin(a) * 60 - 20, Math.cos(a) * 110, -190 + Math.sin(a) * 60 + 30); c.stroke(); }); c.restore(); }
+    palm(610, 830, 1.1); palm(690, 840, 0.8);
+    c.fillStyle = '#f2e3c6'; c.fillRect(0, 820, W, 60); c.fillStyle = '#d9c5a0'; c.fillRect(0, 872, W, 10);
+    c.fillStyle = '#0b3f6b'; c.fillRect(0, RIM_Y, W, H - RIM_Y);
+    c.fillStyle = '#e9f6fb'; rr(c, POOL_L - 14, RIM_Y, POOL_R - POOL_L + 28, 330, 26); c.fill();
+    c.fillStyle = '#bfe3ef'; c.fillRect(POOL_L, RIM_Y, POOL_R - POOL_L, 310);
+    // the tower
+    c.fillStyle = '#c9d6e2'; c.fillRect(70, BOARD_Y, 26, RIM_Y - BOARD_Y); c.fillRect(140, BOARD_Y, 26, RIM_Y - BOARD_Y);
+    c.fillStyle = '#9fb0c2'; for (var y = BOARD_Y + 40; y < RIM_Y - 20; y += 46) c.fillRect(70, y, 96, 10);
+    c.fillStyle = '#12233f'; c.font = '800 20px ' + MONO; c.fillText('10M', 180, BOARD_Y + 46);
+    // the judges' table
+    c.fillStyle = '#7a4a2b'; rr(c, 470, 786, 220, 40, 6); c.fill(); c.fillStyle = '#5e3620'; c.fillRect(480, 826, 14, 30); c.fillRect(666, 826, 14, 30);
+    [['#f7931a', 500], ['#9b5cff', 580], ['#19d9c3', 660]].forEach(function (j) {
+      c.fillStyle = '#ffd9a8'; c.strokeStyle = '#12233f'; c.lineWidth = 4; c.beginPath(); c.arc(j[1], 766, 18, 0, 6.3); c.fill(); c.stroke();
+      c.fillStyle = j[0]; rr(c, j[1] - 16, 744, 32, 10, 4); c.fill();
+      c.fillStyle = '#12233f'; c.beginPath(); c.arc(j[1] - 6, 766, 2.5, 0, 6.3); c.arc(j[1] + 6, 766, 2.5, 0, 6.3); c.fill();
+    });
+  }
+  // The whale: upright, standing on his tail flukes, in swim trunks. (x, y) is the middle of his body.
+  function whale(x, y, rot, pose, ph) {
+    g.save(); g.translate(x, y); g.rotate(rot);
+    var ink = '#12233f'; g.lineJoin = 'round'; g.lineCap = 'round';
+    if (pose !== 'ball') {
+      g.fillStyle = '#2f6fd6'; g.strokeStyle = ink; g.lineWidth = 5;
+      g.beginPath(); g.moveTo(-26, 78); g.quadraticCurveTo(-18, 112, -8, 122); g.lineTo(8, 122); g.quadraticCurveTo(18, 112, 26, 78); g.closePath(); g.fill(); g.stroke();
+      var lift = pose === 'walk' ? Math.sin(ph) * 9 : 0;
+      [[-1, Math.min(0, lift)], [1, Math.min(0, -lift)]].forEach(function (f) {
+        g.save(); g.translate(f[0] * 6, 122 + f[1]); g.rotate(f[0] * 0.15 + (pose === 'jump' ? f[0] * 0.5 : 0));
+        g.beginPath(); g.moveTo(0, -6); g.quadraticCurveTo(f[0] * 34, -14, f[0] * 62, 2); g.quadraticCurveTo(f[0] * 40, 18, 0, 12); g.closePath(); g.fill(); g.stroke(); g.restore();
+      });
+    }
+    g.fillStyle = '#3b82f0'; g.strokeStyle = ink; g.lineWidth = 6; g.beginPath(); g.ellipse(0, 0, 82, 100, 0, 0, 6.3); g.fill();
+    g.save(); g.beginPath(); g.ellipse(0, 0, 79, 97, 0, 0, 6.3); g.clip();
+    g.fillStyle = '#eaf4ff'; g.beginPath(); g.ellipse(22, 34, 62, 86, 0.15, 0, 6.3); g.fill();
+    g.strokeStyle = 'rgba(18,35,63,0.25)'; g.lineWidth = 3; for (var i = 0; i < 4; i++) { g.beginPath(); g.moveTo(-10 + i * 18, 60 - i * 3); g.quadraticCurveTo(-4 + i * 18, 20, 2 + i * 16, -12); g.stroke(); }
+    g.fillStyle = '#ff4d5e'; g.fillRect(-90, 44, 180, 70);
+    g.fillStyle = '#fff'; [[-52, 62], [-20, 76], [14, 60], [46, 78], [-4, 92], [-40, 94], [62, 56]].forEach(function (d) { g.beginPath(); g.arc(d[0], d[1], 6, 0, 6.3); g.fill(); });
+    g.fillStyle = '#ffd23f'; g.fillRect(-90, 44, 180, 9);
+    g.restore();
+    g.strokeStyle = ink; g.lineWidth = 6; g.beginPath(); g.ellipse(0, 0, 82, 100, 0, 0, 6.3); g.stroke();
+    g.fillStyle = '#2f6fd6'; g.lineWidth = 5;
+    var sw = pose === 'walk' ? Math.sin(ph) * 0.35 : 0;
+    var fl = pose === 'ball' ? [[-1, 1.9], [1, -1.9]] : pose === 'jump' ? [[-1, 2.6], [1, -2.6]] : pose === 'float' ? [[-1, 1.2], [1, -1.2]] : [[-1, 0.5 + sw], [1, -0.4 + sw]];
+    fl.forEach(function (f) { g.save(); g.translate(f[0] * 76, 6); g.rotate(f[1]); g.beginPath(); g.moveTo(0, -12); g.quadraticCurveTo(f[0] * 50, -8, f[0] * 58, 22); g.quadraticCurveTo(f[0] * 26, 22, 0, 14); g.closePath(); g.fill(); g.stroke(); g.restore(); });
+    g.fillStyle = '#fff'; g.lineWidth = 4;
+    g.beginPath(); g.arc(-8, -44, 15, 0, 6.3); g.fill(); g.stroke(); g.beginPath(); g.arc(40, -42, 15, 0, 6.3); g.fill(); g.stroke();
+    g.fillStyle = ink; g.beginPath(); g.arc(-3, -42, 7, 0, 6.3); g.arc(45, -40, 7, 0, 6.3); g.fill();
+    g.lineWidth = 5; g.beginPath();
+    if (pose === 'ball' || pose === 'jump') { g.fillStyle = '#7a1f2c'; g.ellipse(20, -8, 20, 15, 0, 0, 6.3); g.fill(); g.stroke(); }
+    else { g.arc(18, -20, 26, 0.25, 2.6); g.stroke(); }
+    g.strokeStyle = '#bfe9ff'; g.lineWidth = 6; g.beginPath(); g.moveTo(-6, -102); g.quadraticCurveTo(-28, -134, -40, -116); g.moveTo(-6, -102); g.quadraticCurveTo(18, -138, 30, -118); g.stroke();
+    g.restore();
+  }
+  function trader(t) {
+    g.save(); g.translate(t.x, t.y); g.rotate(t.rot); g.lineJoin = 'round'; g.lineCap = 'round';
+    var scared = t.state === 'air';
+    g.strokeStyle = '#12233f'; g.lineWidth = 4;
+    if (scared) { g.beginPath(); g.moveTo(-14, -24); g.lineTo(-26, -44); g.moveTo(14, -24); g.lineTo(26, -44); g.stroke(); }
+    g.fillStyle = '#ffd9a8'; g.beginPath(); g.arc(0, -20, 15, 0, 6.3); g.fill(); g.stroke();
+    g.fillStyle = '#12233f';
+    if (t.state === 'out') { g.lineWidth = 3; [-5, 6].forEach(function (ex) { g.beginPath(); g.moveTo(ex - 3, -25); g.lineTo(ex + 3, -19); g.moveTo(ex + 3, -25); g.lineTo(ex - 3, -19); g.stroke(); }); }
+    else { g.beginPath(); g.arc(-5, -22, 2.4, 0, 6.3); g.arc(6, -22, 2.4, 0, 6.3); g.fill(); }
+    g.lineWidth = 3; g.beginPath(); if (scared) { g.ellipse(0, -13, 4, 5, 0, 0, 6.3); g.fill(); } else if (t.state === 'out') { g.arc(0, -9, 5, 3.5, 5.9); g.stroke(); } else { g.arc(0, -17, 6, 0.3, 2.8); g.stroke(); }
+    g.lineWidth = 4; g.fillStyle = t.col; g.beginPath(); g.ellipse(0, 0, 30, 13, 0, 0, 6.3); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.75)'; g.beginPath(); g.ellipse(-12, -4, 9, 3, -0.2, 0, 6.3); g.fill();
+    g.restore();
+  }
+  function label(t, x, y, size, color, alpha) {
+    g.save(); g.globalAlpha = alpha === undefined ? 1 : alpha; g.font = '800 ' + size + 'px ' + MONO; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    g.lineWidth = size * 0.22; g.strokeStyle = '#12233f'; g.lineJoin = 'round'; g.strokeText(t, x, y); g.fillStyle = color || '#fff'; g.fillText(t, x, y); g.restore();
+  }
+  function waterPath() {
+    g.beginPath(); g.moveTo(POOL_L, 1190);
+    for (var i = 0; i < N; i++) g.lineTo(POOL_L + i * DX, WATER_Y - st.h[i]);
+    g.lineTo(POOL_R, 1190); g.closePath();
+  }
+  function draw() {
+    var w = st.whale, k;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = '#0b3f6b'; g.fillRect(0, 0, cv.width, cv.height);
+    var top = g.createLinearGradient(0, 0, 0, OY + 10); g.fillStyle = '#2b1d5c'; g.fillRect(0, 0, cv.width / dpr, OY + 2);
+    var shx = (Math.random() - 0.5) * st.shake, shy = (Math.random() - 0.5) * st.shake;
+    g.setTransform(dpr * S, 0, 0, dpr * S, dpr * (OX + shx * S), dpr * (OY + shy * S));
+    g.drawImage(bgCv, 0, 0);
+    // judges' cards
+    if (st.cards) [500, 580, 660].forEach(function (x, i) {
+      var a = Math.max(0, Math.min(1, (st.t - 0.25 - i * 0.26) / 0.18)); if (!a) return;
+      var y = 668 + (1 - a) * 40; g.fillStyle = '#fff'; g.strokeStyle = '#12233f'; g.lineWidth = 4; rr(g, x - 32, y, 64, 64, 8); g.fill(); g.stroke();
+      g.fillStyle = '#12233f'; g.font = '800 28px ' + MONO; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(st.cards[i]), x, y + 34);
+    });
+    // the board
+    g.save(); g.translate(40, BOARD_Y); g.rotate(st.bend * 0.012);
+    g.fillStyle = '#12233f'; rr(g, 0, -14, 330, 20, 8); g.fill(); g.fillStyle = '#ffd23f'; rr(g, 6, -10, 318, 7, 3); g.fill(); g.restore();
+    // traders thrown out, on the deck
+    for (k = 0; k < st.traders.length; k++) if (st.traders[k].state === 'out') trader(st.traders[k]);
+    // water, whale, then a wash of water over the part of him that is under
+    var wg = g.createLinearGradient(0, WATER_Y, 0, 1200); wg.addColorStop(0, '#35d2f5'); wg.addColorStop(1, '#0d7fc0');
+    g.fillStyle = wg; waterPath(); g.fill();
+    var pose = st.phase === 'walk' ? 'walk' : st.phase === 'air' ? (w.tucked ? 'ball' : 'jump') : (st.t < 1.2 ? 'ball' : 'float');
+    whale(w.x, w.y, w.rot, pose, w.ph);
+    if (w.wet) { g.save(); waterPath(); g.clip(); g.fillStyle = 'rgba(40,190,240,0.5)'; g.fillRect(POOL_L, WATER_Y - 200, POOL_R - POOL_L, 500); g.restore(); }
+    g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 5; g.lineJoin = 'round'; g.beginPath();
+    for (k = 0; k < N; k++) { if (k) g.lineTo(POOL_L + k * DX, WATER_Y - st.h[k]); else g.moveTo(POOL_L, WATER_Y - st.h[0]); } g.stroke();
+    for (k = 0; k < st.traders.length; k++) if (st.traders[k].state !== 'out') trader(st.traders[k]);
+    g.fillStyle = 'rgba(255,255,255,0.92)';
+    for (k = 0; k < st.drops.length; k++) { var d = st.drops[k]; g.beginPath(); g.arc(d.x, d.y, d.r, 0, 6.3); g.fill(); }
+
+    // the run-up meter
+    if (st.phase === 'walk') {
+      var prog = Math.min(1, (w.x - 84) / (TIP - 84));
+      g.fillStyle = 'rgba(18,35,63,0.85)'; rr(g, 420, 190, 260, 126, 16); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.75)'; g.font = '800 16px ' + MONO; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText('TAP TO JUMP', 440, 222);
+      var mg = g.createLinearGradient(440, 0, 660, 0); mg.addColorStop(0, '#ff5470'); mg.addColorStop(0.55, '#ffd23f'); mg.addColorStop(0.86, '#5dff8f'); mg.addColorStop(1, '#5dff8f');
+      g.fillStyle = mg; rr(g, 440, 240, 220, 26, 13); g.fill(); g.fillStyle = '#fff'; g.fillRect(440 + prog * 214, 232, 6, 42);
+      g.fillStyle = 'rgba(255,255,255,0.75)'; g.fillText('EARLY', 440, 300); g.fillStyle = '#5dff8f'; g.textAlign = 'right'; g.fillText('THE TIP', 660, 300);
+    } else if (st.phase === 'air' && !w.tucked && !w.flop) label('TAP TO TUCK', 500, 250, 34, '#fff', 0.6 + 0.4 * Math.sin(st.t * 14));
+    for (k = 0; k < st.pops.length; k++) { var p = st.pops[k]; label(p.text, p.x, p.y - p.t * 60, 28, p.color, 1 - Math.pow(p.t / 1.1, 3)); }
+
+    // the top line
+    g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,0.75)'; g.font = '800 18px ' + MONO;
+    g.fillText('DIVE', 30, 46); g.fillText('SHAKEN OUT', 250, 46); g.textAlign = 'right'; g.fillText('SCORE', 690, 46);
+    g.fillStyle = '#fff'; g.font = '800 34px ' + MONO; g.fillText(st.total.toLocaleString('en-US'), 690, 84);
+    g.textAlign = 'left'; g.fillText(st.dive + '/' + DIVES, 30, 84); g.fillText(st.out + '/' + st.traders.length, 250, 84);
+
+    if (st.phase === 'judged') {
+      var a = Math.min(1, st.t / 0.25);
+      label(st.out + ' SHAKEN OUT' + (st.out >= 6 ? '!' : ''), 360, 180, 50, '#ffd23f', a);
+      label(st.verdict, 360, 232, 28, '#fff', a);
+      if (st.t > 1.0) label('+' + st.score.toLocaleString('en-US'), 360, 290, 34, '#5dff8f');
+      if (st.t > 1.3) {
+        if (st.dive < DIVES) label('TAP FOR DIVE ' + (st.dive + 1), 360, 600, 30, '#fff', 0.65 + 0.35 * Math.sin(st.t * 6));
+        else { label('FINAL ' + st.total.toLocaleString('en-US'), 360, 560, 46, '#fff'); if (st.newBest) label('NEW BEST', 360, 606, 26, '#5dff8f'); label('TAP TO DIVE AGAIN', 360, 652, 26, '#fff', 0.65 + 0.35 * Math.sin(st.t * 6)); }
+      }
+    }
+  }
+
+  // ---------- The loop ----------
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    var vw = cv.clientWidth, vh = cv.clientHeight;
+    cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+    S = Math.min(vw / W, vh / H); OX = (vw - W * S) / 2; OY = (vh - H * S) / 2;
+  }
+  var last = 0, acc = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now; acc += dt;
+    var n = 0; while (acc >= 1 / 60 && n++ < 4) { acc -= 1 / 60; step(); }
+    draw();
+  }
+  function start(saved) {
+    paintBg(); newDive(null); resize();
+    if (saved && saved.total && saved.dive) { st.total = saved.total; st.dive = saved.dive; }
+    window.addEventListener('resize', resize);
+    cv.addEventListener('pointerdown', function (e) { e.preventDefault(); tap(); });
+    window.addEventListener('keydown', function (e) { if (e.code === 'Space' || e.code === 'Enter') { if (e.target && e.target.id === 'snd') return; e.preventDefault(); tap(); } });
+    var b = document.getElementById('snd');
+    b.addEventListener('click', function () { audio(); muted = !muted; if (out) out.gain.value = muted ? 0 : 0.6; b.textContent = muted ? 'SOUND OFF' : 'SOUND ON'; });
+    document.addEventListener('visibilitychange', function () { if (AC) { if (document.hidden) AC.suspend(); else AC.resume(); } });
+    requestAnimationFrame(frame);
+  }
+  // For tuning: run one dive with a given jump quality (0..1), tuck quality (0..1, or -1 for none) and count who is thrown out.
+  window.CB = { sim: function (q, tq) {
+    newDive(null); var w = st.whale; w.x = 84 + (TIP - 84) * q; jump();
+    for (var i = 0; i < 60 * 12 && st.phase !== 'judged'; i++) { if (tq >= 0 && !w.tucked && st.phase === 'air' && Math.abs(w.vy) <= (1 - tq) * 620 + 30) tuck(); step(); }
+    return { out: st.out, P: +st.P.toFixed(2), score: st.score, x: Math.round(w.x) };
+  }, get st() { return st; }, set: function (o) { if (o.L) LAUNCH_H = o.L; if (o.vy0) VY0 = o.vy0; if (o.vyk) VYK = o.vyk; if (o.vx0) VX0 = o.vx0; if (o.vxk) VXK = o.vxk; }, peak: function (q, tq) { newDive(null); st.traders = []; var w = st.whale; w.x = 84 + (TIP - 84) * q; jump(); var mx = new Float32Array(N); for (var i = 0; i < 600; i++) { if (tq >= 0 && !w.tucked && st.phase === 'air' && Math.abs(w.vy) <= (1 - tq) * 620 + 30) tuck(); step(); for (var k = 0; k < N; k++) mx[k] = Math.max(mx[k], st.h[k]); } var o = []; for (k = 0; k < N; k += 9) o.push(Math.round(mx[k])); return { x: Math.round(w.x), P: st.P, mx: o.join(' ') }; } };
+  var hot = window.claude && window.claude.hot;
+  if (hot && hot.snapshot) hot.snapshot(function () { return st ? { total: st.phase === 'judged' ? st.total : st.total, dive: st.dive } : {}; });
+  if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "18725511f80d4503841c5fb7c4b7895b"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

@@ -7,7 +7,8 @@
    At the end the host points at each rapper and the louder crowd wins.
    The rappers "talk" in chiptune babble (one blip per syllable, on the beat), not real or cloned voices. */
 (function () {
-  if (!/[?&]rap\b/i.test(location.search)) return;
+  var SOLO = window.POF_SOLO === 'rap';   // on its own page (/rap/), opened straight from the arcade's Dust Bin
+  if (!SOLO && !/[?&]rap\b/i.test(location.search)) return;
   var D = window.POF_DATA, AU = window.POF_AUDIO, LYRICS = window.POF_RAP_LYRICS, CROWD = window.POF_RAP_CROWD;
 
   var RAPPERS = ['toly', 'vitalik'];
@@ -378,7 +379,7 @@
     sec.className = 'screen rap';
     sec.hidden = true;
     sec.innerHTML =
-      '<div class="rap-top"><button class="btn btn-ghost btn-sm" id="rap-back" type="button">← Menu</button>' +
+      '<div class="rap-top"><button class="btn btn-ghost btn-sm" id="rap-back" type="button">' + (SOLO ? '← Games' : '← Menu') + '</button>' +
         '<span class="rap-round" id="rap-round"></span></div>' +
       '<div class="rap-meter"><span class="rap-mface" id="rap-mface-l"></span>' +
         '<div class="rap-bar" id="rap-bar"><div class="rap-fill" id="rap-fill"></div><div class="rap-mid"></div></div>' +
@@ -794,6 +795,7 @@
     pickRapper();
   }
   function leave() {
+    if (SOLO) { stopAll(); location.href = './'; return; }   // back to the arcade
     stopAll();
     CROWD.stop();
     show('screen-title');
@@ -812,5 +814,6 @@
     story.insertAdjacentElement('afterend', b);
     b.addEventListener('click', open);
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addButton); else addButton();
+  if (SOLO) window.POF_SOLO_OPEN = open;
+  else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addButton); else addButton();
 })();

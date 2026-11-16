@@ -11,6 +11,77 @@ This is the document to build from. If a feature is not in **v1**, it does not g
 
 ## 0. Changes
 
+### Nov 15, 2026: the Boombox (on the hub)
+
+Brian's idea: a boombox on proofoffight.com that plays the songs from every game. His calls: genre radio stations, nonstop play, a randomizer, and the game's name where a radio shows the artist.
+
+- **Five stations** on a tuner dial: 8-BIT 88.3 (Doge Moon Crash's chiptune plus the code-made music of 51% Attack and Ride the Chart), BEATS 96.1 (the 9 Rap Battle beats, full length), SHRED 99.5 (Arena Anthem, Sui Swell, and the boombox exclusives Encore, Wide Open and Lighters Up), BOSS FM 101.5 (the fighting game's dubstep: title, fight, five boss themes, Triumph of Light) and NEON 107.7 (Wen Lambo's 10 songs). 37 songs. The station dial is on top; the transport keys and volume sit under the cassette.
+- **Play:** nothing plays until a tap (browsers block sound before one). Then it's nonstop: the next song, and after a station's last song the next station. Tuning a station starts it. Shuffle picks from every station and doesn't repeat until half the songs have played. Lock-screen and headphone controls show the song, the game as the artist, and the station.
+- **Looks, all drawn in code:** a graphite 80s boombox with piano keys, two speakers whose cones pump with the bass, an LCD with an equaliser and a seek bar, a cassette whose label names the song and whose reels turn (the tape moves from one reel to the other as the song plays), and the dial with a red needle. A song list below names each song's game, linked to it. While music plays and the boombox is scrolled away, a mini player sits at the bottom of the screen.
+- **Files:** `js/boombox.js` (station list, player, drawing), `css/boombox.css`, the section in `index.html`. Extra song files in `audio/box/`, built by `python3 tools/boombox.py PROJECT_FILES RENDER_DIR`: full rap beats and Arena Anthem from the project's Suno files, the fighting game's songs stretched from their seamless loops to about two minutes with a fade (only the loop cuts survive), and the 51% Attack and Ride the Chart music recorded by `node tools/boombox-render.js RENDER_DIR` (Ride's music is a copy of the one in `js/dip.js`). Other songs play the game's own file.
+- **Adding a song:** drop the mp3 in `audio/box/` (about -16 LUFS) and add a line to `STATIONS` in `js/boombox.js`. A song made only for the boombox uses game `null` and shows BOOMBOX EXCLUSIVE. Brian is making more rock songs for SHRED (prompts in the project's `boombox/shred-prompts.md`).
+- A small music-note icon in the top-right corner of the page jumps to the boombox and glows gold while music plays.
+- The station, volume and shuffle are kept in localStorage `pof-bb`.
+
+### Nov 14, 2026: Sui Swell (proofoffight.com/sui)
+
+Brian's idea: a Sui wave surfer. You ride the wave up and down, and when it crests over you the game switches to a first-person view inside the tube. Make it out and the crowd cheers with 80s and 90s surf talk; wipe out and they give a kind "ohhh, good try" instead of a boo. All drawn in code. Its own page and look (`sui/index.html`, `css/sw.css`), and a cabinet on the arcade. Tagline: "Drop in. Get barreled. Stay liquid."
+
+- **One button.** Hold to carve up the face, let go to drop. In the tube the same button stalls.
+- **A heat is three waves:** Testnet Ripple (8 ft), Devnet Swell (15 ft), Mainnet Monster (30 ft). Each is faster than the last, with a tighter tube.
+- **The ride (side view, 20 seconds):** grab the droplets, keep moving up and down to keep the SPEED meter up (coasting drains it, and at zero the whitewater catches you). Fly off the lip for an air; hold in the air to spin and let go to land on a whole turn (a half turn is a sketchy landing). In the way: FUD buoys, GAS jellyfish, a RUG shark fin at the bottom, a PAPER HANDS gull above the lip. A whale's back at the bottom pumps you into the sky.
+- **The tube (first person, 8 seconds), rebuilt Nov 15:** Brian found the first tube (up and down past waterfalls and foam mounds) had no point, and sent a design based on how barrels are really surfed. Now: **hold to stall** (the surfer drags a hand in the wall and sinks deeper), **let go to trim** back toward the exit. Deeper scores faster: 1x, 2x, 3x, MAX. The foam ball sits at the back; stall into it and you wipe out. Foam surges push it forward a few times per wave (more and bigger on the later waves), with a warning. In the last second the barrel closes, so you have to let go and shoot out. Be at MAX within about a second of the exit and it is a SPIT DODGE. Never touching the button rides out safely at 1x. Steering is automatic, so it stays one button. The barrel is drawn as a leaning oval with the open face and the beach in view, after a photo Brian sent. The music gets more muffled the deeper you are.
+- **Easier surges** (Nov 15, after Brian found the barrel really hard): the warning comes 1.5 seconds ahead instead of 0.8, surges creep in more slowly and less deep, letting go pulls you back about 40% faster, and the warning zone on the depth bar is bright striped red with a SURGE! label so it stands out from the pink MAX zone.
+- **Tube help:** before the tube starts, a card explains it (hold = stall, let go = speed up) and waits for a tap on the first wave, or until you have made a barrel once. A depth bar at the bottom shows where you are between the exit and the foam ball, the multiplier zones, and where a coming surge will reach. Hints say when to hold and when to let go.
+- **Judging:** a wave is worth up to 10.00 (10,000 points): droplets 2.40, airs up to 2.00, speed into the tube 0.60, making it out 1.50, time spent deep up to 3.00, spit dodge 0.50. Three judges hold up cards after every wave. The heat is out of 30.
+- **Daily Heat:** the same three waves for everyone (seeded by the UTC date), with a leaderboard. **Free Surf:** new waves every heat, best kept on the device.
+- **Sui:** the name, the blue palette and a plain water droplet (the pickups and the mark on the board). The droplet is our own drawing, not Sui's logo.
+- **Sound:** the song is `audio/sw/sui-swell.mp3`, a surf-rock track Brian made in Suno (added Nov 15). The same song plays on the title, the ride and in the barrel, where a live low-pass filter muffles it more the deeper you go. The sea noise, the crowd cheer and the kind "ohhh" are made in code, as is a stand-in loop that plays until the song has loaded.
+- **Leaderboard:** `/sw/scores` on the same Cloudflare Worker as the other games, boards `sw-YYYY-MM-DD`, highest score first. A heat is its recorded input (the ticks on which the button changed); the server surfs it again with `js/sw-core.js` and only takes the score if it comes out the same. Whenever `js/sw-core.js` changes, rebuild and deploy the Worker.
+- `js/sw-core.js` is the rules with no drawing (node-runnable, no sin/cos so every machine agrees). `node tools/sw-sim.js` surfs six daily heats with two bots and checks that heats replay.
+- `/sui/?debug` exposes `window.POF_SW`; `?auto` lets the bot surf.
+
+### Nov 14, 2026: Doge Moon Crash (proofoffight.com/doge)
+
+Brian's idea: a Flappy-style "to the moon" game with the Doge. Built as a vertical climb, all drawn in code. Its own page and look (`doge/index.html`, `css/dm.css`), and a cabinet on the arcade.
+
+- **The climb:** hold to fire the jetpack, let go to fall; slide a finger or the mouse (or arrow keys) to steer. 384,400 km in five layers: Launchpad, Clouds, Stratosphere, Space, Moon. The meme captions in the sky get more warped the higher you are. The run ends when the doge bonks helmet-first into the moon and a Ð flag goes up. The time to the moon is the score.
+- **In the way:** rows of red candles with one gap (some slide), FUD birds, paper-hand ghosts, and per layer: INFLATION weather balloons (Clouds), WHALE AIR jets with a warning (Stratosphere), FUD-SAT satellites and RUG asteroids (Space), falling burning candles with a warning line (Moon). **The dump**, a wall of red candles, rises behind you.
+- **Three bones.** A hit costs one and slows you. The third is an OOF: back to the start of that layer with the clock still running. A bone pickup gives one back.
+- **Coins and combos:** coins in a row raise the multiplier (wow x2 at 5, much x3 at 12, such x5 at 25) and each step makes you climb 8% faster. Three seconds without a coin loses the streak.
+- **Elawn Moosk's posts** (the avatar is Brian's image, `art/dm/elawn.webp`): a good post is 3 seconds of rocket mode, a bad one is 4 seconds of heavy gravity after a one-second warning. **Much wow** is a 7-second shield and coin magnet.
+- **Daily Moon:** one map a day, the same for everyone (seeded by the UTC date), with a leaderboard. **Free Flight:** a new random map every run, times kept on the device. Medals: gold 1:48, silver 2:00, bronze 2:20.
+- **The dog** is an original code-drawn Shiba astronaut (`js/dm-art.js`); no photo of the real Doge is used. The share picture (1200x675) and the arcade tile use the same drawing.
+- **Leaderboard:** `/dm/scores` on the same Cloudflare Worker as Ride the Chart and Wen Lambo, boards `dm-YYYY-MM-DD`. A run is its recorded input (jetpack on or off and the steering target, sampled 30 times a second); the server flies it again with `js/dm-core.js` and only takes the time if it reaches the moon on the same tick. Whenever `js/dm-core.js` changes, rebuild and deploy the Worker.
+- `js/dm-core.js` is the rules with no drawing (node-runnable, no sin/cos so every machine agrees). `node tools/dm-sim.js` flies six daily maps with two bots and checks that runs replay.
+- `/doge/?debug` exposes `window.POF_DM`; `?auto` lets the bot fly.
+- **Music** (Brian's Suno songs, `audio/dm/`): `title.mp3` on the menu, `climb.mp3` during the run (loops from 3.5 s to 106.394 s, skipping its intro and fade-out, and plays 2.5% faster in each layer), `moon-landing.mp3` once after the bonk. Loop points are in `SONGS` in `js/dm.js`. If the climb song can't load, the old code-made tune plays instead. Sound effects stay code-made.
+
+### Nov 14, 2026: Whale Cannonball goes in the Dust Bin
+
+- **Whale Cannonball** (`/cannonball/`): a whale in polka-dot trunks waddles off a 10 m board into a pool of traders on swim rings. Tap to jump (closer to the tip is better), tap again to tuck (nearer the top of the arc is better). The water is a row of springs; traders thrown out of the pool are "shaken out". Three dives, judges' cards. Brian found the water and physics great but not replayable after about ten dives, so it went straight to the Dust Bin. One self-contained page (`cannonball/index.html`), tile art `art/dustbin-cannonball.webp`.
+
+### Nov 14, 2026: Wen Lambo (proofoffight.com/lambo)
+
+A synthwave road-trip racer, all drawn in code: build your car in the garage, drive it to a crypto conference in each city, post it. Its own page and look (`lambo/index.html`, `css/wl.css`), and a cabinet on the arcade.
+
+- **The drive:** a pseudo-3D road (flat segments projected one by one, `js/wl-view.js`). The car accelerates by itself; steer with the arrow keys or by holding a side of the screen, brake with Down or by holding both sides. Running into traffic costs most of your speed; passing a car closely gives a **DRAFT** boost. Off the road is slow.
+- **Six stages, unlocked in order:** Miami (Sunset Causeway), Denver (mountains at night, snow), Riviera (coast road), Dubai (desert highway, sand on the road costs grip), Tokyo (rain, less grip, tight bends), The Grid (bonus: rollercoaster hills, lane-changing traffic). Each has its own sky, skyline, roadside, billboards and a finish gantry named after a made-up event (HODL CON, BUIDL WEEK, LE SUMMIT, TOKEN OASIS, NEON BLOCK WEEK, THE MAINNET). No real conference names or logos.
+- **Two modes:** Time Trial (clock, traffic, bronze/silver/gold medal times, a ghost of your best run or of the leaderboard's #1) and Cruise (no traffic, no clock, slower, rolls on into the next open stage).
+- **Six cars** with their own top speed, acceleration and grip: Nightwedge (wedge supercar) and Big Block (muscle car) from the start, then Niner (rear-engine coupe, after Miami), Strake 80 (80s exotic, after Denver), HODL SUV (after Dubai; keeps most of its speed when it hits traffic) and Bear Market (a slow hatchback, after Tokyo). They nod at kinds of car, copy none, and have no badges (`js/wl-cars.js`, side and rear views).
+- **Garage:** paint (13) and finish (gloss, matte, neon, chrome), wheels (5 styles, 6 colours), wing, underglow, decal, and a plate of up to 7 characters. Most parts unlock by finishing stages, a few by winning gold. **Share** makes a 1200x675 picture of the car (with the time, after a run).
+- **Radio:** a button while driving (or R) changes station: WAGMI FM 104.2 (outrun: Sunset Causeway, Mile High Midnight, HODL Till Dawn), HODL RADIO 88.8 (city pop and chill: Neon Rain, Chrome Dreams, Bear Market Lounge), DEGEN 99.9 (house and darksynth: Côte d'Azur Overdrive, Desert Run, Mainnet, Liquidation), or off. All are Brian's Suno tracks in `audio/wl/` (leveled to -16 LUFS, 112 kbps). Each stage starts on its own song (Miami Sunset Causeway, Denver Mile High Midnight, Riviera Côte d'Azur Overdrive, Dubai Desert Run, Tokyo Neon Rain, The Grid Mainnet) and switches to that song's station; a retry of the same stage picks the song up where it left off, and Cruise keeps the song going between stages. A station then plays its songs in turn. The pill shows the station and song, and a "now playing" card slides out whenever a song starts. The map, garage and results play **Showroom**, a seamless loop (`MENU` in `js/wl-audio.js`). A station whose files fail to load falls back to a code-made loop.
+- **Leaderboards:** one per stage, fastest first, on the same Cloudflare Worker as Ride the Chart (`/wl/scores`). A run is its recorded steering; the server drives it again with `js/wl-core.js` and only takes the time if it comes out the same. The Worker has to be deployed again for this; until then the game says the leaderboard is offline and keeps times on the device.
+- `js/wl-core.js` is the rules with no drawing (node-runnable). `node tools/wl-sim.js` drives every car down every stage with two bots and checks that runs replay. Medal times come from the best bot run plus 3%, 10% and 22%.
+- `/lambo/?all` opens every stage, car and part. `?debug` exposes `window.POF_WL`; `?auto` lets the bot drive.
+
+### Nov 13, 2026: the Dust Bin
+
+- A **Dust Bin** section under the games on the arcade: where the dumbest game ideas go to die. Each binned idea is a faded, slightly crooked tile (it brightens on hover) that still opens the prototype, with the date it was born and binned.
+- First in: **Rap Battle** (Toly vs Vitalik, hosted by MC Satoshi).
+- Each binned game has its own page that opens straight into it: `/rap/` and `/guitar/` (← Games goes back to the arcade). They are built from `fight/index.html` by `tools/solo-pages.py`. Old `?rap` and `?guitar` links on the home page forward there; `/fight/?rap` and `/fight/?guitar` still add their buttons to the fight's title.
+- Also binned (Nov 13): **Guitar Battle** (Brian likes the idea but doesn't see it working long term).
+
 ### Nov 12, 2026: 51% Attack gets its own arcade cabinet
 
 - The arcade's game grid now fits as many cabinets per row as the screen allows (three on a laptop, two on a tablet, one on a phone), so more games can join.

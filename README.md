@@ -4,10 +4,15 @@ Proof of Fight is an arcade of crypto games at **https://proofoffight.com**. The
 
 | Address | Game |
 |---|---|
-| `/` (`index.html`) | The arcade: today's Daily Fight and Mystery Chart, a cabinet per game, and what's in the lab |
+| `/` (`index.html`) | The arcade: today's Daily Fight and Mystery Chart, a cabinet per game, and the Dust Bin (rejected ideas, still playable) |
 | `/fight/` | **Proof of Fight**, the fighting game (below) |
 | `/ride/` | **Ride the Chart**, the one-button ride over a real price chart |
 | `/51/` | **51% Attack**, the network-defense game |
+| `/lambo/` | **Wen Lambo**, the synthwave road-trip racer with a garage |
+| `/doge/` | **Doge Moon Crash**, the jetpack race to the moon with a daily map and leaderboard |
+| `/sui/` | **Sui Swell**, the one-button surf contest: ride the wave, then the tube in first person, with a daily heat and leaderboard |
+| `/cannonball/` | **Whale Cannonball**, a Dust Bin game: one self-contained page, all drawn in code |
+| `/rap/`, `/guitar/` | The Dust Bin games, Rap Battle and Guitar Battle, each opening straight into its game. They run on the fight's page: both are built from `fight/index.html` by `python3 tools/solo-pages.py` (run it again after editing that file) |
 
 The game pages keep their files (`css/`, `js/`, `art/`, `audio/`) at the site root and reach them through `<base href="../">`. Old links that put a game behind `?something` on the home page (`?dip`, `?ride&race=`, `?daily`, `?51`, ...) are forwarded to the right game's page by a script at the top of `index.html`. To add a game: a new folder with its own `index.html` (with `<base href="../">` and its own link preview), plus a cabinet in `index.html`.
 
@@ -41,6 +46,9 @@ node tools/sim.js            # win rates per fighter, balanced rules
 node tools/sim.js original   # same, with the original draft numbers
 node tools/check.js          # rules still behave (Supers can't be dodged, Blind skips a turn, ...)
 node tools/dip-sim.js        # Ride the Chart (?ride): bots ride each chain's chart, how far each gets
+node tools/wl-sim.js         # Wen Lambo (/lambo/): two bots drive every car down every stage; also checks that runs replay
+node tools/dm-sim.js         # Doge Moon Crash (/doge/): two bots fly six daily maps; also checks that runs replay
+node tools/sw-sim.js         # Sui Swell (/sui/): two bots surf six daily heats; also checks that heats replay
 ```
 
 Add `?speed=0.3` to the URL to play animations faster while testing.

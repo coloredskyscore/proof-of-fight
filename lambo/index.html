@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Wen Lambo lives at proofoffight.com/lambo/, but its files (css/, js/) stay at the site root. -->
+  <base href="../">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Wen Lambo · Proof of Fight</title>
+  <meta name="description" content="A synthwave road trip. Build your Lambo, race from Miami to Tokyo, post it.">
+  <meta name="theme-color" content="#0d0221">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Wen Lambo">
+  <meta property="og:description" content="A synthwave road trip. Build your Lambo, race from Miami to Tokyo, post it.">
+  <!-- Link previews (X, Discord, iMessage...). These must be full URLs. -->
+  <meta property="og:url" content="https://proofoffight.com/lambo/">
+  <meta property="og:image" content="https://proofoffight.com/art/social/wl-og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Wen Lambo: a pink wedge supercar on a neon road at sunset">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@ProofOfFight">
+  <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monoton&family=JetBrains+Mono:wght@500;800&family=Space+Grotesk:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/wl.css">
+  <style>html, body { margin: 0; background: #0d0221; }</style>
+</head>
+<body>
+  <!-- The road is drawn by js/wl-view.js into this canvas; js/wl.js builds the menus on top of it. -->
+  <canvas id="wl-cv" aria-label="Wen Lambo. Steer with the arrow keys, or hold the left or right side of the screen."></canvas>
+  <div id="wl-root"></div>
+  <script src="js/wl-core.js"></script>
+  <script src="js/wl-cars.js"></script>
+  <script src="js/wl-view.js"></script>
+  <script src="js/wl-audio.js"></script>
+  <script src="js/wl.js"></script>
+  <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "18725511f80d4503841c5fb7c4b7895b"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

@@ -10,6 +10,8 @@
       if (!q && !h) return;
       var ride = /[?&](ride|dip|race)\b/i.test(q);
       if (/[?&]51\b/.test(q)) { location.replace('51/' + h); return; }   // 51% Attack
+      if (/[?&]rap\b/i.test(q)) { location.replace('rap/' + h); return; }      // Dust Bin games
+      if (/[?&]guitar\b/i.test(q)) { location.replace('guitar/' + h); return; }
       location.replace((ride ? 'ride/' : 'fight/') + q + h);
     })();
   </script>
@@ -33,10 +35,12 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Comic+Neue:wght@700&family=Pacifico&family=Monoton&family=Chakra+Petch:wght@700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/arcade.css">
+  <link rel="stylesheet" href="css/boombox.css">
 </head>
 <body>
+  <a class="bb-jump" id="bb-jump" href="#boombox" aria-label="Boombox: music from every game" title="Boombox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18.5V6l11-2.5v12"/><circle cx="6.5" cy="18.5" r="2.5"/><circle cx="17.5" cy="15.5" r="2.5"/></svg></a>
   <div class="wrap">
     <header class="marquee">
       <h1 class="logo"><span>PROOF</span><span class="of">OF</span><span>FIGHT</span></h1>
@@ -103,6 +107,116 @@
           </div>
         </div>
       </article>
+
+      <article class="cab cab-lambo">
+        <a class="screen" href="lambo/" tabindex="-1" aria-hidden="true">
+          <canvas id="lambo"></canvas>
+          <div class="lam-hud"><span>NEXT STOP <b id="lam-stop">MIAMI</b></span><span><b id="lam-mph">212</b> MPH</span></div>
+        </a>
+        <div class="info">
+          <div class="kicker">New · Synthwave racer</div>
+          <h2 aria-label="Wen Lambo"><span>WEN</span><em>LAMBO</em></h2>
+          <p>Build your Lambo and drive it to every conference from Miami to Tokyo. Radio on.</p>
+          <ul class="facts"><li>6 stages</li><li>6 cars</li><li>Garage</li></ul>
+          <div class="row">
+            <div class="best" id="best-lambo">Steer, draft, don't crash.</div>
+            <a class="play" href="lambo/">DRIVE</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="cab cab-doge">
+        <a class="screen" href="doge/" tabindex="-1" aria-hidden="true">
+          <canvas id="doge"></canvas>
+          <div class="dm-hud"><span><b id="dm-km">0</b> KM</span><span>MOON <b>384,400</b> KM</span></div>
+        </a>
+        <div class="info">
+          <div class="kicker">New · Race to the moon</div>
+          <h2 aria-label="Doge Moon Crash"><span>DOGE MOON</span><em>CRASH</em></h2>
+          <p>Jetpack a doge to the moon past red candles, FUD birds and Elawn's posts. Fastest time wins.</p>
+          <ul class="facts"><li>Daily Moon</li><li>Leaderboard</li><li>Such wow</li></ul>
+          <div class="row">
+            <div class="best" id="best-doge">Hold to boost. Don't let the dump catch you.</div>
+            <a class="play" href="doge/">LAUNCH</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="cab cab-sui">
+        <a class="screen" href="sui/" tabindex="-1" aria-hidden="true">
+          <canvas id="sui"></canvas>
+          <div class="sw-hud"><span>WAVE <b>3</b>/3</span><span>JUDGES <b id="sw-j">9.4</b></span></div>
+        </a>
+        <div class="info">
+          <div class="kicker">New · Surf contest</div>
+          <h2 aria-label="Sui Swell"><span>Sui</span><em>Swell</em></h2>
+          <p>Carve a big blue wave, launch off the lip, then survive the tube in first person. Totally tubular.</p>
+          <ul class="facts"><li>Daily Heat</li><li>Leaderboard</li><li>One button</li></ul>
+          <div class="row">
+            <div class="best" id="best-sui">Drop in. Get barreled. Stay liquid.</div>
+            <a class="play" href="sui/">SURF</a>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="bbx" id="boombox" aria-labelledby="bb-h">
+      <div class="bb-head">
+        <h3 id="bb-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18v12H3zM7 8V5h10v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="7.5" cy="14" r="2.5" fill="currentColor"/><circle cx="16.5" cy="14" r="2.5" fill="currentColor"/></svg>BOOMBOX</h3>
+        <span>Every song from every game, on five stations. Press play and let it ride.</span>
+      </div>
+      <div class="boombox">
+        <div class="bb-handle" aria-hidden="true"></div>
+        <div class="bb-tuner"><div class="bb-dial" id="bb-dial" role="radiogroup" aria-label="Stations"></div><i class="bb-needle" id="bb-needle" aria-hidden="true"></i></div>
+        <div class="bb-face">
+          <canvas class="bb-spk" id="bb-spk-l" aria-hidden="true"></canvas>
+          <div class="bb-mid">
+            <div class="bb-lcd">
+              <div class="bb-lcd-top"><span id="bb-st"></span><span id="bb-time">--:--</span></div>
+              <div class="bb-title" id="bb-title" aria-live="polite">Press play</div>
+              <a class="bb-from" id="bb-from"></a>
+              <div class="bb-seek" id="bb-seek" aria-hidden="true"><i id="bb-seek-fill"></i></div>
+              <canvas id="bb-eq" aria-hidden="true"></canvas>
+            </div>
+            <canvas class="bb-tape" id="bb-tape" aria-hidden="true"></canvas>
+            <div class="bb-ctl">
+              <div class="bb-keys">
+                <button type="button" id="bb-prev" aria-label="Previous song"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h2.5v14H5zM20 5v14L9 12z"/></svg></button>
+                <button type="button" id="bb-play" class="bb-key-play" aria-label="Play"></button>
+                <button type="button" id="bb-next" aria-label="Next song"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 5H19v14h-2.5zM4 5v14l11-7z"/></svg></button>
+                <button type="button" id="bb-shuf" aria-label="Shuffle every station" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c4 0 6 10 10 10H20M3 17h3.5c1.6 0 2.8-1.6 3.9-3.6M20 7h-3.5c-1.6 0-2.8 1.6-3.9 3.6M17.5 4.5 20 7l-2.5 2.5M17.5 14.5 20 17l-2.5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
+              <label class="bb-vol"><span>VOL</span><input type="range" id="bb-vol" min="0" max="100" value="80" aria-label="Volume"></label>
+            </div>
+          </div>
+          <canvas class="bb-spk" id="bb-spk-r" aria-hidden="true"></canvas>
+        </div>
+      </div>
+      <div class="bb-songs">
+        <div class="bb-list-h" id="bb-list-h"></div>
+        <ol class="bb-list" id="bb-list"></ol>
+      </div>
+    </section>
+
+    <section class="dustbin" aria-labelledby="bin-h">
+      <div class="bin-head">
+        <h3 id="bin-h"><svg class="bin-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M9 6V4h6v2M6 6l1 14h10l1-14M10 10v7M14 10v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>DUST BIN</h3>
+        <span>Where our dumbest game ideas go to die. Still playable, at your own risk.</span>
+      </div>
+      <div class="bin-grid">
+        <a class="binned" href="rap/">
+          <span class="bin-art bin-rap" aria-hidden="true"><img src="art/dustbin-rap.webp" alt="" loading="lazy"><i class="bin-pop">EHHH...</i></span>
+          <span class="bin-txt"><b>Rap Battle</b><span>Toly vs Vitalik, three rounds, hosted by MC Satoshi. Babble voices, real beats, questionable bars.</span><em>Born Oct 11 · Binned Nov 13</em></span>
+        </a>
+        <a class="binned" href="guitar/">
+          <span class="bin-art bin-shot" aria-hidden="true"><img src="art/dustbin-guitar.webp" alt="" loading="lazy"></span>
+          <span class="bin-txt"><b>Guitar Battle</b><span>Shred against a founder over a real rock song. Great song, long-term dead end.</span><em>Born Oct 31 · Binned Nov 13</em></span>
+        </a>
+        <a class="binned" href="cannonball/">
+          <span class="bin-art bin-shot" aria-hidden="true"><img src="art/dustbin-cannonball.webp" alt="" loading="lazy"></span>
+          <span class="bin-txt"><b>Whale Cannonball</b><span>A whale in polka-dot trunks cannonballs into a pool of traders. Great splash, ten dives and done.</span><em>Born Nov 13 · Binned Nov 14</em></span>
+        </a>
+      </div>
     </section>
 
     <p class="more">More games are on the way. Got an idea? Tell <a href="https://x.com/ProofOfFight" target="_blank" rel="noopener">@ProofOfFight</a> on X.</p>
@@ -113,11 +227,19 @@
     </footer>
   </div>
 
+  <div class="bb-mini" id="bb-mini" hidden>
+    <button type="button" class="bb-mini-up" id="bb-mini-up" aria-label="Show the boombox"><span id="bb-mini-title"></span><small id="bb-mini-from"></small></button>
+    <button type="button" id="bb-mini-play" aria-label="Play"></button>
+    <button type="button" id="bb-mini-next" aria-label="Next song"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 5H19v14h-2.5zM4 5v14l11-7z"/></svg></button>
+  </div>
+
   <script src="js/data.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/dip-data.js"></script>
   <script src="js/dip-core.js"></script>
+  <script src="js/dm-art.js"></script>
   <script src="js/arcade.js"></script>
+  <script src="js/boombox.js"></script>
   <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "18725511f80d4503841c5fb7c4b7895b"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
