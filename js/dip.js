@@ -38,9 +38,9 @@
   // The Ride the Chart server (worker/ in the repo): short race links and the leaderboards. ?dip&debug&api=<url> points
   // the page at another copy (a local one, say).
   var API = (DEBUG && (/[?&]api=([^&#]+)/.exec(location.search) || [])[1]) ? decodeURIComponent(/[?&]api=([^&#]+)/.exec(location.search)[1]) : 'https://pof-dip.brianboode.workers.dev';
-  var posted = false, lbBoard = null, shortUrl = '', played = chainIds[0];
-  function api(path, body) {
-    return fetch(API + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {})
+  var posted = false, postedTo = {}, lbBoard = null, shortUrl = '', played = chainIds[0];
+  function api(path, body, fresh) {
+    return fetch(API + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : fresh ? { cache: 'reload' } : {})
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'error'); return j; }); });
   }
 
@@ -390,7 +390,9 @@
     root.querySelectorAll('.dip-lb-tab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-board') === m); });
     var list = $('#dip-lb-list'), note = $('#dip-lb-note'), LT = terrain(m), unit = m === 'daily' ? 'points' : CHAINS.CHAINS[m].unit;
     list.innerHTML = ''; note.textContent = 'Loading…';
-    api('/scores?board=' + boardId(m) + '&limit=10').then(function (j) {
+    // the server lets browsers cache a board for 30 s, so right after a post ask past that cache
+    var fresh = postedTo[boardId(m)]; postedTo[boardId(m)] = false;
+    api('/scores?board=' + boardId(m) + '&limit=10', null, fresh).then(function (j) {
       if (lbBoard !== m) return;
       note.textContent = j.top.length ? 'Tap RACE to ride against a run.' : 'No scores yet. Be the first.';
       j.top.forEach(function (row) {
@@ -416,7 +418,7 @@
     posted = true; store('pof-dip-initials', ini);
     $('#dip-post-btn').disabled = true; note.textContent = 'Posting…';
     api('/scores', { code: C.encode(REC), initials: ini }).then(function (j) {
-      $('#dip-post').hidden = true;
+      $('#dip-post').hidden = true; postedTo[boardId(mode)] = true;
       note.textContent = 'You\'re #' + fmt(j.rank) + ' on the ' + (mode === 'daily' ? 'Mystery Chart' : CHAINS.CHAINS[mode].name) + ' board.';
     }, function (e) {
       posted = /does not replay|bad run|old daily/.test(e.message); $('#dip-post-btn').disabled = false;
