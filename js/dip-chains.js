@@ -29,13 +29,14 @@
     ['2024-01-10', 'SPOT ETFS APPROVED', ''],
     ['2024-04-20', 'HALVING #4', ''],
     ['2024-12-05', '$100,000', ''],
-    ['2025-10-06', '$124,000', 'the all-time high']
+    ['2025-10-06', '$124,000', 'the all-time high'],
+        ['2026-11-14', 'THE NOVEMBER CRASH', 'down 6% in a day']
       ],
-      // After the last real day: the price never drops under $68,000; the next bull market tops near $200,000,
-      // pulls back, runs to about $600,000, pulls back again, and the game ends at $1,000,000 (early 2035).
-      // Waypoints are [days after the last real day, price]; the wobble around them is seeded.
-      future: { seed: 42, floor: 68000, vol: 0.0078, pts: [[0, 74015], [60, 70500], [130, 79000], [210, 69500],
-        [330, 96000], [450, 150000], [540, 200000], [620, 155000], [720, 114000], [820, 108000], [1000, 200000],
+      // After the last real day: the November 2026 crash bottoms out, and the price never drops under $52,000; the
+      // next bull market tops near $200,000, pulls back, runs to about $600,000, pulls back again, and the game ends
+      // at $1,000,000 (early 2035). Waypoints are [days after the last real day, price]; the wobble around them is seeded.
+      future: { seed: 42, floor: 52000, vol: 0.0078, pts: [[0, 58214], [45, 54500], [130, 66000], [210, 57000],
+        [330, 90000], [450, 150000], [540, 200000], [620, 155000], [720, 114000], [820, 108000], [1000, 200000],
         [1250, 380000], [1500, 600000], [1580, 490000], [1720, 355000], [1820, 345000], [2100, 560000],
         [2500, 800000], [2900, 1000000], [3040, 1000000]] },
       theme: {
@@ -62,11 +63,12 @@
         ['2025-01-18', 'TRUMP COIN LAUNCHES', '$262, the all-time high'],
         ['2025-03-02', 'CRYPTO RESERVE NEWS', 'up 24% in a day'],
         ['2025-10-10', 'OCT 10 LIQUIDATIONS', 'down 15% in a day'],
-        ['2026-06-06', 'THE 2026 LOW', '$62']
+        ['2026-06-06', 'THE 2026 LOW', '$62'],
+        ['2026-11-14', 'THE NOVEMBER CRASH', 'down 10% in a day']
       ],
-      // After the last real day: the June 2026 low of $62 holds; the next bull market tops near $300, pulls back,
-      // runs to about $700, pulls back again, and the game ends at $1,000.
-      future: { seed: 7, floor: 62, vol: 0.0105, pts: [[0, 83], [60, 77], [130, 96], [210, 68], [330, 125],
+      // After the last real day: the November 2026 crash stops just above the June 2026 low of $62, which holds; the
+      // next bull market tops near $300, pulls back, runs to about $700, pulls back again, and the game ends at $1,000.
+      future: { seed: 7, floor: 62, vol: 0.0105, pts: [[0, 67.2], [45, 64], [130, 82], [210, 66], [330, 118],
         [450, 210], [540, 300], [620, 230], [720, 165], [820, 155], [1000, 310], [1250, 520], [1500, 700],
         [1580, 560], [1720, 400], [1820, 390], [2100, 640], [2500, 860], [2900, 1000], [3040, 1000]] },
       theme: {
@@ -98,11 +100,12 @@
         ['2023-07-17', 'CCIP LAUNCHES', 'cross-chain messaging'],
         ['2024-12-15', '$29', 'the 2024 top'],
         ['2025-10-10', 'OCT 10 LIQUIDATIONS', 'down 20% in a day'],
-        ['2026-06-30', 'THE 2026 LOW', '$7.19']
+        ['2026-06-30', 'THE 2026 LOW', '$7.19'],
+        ['2026-11-14', 'THE NOVEMBER CRASH', 'down 10% in a day']
       ],
       // After the last real day (Claude's guess, the same shape as Solana's): the June 2026 low of $7.19 holds; the
       // next bull market tops near $37, pulls back, runs to about $80, pulls back again, and the game ends at $100.
-      future: { seed: 11, floor: 7.2, vol: 0.0105, pts: [[0, 10.15], [60, 9.5], [130, 11.7], [210, 8.4], [330, 15],
+      future: { seed: 11, floor: 7.2, vol: 0.0105, pts: [[0, 8.3], [45, 7.7], [130, 10.2], [210, 8], [330, 14],
         [450, 26], [540, 37], [620, 28], [720, 20], [820, 19], [1000, 36], [1250, 58], [1500, 80],
         [1580, 64], [1720, 47], [1820, 46], [2100, 66], [2500, 85], [2900, 100], [3040, 100]] },
       theme: {
@@ -118,7 +121,18 @@
   var ORDER = ['btc', 'sol', 'link'];
   // The chains the daily Mystery Chart picks from on a given day (a chain with mysterySince joins from that date).
   function mysteryIds(day) { return ORDER.filter(function (id) { return !CHAINS[id].mysterySince || CHAINS[id].mysterySince <= day; }); }
-  var api = { CHAINS: CHAINS, ORDER: ORDER, mysteryIds: mysteryIds };
+  // When the price files grow, a day's Mystery Chart would change (its pick depends on how many days there are), so
+  // each update gets a line here: before that UTC date the daily uses the files as they ended before it.
+  var DATA_UPDATES = [['2026-11-21', { btc: '2026-11-11', sol: '2026-11-11', link: '2026-11-12' }]];
+  function mysteryUpto(id, day) {
+    for (var i = 0; i < DATA_UPDATES.length; i++) if (day < DATA_UPDATES[i][0]) return DATA_UPDATES[i][1][id] || null;
+    return null;
+  }
+  // The pool for makeTerrain's daily mode; data(id) gives a chain's price file.
+  function mysteryPool(day, data) {
+    return mysteryIds(day).map(function (id) { return { chain: CHAINS[id], data: data(id), upto: mysteryUpto(id, day) }; });
+  }
+  var api = { CHAINS: CHAINS, ORDER: ORDER, mysteryIds: mysteryIds, mysteryPool: mysteryPool };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.POF_DIP_CHAINS = api;
 })(this);
