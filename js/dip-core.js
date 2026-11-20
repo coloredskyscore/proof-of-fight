@@ -85,7 +85,7 @@
 
   /* The chart as ground. opts.mode 'chain' needs opts.chain (a definition from js/dip-chains.js) and opts.data (its
      price file). 'daily' is the Mystery Chart: opts.seed (the date) picks one of opts.pool ([{ chain, data }], in
-     the menu's order) and a real starting day, leaving at least MYSTERY_ROOM real days ahead, then the ride runs
+     the menu's order; upto, if set, cuts the price file at that date) and a real starting day, leaving at least MYSTERY_ROOM real days ahead, then the ride runs
      on through the rest of that coin's history and its made-up future. The coin and the dates stay hidden until
      the end screen (T.mystery). */
   var MYSTERY_ROOM = 1200;
@@ -94,7 +94,9 @@
     if (opts.mode === 'daily' && opts.pool) {
       var r = rng(hashStr('mystery-' + opts.seed)); r(); r(); r();   // the first few draws of nearby seeds are alike
       var pk = opts.pool[Math.floor(r() * opts.pool.length)];
-      var full = decode(pk.data), from = Math.floor(r() * Math.max(1, full.length - MYSTERY_ROOM));
+      var full = decode(pk.data);
+      if (pk.upto) full = full.subarray(0, dayNum(pk.upto) - dayNum(pk.data.start) + 1);   // the file as it was that day
+      var from = Math.floor(r() * Math.max(1, full.length - MYSTERY_ROOM));
       var part = full.subarray(from), mch = pk.chain, mfut = scriptedFuture(rng(mch.future.seed || 42), full[full.length - 1], mch.future);
       real = part.length; day0 = dayNum(pk.data.start) + from;
       logs = new Float64Array(real + mfut.length);

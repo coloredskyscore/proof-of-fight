@@ -68,7 +68,7 @@
     if (!iso) return 'DAY ' + fmt(T.dayAt(x));
     return (long ? MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' : MONTHS[Number(iso.slice(5, 7)) - 1] + ' ') + iso.slice(0, 4);
   }
-  function mysteryPool() { return CHAINS.mysteryIds(today).map(function (id) { return { chain: CHAINS.CHAINS[id], data: window[CHAINS.CHAINS[id].dataVar] }; }); }
+  function mysteryPool() { return CHAINS.mysteryPool(today, function (id) { return window[CHAINS.CHAINS[id].dataVar]; }); }
   function monthOf(iso) { return MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' + iso.slice(0, 4); }
   // The Mystery Chart shows the move since the start instead of the price, which would give the coin away.
   function moveOf(p) { var v = (p / T.mystery.price0 - 1) * 100; return (v >= 0 ? '+' : '−') + fmt(Math.abs(Math.round(v))) + '%'; }
