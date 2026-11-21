@@ -391,11 +391,14 @@
     x.font = '800 24px "JetBrains Mono", monospace'; x.fillStyle = '#f6e7ff'; x.fillText('proofoffight.com/lambo', 1150, 645);
     return c;
   }
+  // Phones and tablets get the system share sheet; a computer with a mouse copies the picture and opens the X post
+  // (Windows and macOS pop up their own share dialog for navigator.share, which isn't what people want there).
+  var SHEET = !!navigator.share && window.matchMedia && matchMedia('(pointer: coarse)').matches;
   function share(card, text) {
     var url = 'https://proofoffight.com/lambo/', note = $('#wl-note');
     card.toBlob(function (blob) {
       var file = null; try { file = new File([blob], 'wen-lambo.png', { type: 'image/png' }); } catch (e) { /* old browser */ }
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], text: text + ' ' + url }).catch(function () { /* closed */ }); return; }
+      if (SHEET && file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], text: text + ' ' + url }).catch(function () { /* closed */ }); return; }
       var done = function (copied) { if (note) note.textContent = copied ? 'Picture copied. Paste it into your post.' : 'Picture saved. Attach it to your post.'; window.open('https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank', 'noopener'); };
       var dl = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'wen-lambo.png'; a.click(); done(false); };
       if (navigator.clipboard && window.ClipboardItem) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function () { done(true); }, dl); else dl();

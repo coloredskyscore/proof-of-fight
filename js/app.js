@@ -1762,7 +1762,7 @@
         finish: res.finish, quote: B.loseLine ? B.name + ': “' + B.loseLine + '”' : '',
         meta: 'Next: ' + (isFinal(run.rung) ? 'the final boss' : next.name) + (nextB ? '' : ' (coming soon)'),
         actions: [['Next boss ▶', 'btn-gold', function () { closeStory(); renderLadder(run); }],
-          [navigator.share ? 'Share' : 'Copy result', '', function () { shareStory(storyText(res, run)); }],
+          [SHEET ? 'Share' : 'Copy result', '', function () { shareStory(storyText(res, run)); }],
           ['Post on X', 'btn-x', storyText(res, run)],
           ['Menu', 'btn-ghost', function () { closeStory(); renderTitle(); }]]
       });
@@ -1834,7 +1834,7 @@
       kicker: 'STORY', title: won ? 'STORY COMPLETE' : 'GAME OVER', lose: !won,
       faces: face(P, !won), line: won ? P.name + ' beat all ' + total + ' bosses' : P.name + ' made it to boss ' + Math.min(n + 1, total) + ' of ' + total,
       finish: '', meta: stats,
-      actions: [[navigator.share ? 'Share' : 'Copy result', 'btn-gold', function () { shareStory(text); }],
+      actions: [[SHEET ? 'Share' : 'Copy result', 'btn-gold', function () { shareStory(text); }],
         ['Post on X', 'btn-x', text],
         ['New run', '', function () { closeStory(); openStory(); }],
         ['Menu', 'btn-ghost', function () { closeStory(); renderTitle(); }]]
@@ -1849,8 +1849,11 @@
       ' (boss ' + (res.rung + 1) + ' of ' + D.STORY.ladder.length + ')\n' + gridText(res) + '\n' + siteUrl();
   }
 
+  // Phones and tablets get the system share sheet; a computer with a mouse copies instead (Windows and macOS
+  // pop up their own share dialog for navigator.share, which isn't what people want there).
+  var SHEET = !!navigator.share && window.matchMedia && matchMedia('(pointer: coarse)').matches;
   function shareStory(text) {
-    if (navigator.share) { navigator.share({ text: text }).catch(function () {}); return; }
+    if (SHEET) { navigator.share({ text: text }).catch(function () {}); return; }
     copyText(text).then(function () { toast('Copied! Paste it anywhere.'); }, function () { toast("Couldn't copy. Try Post on X."); });
   }
 
@@ -1984,7 +1987,7 @@
     $('#res-quote').hidden = !loser.loseLine;
     $('#res-quote').textContent = loser.loseLine ? loser.name + ': “' + loser.loseLine + '”' : '';
     $('#res-grid').textContent = gridText(res);
-    $('#res-share').textContent = navigator.share ? 'Share result' : 'Copy result';
+    $('#res-share').textContent = SHEET ? 'Share result' : 'Copy result';
     $('#res-x').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText(res));
     $('#res-again').textContent = res.mode === 'daily' ? 'Practice this matchup' : 'Rematch';
 
@@ -2038,7 +2041,7 @@
 
   function onShare() {
     var text = shareText(S.result);
-    if (navigator.share) {
+    if (SHEET) {
       navigator.share({ text: text }).catch(function () { /* user closed the sheet */ });
       return;
     }
