@@ -126,3 +126,5 @@ html.dip-on, html.dip-on body { overflow: hidden; overscroll-behavior: none; }
 @media (max-width: 380px) { .dip-lb-list li { grid-template-columns: 20px 42px 1fr auto; } .dip-lb-list span { display: none; } }
 /* The chain buttons keep their own colors on hover (the plain hover above would wash them out). */
 .dip-btn-main:hover { background: var(--btn-bg); border-color: transparent; }
+.dip-lb-list li.mine { background: rgba(31, 242, 160, 0.16); box-shadow: inset 0 0 0 2px rgba(31, 242, 160, 0.75); }
+#dip-see-lb { width: min(240px, 100%); }

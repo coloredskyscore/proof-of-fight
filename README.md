@@ -10,6 +10,7 @@ Proof of Fight is an arcade of crypto games at **https://proofoffight.com**. The
 | `/51/` | **51% Attack**, the network-defense game |
 | `/lambo/` | **Wen Lambo**, the synthwave road-trip racer with a garage |
 | `/doge/` | **Doge Moon Crash**, the jetpack race to the moon with a daily map and leaderboard |
+| `/sui/` | **Sui Swell**, the one-button surf contest: ride the wave, then the tube in first person, with a daily heat and leaderboard |
 | `/cannonball/` | **Whale Cannonball**, a Dust Bin game: one self-contained page, all drawn in code |
 | `/rap/`, `/guitar/` | The Dust Bin games, Rap Battle and Guitar Battle, each opening straight into its game. They run on the fight's page: both are built from `fight/index.html` by `python3 tools/solo-pages.py` (run it again after editing that file) |
 
@@ -47,6 +48,7 @@ node tools/check.js          # rules still behave (Supers can't be dodged, Blind
 node tools/dip-sim.js        # Ride the Chart (?ride): bots ride each chain's chart, how far each gets
 node tools/wl-sim.js         # Wen Lambo (/lambo/): two bots drive every car down every stage; also checks that runs replay
 node tools/dm-sim.js         # Doge Moon Crash (/doge/): two bots fly six daily maps; also checks that runs replay
+node tools/sw-sim.js         # Sui Swell (/sui/): two bots surf six daily heats; also checks that heats replay
 ```
 
 Add `?speed=0.3` to the URL to play animations faster while testing.
